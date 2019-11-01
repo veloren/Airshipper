@@ -1,0 +1,151 @@
+<?xml version='1.0' encoding='windows-1252'?>
+<!--
+  Copyright (C) 2017 Christopher R. Field.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!--
+  Please do not remove these pre-processor If-Else blocks. These are used with
+  the `cargo wix` subcommand to automatically determine the installation
+  destination for 32-bit versus 64-bit installers. Removal of these lines will
+  cause installation errors.
+-->
+<?if $(var.Platform) = x64 ?>
+    <?define Win64 = "yes" ?>
+    <?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
+<?else ?>
+  <?define Win64 = "no" ?>
+  <?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
+<?endif ?>
+
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+    <Product Id='*' Name='Veloren' UpgradeCode='1715788C-2FC7-44D7-912D-2B46202C2FD9' Manufacturer='Veloren' Language='1033' Codepage='1252' Version='$(var.Version)'>
+    <Package Id='*' Keywords='Installer' Description='Veloren is a multiplayer voxel RPG written in Rust.' Manufacturer='Veloren' InstallerVersion='450' Languages='1033' Compressed='yes' InstallScope='perMachine' SummaryCodepage='1252' Platform='$(var.Platform)'/>
+
+    <MajorUpgrade Schedule='afterInstallInitialize' DowngradeErrorMessage='A newer version of [ProductName] is already installed. Setup will now exit.'/>
+
+    <Property Id="APPLICATIONFOLDER" Secure="yes">
+      <RegistrySearch Id="FindInstallLocation"
+          Root="HKCU"
+          Key="Software\Veloren"
+          Name="InstallationPath"
+          Type="raw"
+          Win64="$(var.Win64)" />
+    </Property>
+
+    <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1'/>
+    <Property Id='DiskPrompt' Value='Veloren Installation'/>
+    <Property Id="START_VIA_REGISTRY">1</Property>
+
+    <Directory Id='TARGETDIR' Name='SourceDir'>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Veloren">
+          <!-- Create shortcut to start Veloren from taskbar search -->
+          <Component Id='ApplicationShortcut' Guid='{E2CD5A52-9B7C-410F-8C85-0D834C435A43}' Win64='$(var.Win64)'>
+            <Shortcut Id='ApplicationStartMenuShortcut' Name='Veloren' Description='Veloren' Target='[!veloren.exe]' WorkingDirectory='APPLICATIONFOLDER' />
+            <RemoveFolder Id='CleanUpShortCut' Directory='ApplicationProgramsFolder' On='uninstall'/>
+            <RegistryValue Root='HKCU' Key='Software\Veloren' Name='installed' Type='integer' Value='1' KeyPath='yes'/>
+            <!-- make upgrading easier by remembering where it was installed -->
+            <RegistryValue Root='HKCU' Key='Software\Veloren' Name='InstallationPath' Type='string' Value='[APPLICATIONFOLDER]' />
+          </Component>
+        </Directory>
+      </Directory>
+
+      <Directory Id='$(var.PlatformProgramFilesFolder)' Name='PFiles'>
+        <Directory Id='APPLICATIONFOLDER' Name='Veloren'>
+          <!-- Veloren itself-->
+          <Component Id='veloren.exe' Guid='{dd1e4a01-ff62-4d96-a9ce-a5d7d7548fad}' Win64='$(var.Win64)'>
+            <File Id='veloren.exe' Name='veloren.exe' DiskId='1' Source='target\release\veloren.exe' KeyPath='yes'/>
+          </Component>
+          <!-- Add to PATH for easier access over terminal -->
+          <Component Id='Path' Guid='4a62682d-9dfd-4203-ad35-1e4300ad6a5a' Win64='$(var.Win64)' KeyPath='yes'>
+            <Environment Id='PATH' Name='PATH' Value='[APPLICATIONFOLDER]' Permanent='no' Part='last' Action='set' System='yes'/>
+          </Component>
+        </Directory>
+      </Directory>
+    </Directory>
+    
+    <!-- Main feature installs veloren and shortcut -->
+    <Feature Id='MainProgram' Title='Veloren' Description='Installs Veloren.' Level='1' ConfigurableDirectory='APPLICATIONFOLDER' AllowAdvertise='no' Display='expand' Absent='disallow'>
+      <ComponentRef Id='veloren.exe'/>
+      <ComponentRef Id='ApplicationShortcut'/>
+    </Feature>
+    <!-- If choosen add to PATH for easier access over terminal -->
+    <Feature Id='Environment' Title='PATH Environment Variable' Description='Add the install location of the [ProductName] executable to the PATH system environment variable. This allows the [ProductName] executable to be called from any location.' Level='1' Absent='allow'>
+      <ComponentRef Id='Path'/>
+    </Feature>
+
+    <SetProperty Id='ARPINSTALLLOCATION' Value='[APPLICATIONFOLDER]' After='CostFinalize'/>
+    
+    <!-- set product icon -->
+    <Icon Id='ProductICO' SourceFile='wix/Veloren.ico'/>
+    <Property Id='ARPPRODUCTICON' Value='ProductICO' />
+    <Property Id='ARPHELPLINK' Value='veloren.net'/>
+
+    <!-- Customize UI -->
+    <UI>
+      <!-- Skip license Dialog via customized FeatureTree UI -->
+      <!-- Copy pasted till cargo-wix adds a way to use multiple *.wxs files -->
+      <!-- <UIRef Id='WixUI_FeatureTreeNoLicense'/> -->
+      <TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
+      <TextStyle Id="WixUI_Font_Bigger" FaceName="Tahoma" Size="12" />
+      <TextStyle Id="WixUI_Font_Title" FaceName="Tahoma" Size="9" Bold="yes" />
+
+      <Property Id="DefaultUIFont" Value="WixUI_Font_Normal" />
+      <Property Id="WixUI_Mode" Value="FeatureTree" />
+
+      <DialogRef Id="ErrorDlg" />
+      <DialogRef Id="FatalError" />
+      <DialogRef Id="FilesInUse" />
+      <DialogRef Id="MsiRMFilesInUse" />
+      <DialogRef Id="PrepareDlg" />
+      <DialogRef Id="ProgressDlg" />
+      <DialogRef Id="ResumeDlg" />
+      <DialogRef Id="UserExit" />
+
+      <Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
+
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="CustomizeDlg">NOT Installed</Publish>
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
+
+      <Publish Dialog="CustomizeDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Order="1">Installed</Publish>
+      <Publish Dialog="CustomizeDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="2">NOT Installed</Publish>
+      <Publish Dialog="CustomizeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
+
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="CustomizeDlg" Order="1">NOT Installed OR WixUI_InstallMode = "Change"</Publish>
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2">Installed AND NOT PATCH</Publish>
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="3">Installed AND PATCH</Publish>
+
+      <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MaintenanceTypeDlg">1</Publish>
+
+      <Publish Dialog="MaintenanceTypeDlg" Control="ChangeButton" Event="NewDialog" Value="CustomizeDlg">1</Publish>
+      <Publish Dialog="MaintenanceTypeDlg" Control="RepairButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
+      <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
+      <Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg">1</Publish>
+      <!-- Allow to start veloren after install -->
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+      <UIRef Id="WixUI_Common" />
+    </UI>
+    
+    <WixVariable Id='WixUIExclamationIco' Value='wix/Veloren.ico'/>
+    <WixVariable Id='WixUIDialogBmp' Value='wix/Dialog.bmp'/>
+    <WixVariable Id='WixUIBannerBmp' Value='wix/Banner.bmp'/>
+    <WixVariable Id='WixUIInfoIco' Value='wix/Veloren.ico'/>
+
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Veloren" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <Property Id="WixShellExecTarget" Value="[#veloren.exe]" />
+    <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
+  </Product>
+</Wix>
