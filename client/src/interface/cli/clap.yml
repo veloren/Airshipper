@@ -1,0 +1,32 @@
+name: Veloren
+about: "Veloren is a multiplayer voxel RPG written in Rust."
+
+subcommands:
+    - start:
+        help: starts the game without updating.
+        short: s
+        long: start
+        takes_value: false
+        multiple: false
+    - update:
+        help: updates the game without starting it.
+        short: u
+        long: update
+        takes_value: false
+        multiple: false
+
+args:
+    - gui:
+        help: starts fancy GUI.
+        short: g
+        long: gui
+        multiple: false
+        takes_value: false
+    - log:
+        help: set the log verbosity for the launcher and veloren (v = DEBUG, vv = TRACE)
+        short: v
+        long: log
+        takes_value: false
+        multiple: true
+        global: true
+        max_values: 3

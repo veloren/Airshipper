@@ -1,0 +1,294 @@
+{
+    "object_kind": "pipeline",
+    "object_attributes": {
+        "id": 89823316,
+        "ref": "master",
+        "tag": false,
+        "sha": "ab8c4a45b5b286dd43fb927a78eb5a4ecdf9cd2e",
+        "before_sha": "72e18d0edd4d28019952660f4f356dccba199be2",
+        "source": "push",
+        "status": "success",
+        "detailed_status": "passed",
+        "stages": [
+            "optional-builds",
+            "check-compile",
+            "post"
+        ],
+        "created_at": "2019-10-18 16:21:30 UTC",
+        "finished_at": "2019-10-18 16:52:59 UTC",
+        "duration": 1880,
+        "variables": []
+    },
+    "merge_request": null,
+    "user": {
+        "name": "Songtronix",
+        "username": "Songtronix",
+        "avatar_url": "<REDACTED>"
+    },
+    "project": {
+        "id": 10174980,
+        "name": "veloren",
+        "description": "Veloren is a multiplayer voxel RPG written in Rust. It is inspired by games such as Cube World, Legend of Zelda: Breath of the Wild, Dwarf Fortress and Minecraft.",
+        "web_url": "https://gitlab.com/veloren/veloren",
+        "avatar_url": "https://assets.gitlab-static.net/uploads/-/system/project/avatar/10174980/veloren-square-big.png",
+        "git_ssh_url": "git@gitlab.com:veloren/veloren.git",
+        "git_http_url": "https://gitlab.com/veloren/veloren.git",
+        "namespace": "Veloren",
+        "visibility_level": 20,
+        "path_with_namespace": "veloren/veloren",
+        "default_branch": "master",
+        "ci_config_path": ""
+    },
+    "commit": {
+        "id": "ab8c4a45b5b286dd43fb927a78eb5a4ecdf9cd2e",
+        "message": "Merge branch 'songtronix/hotfix' into 'master'\n\nFix singleplayer\n\nSee merge request veloren/veloren!605",
+        "timestamp": "2019-10-18T16:21:28Z",
+        "url": "<REDACTED>",
+        "author": {
+            "name": "Songtronix",
+            "email": "505534-Songtronix@users.noreply.gitlab.com"
+        }
+    },
+    "builds": [
+        {
+            "id": 325175078,
+            "stage": "optional-builds",
+            "name": "optional-release:windows",
+            "status": "manual",
+            "created_at": "2019-10-18 16:21:30 UTC",
+            "started_at": null,
+            "finished_at": null,
+            "when": "manual",
+            "manual": true,
+            "user": {
+                "name": "Songtronix",
+                "username": "Songtronix",
+                "avatar_url": "<REDACTED>"
+            },
+            "runner": null,
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            }
+        },
+        {
+            "id": 325175076,
+            "stage": "optional-builds",
+            "name": "optional-release:linux",
+            "status": "manual",
+            "created_at": "2019-10-18 16:21:30 UTC",
+            "started_at": null,
+            "finished_at": null,
+            "when": "manual",
+            "manual": true,
+            "user": {
+                "name": "Songtronix",
+                "username": "Songtronix",
+                "avatar_url": "<REDACTED>"
+            },
+            "runner": null,
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            }
+        },
+        {
+            "id": 325175074,
+            "stage": "optional-builds",
+            "name": "optional-debug:windows",
+            "status": "manual",
+            "created_at": "2019-10-18 16:21:30 UTC",
+            "started_at": null,
+            "finished_at": null,
+            "when": "manual",
+            "manual": true,
+            "user": {
+                "name": "Songtronix",
+                "username": "Songtronix",
+                "avatar_url": "<REDACTED>"
+            },
+            "runner": null,
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            }
+        },
+        {
+            "id": 325175072,
+            "stage": "optional-builds",
+            "name": "optional-debug:linux",
+            "status": "manual",
+            "created_at": "2019-10-18 16:21:30 UTC",
+            "started_at": null,
+            "finished_at": null,
+            "when": "manual",
+            "manual": true,
+            "user": {
+                "name": "Songtronix",
+                "username": "Songtronix",
+                "avatar_url": "<REDACTED>"
+            },
+            "runner": null,
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            }
+        },
+        {
+            "id": 325175083,
+            "stage": "post",
+            "name": "unittests",
+            "status": "success",
+            "created_at": "2019-10-18 16:21:30 UTC",
+            "started_at": "2019-10-18 16:30:01 UTC",
+            "finished_at": "2019-10-18 16:52:59 UTC",
+            "when": "delayed",
+            "manual": true,
+            "user": {
+                "name": "Songtronix",
+                "username": "Songtronix",
+                "avatar_url": "<REDACTED>"
+            },
+            "runner": {
+                "id": 1205778,
+                "description": "<REDACTED>",
+                "active": true,
+                "is_shared": false
+            },
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            }
+        },
+        {
+            "id": 325175088,
+            "stage": "post",
+            "name": "windows",
+            "status": "success",
+            "created_at": "2019-10-18 16:21:30 UTC",
+            "started_at": "2019-10-18 16:29:50 UTC",
+            "finished_at": "2019-10-18 16:50:22 UTC",
+            "when": "delayed",
+            "manual": true,
+            "user": {
+                "name": "Songtronix",
+                "username": "Songtronix",
+                "avatar_url": "<REDACTED>"
+            },
+            "runner": {
+                "id": 1202393,
+                "description": "<REDACTED>",
+                "active": true,
+                "is_shared": false
+            },
+            "artifacts_file": {
+                "filename": "artifacts.zip",
+                "size": 79911374
+            }
+        },
+        {
+            "id": 325175087,
+            "stage": "post",
+            "name": "linux",
+            "status": "success",
+            "created_at": "2019-10-18 16:21:30 UTC",
+            "started_at": "2019-10-18 16:29:50 UTC",
+            "finished_at": "2019-10-18 16:49:53 UTC",
+            "when": "delayed",
+            "manual": true,
+            "user": {
+                "name": "Songtronix",
+                "username": "Songtronix",
+                "avatar_url": "<REDACTED>"
+            },
+            "runner": {
+                "id": 1202361,
+                "description": "<REDACTED>",
+                "active": true,
+                "is_shared": false
+            },
+            "artifacts_file": {
+                "filename": "artifacts.zip",
+                "size": 80259384
+            }
+        },
+        {
+            "id": 325175085,
+            "stage": "post",
+            "name": "benchmarks",
+            "status": "success",
+            "created_at": "2019-10-18 16:21:30 UTC",
+            "started_at": "2019-10-18 16:29:50 UTC",
+            "finished_at": "2019-10-18 16:37:41 UTC",
+            "when": "delayed",
+            "manual": true,
+            "user": {
+                "name": "Songtronix",
+                "username": "Songtronix",
+                "avatar_url": "<REDACTED>"
+            },
+            "runner": {
+                "id": 1231039,
+                "description": "<REDACTED>",
+                "active": true,
+                "is_shared": false
+            },
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            }
+        },
+        {
+            "id": 325175081,
+            "stage": "check-compile",
+            "name": "code-quality",
+            "status": "success",
+            "created_at": "2019-10-18 16:21:30 UTC",
+            "started_at": "2019-10-18 16:21:30 UTC",
+            "finished_at": "2019-10-18 16:29:41 UTC",
+            "when": "on_success",
+            "manual": false,
+            "user": {
+                "name": "Songtronix",
+                "username": "Songtronix",
+                "avatar_url": "<REDACTED>"
+            },
+            "runner": {
+                "id": 1202393,
+                "description": "<REDACTED>",
+                "active": true,
+                "is_shared": false
+            },
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            }
+        },
+        {
+            "id": 325175080,
+            "stage": "check-compile",
+            "name": "check",
+            "status": "success",
+            "created_at": "2019-10-18 16:21:30 UTC",
+            "started_at": "2019-10-18 16:21:30 UTC",
+            "finished_at": "2019-10-18 16:28:31 UTC",
+            "when": "on_success",
+            "manual": false,
+            "user": {
+                "name": "Songtronix",
+                "username": "Songtronix",
+                "avatar_url": "<REDACTED>"
+            },
+            "runner": {
+                "id": 1202361,
+                "description": "<REDACTED>",
+                "active": true,
+                "is_shared": false
+            },
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            }
+        }
+    ]
+}
