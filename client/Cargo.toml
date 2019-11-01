@@ -1,0 +1,44 @@
+[package]
+name = "airshipper"
+description = "Provides automatic updates for the voxel RPG Veloren."
+version = "0.1.0"
+authors = ["Songtronix <contact@songtronix.com>"]
+edition = "2018"
+publish = false
+default-run = "airshipper"
+
+license = "GPL-3.0"
+homepage = "https://www.veloren.net"
+repository = "https://gitlab.com/veloren/airshipper"
+
+# Windows logo
+[package.metadata.winres]
+OriginalFilename = "Veloren.exe"
+FileDescription = "Multiplayer voxel RPG written in Rust."
+LegalCopyright = "Copyright © 2019"
+
+[badges]
+maintenance = { status = "actively-developed" }
+
+[dependencies]
+# Cli
+clap = { version = "2.33.0", features = ["yaml"] }
+# UI
+# None yet
+# logging
+log = "0.4.8"
+fern = { version = "0.5.9", features = ["colored"] }
+chrono = "0.4.9"
+# networking
+reqwest = "0.9.20" # switching to something more lightweight may speed up compile time.
+# other
+derive_more = "0.15.0"
+lazy_static = "1.4.0"
+whoami = "0.5.3"
+zip = "0.5.3"
+dirs = "2.0.2"
+serde = "1.0.101"
+ron = "0.5.1"
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"
