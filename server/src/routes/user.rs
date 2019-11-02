@@ -6,7 +6,7 @@ use crate::Result;
 #[get("/")]
 pub fn index() -> &'static str {
     // TODO: Expose static files for a download webpage or such.
-    "Welcome to the index! You probably want to visit /windows or /linux"
+    "You probably want to visit /latest/windows or /latest/linux"
 }
 
 #[get("/robots.txt")]
