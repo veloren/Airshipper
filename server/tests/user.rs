@@ -13,6 +13,6 @@ fn index() {
     assert_eq!(response.status(), Status::Ok);
     assert_eq!(
         response.body_string(),
-        Some("Welcome to the index! You probably want to visit /windows or /linux".to_string())
+        Some("You probably want to visit /latest/windows or /latest/linux".to_string())
     );
 }
