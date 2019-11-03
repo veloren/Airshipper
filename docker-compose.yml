@@ -3,17 +3,34 @@ version: '3'
 services:
  airshipper:
   image: airshipper:latest
-  ports:
-  - "8080:8080"
+  container_name: AirshipperRocket
+  restart: always
+  depends_on:
+   - db
+   - proxy
   volumes:
-  # NOTE: run 'touch /opt/airshipper/data/server.ron' to create the config or docker
+  # NOTE: run 'touch /opt/airshipper/data/airshipper/server.ron' to create the config or docker
   # will create a folder called 'server.ron' which does not work.
-  - "/opt/airshipper/data/server.ron:/app/server.ron" 
-  - "/opt/airshipper/data/public:/app/public"
+  - "/opt/airshipper/data/airshipper/server.ron:/app/server.ron" 
+  - "/opt/airshipper/data/airshipper/public:/app/public"
  db:
   image: postgres:11-alpine
+  container_name: AirshipperSQL
+  restart: always
   command: postgres -c 'max_connections=65'
   volumes:
   - "/opt/airshipper/data/postgres:/var/lib/postgresql/data"
   environment:
-    POSTGRES_PASSWORD: airshipper
+    POSTGRES_PASSWORD: example_password
+ proxy:
+  image: valian/docker-nginx-auto-ssl
+  container_name: AirshipperProxy
+  restart: always
+  ports:
+  - "80:80"
+  - "443:443"
+  volumes:
+  - /opt/airshipper/data/nginx:/etc/resty-auto-ssl
+  environment:
+    ALLOWED_DOMAINS: "example.com"
+    SITES: "example.com=airshipper:8080"
