@@ -41,9 +41,7 @@ impl Default for ClientConfig {
         let base_path = base();
         let log_file = base_path.join(LAUNCHER_LOG);
 
-        // Generate based on the platform where to download veloren
-        // TODO: Replace the default with https://download.veloren.net once done.
-        let base_url = "https://www.airshipper.songtronix.com".into();
+        let base_url = "https://download.veloren.net".into();
 
         Self {
             base_path,
