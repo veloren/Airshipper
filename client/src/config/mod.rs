@@ -21,7 +21,7 @@ pub const DOWNLOAD_FILE: &str = "veloren";
 
 pub const PROFILES: &str = "profiles";
 pub const LAUNCHER_LOG: &str = "launcher.log";
-pub const CONFIG_FILE: &str = "airshipper.ron";
+pub const CONFIG_FILE: &str = "launcher.ron";
 
 /// Configuration and defaults for airshipper.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -127,9 +127,19 @@ pub fn base() -> std::path::PathBuf {
         Some(name) => {
             // Airshipper has been installed
             if name.to_string_lossy().to_lowercase().contains("veloren") {
+                // Check if game location has been customized.
+                match std::env::var("AIRSHIPPER_DATA") {
+                    Ok(x) => {
+                        let path = PathBuf::from(x);
+                        std::fs::create_dir_all(&path).expect("failed to create data directory!");
+                        return path;
+                    }
+                    Err(e) => println!("Game data location is invalid! '{}', fallback to default.", e),
+                }
+                
                 let base = dirs::config_dir()
                     .expect("Couldn't locate where to put configuration!")
-                    .join("airshipper");
+                    .join("veloren");
 
                 std::fs::create_dir_all(&base).expect("failed to create data directory!");
 

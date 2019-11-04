@@ -20,6 +20,7 @@ pub fn run(config: &mut ClientConfig) -> Result<()> {
     }
 
     log::debug!("Running on {}", whoami::os());
+    log::debug!("Base Path: {}", config.base_path.display());
 
     if m.is_present("gui") {
         // Exit early for gui to take over.
