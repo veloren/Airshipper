@@ -10,6 +10,12 @@ pub const HOOK_TYPE: &str = "Pipeline Hook";
 /// Location of the config
 pub const CONFIG_PATH: &str = "server.ron";
 
+/// File ending of *downloaded* artifacts
+#[cfg(not(unix))]
+pub const ARTIFACT_FILE_ENDING: &str = "zip";
+#[cfg(unix)]
+pub const ARTIFACT_FILE_ENDING: &str = "tar.gz";
+
 /// Configuration and defaults for the entire server.
 /// Provides configuration for essentials like port, addr and secrets
 #[derive(Clone, Debug, Serialize, Deserialize)]

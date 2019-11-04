@@ -87,9 +87,10 @@ impl Artifact {
         std::fs::create_dir_all(&path)?;
         // Add file name + extension
         Ok(path.join(format!(
-            "{}-{}.zip",
+            "{}-{}.{}",
             channel,
-            date.format("%Y-%m-%d-%H_%M_%S")
+            date.format("%Y-%m-%d-%H_%M_%S"),
+            crate::config::ARTIFACT_FILE_ENDING,
         )))
     }
 
