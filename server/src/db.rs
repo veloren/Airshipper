@@ -26,7 +26,7 @@ impl DbConnection {
         }
         Ok(None)
     }
-    
+
     /// Returns Path to the latest version on disk.
     pub fn get_latest_channel_version(
         &self,
@@ -46,7 +46,7 @@ impl DbConnection {
         }
         Ok(None)
     }
-    
+
     /// Insert a new artifact into the database with it's metadata
     pub fn insert_artifact(&self, artifact: Artifact) -> Result<()> {
         self.0.execute(
