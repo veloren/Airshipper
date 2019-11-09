@@ -11,10 +11,8 @@ pub const HOOK_TYPE: &str = "Pipeline Hook";
 pub const CONFIG_PATH: &str = "server.ron";
 
 /// File ending of *downloaded* artifacts
-#[cfg(not(unix))]
-pub const ARTIFACT_FILE_ENDING: &str = "zip";
-#[cfg(unix)]
-pub const ARTIFACT_FILE_ENDING: &str = "tar.gz";
+pub const WINDOWS_FILE_ENDING: &str = "zip";
+pub const LINUX_FILE_ENDING: &str = "tar.gz";
 
 /// Configuration and defaults for the entire server.
 /// Provides configuration for essentials like port, addr and secrets
@@ -25,7 +23,7 @@ pub struct ServerConfig {
     pub database_address: String,
     pub database_table: String,
     pub static_files: String,
-    
+
     /// Off, Normal, Debug, Critical
     pub log_level: LogLevel,
     /// Development, Staging, Production
