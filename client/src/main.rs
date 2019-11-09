@@ -16,5 +16,7 @@ fn main() {
     let config = ClientConfig::load();
     if let Err(e) = interface::process(config) {
         log::error!("{}", e);
+        log::info!("Press enter to exit...");
+        let _ = std::io::stdin().read_line(&mut String::new());
     }
 }

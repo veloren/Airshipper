@@ -8,15 +8,10 @@ A cross-platform Veloren launcher.
 - [ ] Fancy UI with batteries included.
 
 ## Download
-- [Windows](#)
-- [Linux](#)
-- MacOS users have to compile it themself :/
+Currently can be downloaded on my webpage: [www.songtronix.com](https://www.songtronix.com)
+
 
 ##### Compile from source
-If you want to compile it yourself you can do so by either installing via cargo: 
-``cargo install veloren-launcher``
-
-or by cloning the repository:
 ```bash
 git clone https://gitlab.com/veloren/airshipper.git
 cd airshipper
