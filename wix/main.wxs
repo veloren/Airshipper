@@ -74,16 +74,48 @@
           </Component>
         </Directory>
       </Directory>
+      
+      <Directory Id="DesktopFolder" Name="Desktop">
+          <!-- Create shortcut to start Veloren from the desktop -->
+          <Component Id="ApplicationShortcutDesktop" Guid="c2601e65-edf8-4f5a-94ff-0b3e800fe375">
+              <Shortcut Id="ApplicationDesktopShortcut" Name="Veloren" Description="Multiplayer voxel RPG written in Rust." Target="[!veloren.exe]" WorkingDirectory='APPLICATIONFOLDER'/>
+              <RemoveFolder Id="CleanUpDesktopShortcut" On="uninstall"/>
+              <RegistryValue Root="HKCU" Key="Software\Veloren" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes"/>
+          </Component>
+      </Directory>
+      
+      <Directory Id="AppDataFolder" Name="AppData">
+        <Directory Id="AIRSHIPPERDATA" Name="veloren">
+          <Component Id="ApplicationDataLocation" Guid="f423598e-3664-4ddf-a37c-70e5cfe63ec6">
+            <!-- Set Env var 'AIRSHIPPER_DATA' for airshipper to figure out where to put the data -->
+            <!-- TODO: For whatever reason the installer does not remove the env var :/ -->
+            <Environment Id='AIRSHIPPER_DATA' Name='AIRSHIPPER_DATA' Value='[AIRSHIPPERDATA]' Permanent='no' Action='set' System='yes'/>
+            <RemoveFolder Id="CleanUpApplicationData" On="uninstall"/>
+            <RegistryValue Root="HKCU" Key="Software\Veloren" Name="AppdataLocation" Type="integer" Value="1" KeyPath="yes"/>
+          </Component>
+        </Directory>
+      </Directory>
+      
     </Directory>
     
     <!-- Main feature installs veloren and shortcut -->
     <Feature Id='MainProgram' Title='Veloren' Description='Installs Veloren.' Level='1' ConfigurableDirectory='APPLICATIONFOLDER' AllowAdvertise='no' Display='expand' Absent='disallow'>
       <ComponentRef Id='veloren.exe'/>
       <ComponentRef Id='ApplicationShortcut'/>
-    </Feature>
-    <!-- If choosen add to PATH for easier access over terminal -->
-    <Feature Id='Environment' Title='PATH Environment Variable' Description='Add the install location of the [ProductName] executable to the PATH system environment variable. This allows the [ProductName] executable to be called from any location.' Level='1' Absent='allow'>
-      <ComponentRef Id='Path'/>
+      
+      <!-- If choosen add to PATH for easier access over terminal -->
+      <Feature Id='Environment' Title='PATH Environment Variable' Description='Add the install location of the [ProductName] executable to the PATH system environment variable. This allows the [ProductName] executable to be called from any location.' Level='1' Absent='allow'>
+        <ComponentRef Id='Path'/>
+      </Feature>
+      <!-- If choosen create a desktop shortcut -->
+      <Feature Id='DesktopShortcut' Title='Add a Desktop shortcut' Description='Creates a shortcut on your desktop for easier access.' Level='1' Absent='allow'>
+        <ComponentRef Id='ApplicationShortcutDesktop'/>
+      </Feature>
+      <!-- If choosen allow to customize the appdata location -->
+      <Feature Id='AppDataLocation' Title='Game data location' Description='Set where all profiles, settings should be saved.' ConfigurableDirectory='AIRSHIPPERDATA' Display='expand' Level='1' Absent='allow'>
+        <ComponentRef Id='ApplicationDataLocation'/>
+      </Feature>
+      
     </Feature>
 
     <SetProperty Id='ARPINSTALLLOCATION' Value='[APPLICATIONFOLDER]' After='CostFinalize'/>
