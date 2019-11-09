@@ -86,11 +86,16 @@ impl Artifact {
         // Create base path
         std::fs::create_dir_all(&path)?;
         // Add file name + extension
+        let file_ending = match platform {
+            Platform::Windows => crate::config::WINDOWS_FILE_ENDING,
+            Platform::Linux => crate::config::LINUX_FILE_ENDING,
+        };
+
         Ok(path.join(format!(
             "{}-{}.{}",
             channel,
             date.format("%Y-%m-%d-%H_%M_%S"),
-            crate::config::ARTIFACT_FILE_ENDING,
+            file_ending,
         )))
     }
 
