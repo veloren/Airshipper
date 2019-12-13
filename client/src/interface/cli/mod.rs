@@ -2,6 +2,8 @@ use crate::config::ClientConfig;
 use crate::{logger, Result};
 use clap::{load_yaml, App};
 
+pub mod downloadbar;
+
 pub fn run(config: &mut ClientConfig) -> Result<()> {
     let yml = load_yaml!("clap.yml");
     let version = format!("provided by airshipper v{}", env!("CARGO_PKG_VERSION"));

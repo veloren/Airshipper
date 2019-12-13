@@ -1,7 +1,7 @@
 [package]
 name = "airshipper"
 description = "Provides automatic updates for the voxel RPG Veloren."
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Songtronix <contact@songtronix.com>"]
 edition = "2018"
 publish = false
@@ -25,6 +25,8 @@ maintenance = { status = "actively-developed" }
 clap = { version = "2.33.0", features = ["yaml"] }
 # UI
 # None yet
+# CLI
+indicatif = "0.13.0"
 # logging
 log = "0.4.8"
 fern = { version = "0.5.9", features = ["colored"] }
