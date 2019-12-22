@@ -75,7 +75,7 @@ impl Profile {
         log::debug!("remote version of {} is {}", self.channel, &remote_version);
         if self.version != remote_version {
             if !self.voxygen_path().exists() {
-                log::info!("Installing {} - {}", self.name, self.channel);
+                log::info!("Downloading {} - {}", self.name, self.channel);
                 server::download(&config, &self.cwd, &self.channel)?;
                 updated.version = remote_version;
                 return Ok(updated);
