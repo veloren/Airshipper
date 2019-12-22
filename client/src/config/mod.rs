@@ -134,10 +134,7 @@ pub fn base() -> std::path::PathBuf {
                         std::fs::create_dir_all(&path).expect("failed to create data directory!");
                         return path;
                     }
-                    Err(e) => println!(
-                        "Game data location is invalid! '{}', fallback to default.",
-                        e
-                    ),
+                    Err(_) => {}
                 }
 
                 let base = dirs::config_dir()

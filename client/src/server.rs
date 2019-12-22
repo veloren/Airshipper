@@ -3,11 +3,11 @@ use crate::models::{Channel, Profile};
 use crate::Result;
 use reqwest::header::*;
 use reqwest::{Client, ClientBuilder};
-use std::fs::OpenOptions;
 use std::path::PathBuf;
 
+// Maybe move this over to downloadbar ?
 lazy_static::lazy_static! {
-    static ref CLIENT: Client = {
+    pub static ref CLIENT: Client = {
         let mut headers = HeaderMap::new();
         headers.insert(
             USER_AGENT,
@@ -38,60 +38,33 @@ pub fn version(config: &ClientConfig, profile: &Profile) -> Result<String> {
     }
 }
 
-/// TODO: Add a progress bar
 /// Downloads and unzips to destination
 pub fn download(config: &ClientConfig, destination: &PathBuf, channel: &Channel) -> Result<()> {
-    let mut resp = CLIENT.get(&config.get_artifact_uri(channel)).send()?;
+    use crate::interface::downloadbar::{download_with_progress, unzip_with_progress};
+
+    // Download
     std::fs::create_dir_all(destination)?;
+    let zip_file = download_with_progress(
+        &CLIENT,
+        &config.get_artifact_uri(channel),
+        &destination.join(crate::config::DOWNLOAD_FILE),
+    )?;
 
-    if resp.status().is_success() {
-        let mut f = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .read(true)
-            .append(false)
-            .truncate(true)
-            .open(destination.join(crate::config::DOWNLOAD_FILE))?;
-        std::io::copy(&mut resp, &mut f)?;
-        log::debug!("Unzipping artifacts to {}", destination.display());
-        let mut archive = zip::ZipArchive::new(&mut f)?;
+    // Extract
+    log::debug!("Unzipping artifacts to {}", destination.display());
+    unzip_with_progress(zip_file, &config.base_path, &destination)?;
 
-        for i in 1..archive.len() {
-            let mut file = archive.by_index(i)?;
-            let path = destination.join(file.sanitized_name());
+    // Delete downloaded zip
+    log::trace!("Extracted files, deleting zip archive.");
+    std::fs::remove_file(destination.join(crate::config::DOWNLOAD_FILE))?;
 
-            if file.is_dir() {
-                std::fs::create_dir_all(path)?;
-            } else {
-                log::trace!("Unzipping {}", path.display());
-                let mut target = OpenOptions::new()
-                    .write(true)
-                    .create(true)
-                    .truncate(true)
-                    .open(path)?;
+    #[cfg(unix)]
+    set_permissions(vec![
+        &destination.join(crate::config::VOXYGEN_FILE),
+        &destination.join(crate::config::SERVER_CLI_FILE),
+    ])?;
 
-                std::io::copy(&mut file, &mut target)?;
-            }
-        }
-
-        // Delete downloaded zip
-        log::trace!("Extracted files, deleting zip archive.");
-        std::fs::remove_file(destination.join(crate::config::DOWNLOAD_FILE))?;
-
-        #[cfg(unix)]
-        set_permissions(vec![
-            &destination.join(crate::config::VOXYGEN_FILE),
-            &destination.join(crate::config::SERVER_CLI_FILE),
-        ])?;
-
-        Ok(())
-    } else {
-        Err(format!(
-            "Failed to download version. Server returned '{}'",
-            resp.status()
-        )
-        .into())
-    }
+    Ok(())
 }
 
 /// Tries to set executable permissions on linux
