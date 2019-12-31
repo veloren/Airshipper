@@ -42,6 +42,8 @@ zip = "0.5.3"
 dirs = "2.0.2"
 serde = "1.0.101"
 ron = "0.5.1"
+async-std = "1.4.0"
+directories = "2.0.2"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"

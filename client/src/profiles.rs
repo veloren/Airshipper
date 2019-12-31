@@ -1,5 +1,4 @@
-use crate::config::ClientConfig;
-use crate::server;
+use crate::network;
 use crate::Result;
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
@@ -10,11 +9,12 @@ use std::process::Command;
 /// Represents a version with channel, name and path.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
-    name: String,
-    cwd: PathBuf,
-
+    pub name: String,
     pub channel: Channel,
-    version: String,
+    pub base_server_url: String,
+
+    pub directory: PathBuf,
+    pub version: String,
 }
 
 #[derive(Debug, Display, Clone, Copy, Serialize, Deserialize)]
@@ -24,84 +24,67 @@ pub enum Channel {
     // TODO: Source,
 }
 
-impl Default for Profile {
-    fn default() -> Self {
-        let name = "latest".to_string();
-        let cwd = crate::config::base()
-            .join(crate::config::PROFILES)
-            .join(&name);
-        let channel = Channel::Nightly;
-        let version = String::new();
-
-        Self {
-            name,
-            cwd,
-            channel,
-            version,
-        }
-    }
-}
-
-/// Will read from stdin for confirmation
-/// NOTE: no input = true
-/// Temporary...
-fn confirm_action(name: &str) -> Result<bool> {
-    log::info!("Update for '{}' profile found. Download? [Y/n] ", name);
-    let mut buffer = String::new();
-    let _ = std::io::stdin().read_line(&mut buffer)?;
-    buffer = buffer.to_lowercase();
-
-    if buffer.trim().is_empty() {
-        Ok(true)
-    } else if buffer.starts_with("y") {
-        Ok(true)
-    } else if buffer.starts_with("n") {
-        Ok(false)
-    } else {
-        // for the accidental key smash
-        Ok(false)
-    }
-}
-
 impl Profile {
+    /// Creates a new profile and downloads the correct files into the target directory.
+    pub fn from_download(
+        name: String,
+        channel: Channel,
+        base_server_url: String,
+        target: PathBuf,
+    ) -> Result<Self> {
+        // TODO: check if dir is empty but available
+        let mut directory = target;
+        directory.push(name.clone());
+        let profile = Self {
+            name,
+            channel,
+            base_server_url,
+            directory,
+            version: "".to_owned(), // Will be set by download
+        };
+
+        log::info!("Downloading {} - {}", profile.name, profile.channel);
+        network::download(&profile)?;
+        Ok(profile)
+    }
+
     /// Returns an updated version of itself if applicable
     ///
     /// NOTE: Don't forget to save the changes!
     /// TODO: Solve this better
-    pub fn update(&self, config: &ClientConfig) -> Result<Self> {
-        let remote_version = server::version(&config, &self)?;
+    pub fn update(&mut self) -> Result<()> {
+        let remote_version = network::get_newest_version_name(&self)?;
         let mut updated = self.clone();
 
         log::debug!("remote version of {} is {}", self.channel, &remote_version);
         if self.version != remote_version {
             if !self.voxygen_path().exists() {
+                log::warn!("Previous installation not found!");
                 log::info!("Downloading {} - {}", self.name, self.channel);
-                server::download(&config, &self.cwd, &self.channel)?;
-                updated.version = remote_version;
-                return Ok(updated);
-            } else if confirm_action(&self.name)? {
+                network::download(&self)?;
+                self.version = remote_version;
+            } else {
                 log::info!("Updating...");
-                server::download(&config, &self.cwd, &self.channel)?;
-                updated.version = remote_version;
-                return Ok(updated);
+                network::download(&self)?;
+                self.version = remote_version;
             }
         } else {
             log::info!("Veloren is up-to-date.");
         }
-        Ok(updated)
+        Ok(())
     }
 
     // TODO: add possibility to start the server too
     pub fn start(&self) -> Result<()> {
         let mut envs = HashMap::new();
-        envs.insert("VOXYGEN_CONFIG", self.cwd.clone().into_os_string());
+        envs.insert("VOXYGEN_CONFIG", self.directory.clone().into_os_string());
 
         log::debug!("Launching {}", self.voxygen_path().display());
-        log::debug!("CWD: {}", self.cwd.display());
+        log::debug!("CWD: {:?}", self.directory);
         log::debug!("ENV: {:?}", envs);
 
         let cmd = Command::new(self.voxygen_path())
-            .current_dir(&self.cwd)
+            .current_dir(&self.directory)
             .envs(envs)
             .status()?;
         log::debug!(
@@ -116,6 +99,6 @@ impl Profile {
     /// Returns path to voxygen binary.
     /// e.g. <base>/profiles/latest/veloren-voxygen.exe
     fn voxygen_path(&self) -> PathBuf {
-        self.cwd.join(crate::config::VOXYGEN_FILE)
+        self.directory.join(crate::VOXYGEN_FILE)
     }
 }
