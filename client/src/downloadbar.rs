@@ -24,7 +24,7 @@ impl<R: Read> Read for DownloadBar<R> {
 
 /// Downloads a file with a progress bar
 pub fn download_with_progress(
-    client: &crate::server::CLIENT,
+    client: &crate::network::CLIENT,
     url: &str,
     file: &PathBuf,
 ) -> Result<fs::File> {
@@ -84,11 +84,7 @@ pub fn download_with_progress(
     Ok(dest)
 }
 
-pub fn unzip_with_progress(
-    mut zip_file: fs::File,
-    base_path: &PathBuf,
-    destination: &PathBuf,
-) -> Result<()> {
+pub fn unzip_with_progress(mut zip_file: fs::File, destination: &PathBuf) -> Result<()> {
     use std::convert::TryInto;
 
     let mut archive = zip::ZipArchive::new(&mut zip_file)?;
@@ -113,10 +109,7 @@ pub fn unzip_with_progress(
         if file.is_dir() {
             std::fs::create_dir_all(path)?;
         } else {
-            pb.set_message(&format!(
-                "Unzipping {}",
-                path.strip_prefix(base_path)?.display()
-            ));
+            pb.set_message("Unzipping...");
             let mut target = fs::OpenOptions::new()
                 .write(true)
                 .create(true)

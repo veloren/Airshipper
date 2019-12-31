@@ -1,11 +1,12 @@
-use crate::config::ClientConfig;
-use iced::{
+use {
+crate::{profiles::{Profile, Channel}, saved_state::{self, SavedState}},
+    iced::{
     button, scrollable, slider, Align, Application, Button, Color, Column, Command, Element,
     HorizontalAlignment, Image, Length, Row, Scrollable, Settings, Slider, Space, Svg, Text,
     VerticalAlignment,
-};
+}};
 
-pub fn run(_config: &mut ClientConfig) {
+pub fn run() {
     let mut settings = Settings::default();
     settings.window.size = (800, 460);
     settings.window.resizable = false;
@@ -17,69 +18,40 @@ pub fn run(_config: &mut ClientConfig) {
 #[derive(Debug)]
 enum Airshipper {
     Loading,
-    Loaded(AirshipperState),
-    //Downloading(AirshipperState),
-    //Extracting(AirshipperState),
-    //Playing(AirshipperState),
+    Loaded(State),
 }
 
-#[derive(Debug)]
-struct AirshipperState {
+#[derive(Default, Debug, Clone)]
+struct State {
     download_slider_state: slider::State,
     changelog_scrollable_state: scrollable::State,
     news_scrollable_state: scrollable::State,
     play_button_state: button::State,
-    
+
     changelog: String,
     news: String,
-    config: crate::config::ClientConfig,
+    profiles: Vec<Profile>,
+
+    downloading: bool,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
-    Loaded(Result<AirshipperData, LoadError>),
+    Loaded(Result<SavedState, crate::saved_state::LoadError>),
+    DownloadDone(Vec<Profile>),
     PlayPressed,
-    /// Do nothing.
     SliderChanged(f32),
 }
 
-/// Cached/persistent values like the changelog, news and profile information.
-#[derive(Debug, Clone)]
-struct AirshipperData {
-    changelog: String,
-    news: String,
-    config: crate::config::ClientConfig,
-}
-
-impl AirshipperData {
-    /// Loads up data like profile information, changelog, news
-    /// either by a local cache or online.
-    pub(crate) async fn load() -> Result<Self, LoadError> {
-        // TODO: Cache it and don't request it every single time!
-        let changelog = match reqwest::get("https://gitlab.com/veloren/veloren/raw/master/CHANGELOG.md") {
-            Ok(mut resp) => {
-                match resp.text() {
-                    Ok(txt) => txt,
-                    Err(_) => return Err(LoadError),
-                }  
-            },
-            Err(_) => return Err(LoadError),
-        };
-        
-        let config = crate::config::ClientConfig::load();
-                
-        Ok(Self {
-            changelog,
-            news: "To be done".into(),
-            config,
-        })
+async fn download_stuff(mut state: State) -> Vec<Profile> {
+    // Default to checking for updates and starting the game.
+    if state.profiles.is_empty() {
+        log::info!("Downloading from a new profile...");
+        state.profiles.push(Profile::from_download("default".to_owned(), Channel::Nightly, "https://download.veloren.net".to_owned(), saved_state::get_profiles_path()).unwrap());
     }
+    log::info!("Done checking for updates...");
+    state.profiles
 }
-
-/// TODO: Actually handle the error and display
-/// an error message.
-#[derive(Debug, Clone)]
-struct LoadError;
 
 impl Application for Airshipper {
     type Message = Message;
@@ -87,7 +59,7 @@ impl Application for Airshipper {
     fn new() -> (Self, Command<Message>) {
         (
             Airshipper::Loading,
-            Command::perform(AirshipperData::load(), Message::Loaded),
+            Command::perform(SavedState::load(), Message::Loaded),
         )
     }
 
@@ -97,54 +69,62 @@ impl Application for Airshipper {
 
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
-            Message::Loaded(Ok(state)) => {
-                *self = Airshipper::Loaded(AirshipperState {
-                        download_slider_state: slider::State::default(),
-                        changelog_scrollable_state: scrollable::State::default(),
-                        news_scrollable_state: scrollable::State::default(),
-                        play_button_state: button::State::default(),
-                        
+            Message::Loaded(saved_state) => {
+                let state = saved_state
+                    .map(|state| State {
                         changelog: state.changelog,
                         news: state.news,
-                        config: state.config,
-                });
-                
+                        profiles: state.profiles,
+                        ..Default::default()
+                    })
+                    .unwrap_or_default();
+
+                *self = Airshipper::Loaded(state);
+
                 Command::none()
-            },
-            Message::Loaded(Err(_e)) => {
-                // TODO: Display network error.
-                panic!("Still livin in the 80s? I need a working internet connection!");
-            },
+            }
             Message::PlayPressed => {
-                
-                // TODO: do this asynchronously and feed back information about to the UI. 
+                // TODO: do this asynchronously and feed back information about to the UI.
                 match self {
                     Self::Loaded(state) => {
-                        // Default to checking for updates and starting the game.
-                        log::info!("Checking for updates...");
-                        state.config.update().expect("Failed updating the game.");
-                        log::info!("Starting...");
-                        state.config.start().expect("Failed to start the game");
-                    },
-                    _ => log::info!("Not ready yet :o"),
+                        state.downloading = true;
+                        let mut state = state.clone();
+                        Command::perform(download_stuff(state), Message::DownloadDone)
+                    }
+                    _ => {
+                        log::info!("Not ready yet :o");
+                        Command::none()
+                    }
                 }
-                
+            }
+            Message::DownloadDone(profiles) => {
+                if let Self::Loaded(state) = self {
+                    state.profiles = profiles;
+                }
                 Command::none()
-            },
+            }
             Message::SliderChanged(_) => Command::none(),
+            _ => Command::none()
         }
     }
 
     fn view(&mut self) -> Element<Message> {
         match self {
-            Airshipper::Loading => Text::new("Loading...").into(),
+            Airshipper::Loading => Text::new("").into(),
             Airshipper::Loaded(state) => {
-                let title = Image::new("client/assets/veloren-logo.png").width(Length::FillPortion(10));
-                let discord = Svg::new("client/assets/discord.svg").width(Length::Fill);
-                let gitlab = Svg::new("client/assets/gitlab.svg").width(Length::Fill);
-                let youtube = Svg::new("client/assets/youtube.svg").width(Length::Fill);
-                let reddit = Svg::new("client/assets/reddit.svg").width(Length::Fill);
-                let twitter = Svg::new("client/assets/twitter.svg").width(Length::Fill);
+                let manifest_dir = env!("CARGO_MANIFEST_DIR").to_owned();
+                let title = Image::new(manifest_dir.clone() + "/assets/veloren-logo.png")
+                    .width(Length::FillPortion(10));
+                let discord =
+                    Svg::new(manifest_dir.clone() + "/assets/discord.svg").width(Length::Fill);
+                let gitlab =
+                    Svg::new(manifest_dir.clone() + "/assets/gitlab.svg").width(Length::Fill);
+                let youtube =
+                    Svg::new(manifest_dir.clone() + "/assets/youtube.svg").width(Length::Fill);
+                let reddit =
+                    Svg::new(manifest_dir.clone() + "/assets/reddit.svg").width(Length::Fill);
+                let twitter =
+                    Svg::new(manifest_dir.clone() + "/assets/twitter.svg").width(Length::Fill);
 
                 let icons = Row::new()
                     .align_items(Align::Center)
@@ -172,9 +152,7 @@ impl Application for Airshipper {
                     .push(icons)
                     .push(changelog);
 
-                let news_test = Text::new(&state.news)
-
-                .size(16);
+                let news_test = Text::new(&state.news).size(16);
                 let news = Scrollable::new(&mut state.news_scrollable_state)
                     .width(Length::Fill)
                     .spacing(20)
@@ -203,7 +181,7 @@ impl Application for Airshipper {
 
                 let play = Button::new(
                     &mut state.play_button_state,
-                    Text::new("PLAY")
+                    Text::new(if state.downloading { "Loading" } else { "PLAY" })
                         .size(60)
                         .horizontal_alignment(HorizontalAlignment::Center)
                         .vertical_alignment(VerticalAlignment::Center)
