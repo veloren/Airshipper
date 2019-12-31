@@ -14,11 +14,12 @@ pub fn log(config: &ClientConfig, level: log::LevelFilter) -> Result<()> {
     let base = fern::Dispatch::new()
         .level_for("hyper", log::LevelFilter::Warn)
         .level_for("tokio_reactor", log::LevelFilter::Warn)
+        .level_for("gfx_backend_vulkan", log::LevelFilter::Warn)
         .level_for("mio", log::LevelFilter::Debug)
         .level_for("want", log::LevelFilter::Debug);
 
     let file_cfg = fern::Dispatch::new()
-        .level(log::LevelFilter::Trace) // TODO: Might need to be adjusted
+        .level(log::LevelFilter::Debug)
         .format(|out, message, record| {
             out.finish(format_args!(
                 "{}[{}:{}][{}] {}",

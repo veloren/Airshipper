@@ -1,5 +1,6 @@
 use std::fmt;
 
+#[derive(Debug)]
 pub enum ClientError {
     IoError(std::io::Error),
     LogError(log::SetLoggerError),
