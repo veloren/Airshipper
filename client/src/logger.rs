@@ -1,9 +1,10 @@
-use crate::config::ClientConfig;
 use crate::Result;
 use fern::colors::{Color, ColoredLevelConfig};
 
 /// Setup logging.
-pub fn log(config: &ClientConfig, level: log::LevelFilter) -> Result<()> {
+pub fn log(level: log::LevelFilter) -> Result<()> {
+    // TODO: instead of taking the log path from the config, find one in this file?
+    /*
     let colors = ColoredLevelConfig::new()
         .error(Color::Red)
         .warn(Color::Yellow)
@@ -47,5 +48,6 @@ pub fn log(config: &ClientConfig, level: log::LevelFilter) -> Result<()> {
         .chain(std::io::stdout());
 
     base.chain(file_cfg).chain(stdout_cfg).apply()?;
+    */
     Ok(())
 }
