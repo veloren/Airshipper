@@ -24,7 +24,8 @@ maintenance = { status = "actively-developed" }
 # Cli
 clap = { version = "2.33.0", features = ["yaml"] }
 # UI
-# None yet
+# TODO: Do not depend on git and revisit features we need before release
+iced = { git = "https://github.com/hecrj/iced.git", features = ["debug", "svg"] }
 # CLI
 indicatif = "0.13.0"
 # logging
