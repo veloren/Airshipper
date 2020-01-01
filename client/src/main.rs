@@ -23,5 +23,6 @@ pub const SERVER_CLI_FILE: &str = "veloren-server-cli";
 pub type Result<T> = std::result::Result<T, ClientError>;
 
 fn main() {
+    let _ = logger::log(log::LevelFilter::Info);
     gui::run();
 }

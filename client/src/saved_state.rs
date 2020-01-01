@@ -1,8 +1,8 @@
 use {
+    crate::profiles::Profile,
     async_std::prelude::*,
     directories,
     serde::{Deserialize, Serialize},
-    crate::profiles::Profile,
 };
 
 #[derive(Debug, Clone)]
@@ -19,11 +19,11 @@ pub enum SaveError {
     FormatError,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct SavedState {
     pub changelog: String,
     pub news: String,
-    pub profiles: Vec<Profile>,
+    pub active_profile: Profile,
 }
 
 impl SavedState {
