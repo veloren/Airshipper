@@ -10,3 +10,5 @@ WORKDIR /app/
 
 RUN cargo build --bin server --release
 CMD cargo run --bin server --release
+
+EXPOSE 8080
