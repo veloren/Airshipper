@@ -1,4 +1,4 @@
-use crate::profiles::{Channel, Profile};
+use crate::profiles::Profile;
 use crate::Result;
 use reqwest::header::*;
 use reqwest::{Client, ClientBuilder};

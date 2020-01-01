@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Command;
+use crate::saved_state;
 
 /// Represents a version with channel, name and path.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,6 +16,18 @@ pub struct Profile {
 
     pub directory: PathBuf,
     pub version: String,
+    pub newer_version: Option<String>,
+}
+
+impl Default for Profile {
+    fn default() -> Self {
+        Profile::new(
+            "default".to_owned(),
+            Channel::Nightly,
+            "https://download.veloren.net".to_owned(),
+            saved_state::get_profiles_path(),
+        )
+    }
 }
 
 #[derive(Debug, Display, Clone, Copy, Serialize, Deserialize)]
@@ -26,48 +39,31 @@ pub enum Channel {
 
 impl Profile {
     /// Creates a new profile and downloads the correct files into the target directory.
-    pub fn from_download(
-        name: String,
-        channel: Channel,
-        base_server_url: String,
-        target: PathBuf,
-    ) -> Result<Self> {
+    pub fn new(name: String, channel: Channel, base_server_url: String, target: PathBuf) -> Self {
         // TODO: check if dir is empty but available
         let mut directory = target;
         directory.push(name.clone());
-        let profile = Self {
+        Self {
             name,
             channel,
             base_server_url,
             directory,
             version: "".to_owned(), // Will be set by download
-        };
-
-        log::info!("Downloading {} - {}", profile.name, profile.channel);
-        network::download(&profile)?;
-        Ok(profile)
+            newer_version: None,
+        }
     }
 
     /// Returns an updated version of itself if applicable
     ///
     /// NOTE: Don't forget to save the changes!
     /// TODO: Solve this better
-    pub fn update(&mut self) -> Result<()> {
-        let remote_version = network::get_newest_version_name(&self)?;
-        let mut updated = self.clone();
-
-        log::debug!("remote version of {} is {}", self.channel, &remote_version);
-        if self.version != remote_version {
-            if !self.voxygen_path().exists() {
-                log::warn!("Previous installation not found!");
-                log::info!("Downloading {} - {}", self.name, self.channel);
-                network::download(&self)?;
-                self.version = remote_version;
-            } else {
-                log::info!("Updating...");
-                network::download(&self)?;
-                self.version = remote_version;
-            }
+    pub async fn download(&mut self) -> Result<()> {
+        self.check_for_update().await;
+        if let Some(newer_version) = &self.newer_version {
+            log::info!("Downloading {} - {}", self.name, self.channel);
+            network::download(&self)?;
+            self.version = newer_version.clone();
+            self.newer_version = None;
         } else {
             log::info!("Veloren is up-to-date.");
         }
@@ -75,7 +71,7 @@ impl Profile {
     }
 
     // TODO: add possibility to start the server too
-    pub fn start(&self) -> Result<()> {
+    pub async fn start(&self) -> Result<()> {
         let mut envs = HashMap::new();
         envs.insert("VOXYGEN_CONFIG", self.directory.clone().into_os_string());
 
@@ -94,6 +90,20 @@ impl Profile {
                 .unwrap_or("Exit code unavailable.".to_string())
         );
         Ok(())
+    }
+
+    pub async fn check_for_update(&mut self) -> Result<()> {
+        let remote_version = network::get_newest_version_name(&self)?;
+        if self.version != remote_version {
+            self.newer_version = Some(remote_version);
+        } else {
+            self.newer_version = None;
+        }
+        Ok(())
+    }
+
+    pub fn is_ready(&self) -> bool {
+        self.directory.exists()
     }
 
     /// Returns path to voxygen binary.
