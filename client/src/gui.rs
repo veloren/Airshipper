@@ -1,8 +1,5 @@
 use {
-    crate::{
-        profiles::Profile,
-        saved_state::SavedState,
-    },
+    crate::{profiles::Profile, saved_state::SavedState},
     iced::{
         button, scrollable, slider, Align, Application, Button, Color, Column, Command, Element,
         HorizontalAlignment, Image, Length, Row, Scrollable, Settings, Slider, Space, Svg, Text,
@@ -28,7 +25,7 @@ struct Airshipper {
     news: String,
     active_profile: Profile,
 
-    needs_save: bool,
+    saving: bool,
     downloading: bool,
 }
 
@@ -72,7 +69,7 @@ enum Message {
 }
 
 async fn download_or_run(mut profile: Profile) -> Profile {
-    if profile.is_ready() {
+    if profile.is_ready() && profile.newer_version.is_none() {
         profile.start().await;
         profile
     } else {
@@ -101,32 +98,52 @@ impl Application for Airshipper {
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
+        let mut needs_save = false;
+
         match message {
             Message::Loaded(saved_state) => {
                 if let Ok(saved) = saved_state {
                     self.update_from_save(saved);
                 } else {
-                    self.needs_save = true;
+                    needs_save = true;
                 }
 
-                Command::perform(check_for_update(self.active_profile.clone()), Message::UpdateCheckDone)
+                return Command::perform(
+                    check_for_update(self.active_profile.clone()),
+                    Message::UpdateCheckDone,
+                );
+            }
+            Message::Saved(_) => {
+                self.saving = false;
             }
             Message::PlayPressed => {
                 // TODO: do this asynchronously and feed back information about to the UI.
-                if self.downloading {
-                    return Command::none();
+                if !self.downloading {
+                    self.downloading = true;
+                    return Command::perform(
+                        download_or_run(self.active_profile.clone()),
+                        Message::DownloadDone,
+                    );
                 }
-
-                self.downloading = true;
-                Command::perform(download_or_run(self.active_profile.clone()), Message::DownloadDone)
+            }
+            Message::UpdateCheckDone(profile) => {
+                self.active_profile = profile;
+                needs_save = true
             }
             Message::DownloadDone(profile) => {
                 self.active_profile = profile;
                 self.downloading = false;
-                Command::none()
+                needs_save = true
             }
-            _ => Command::none(),
+            _ => {}
         }
+
+        if needs_save && !self.saving {
+            self.saving = true;
+            return Command::perform(SavedState::from(self.clone()).save(), Message::Saved);
+        }
+
+        Command::none()
     }
 
     fn view(&mut self) -> Element<Message> {

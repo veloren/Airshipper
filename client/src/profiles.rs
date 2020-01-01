@@ -1,11 +1,11 @@
 use crate::network;
+use crate::saved_state;
 use crate::Result;
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Command;
-use crate::saved_state;
 
 /// Represents a version with channel, name and path.
 #[derive(Debug, Clone, Serialize, Deserialize)]
