@@ -3,8 +3,6 @@ use fern::colors::{Color, ColoredLevelConfig};
 
 /// Setup logging.
 pub fn log(level: log::LevelFilter) -> Result<()> {
-    // TODO: instead of taking the log path from the config, find one in this file?
-    /*
     let colors = ColoredLevelConfig::new()
         .error(Color::Red)
         .warn(Color::Yellow)
@@ -19,6 +17,8 @@ pub fn log(level: log::LevelFilter) -> Result<()> {
         .level_for("mio", log::LevelFilter::Debug)
         .level_for("want", log::LevelFilter::Debug);
 
+    // TODO: use saved_state.rs to save logs somewhere
+    /*
     let file_cfg = fern::Dispatch::new()
         .level(log::LevelFilter::Debug)
         .format(|out, message, record| {
@@ -34,7 +34,7 @@ pub fn log(level: log::LevelFilter) -> Result<()> {
                 message
             ))
         })
-        .chain(fern::log_file(&config.log_file)?);
+        .chain(fern::log_file(&config.log_file)?);*/
 
     let stdout_cfg = fern::Dispatch::new()
         .level(level)
@@ -47,7 +47,9 @@ pub fn log(level: log::LevelFilter) -> Result<()> {
         })
         .chain(std::io::stdout());
 
-    base.chain(file_cfg).chain(stdout_cfg).apply()?;
-    */
+    base /*.chain(file_cfg)*/
+        .chain(stdout_cfg)
+        .apply()?;
+
     Ok(())
 }
