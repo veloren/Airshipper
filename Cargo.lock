@@ -1573,7 +1573,7 @@ dependencies = [
 [[package]]
 name = "iced"
 version = "0.1.0-beta"
-source = "git+https://github.com/hecrj/iced.git#26de688e68347e1f6e388d01014eac89cea71afa"
+source = "git+https://github.com/hecrj/iced.git#8311500ac03a95927022d8eec8178ba7d87b0010"
 dependencies = [
  "iced_web",
  "iced_wgpu",
@@ -1583,7 +1583,7 @@ dependencies = [
 [[package]]
 name = "iced_core"
 version = "0.1.0"
-source = "git+https://github.com/hecrj/iced.git#26de688e68347e1f6e388d01014eac89cea71afa"
+source = "git+https://github.com/hecrj/iced.git#8311500ac03a95927022d8eec8178ba7d87b0010"
 dependencies = [
  "futures 0.3.1",
 ]
@@ -1591,7 +1591,7 @@ dependencies = [
 [[package]]
 name = "iced_native"
 version = "0.1.0"
-source = "git+https://github.com/hecrj/iced.git#26de688e68347e1f6e388d01014eac89cea71afa"
+source = "git+https://github.com/hecrj/iced.git#8311500ac03a95927022d8eec8178ba7d87b0010"
 dependencies = [
  "futures 0.3.1",
  "iced_core",
@@ -1603,7 +1603,7 @@ dependencies = [
 [[package]]
 name = "iced_web"
 version = "0.1.0"
-source = "git+https://github.com/hecrj/iced.git#26de688e68347e1f6e388d01014eac89cea71afa"
+source = "git+https://github.com/hecrj/iced.git#8311500ac03a95927022d8eec8178ba7d87b0010"
 dependencies = [
  "dodrio",
  "futures 0.3.1",
@@ -1616,7 +1616,7 @@ dependencies = [
 [[package]]
 name = "iced_wgpu"
 version = "0.1.0"
-source = "git+https://github.com/hecrj/iced.git#26de688e68347e1f6e388d01014eac89cea71afa"
+source = "git+https://github.com/hecrj/iced.git#8311500ac03a95927022d8eec8178ba7d87b0010"
 dependencies = [
  "font-kit",
  "glam",
@@ -1633,7 +1633,7 @@ dependencies = [
 [[package]]
 name = "iced_winit"
 version = "0.1.0-alpha"
-source = "git+https://github.com/hecrj/iced.git#26de688e68347e1f6e388d01014eac89cea71afa"
+source = "git+https://github.com/hecrj/iced.git#8311500ac03a95927022d8eec8178ba7d87b0010"
 dependencies = [
  "futures 0.3.1",
  "iced_native",
@@ -3806,7 +3806,7 @@ version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3bfd5b7557925ce778ff9b9ef90e3ade34c524b5ff10e239c69a42d546d2af56"
 dependencies = [
- "rand 0.7.2",
+ "rand 0.3.23",
 ]
 
 [[package]]
