@@ -1,9 +1,9 @@
 use {
     crate::{profiles::Profile, saved_state::SavedState},
     iced::{
-        button, scrollable, slider, Align, Application, Button, Color, Column, Command, Element,
-        HorizontalAlignment, Image, Length, Row, Scrollable, Settings, Slider, Space, Svg, Text,
-        VerticalAlignment,
+        button, scrollable, Align, Application, Background, Button, Color, Column, Command,
+        Element, HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable, Settings, Space,
+        Svg, Text, VerticalAlignment,
     },
 };
 
@@ -16,7 +16,6 @@ pub fn run() {
 
 #[derive(Default, Debug, Clone)]
 struct Airshipper {
-    download_slider_state: slider::State,
     changelog_scrollable_state: scrollable::State,
     news_scrollable_state: scrollable::State,
     play_button_state: button::State,
@@ -197,17 +196,12 @@ impl Application for Airshipper {
             .push(news);
 
         let download_speed = Text::new("8 kb / s").size(12);
-        let download_slider = Slider::new(
-            &mut self.download_slider_state,
-            0.0..=100.0,
-            20.0,
-            Message::SliderChanged,
-        );
+        let download_progressbar = ProgressBar::new(0.0..=100.0, 20.0);
         let download = Column::new()
             .width(Length::FillPortion(4))
             .spacing(5)
             .push(download_speed)
-            .push(download_slider);
+            .push(download_progressbar);
 
         let play = Button::new(
             &mut self.play_button_state,
