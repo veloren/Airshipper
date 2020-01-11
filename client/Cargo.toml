@@ -26,6 +26,7 @@ clap = { version = "2.33.0", features = ["yaml"] }
 # UI
 # TODO: Do not depend on git and revisit features we need before release
 iced = { git = "https://github.com/hecrj/iced.git", features = ["debug", "svg"] }
+iced_native = { git = "https://github.com/hecrj/iced.git" }
 # CLI
 indicatif = "0.13.0"
 # logging
@@ -42,8 +43,10 @@ zip = "0.5.3"
 dirs = "2.0.2"
 serde = "1.0.101"
 ron = "0.5.1"
-async-std = "1.4.0"
+async-std = { version = "1.4.0", features = ["unstable"] }
 directories = "2.0.2"
+futures = "0.3.1"
+isahc = "0.8.2"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"

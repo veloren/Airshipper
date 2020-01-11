@@ -1,13 +1,16 @@
 mod style;
+mod time;
 mod update;
 
 use {
     crate::{profiles::Profile, saved_state::SavedState},
     iced::{
         button, scrollable, Align, Application, Button, Column, Command, Container, Element,
-        HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable, Settings, Space, Svg,
-        Text, VerticalAlignment,
+        HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable, Settings, Space,
+        Subscription, Svg, Text, VerticalAlignment,
     },
+    indicatif::HumanBytes,
+    std::{path::PathBuf, time::Duration},
 };
 
 pub fn run() {
@@ -18,10 +21,18 @@ pub fn run() {
 }
 
 #[derive(Debug, Clone)]
+pub enum DownloadStage {
+    None,
+    Download(isahc::Metrics, PathBuf),
+    Install,
+}
+
+#[derive(Debug)]
 pub struct Airshipper {
     changelog_scrollable_state: scrollable::State,
     news_scrollable_state: scrollable::State,
     play_button_state: button::State,
+    progress: f32,
 
     play_button_text: String,
 
@@ -30,7 +41,8 @@ pub struct Airshipper {
     active_profile: Profile,
 
     saving: bool,
-    downloading: bool,
+    download: DownloadStage,
+    download_speed: HumanBytes,
 }
 
 impl Default for Airshipper {
@@ -39,6 +51,7 @@ impl Default for Airshipper {
             changelog_scrollable_state: Default::default(),
             news_scrollable_state: Default::default(),
             play_button_state: Default::default(),
+            progress: 100.0,
 
             play_button_text: "PLAY".to_owned(),
 
@@ -47,33 +60,20 @@ impl Default for Airshipper {
             active_profile: Default::default(),
 
             saving: false,
-            downloading: false,
-        }
-    }
-}
-
-impl From<SavedState> for Airshipper {
-    fn from(saved: SavedState) -> Self {
-        Self {
-            changelog: saved.changelog,
-            news: saved.news,
-            active_profile: saved.active_profile,
-            ..Default::default()
-        }
-    }
-}
-
-impl From<Airshipper> for SavedState {
-    fn from(state: Airshipper) -> Self {
-        SavedState {
-            changelog: state.changelog,
-            news: state.news,
-            active_profile: state.active_profile,
+            download: DownloadStage::None,
+            download_speed: HumanBytes(0),
         }
     }
 }
 
 impl Airshipper {
+    fn into_save(&self) -> SavedState {
+        SavedState {
+            changelog: self.changelog.clone(),
+            news: self.news.clone(),
+            active_profile: self.active_profile.clone(),
+        }
+    }
     fn update_from_save(&mut self, save: SavedState) {
         self.changelog = save.changelog;
         self.news = save.news;
@@ -85,9 +85,11 @@ impl Airshipper {
 pub enum Message {
     Loaded(Result<SavedState, crate::saved_state::LoadError>),
     Saved(Result<(), crate::saved_state::SaveError>),
-    DownloadDone(Profile),
     UpdateCheckDone(Profile),
     PlayPressed,
+    Tick(()),
+    InstallDone(Result<Profile, ()>),
+    PlayDone(()),
 }
 
 impl Application for Airshipper {
@@ -102,6 +104,13 @@ impl Application for Airshipper {
 
     fn title(&self) -> String {
         format!("Airshipper v{}", env!("CARGO_PKG_VERSION"))
+    }
+
+    fn subscription(&self) -> Subscription<Message> {
+        match self.download {
+            DownloadStage::None => Subscription::none(),
+            _ => time::every(Duration::from_millis(300)).map(Message::Tick),
+        }
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
@@ -166,7 +175,8 @@ impl Application for Airshipper {
             .style(style::Middle);
 
         let download_speed = Text::new("8 kb / s").size(12);
-        let download_progressbar = ProgressBar::new(0.0..=100.0, 20.0).style(style::Progress);
+        let download_progressbar =
+            ProgressBar::new(0.0..=100.0, self.progress).style(style::Progress);
         let download = Column::new()
             .width(Length::FillPortion(4))
             .spacing(5)

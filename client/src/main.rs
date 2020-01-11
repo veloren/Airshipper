@@ -1,4 +1,3 @@
-mod downloadbar;
 mod error;
 mod gui;
 mod logger;
