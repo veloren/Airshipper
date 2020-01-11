@@ -1,8 +1,10 @@
 use crate::profiles::Profile;
 use crate::Result;
+use async_std::{fs::File, prelude::*};
+use std::path::PathBuf;
+use isahc::{config::RedirectPolicy, prelude::*};
 use reqwest::header::*;
 use reqwest::{Client, ClientBuilder};
-use std::path::PathBuf;
 
 #[cfg(windows)]
 pub const DOWNLOAD_FILE: &str = "veloren.zip";
@@ -40,21 +42,79 @@ pub fn get_newest_version_name(profile: &Profile) -> Result<String> {
     }
 }
 
-/// Downloads and unzips to target directory
-pub fn download(profile: &Profile) -> Result<()> {
-    use crate::downloadbar::{download_with_progress, unzip_with_progress};
+/// Starts a download of the zip to target directory
+pub fn start_download(profile: &Profile) -> Result<(isahc::Metrics, PathBuf)> {
+    log::info!("Downloading {} - {}", profile.name, profile.channel);
 
     // Download
     std::fs::create_dir_all(&profile.directory)?;
-    let zip_file = download_with_progress(
-        &CLIENT,
-        &get_artifact_uri(&profile),
-        &profile.directory.join(DOWNLOAD_FILE),
-    )?;
 
+    let mut response = Request::get(get_artifact_uri(&profile))
+        .metrics(true)
+        .redirect_policy(RedirectPolicy::Follow)
+        .body(())
+        .expect("error handling")
+        .send()
+        .expect("error handling");
+
+    let metrics = response.metrics().unwrap().clone();
+
+    let zip_path = profile.directory.join(DOWNLOAD_FILE);
+    let zip_path_clone = zip_path.clone();
+
+    async_std::task::spawn(async move {
+        let body = response.body_mut();
+        let mut buffer = [0; 8000]; // 8KB
+        let mut file = File::create(&zip_path_clone)
+            .await
+            .expect("TODO: error handling");
+
+        loop {
+            match body.read(&mut buffer).await {
+                Ok(0) => {
+                    println!("Download finished!");
+                    break;
+                }
+                Ok(x) => {
+                    file.write_all(&buffer[0..x]).await.expect("TODO: error handling");
+                    for i in 0..x {
+                        buffer[i] = 0;
+                    }
+                }
+                Err(e) => {
+                    eprintln!("ERROR: {}", e);
+                    break;
+                }
+            }
+        }
+    });
+    Ok((metrics, zip_path.to_owned()))
+}
+
+/// Unzips to target directory and changes permissions
+pub async fn install(profile: &Profile, zip_path: PathBuf) -> Result<()> {
     // Extract
-    log::debug!("Unzipping artifacts to {:?}", profile.directory);
-    unzip_with_progress(zip_file, &profile.directory)?;
+    log::info!("Unzipping to {:?}", profile.directory);
+    let mut zip_file = std::fs::File::open(&zip_path)?;
+
+    let mut archive = zip::ZipArchive::new(&mut zip_file)?;
+
+    for i in 1..archive.len() {
+        let mut file = archive.by_index(i)?;
+        let path = profile.directory.join(file.sanitized_name());
+
+        if file.is_dir() {
+            std::fs::create_dir_all(path)?;
+        } else {
+            let mut target = std::fs::OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(path)?;
+
+            std::io::copy(&mut file, &mut target)?;
+        }
+    }
 
     // Delete downloaded zip
     log::trace!("Extracted files, deleting zip archive.");
