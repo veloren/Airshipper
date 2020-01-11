@@ -53,21 +53,20 @@ impl Profile {
         }
     }
 
-    /// Returns an updated version of itself if applicable
-    ///
-    /// NOTE: Don't forget to save the changes!
-    /// TODO: Solve this better
-    pub async fn download(&mut self) -> Result<()> {
-        self.check_for_update().await;
+    pub fn start_download(&self) -> Result<(isahc::Metrics, PathBuf)> {
+        network::start_download(&self)
+    }
+
+    pub async fn install(mut self, zip_path: PathBuf) -> Result<Profile> {
         if let Some(newer_version) = &self.newer_version {
-            log::info!("Downloading {} - {}", self.name, self.channel);
-            network::download(&self)?;
+            let result = network::install(&self, zip_path).await;
             self.version = newer_version.clone();
             self.newer_version = None;
+
+            result.map(|_| self)
         } else {
-            log::info!("Veloren is up-to-date.");
+            Err("No newer version found".to_owned().into())
         }
-        Ok(())
     }
 
     // TODO: add possibility to start the server too
