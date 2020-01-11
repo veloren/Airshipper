@@ -1,9 +1,9 @@
 use {
     crate::{profiles::Profile, saved_state::SavedState},
     iced::{
-        button, scrollable, Align, Application, Background, Button, Color, Column, Command,
-        Element, HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable, Settings, Space,
-        Svg, Text, VerticalAlignment,
+        Container, container, button, scrollable, Align, Application, Background, Button, Color, Column, Command,
+        Element, HorizontalAlignment, Image, Length, progress_bar, ProgressBar, Row, Scrollable, Settings, Space,
+        Svg, Text, Vector, VerticalAlignment,
     },
 };
 
@@ -147,7 +147,7 @@ impl Application for Airshipper {
 
     fn view(&mut self) -> Element<Message> {
         let manifest_dir = env!("CARGO_MANIFEST_DIR").to_owned();
-        let title = Image::new(manifest_dir.clone() + "/assets/veloren-logo.png")
+        let title = Container::new(Image::new(manifest_dir.clone() + "/assets/veloren-logo.png"))
             .width(Length::FillPortion(10));
         let discord = Svg::new(manifest_dir.clone() + "/assets/discord.svg").width(Length::Fill);
         let gitlab = Svg::new(manifest_dir.clone() + "/assets/gitlab.svg").width(Length::Fill);
@@ -156,47 +156,55 @@ impl Application for Airshipper {
         let twitter = Svg::new(manifest_dir.clone() + "/assets/twitter.svg").width(Length::Fill);
 
         let icons = Row::new()
+            .width(Length::Fill)
+            .height(Length::Units(80))
             .align_items(Align::Center)
             .spacing(10)
+            .padding(15)
             .push(title)
             .push(Space::with_width(Length::FillPortion(5)))
-            .push(Column::new())
             .push(discord)
             .push(gitlab)
             .push(youtube)
             .push(reddit)
             .push(twitter);
 
-        let changelog_text = Text::new(&self.changelog).size(18);
+        let changelog_text = Text::new(&self.changelog).size(14);
         let changelog = Scrollable::new(&mut self.changelog_scrollable_state)
             .height(Length::Fill)
+            .padding(15)
             .spacing(20)
             .push(changelog_text);
 
         // Contains title, changelog
         let left = Column::new()
-            .width(Length::FillPortion(2))
+            .width(Length::FillPortion(3))
             .height(Length::Fill)
-            .spacing(20)
+            .padding(15)
             .push(icons)
             .push(changelog);
 
-        let news_test = Text::new(&self.news).size(16);
+        let news_test = Text::new(&self.news).size(14);
         let news = Scrollable::new(&mut self.news_scrollable_state)
-            .width(Length::Fill)
             .spacing(20)
+            .padding(25)
             .push(news_test);
+        let news_container = Container::new(news)
+            .width(Length::FillPortion(2))
+            .height(Length::Fill)
+            .style(NewsStyle);
 
         // Contains logo, changelog and news
         let middle = Row::new()
-            .height(Length::FillPortion(6))
-            .padding(25)
-            .spacing(60)
+            .padding(2)
             .push(left)
-            .push(news);
+            .push(news_container);
+        let middle_container = Container::new(middle)
+            .height(Length::FillPortion(6))
+            .style(MiddleStyle);
 
         let download_speed = Text::new("8 kb / s").size(12);
-        let download_progressbar = ProgressBar::new(0.0..=100.0, 20.0);
+        let download_progressbar = ProgressBar::new(0.0..=100.0, 20.0).style(ProgressStyle);
         let download = Column::new()
             .width(Length::FillPortion(4))
             .spacing(5)
@@ -214,30 +222,134 @@ impl Application for Airshipper {
                     "Download"
                 }
             })
-            .size(40)
+            .size(30)
+            .height(Length::Fill)
             .horizontal_alignment(HorizontalAlignment::Center)
             .vertical_alignment(VerticalAlignment::Center)
-            .color(Color::WHITE),
         )
         .on_press(Message::PlayPressed)
         .width(Length::Fill)
-        .height(Length::Fill)
-        .background(Color::from_rgb(0.2, 0.2, 0.7));
+        .height(Length::Units(60))
+        .padding(2)
+        .style(PlayButtonStyle);
 
         let bottom = Row::new()
             .align_items(Align::End)
-            .height(Length::Fill)
             .spacing(20)
+            .padding(10)
             .push(download)
             .push(play);
+        let bottom_container = Container::new(bottom)
+            .style(BottomStyle);
 
         // Contains everything
         let content = Column::new()
-            .spacing(20)
-            .padding(20)
-            .push(middle)
-            .push(bottom);
+            .padding(2)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .push(middle_container)
+            .push(bottom_container);
 
-        content.into()
+        Container::new(content)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .style(ContentStyle)
+            .into()
+    }
+}
+
+struct PlayButtonStyle;
+impl button::StyleSheet for PlayButtonStyle {
+    fn active(&self) -> button::Style {
+        button::Style {
+            background: Some(Background::Color(Color::from_rgb(0.05, 0.44, 0.62))),
+            border_color: Color::from_rgb(0.29, 0.19, 0.03),
+            border_width: 4,
+            shadow_offset: Vector::new(1.0, 1.0),
+            text_color: Color::from_rgb8(0xEE, 0xEE, 0xEE),
+            ..button::Style::default()
+        }
+    }
+
+    fn hovered(&self) -> button::Style {
+        button::Style {
+            background: Some(Background::Color(Color::from_rgb(0.08, 0.61, 0.65))),
+            text_color: Color::WHITE,
+            shadow_offset: Vector::new(1.0, 2.0),
+            ..self.active()
+        }
+    }
+}
+
+pub struct NewsStyle;
+impl container::StyleSheet for NewsStyle {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(Color::from_rgb(
+                0.09, 0.24, 0.29
+            ))),
+            text_color: Some(Color::WHITE),
+            ..container::Style::default()
+        }
+    }
+}
+
+pub struct MiddleStyle;
+impl container::StyleSheet for MiddleStyle {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(Color::from_rgb(
+                0.10, 0.21, 0.25
+            ))),
+            text_color: Some(Color::WHITE),
+            border_width: 2,
+            border_color: Color::from_rgb(
+                0.14, 0.29, 0.35
+            ),
+            ..container::Style::default()
+        }
+    }
+}
+
+pub struct BottomStyle;
+impl container::StyleSheet for BottomStyle {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(Color::from_rgb(
+                0.10, 0.21, 0.25
+            ))),
+            text_color: Some(Color::WHITE),
+            border_width: 2,
+            border_color: Color::from_rgb(
+                0.14, 0.29, 0.35
+            ),
+            ..container::Style::default()
+        }
+    }
+}
+
+pub struct ProgressStyle;
+impl progress_bar::StyleSheet for ProgressStyle {
+    fn style(&self) -> progress_bar::Style {
+        progress_bar::Style {
+            background: Background::Color(Color::from_rgb(0.35, 0.43, 0.46)),
+            bar: Background::Color(Color::from_rgb(
+                0.35, 0.82, 0.76
+            )),
+            border_radius: 5,
+        }
+    }
+}
+
+pub struct ContentStyle;
+impl container::StyleSheet for ContentStyle {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(Color::from_rgb(
+                0.10, 0.21, 0.25
+            ))),
+            text_color: Some(Color::WHITE),
+            ..container::Style::default()
+        }
     }
 }
