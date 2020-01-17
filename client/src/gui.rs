@@ -131,7 +131,7 @@ impl Application for Airshipper {
 
         let icons = Row::new()
             .width(Length::Fill)
-            .height(Length::Units(80))
+            .height(Length::Units(90))
             .align_items(Align::Center)
             .spacing(10)
             .padding(15)
