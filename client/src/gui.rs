@@ -174,7 +174,7 @@ impl Application for Airshipper {
             .height(Length::FillPortion(6))
             .style(style::Middle);
 
-        let download_speed = Text::new("8 kb / s").size(12);
+        let download_speed = Text::new(format!("{}/sec", self.download_speed)).size(12);
         let download_progressbar =
             ProgressBar::new(0.0..=100.0, self.progress).style(style::Progress);
         let download = Column::new()

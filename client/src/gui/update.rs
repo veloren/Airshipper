@@ -3,6 +3,7 @@ use {
     crate::{profiles::Profile, saved_state::SavedState},
     iced::Command,
     std::path::PathBuf,
+    indicatif::HumanBytes,
 };
 
 pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Message> {
@@ -62,6 +63,7 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
                 DownloadStage::Download(m, p) => {
                     let portion = ((m.download_progress().0 * 100) / m.download_progress().1) as f32;
                     state.progress = portion * 0.8; // Leave some percentages for the install process
+                    state.download_speed = HumanBytes(m.download_speed() as u64);
 
                     if portion == 100.0 {
                         state.play_button_text = "Install".to_owned();
