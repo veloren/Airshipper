@@ -37,6 +37,9 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
                 return Command::perform(start(state.active_profile.clone()), Message::PlayDone);
             }
         }
+        Message::ReadMore(url) => {
+            opener::open(&url).expect(&format!("Failed to open {}", url));
+        }
         Message::UpdateCheckDone((profile, changelog, news)) => {
             state.active_profile = profile;
             if state.active_profile.newer_version.is_some() {
