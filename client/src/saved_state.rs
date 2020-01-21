@@ -1,4 +1,5 @@
 use {
+    crate::network,
     crate::profiles::Profile,
     async_std::prelude::*,
     directories,
@@ -22,7 +23,7 @@ pub enum SaveError {
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct SavedState {
     pub changelog: String,
-    pub news: String,
+    pub news: Vec<network::Post>,
     pub active_profile: Profile,
 }
 
