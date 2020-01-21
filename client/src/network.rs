@@ -1,10 +1,11 @@
 use crate::profiles::Profile;
 use crate::Result;
 use async_std::{fs::File, prelude::*};
-use std::path::PathBuf;
 use isahc::{config::RedirectPolicy, prelude::*};
 use reqwest::header::*;
 use reqwest::{Client, ClientBuilder};
+use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 #[cfg(windows)]
 pub const DOWNLOAD_FILE: &str = "veloren.zip";
@@ -72,23 +73,79 @@ pub fn start_download(profile: &Profile) -> Result<(isahc::Metrics, PathBuf)> {
         loop {
             match body.read(&mut buffer).await {
                 Ok(0) => {
-                    println!("Download finished!");
+                    log::info!("Download finished!");
                     break;
                 }
                 Ok(x) => {
-                    file.write_all(&buffer[0..x]).await.expect("TODO: error handling");
+                    file.write_all(&buffer[0..x])
+                        .await
+                        .expect("TODO: error handling");
                     for i in 0..x {
                         buffer[i] = 0;
                     }
                 }
                 Err(e) => {
-                    eprintln!("ERROR: {}", e);
+                    log::error!("ERROR: {}", e);
                     break;
                 }
             }
         }
     });
     Ok((metrics, zip_path.to_owned()))
+}
+
+pub async fn query_changelog() -> Result<String> {
+    Ok(
+        Request::get("https://gitlab.com/veloren/veloren/raw/master/CHANGELOG.md")
+            .body(())
+            .expect("Error handling!")
+            .send()
+            .expect("Error handling!")
+            .text()
+            .expect("Non UTF-8 Text :/")
+            .lines()
+            .skip_while(|x| !x.contains(&"## [Unreleased]"))
+            .skip(2)
+            .take_while(|x| !x.contains(&"## [0.1.0]"))
+            .map(|x| format!("{}\n", x))
+            .collect(),
+    )
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct Post {
+    pub title: String,
+    pub description: String,
+    pub button_url: String,
+}
+
+/// Returns a list of Posts with title, description and button url.
+pub async fn query_news() -> Result<Vec<Post>> {
+    let feed = rss::Channel::from_url("https://veloren.net/rss.xml").expect("Error handling timo!");
+    let mut posts = Vec::new();
+
+    for post in feed.items() {
+        posts.push(Post {
+            title: post.title().unwrap_or("Missing title").into(),
+            description: process_description(post.description().unwrap_or("No description found.")),
+            button_url: post.link().unwrap_or("https://www.veloren.net").into(),
+        });
+    }
+
+    Ok(posts)
+}
+
+fn process_description(post: &str) -> String {
+    // TODO: Check if removing markdown before html is better!
+    // TODO: Play with the width!
+    let stripped_html = html2text::from_read(post.as_bytes(), 400)
+        .lines()
+        .take(3)
+        .filter(|x| !x.contains("[banner]"))
+        .map(|x| format!("{}\n", x))
+        .collect::<String>();
+    let stripped_markdown = strip_markdown::strip_markdown(&stripped_html);
+    stripped_markdown
 }
 
 /// Unzips to target directory and changes permissions

@@ -101,7 +101,7 @@ impl Profile {
         Ok(())
     }
 
-    pub fn is_ready(&self) -> bool {
+    pub fn _is_ready(&self) -> bool {
         self.directory.exists()
     }
 
