@@ -3,7 +3,7 @@ mod time;
 mod update;
 
 use {
-    crate::{profiles::Profile, saved_state::SavedState},
+    crate::{network, profiles::Profile, saved_state::SavedState},
     iced::{
         button, scrollable, Align, Application, Button, Column, Command, Container, Element,
         HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable, Settings, Space,
@@ -16,7 +16,7 @@ use {
 pub fn run() {
     let mut settings = Settings::default();
     settings.window.size = (800, 460);
-    settings.window.resizable = false;
+    settings.window.resizable = true;
     Airshipper::run(settings);
 }
 
@@ -37,7 +37,7 @@ pub struct Airshipper {
     play_button_text: String,
 
     changelog: String,
-    news: String,
+    news: Vec<network::Post>,
     active_profile: Profile,
 
     saving: bool,
@@ -85,7 +85,7 @@ impl Airshipper {
 pub enum Message {
     Loaded(Result<SavedState, crate::saved_state::LoadError>),
     Saved(Result<(), crate::saved_state::SaveError>),
-    UpdateCheckDone(Profile),
+    UpdateCheckDone((Profile, String, Vec<network::Post>)),
     PlayPressed,
     Tick(()),
     InstallDone(Result<Profile, ()>),
@@ -143,7 +143,7 @@ impl Application for Airshipper {
             .push(reddit)
             .push(twitter);
 
-        let changelog_text = Text::new(&self.changelog).size(14);
+        let changelog_text = Text::new(&self.changelog).size(16);
         let changelog = Scrollable::new(&mut self.changelog_scrollable_state)
             .height(Length::Fill)
             .padding(15)
@@ -158,11 +158,15 @@ impl Application for Airshipper {
             .push(icons)
             .push(changelog);
 
-        let news_test = Text::new(&self.news).size(14);
-        let news = Scrollable::new(&mut self.news_scrollable_state)
+        let mut news = Scrollable::new(&mut self.news_scrollable_state)
             .spacing(20)
-            .padding(25)
-            .push(news_test);
+            .padding(25);
+
+        for post in &self.news {
+            news = news.push(Text::new(post.title.clone()).size(20));
+            news = news.push(Text::new(post.description.clone()).size(15));
+        }
+
         let news_container = Container::new(news)
             .width(Length::FillPortion(2))
             .height(Length::Fill)
