@@ -117,6 +117,9 @@ pub struct Post {
     pub title: String,
     pub description: String,
     pub button_url: String,
+    
+    #[serde(skip)]
+    pub btn_state: iced::button::State,
 }
 
 /// Returns a list of Posts with title, description and button url.
@@ -129,6 +132,8 @@ pub async fn query_news() -> Result<Vec<Post>> {
             title: post.title().unwrap_or("Missing title").into(),
             description: process_description(post.description().unwrap_or("No description found.")),
             button_url: post.link().unwrap_or("https://www.veloren.net").into(),
+            
+            btn_state: Default::default(),
         });
     }
 

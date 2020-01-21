@@ -23,6 +23,26 @@ impl button::StyleSheet for PlayButton {
     }
 }
 
+pub struct ReadMoreButton;
+impl button::StyleSheet for ReadMoreButton {
+    fn active(&self) -> button::Style {
+        button::Style {
+            background: Some(Background::Color(Color::from_rgb(0.05, 0.44, 0.62))),
+            text_color: Color::from_rgb8(0xEE, 0xEE, 0xEE),
+            ..button::Style::default()
+        }
+    }
+
+    fn hovered(&self) -> button::Style {
+        button::Style {
+            background: Some(Background::Color(Color::from_rgb(0.08, 0.61, 0.65))),
+            text_color: Color::WHITE,
+            ..self.active()
+        }
+    }
+}
+
+
 pub struct News;
 impl container::StyleSheet for News {
     fn style(&self) -> container::Style {

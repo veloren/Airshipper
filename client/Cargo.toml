@@ -50,6 +50,7 @@ isahc = "0.8.2"
 rss = { version = "1.8.0", features = ["from_url"] }
 html2text = "0.1.8"
 strip_markdown = "0.1.0"
+opener = "0.4.1"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"
