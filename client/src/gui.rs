@@ -87,6 +87,7 @@ pub enum Message {
     Saved(Result<(), crate::saved_state::SaveError>),
     UpdateCheckDone((Profile, String, Vec<network::Post>)),
     PlayPressed,
+    ReadMore(String),
     Tick(()),
     InstallDone(Result<Profile, ()>),
     PlayDone(()),
@@ -143,7 +144,7 @@ impl Application for Airshipper {
             .push(reddit)
             .push(twitter);
 
-        let changelog_text = Text::new(&self.changelog).size(16);
+        let changelog_text = Text::new(&self.changelog).size(18);
         let changelog = Scrollable::new(&mut self.changelog_scrollable_state)
             .height(Length::Fill)
             .padding(15)
@@ -162,9 +163,23 @@ impl Application for Airshipper {
             .spacing(20)
             .padding(25);
 
-        for post in &self.news {
+        for post in &mut self.news {
             news = news.push(Text::new(post.title.clone()).size(20));
-            news = news.push(Text::new(post.description.clone()).size(15));
+            news = news.push(Text::new(post.description.clone()).size(16));
+            news = news.push(
+                Button::new(
+                    &mut post.btn_state,
+                    Text::new("Read More")
+                        .size(14)
+                        .horizontal_alignment(HorizontalAlignment::Center)
+                        .vertical_alignment(VerticalAlignment::Center),
+                )
+                .on_press(Message::ReadMore(post.button_url.clone()))
+                .width(Length::Units(80))
+                .height(Length::Units(25))
+                .padding(2)
+                .style(style::ReadMoreButton),
+            );
         }
 
         let news_container = Container::new(news)
@@ -178,7 +193,7 @@ impl Application for Airshipper {
             .height(Length::FillPortion(6))
             .style(style::Middle);
 
-        let download_speed = Text::new(format!("{}/sec", self.download_speed)).size(12);
+        let download_speed = Text::new(format!("{}/sec", self.download_speed)).size(15);
         let download_progressbar =
             ProgressBar::new(0.0..=100.0, self.progress).style(style::Progress);
         let download = Column::new()
