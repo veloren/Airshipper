@@ -16,7 +16,11 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
             }
 
             return Command::perform(
-                check_for_updates(state.active_profile.clone()),
+                check_for_updates(
+                    state.active_profile.clone(),
+                    state.changelog_etag.clone(),
+                    state.news_etag.clone(),
+                ),
                 Message::UpdateCheckDone,
             );
         }
@@ -46,8 +50,12 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
                 state.play_button_text = "Update".to_owned();
                 state.progress = 0.0;
             }
-            state.changelog = changelog;
-            state.news = news;
+            if let Some(changelog) = changelog {
+                state.changelog = changelog;
+            }
+            if let Some(news) = news {
+                state.news = news;
+            }
             needs_save = true
         }
         Message::InstallDone(result) => {
@@ -95,15 +103,25 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
 }
 
 /// Will check for profile updates and updated changelog, news.
-///
-/// TODO: cache changelog and news and really check for updates
-async fn check_for_updates(profile: Profile) -> (Profile, String, Vec<network::Post>) {
+async fn check_for_updates(
+    profile: Profile,
+    changelog_etag: String,
+    news_etag: String,
+) -> (Profile, Option<String>, Option<Vec<network::Post>>) {
     let profile = check_for_update(profile).await;
 
-    let changelog = network::query_changelog()
-        .await
-        .expect("TODO: Error handling!");
-    let news = network::query_news().await.expect("TODO: Error handling!");
+    let mut changelog = None;
+    if network::compare_changelog_etag(&changelog_etag).await {
+        changelog = Some(
+            network::query_changelog()
+                .await
+                .expect("TODO: Error handling!"),
+        );
+    }
+    let mut news = None;
+    if network::compare_news_etag(&news_etag).await {
+        news = Some(network::query_news().await.expect("TODO: Error handling!"));
+    }
 
     (profile, changelog, news)
 }
