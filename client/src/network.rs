@@ -94,6 +94,34 @@ pub fn start_download(profile: &Profile) -> Result<(isahc::Metrics, PathBuf)> {
     Ok((metrics, zip_path.to_owned()))
 }
 
+pub async fn compare_changelog_etag(cached: &str) -> bool {
+    Request::head("https://gitlab.com/veloren/veloren/raw/master/CHANGELOG.md")
+        .body(())
+        .expect("Error handling!")
+        .send_async()
+        .await
+        .expect("Error handling!")
+        .headers()
+        .get("etag")
+        .map(|x| x.to_str().expect("Error handling!"))
+        .unwrap_or("MissingEtag")
+        != cached
+}
+
+pub async fn compare_news_etag(cached: &str) -> bool {
+    Request::head("https://veloren.net/rss.xml")
+        .body(())
+        .expect("Error handling!")
+        .send_async()
+        .await
+        .expect("Error handling!")
+        .headers()
+        .get("etag")
+        .map(|x| x.to_str().expect("Error handling!"))
+        .unwrap_or("MissingEtag")
+        != cached
+}
+
 pub async fn query_changelog() -> Result<String> {
     Ok(
         Request::get("https://gitlab.com/veloren/veloren/raw/master/CHANGELOG.md")
@@ -117,7 +145,7 @@ pub struct Post {
     pub title: String,
     pub description: String,
     pub button_url: String,
-    
+
     #[serde(skip)]
     pub btn_state: iced::button::State,
 }
@@ -132,7 +160,7 @@ pub async fn query_news() -> Result<Vec<Post>> {
             title: post.title().unwrap_or("Missing title").into(),
             description: process_description(post.description().unwrap_or("No description found.")),
             button_url: post.link().unwrap_or("https://www.veloren.net").into(),
-            
+
             btn_state: Default::default(),
         });
     }

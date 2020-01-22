@@ -37,7 +37,9 @@ pub struct Airshipper {
     play_button_text: String,
 
     changelog: String,
+    changelog_etag: String,
     news: Vec<network::Post>,
+    news_etag: String,
     active_profile: Profile,
 
     saving: bool,
@@ -56,7 +58,9 @@ impl Default for Airshipper {
             play_button_text: "PLAY".to_owned(),
 
             changelog: Default::default(),
+            changelog_etag: Default::default(),
             news: Default::default(),
+            news_etag: Default::default(),
             active_profile: Default::default(),
 
             saving: false,
@@ -70,7 +74,9 @@ impl Airshipper {
     fn into_save(&self) -> SavedState {
         SavedState {
             changelog: self.changelog.clone(),
+            changelog_etag: self.changelog_etag.clone(),
             news: self.news.clone(),
+            news_etag: self.news_etag.clone(),
             active_profile: self.active_profile.clone(),
         }
     }
@@ -85,7 +91,7 @@ impl Airshipper {
 pub enum Message {
     Loaded(Result<SavedState, crate::saved_state::LoadError>),
     Saved(Result<(), crate::saved_state::SaveError>),
-    UpdateCheckDone((Profile, String, Vec<network::Post>)),
+    UpdateCheckDone((Profile, Option<String>, Option<Vec<network::Post>>)),
     PlayPressed,
     ReadMore(String),
     Tick(()),

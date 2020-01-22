@@ -42,7 +42,6 @@ impl button::StyleSheet for ReadMoreButton {
     }
 }
 
-
 pub struct News;
 impl container::StyleSheet for News {
     fn style(&self) -> container::Style {
