@@ -23,7 +23,11 @@ pub enum SaveError {
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct SavedState {
     pub changelog: String,
+    /// Compare this to decide whether to update the saved state
+    pub changelog_etag: String,
     pub news: Vec<network::Post>,
+    /// Compare this to decide whether to update the saved state
+    pub news_etag: String,
     pub active_profile: Profile,
 }
 
