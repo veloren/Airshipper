@@ -6,8 +6,8 @@ use {
     crate::{network, profiles::Profile, saved_state::SavedState},
     iced::{
         button, scrollable, Align, Application, Button, Column, Command, Container, Element,
-        HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable, Settings, Space,
-        Subscription, Svg, Text, VerticalAlignment,
+        HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable, Settings,
+        Subscription, Text, VerticalAlignment,
     },
     indicatif::HumanBytes,
     std::{path::PathBuf, time::Duration},
@@ -130,11 +130,12 @@ impl Application for Airshipper {
             manifest_dir.clone() + "/assets/veloren-logo.png",
         ))
         .width(Length::FillPortion(10));
-        let discord = Svg::new(manifest_dir.clone() + "/assets/discord.svg").width(Length::Fill);
-        let gitlab = Svg::new(manifest_dir.clone() + "/assets/gitlab.svg").width(Length::Fill);
-        let youtube = Svg::new(manifest_dir.clone() + "/assets/youtube.svg").width(Length::Fill);
-        let reddit = Svg::new(manifest_dir.clone() + "/assets/reddit.svg").width(Length::Fill);
-        let twitter = Svg::new(manifest_dir.clone() + "/assets/twitter.svg").width(Length::Fill);
+        // Will be reenabled once finished
+        //let discord = Svg::new(manifest_dir.clone() + "/assets/discord.svg").width(Length::Fill);
+        //let gitlab = Svg::new(manifest_dir.clone() + "/assets/gitlab.svg").width(Length::Fill);
+        //let youtube = Svg::new(manifest_dir.clone() + "/assets/youtube.svg").width(Length::Fill);
+        //let reddit = Svg::new(manifest_dir.clone() + "/assets/reddit.svg").width(Length::Fill);
+        //let twitter = Svg::new(manifest_dir.clone() + "/assets/twitter.svg").width(Length::Fill);
 
         let icons = Row::new()
             .width(Length::Fill)
@@ -142,13 +143,13 @@ impl Application for Airshipper {
             .align_items(Align::Center)
             .spacing(10)
             .padding(15)
-            .push(title)
-            .push(Space::with_width(Length::FillPortion(5)))
-            .push(discord)
-            .push(gitlab)
-            .push(youtube)
-            .push(reddit)
-            .push(twitter);
+            .push(title);
+            //.push(Space::with_width(Length::FillPortion(5)))
+            //.push(discord)
+            //.push(gitlab)
+            //.push(youtube)
+            //.push(reddit)
+            //.push(twitter);
 
         let changelog_text = Text::new(&self.changelog).size(18);
         let changelog = Scrollable::new(&mut self.changelog_scrollable_state)
