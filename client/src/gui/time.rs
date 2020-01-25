@@ -1,3 +1,6 @@
+// TODO: rewrite download with subscription so this gets obsolete
+// https://github.com/hecrj/iced/pull/164 `subscription::Tracker`
+
 use {
     async_std::stream::interval,
     futures::stream::{BoxStream, StreamExt},
@@ -22,7 +25,10 @@ where
         self.0.hash(state);
     }
 
-    fn stream(self: Box<Self>, _input: I) -> BoxStream<'static, Self::Output> {
+    fn stream(
+        self: Box<Self>,
+        _input: futures::stream::BoxStream<'static, I>,
+    ) -> BoxStream<'static, Self::Output> {
         interval(self.0).boxed()
     }
 }
