@@ -92,7 +92,7 @@ impl Profile {
     }
 
     pub async fn check_for_update(&mut self) -> Result<()> {
-        let remote_version = network::get_newest_version_name(&self)?;
+        let remote_version = network::get_newest_version_name(&self).await?;
         if self.version != remote_version {
             self.newer_version = Some(remote_version);
         } else {

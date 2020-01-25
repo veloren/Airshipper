@@ -1,24 +1,11 @@
 use {
     crate::network,
     crate::profiles::Profile,
+    crate::Result,
     async_std::prelude::*,
     directories,
     serde::{Deserialize, Serialize},
 };
-
-#[derive(Debug, Clone)]
-pub enum LoadError {
-    FileError,
-    FormatError,
-}
-
-#[derive(Debug, Clone)]
-pub enum SaveError {
-    DirectoryError,
-    FileError,
-    WriteError,
-    FormatError,
-}
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct SavedState {
@@ -32,40 +19,26 @@ pub struct SavedState {
 }
 
 impl SavedState {
-    pub async fn load() -> Result<SavedState, LoadError> {
+    pub async fn load() -> Result<SavedState> {
         let mut contents = String::new();
 
-        let mut file = async_std::fs::File::open(get_savedstate_path())
-            .await
-            .map_err(|_| LoadError::FileError)?;
+        let mut file = async_std::fs::File::open(get_savedstate_path()).await?;
+        file.read_to_string(&mut contents).await?;
 
-        file.read_to_string(&mut contents)
-            .await
-            .map_err(|_| LoadError::FileError)?;
-
-        ron::de::from_str(&contents).map_err(|_| LoadError::FormatError)
+        Ok(ron::de::from_str(&contents)?)
     }
 
-    pub async fn save(self) -> Result<(), SaveError> {
-        let ron = ron::ser::to_string(&self).map_err(|_| SaveError::FormatError)?;
+    pub async fn save(self) -> Result<()> {
+        let ron = ron::ser::to_string(&self)?;
 
         let path = get_savedstate_path();
 
         if let Some(dir) = path.parent() {
-            async_std::fs::create_dir_all(dir)
-                .await
-                .map_err(|_| SaveError::DirectoryError)?;
+            async_std::fs::create_dir_all(dir).await?;
         }
 
-        {
-            let mut file = async_std::fs::File::create(path)
-                .await
-                .map_err(|_| SaveError::FileError)?;
-
-            file.write_all(ron.as_bytes())
-                .await
-                .map_err(|_| SaveError::WriteError)?;
-        }
+        let mut file = async_std::fs::File::create(path).await?;
+        file.write_all(ron.as_bytes()).await?;
 
         // This is a simple way to save at most once every couple seconds
         async_std::task::sleep(std::time::Duration::from_secs(2)).await;
@@ -74,6 +47,8 @@ impl SavedState {
     }
 }
 
+/// TODO: Rewrite it as such that it will choose either
+/// the cwd or standard path based on where it is (e.g installed in /usr/bin, or laying around in /home/...)
 pub fn get_savedstate_path() -> std::path::PathBuf {
     let mut path = if let Some(project_dirs) =
         directories::ProjectDirs::from("net", "veloren", "airshipper")
@@ -87,6 +62,8 @@ pub fn get_savedstate_path() -> std::path::PathBuf {
     path
 }
 
+/// TODO: Rewrite it as such that it will choose either
+/// the cwd or standard path based on where it is (e.g installed in /usr/bin, or laying around in /home/...)
 pub fn get_profiles_path() -> std::path::PathBuf {
     let mut path = if let Some(project_dirs) =
         directories::ProjectDirs::from("net", "veloren", "airshipper")

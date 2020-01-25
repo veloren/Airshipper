@@ -2,8 +2,6 @@ use crate::profiles::Profile;
 use crate::Result;
 use async_std::{fs::File, prelude::*};
 use isahc::{config::RedirectPolicy, prelude::*};
-use reqwest::header::*;
-use reqwest::{Client, ClientBuilder};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -12,26 +10,26 @@ pub const DOWNLOAD_FILE: &str = "veloren.zip";
 #[cfg(unix)]
 pub const DOWNLOAD_FILE: &str = "veloren";
 
-// Maybe move this over to downloadbar ?
-lazy_static::lazy_static! {
-    pub static ref CLIENT: Client = {
-        let mut headers = HeaderMap::new();
-        headers.insert(
-            USER_AGENT,
-            format!("Airshipper/{} ({})", env!("CARGO_PKG_VERSION"), whoami::os())
-                .parse()
-                .unwrap(),
-        );
-        ClientBuilder::new()
-            .connect_timeout(std::time::Duration::from_secs(30))
-            .default_headers(headers)
-            .build().expect("FATAL: failed to build reqwest client!")
-    };
+const CHANGELOG_URL: &str = "https://gitlab.com/veloren/veloren/raw/master/CHANGELOG.md";
+const NEWS_URL: &str = "https://veloren.net/rss.xml";
+
+/// Use this method when making requests
+/// it will include required defaults to make secure https requests.
+pub async fn request<T: ToString>(url: T) -> Result<Response<isahc::Body>> {
+    Ok(Request::get(url.to_string())
+        .redirect_policy(RedirectPolicy::Follow)
+        .timeout(std::time::Duration::from_secs(20))
+        .header(
+            "User-Agent",
+            &format!("Airshipper v{}", env!("CARGO_PKG_VERSION")),
+        )
+        .body(())?
+        .send()?)
 }
 
 /// Returns the remote version of the profile
-pub fn get_newest_version_name(profile: &Profile) -> Result<String> {
-    let mut resp = CLIENT.get(&get_version_uri(profile)).send()?;
+pub async fn get_newest_version_name(profile: &Profile) -> Result<String> {
+    let mut resp = request(&get_version_uri(profile)).await?;
     if resp.status().is_success() {
         Ok(resp.text()?)
     } else {
@@ -94,50 +92,36 @@ pub fn start_download(profile: &Profile) -> Result<(isahc::Metrics, PathBuf)> {
     Ok((metrics, zip_path.to_owned()))
 }
 
-pub async fn compare_changelog_etag(cached: &str) -> bool {
-    Request::head("https://gitlab.com/veloren/veloren/raw/master/CHANGELOG.md")
-        .body(())
-        .expect("Error handling!")
-        .send_async()
-        .await
-        .expect("Error handling!")
+pub async fn compare_changelog_etag(cached: &str) -> Result<bool> {
+    Ok(request(CHANGELOG_URL)
+        .await?
         .headers()
         .get("etag")
-        .map(|x| x.to_str().expect("Error handling!"))
-        .unwrap_or("MissingEtag")
-        != cached
+        .map(|x| x.to_str().unwrap()) // Etag will always be a valid UTF-8 due to it being ASCII
+        .unwrap_or("MissingEtag") // TODO: Decide whether to throw an error if etag does not exist
+        != cached)
 }
 
-pub async fn compare_news_etag(cached: &str) -> bool {
-    Request::head("https://veloren.net/rss.xml")
-        .body(())
-        .expect("Error handling!")
-        .send_async()
-        .await
-        .expect("Error handling!")
+pub async fn compare_news_etag(cached: &str) -> Result<bool> {
+    Ok(request(CHANGELOG_URL)
+        .await?
         .headers()
         .get("etag")
-        .map(|x| x.to_str().expect("Error handling!"))
-        .unwrap_or("MissingEtag")
-        != cached
+        .map(|x| x.to_str().unwrap()) // Etag will always be a valid UTF-8 due to it being ASCII
+        .unwrap_or("MissingEtag") // TODO: Decide whether to throw an error if etag does not exist
+        != cached)
 }
 
 pub async fn query_changelog() -> Result<String> {
-    Ok(
-        Request::get("https://gitlab.com/veloren/veloren/raw/master/CHANGELOG.md")
-            .body(())
-            .expect("Error handling!")
-            .send()
-            .expect("Error handling!")
-            .text()
-            .expect("Non UTF-8 Text :/")
-            .lines()
-            .skip_while(|x| !x.contains(&"## [Unreleased]"))
-            .skip(2)
-            .take_while(|x| !x.contains(&"## [0.1.0]"))
-            .map(|x| format!("{}\n", x))
-            .collect(),
-    )
+    Ok(request(CHANGELOG_URL)
+        .await?
+        .text()?
+        .lines()
+        .skip_while(|x| !x.contains(&"## [Unreleased]"))
+        .skip(2)
+        .take_while(|x| !x.contains(&"## [0.1.0]"))
+        .map(|x| format!("{}\n", x))
+        .collect())
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
@@ -152,7 +136,7 @@ pub struct Post {
 
 /// Returns a list of Posts with title, description and button url.
 pub async fn query_news() -> Result<Vec<Post>> {
-    let feed = rss::Channel::from_url("https://veloren.net/rss.xml").expect("Error handling timo!");
+    let feed = rss::Channel::from_url(NEWS_URL)?;
     let mut posts = Vec::new();
 
     for post in feed.items() {
@@ -169,7 +153,6 @@ pub async fn query_news() -> Result<Vec<Post>> {
 }
 
 fn process_description(post: &str) -> String {
-    // TODO: Check if removing markdown before html is better!
     // TODO: Play with the width!
     let stripped_html = html2text::from_read(post.as_bytes(), 400)
         .lines()
