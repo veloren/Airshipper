@@ -1,6 +1,6 @@
 use {
-    super::{Airshipper, DownloadStage, Message},
-    crate::{network, profiles::Profile},
+    super::{Airshipper, DownloadStage, Interaction, Message},
+    crate::{network, profiles::Profile, Result},
     iced::Command,
     indicatif::HumanBytes,
     std::path::PathBuf,
@@ -27,7 +27,7 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
         Message::Saved(_) => {
             state.saving = false;
         }
-        Message::PlayPressed => {
+        Message::Interaction(Interaction::PlayPressed) => {
             if state.active_profile.newer_version.is_some() {
                 if let DownloadStage::None = state.download {
                     state.download = state
@@ -41,22 +41,24 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
                 return Command::perform(start(state.active_profile.clone()), Message::PlayDone);
             }
         }
-        Message::ReadMore(url) => {
+        Message::Interaction(Interaction::ReadMore(url)) => {
             opener::open(&url).expect(&format!("Failed to open {}", url));
         }
-        Message::UpdateCheckDone((profile, changelog, news)) => {
-            state.active_profile = profile;
-            if state.active_profile.newer_version.is_some() {
-                state.play_button_text = "Update".to_owned();
-                state.progress = 0.0;
+        Message::UpdateCheckDone(update) => {
+            if let Ok((profile, changelog, news)) = update {
+                state.active_profile = profile;
+                if state.active_profile.newer_version.is_some() {
+                    state.play_button_text = "Update".to_owned();
+                    state.progress = 0.0;
+                }
+                if let Some(changelog) = changelog {
+                    state.changelog = changelog;
+                }
+                if let Some(news) = news {
+                    state.news = news;
+                }
+                needs_save = true
             }
-            if let Some(changelog) = changelog {
-                state.changelog = changelog;
-            }
-            if let Some(news) = news {
-                state.news = news;
-            }
-            needs_save = true
         }
         Message::InstallDone(result) => {
             if let Ok(profile) = result {
@@ -107,32 +109,28 @@ async fn check_for_updates(
     profile: Profile,
     changelog_etag: String,
     news_etag: String,
-) -> (Profile, Option<String>, Option<Vec<network::Post>>) {
-    let profile = check_for_update(profile).await;
+) -> Result<(Profile, Option<String>, Option<Vec<network::Post>>)> {
+    let profile = check_for_update(profile).await?;
 
     let mut changelog = None;
-    if network::compare_changelog_etag(&changelog_etag).await {
-        changelog = Some(
-            network::query_changelog()
-                .await
-                .expect("TODO: Error handling!"),
-        );
+    if network::compare_changelog_etag(&changelog_etag).await? {
+        changelog = Some(network::query_changelog().await?);
     }
     let mut news = None;
-    if network::compare_news_etag(&news_etag).await {
-        news = Some(network::query_news().await.expect("TODO: Error handling!"));
+    if network::compare_news_etag(&news_etag).await? {
+        news = Some(network::query_news().await?);
     }
 
-    (profile, changelog, news)
+    Ok((profile, changelog, news))
 }
 
-async fn check_for_update(mut profile: Profile) -> Profile {
-    profile.check_for_update().await.expect("Error handling");
-    profile
+async fn check_for_update(mut profile: Profile) -> Result<Profile> {
+    profile.check_for_update().await?;
+    Ok(profile)
 }
 
-async fn install(profile: Profile, zip_path: PathBuf) -> Result<Profile, ()> {
-    profile.install(zip_path).await.map_err(|_| ())
+async fn install(profile: Profile, zip_path: PathBuf) -> Result<Profile> {
+    Ok(profile.install(zip_path).await?)
 }
 
 async fn start(profile: Profile) {
