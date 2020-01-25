@@ -11,6 +11,7 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
 
     match message {
         Message::Loaded(saved_state) => {
+            // TODO: Error handling: maybe return a command which returns the error and get shown by msgbox or such?
             if let Ok(saved) = saved_state {
                 state.update_from_save(saved);
             }
@@ -28,7 +29,7 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
             state.saving = false;
         }
         Message::Interaction(Interaction::PlayPressed) => {
-            if state.active_profile.newer_version.is_some() {
+            if state.active_profile.remote_version.is_some() {
                 if let DownloadStage::None = state.download {
                     state.download = state
                         .active_profile
@@ -42,12 +43,14 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
             }
         }
         Message::Interaction(Interaction::ReadMore(url)) => {
+            // TODO: Error handling: maybe return a command which returns the error and get shown by msgbox or such?
             opener::open(&url).expect(&format!("Failed to open {}", url));
         }
         Message::UpdateCheckDone(update) => {
+            // TODO: Error handling: maybe return a command which returns the error and get shown by msgbox or such?
             if let Ok((profile, changelog, news)) = update {
                 state.active_profile = profile;
-                if state.active_profile.newer_version.is_some() {
+                if state.active_profile.remote_version.is_some() {
                     state.play_button_text = "Update".to_owned();
                     state.progress = 0.0;
                 }
@@ -61,6 +64,7 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
             }
         }
         Message::InstallDone(result) => {
+            // TODO: Error handling: maybe return a command which returns the error and get shown by msgbox or such?
             if let Ok(profile) = result {
                 state.active_profile = profile;
                 state.play_button_text = "PLAY".to_owned();
@@ -93,7 +97,9 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
                 _ => {}
             }
         }
-        Message::PlayDone(_) => {}
+        Message::PlayDone(_start_game_result) => {
+            // TODO: Error handling: maybe return a command which returns the error and get shown by msgbox or such?
+        }
     }
 
     if needs_save && !state.saving {
@@ -133,6 +139,6 @@ async fn install(profile: Profile, zip_path: PathBuf) -> Result<Profile> {
     Ok(profile.install(zip_path).await?)
 }
 
-async fn start(profile: Profile) {
-    profile.start().await.expect("Error handling");
+async fn start(profile: Profile) -> Result<()> {
+    Ok(profile.start().await?)
 }
