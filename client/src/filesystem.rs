@@ -34,7 +34,7 @@ lazy_static::lazy_static! {
 //       to allow to use another base location and avoid polluting the current install while developing?
 
 /// Returns the base path where all airshipper files belong
-/// 
+///
 /// |Platform | Example                                                       |
 /// | ------- | ------------------------------------------------------------- |
 /// | Linux   | /home/alice/.local/share/barapp                               |
@@ -55,6 +55,22 @@ pub(crate) fn base_path() -> impl std::fmt::Display {
 /// Returns path to the file which saves the current state
 pub(crate) fn get_savedstate_path() -> PathBuf {
     BASE_PATH.join(SAVED_STATE_FILE)
+}
+
+/// Returns path to where the assets are stored
+/// TODO: More gracefull assets finding!
+pub(crate) fn get_assets_path(name: &str) -> String {
+    if BASE_PATH.join("assets").join(name).exists() {
+        BASE_PATH.join("assets").join(name).display().to_string()
+    } else {
+        std::env::current_dir()
+            .unwrap()
+            .join("client")
+            .join("assets")
+            .join(name)
+            .display()
+            .to_string()
+    }
 }
 
 /// Returns path to a profile while creating the folder

@@ -2,22 +2,23 @@ mod style;
 mod time;
 mod update;
 
-use {
-    crate::{network, profiles::Profile, saved_state::SavedState, Result},
-    iced::{
-        button, scrollable, Align, Application, Button, Column, Command, Container, Element,
-        HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable, Settings, Subscription,
-        Text, VerticalAlignment,
-    },
-    indicatif::HumanBytes,
-    std::{path::PathBuf, time::Duration},
+use crate::{filesystem, network, profiles::Profile, state::State, Result};
+use iced::{
+    button, scrollable, Align, Application, Button, Column, Command, Container, Element,
+    HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable, Settings, Subscription, Text,
+    VerticalAlignment,
 };
+use indicatif::HumanBytes;
+use std::{path::PathBuf, time::Duration};
 
+/// Starts the GUI won't return
 pub fn run() {
     let mut settings = Settings::default();
     settings.window.size = (1050, 620);
     Airshipper::run(settings);
 }
+
+// TODO: Clean up state handling
 
 #[derive(Debug, Clone)]
 pub enum DownloadStage {
@@ -75,8 +76,8 @@ impl Default for Airshipper {
 }
 
 impl Airshipper {
-    fn into_save(&self) -> SavedState {
-        SavedState {
+    fn into_save(&self) -> State {
+        State {
             changelog: self.changelog.clone(),
             changelog_etag: self.changelog_etag.clone(),
             news: self.news.clone(),
@@ -84,7 +85,7 @@ impl Airshipper {
             active_profile: self.active_profile.clone(),
         }
     }
-    fn update_from_save(&mut self, save: SavedState) {
+    fn update_from_save(&mut self, save: State) {
         self.changelog = save.changelog;
         self.news = save.news;
         self.active_profile = save.active_profile;
@@ -94,13 +95,14 @@ impl Airshipper {
 #[derive(Debug)]
 pub enum Message {
     Interaction(Interaction),
-    Loaded(Result<SavedState>),
+    Loaded(Result<State>),
     Saved(Result<()>),
     UpdateCheckDone(Result<(Profile, Option<String>, Option<Vec<network::Post>>)>),
     Tick(()), // TODO: Get rid of Tick by implementing download via subscription
     InstallDone(Result<Profile>),
-    PlayDone(()),
+    PlayDone(Result<()>),
 }
+
 #[derive(Debug, Clone)]
 pub enum Interaction {
     PlayPressed,
@@ -114,7 +116,7 @@ impl Application for Airshipper {
     fn new() -> (Self, Command<Message>) {
         (
             Airshipper::default(),
-            Command::perform(SavedState::load(), Message::Loaded),
+            Command::perform(State::load(), Message::Loaded),
         )
     }
 
@@ -134,12 +136,8 @@ impl Application for Airshipper {
     }
 
     fn view(&mut self) -> Element<Message> {
-        // TODO: Use correct path
-        let manifest_dir = env!("CARGO_MANIFEST_DIR").to_owned();
-        let title = Container::new(Image::new(
-            manifest_dir.clone() + "/assets/veloren-logo.png",
-        ))
-        .width(Length::FillPortion(10));
+        let title = Container::new(Image::new(filesystem::get_assets_path("veloren-logo.png")))
+            .width(Length::FillPortion(10));
         // Will be reenabled once finished
         //let discord = Svg::new(manifest_dir.clone() + "/assets/discord.svg").width(Length::Fill);
         //let gitlab = Svg::new(manifest_dir.clone() + "/assets/gitlab.svg").width(Length::Fill);

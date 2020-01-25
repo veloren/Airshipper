@@ -1,8 +1,8 @@
-use crate::{logger, filesystem, gui, Result};
+use crate::{filesystem, gui, logger, /*state::State, profiles::Profile,*/ Result};
 use clap::{load_yaml, App};
 
-/// Process command line arguments and start GUI
-pub fn process() -> Result<()> {
+/// Process command line arguments and optionally start GUI
+pub async fn process() -> Result<()> {
     let yml = load_yaml!("clap.yml");
     let version = format!("v{}", env!("CARGO_PKG_VERSION"));
     let app = App::from_yaml(yml).version(&*version);
@@ -22,20 +22,18 @@ pub fn process() -> Result<()> {
     log::debug!("Running on {}", whoami::os());
     log::debug!("Base Path: {}", filesystem::base_path());
     log::debug!("Log file Path: {}", filesystem::get_log_path().display());
-    
-    // handle arguments otherwise
+
+    //let state = State::load().await?;
+
+    // handle arguments
     if m.is_present("update") {
-        log::info!("Updating...");
-        // TODO: Update only, no GUI
+        //update(&mut state).await?;
     } else if m.is_present("start") {
         log::info!("Starting...");
-        // TODO: Start only, no GUI
-    } else if m.is_present("run"){
-        // Default to checking for updates and starting the game.
-        log::info!("Checking for updates...");
-        // TODO: Update only, no GUI
-        log::info!("Starting...");
-        // TODO: Start only, no GUI
+    //start(&mut state, &state.active_profile).await?;
+    } else if m.is_present("run") {
+        //update(&mut state).await?;
+        //start(&mut state, &state.active_profile).await?;
     } else {
         gui::run();
     }
