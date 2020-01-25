@@ -1,14 +1,11 @@
-use {
-    crate::filesystem,
-    crate::network,
-    crate::profiles::Profile,
-    crate::Result,
-    async_std::prelude::*,
-    serde::{Deserialize, Serialize},
-};
+//! State which is used by the command line and GUI and also gets saved to disk
+
+use crate::{filesystem, network, profiles::Profile, Result};
+use async_std::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct SavedState {
+pub struct State {
     pub changelog: String,
     /// Compare this to decide whether to update the saved state
     pub changelog_etag: String,
@@ -18,8 +15,9 @@ pub struct SavedState {
     pub active_profile: Profile,
 }
 
-impl SavedState {
-    pub async fn load() -> Result<SavedState> {
+impl State {
+    // TODO: If file does not exist return default!
+    pub async fn load() -> Result<Self> {
         let mut contents = String::new();
 
         let mut file = async_std::fs::File::open(filesystem::get_savedstate_path()).await?;
@@ -32,17 +30,12 @@ impl SavedState {
         let ron = ron::ser::to_string(&self)?;
 
         let path = filesystem::get_savedstate_path();
-
         if let Some(dir) = path.parent() {
             async_std::fs::create_dir_all(dir).await?;
         }
 
         let mut file = async_std::fs::File::create(path).await?;
         file.write_all(ron.as_bytes()).await?;
-
-        // This is a simple way to save at most once every couple seconds
-        async_std::task::sleep(std::time::Duration::from_secs(2)).await;
-
         Ok(())
     }
 }

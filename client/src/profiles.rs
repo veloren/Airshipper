@@ -10,20 +10,15 @@ use std::process::Command;
 pub struct Profile {
     pub name: String,
     pub channel: Channel,
-    pub base_server_url: String,
 
     pub directory: PathBuf,
     pub version: String,
-    pub newer_version: Option<String>,
+    pub remote_version: Option<String>,
 }
 
 impl Default for Profile {
     fn default() -> Self {
-        Profile::new(
-            "default".to_owned(),
-            Channel::Nightly,
-            network::DOWNLOAD_SERVER.to_owned(),
-        )
+        Profile::new("default".to_owned(), Channel::Nightly)
     }
 }
 
@@ -36,14 +31,13 @@ pub enum Channel {
 
 impl Profile {
     /// Creates a new profile and downloads the correct files into the target directory.
-    pub fn new(name: String, channel: Channel, base_server_url: String) -> Self {
+    pub fn new(name: String, channel: Channel) -> Self {
         Self {
             directory: filesystem::get_profile_path(&name),
             name,
             channel,
-            base_server_url,
             version: "".to_owned(), // Will be set by download
-            newer_version: None,
+            remote_version: None,
         }
     }
 
@@ -52,10 +46,11 @@ impl Profile {
     }
 
     pub async fn install(mut self, zip_path: PathBuf) -> Result<Profile> {
-        if let Some(newer_version) = &self.newer_version {
+        if let Some(newer_version) = &self.remote_version {
+            // TODO: maybe let install return the new profile or make it all &mut
             network::install(&self, zip_path).await?;
             self.version = newer_version.clone();
-            self.newer_version = None;
+            self.remote_version = None;
             Ok(self)
         } else {
             Err("No newer version found".into())
@@ -85,11 +80,11 @@ impl Profile {
     }
 
     pub async fn check_for_update(&mut self) -> Result<()> {
-        let remote_version = network::get_newest_version_name(&self).await?;
+        let remote_version = network::get_version(&self).await?;
         if self.version != remote_version {
-            self.newer_version = Some(remote_version);
+            self.remote_version = Some(remote_version);
         } else {
-            self.newer_version = None;
+            self.remote_version = None;
         }
         Ok(())
     }

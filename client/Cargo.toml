@@ -42,14 +42,12 @@ ron = "0.5.1"
 zip = "0.5.3"
 serde = "1.0.101"
 # other
-async-std = { version = "1.4.0", features = ["unstable"] }
+async-std = { version = "1.4.0", features = ["unstable", "attributes"] }
 derive_more = "0.15.0"
 lazy_static = "1.4.0"
 whoami = "0.5.3"
 msgbox = "0.4.0"
-# TODO: choose dirs or directories!
 dirs = "2.0.2"
-directories = "2.0.2"
 # TODO: use futures provides by Iced?
 futures = "0.3.1"
 opener = "0.4.1"

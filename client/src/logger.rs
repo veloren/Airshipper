@@ -1,4 +1,4 @@
-use crate::{Result, filesystem};
+use crate::{filesystem, Result};
 use fern::colors::{Color, ColoredLevelConfig};
 
 /// Setup logging.
@@ -21,7 +21,7 @@ pub fn log(level: log::LevelFilter) -> Result<()> {
         .level_for("iced_winit", log::LevelFilter::Info)
         .level_for("wgpu_native", log::LevelFilter::Warn)
         .level_for("gfx_backend_vulkan", log::LevelFilter::Info);
-    
+
     let file_cfg = fern::Dispatch::new()
         .level(log::LevelFilter::Debug)
         .format(|out, message, record| {
@@ -38,7 +38,7 @@ pub fn log(level: log::LevelFilter) -> Result<()> {
             ))
         })
         .chain(fern::log_file(&filesystem::get_log_path())?);
-    
+
     let mut stdout_cfg = fern::Dispatch::new().level(level);
     // If more verbose debugging is requested. We will print the lines too.
     if level == log::LevelFilter::Trace {
@@ -63,12 +63,10 @@ pub fn log(level: log::LevelFilter) -> Result<()> {
             ))
         });
     }
-    
+
     stdout_cfg = stdout_cfg.chain(std::io::stdout());
 
-    base.chain(file_cfg)
-        .chain(stdout_cfg)
-        .apply()?;
+    base.chain(file_cfg).chain(stdout_cfg).apply()?;
 
     Ok(())
 }

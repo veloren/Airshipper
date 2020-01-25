@@ -28,7 +28,7 @@ pub async fn request<T: ToString>(url: T) -> Result<Response<isahc::Body>> {
 }
 
 /// Returns the remote version of the profile
-pub async fn get_newest_version_name(profile: &Profile) -> Result<String> {
+pub async fn get_version(profile: &Profile) -> Result<String> {
     let mut resp = request(&get_version_uri(profile)).await?;
     if resp.status().is_success() {
         Ok(resp.text()?)
@@ -207,7 +207,7 @@ pub async fn install(profile: &Profile, zip_path: PathBuf) -> Result<()> {
 fn get_version_uri(profile: &Profile) -> String {
     format!(
         "{}/version/{}/{}",
-        profile.base_server_url,
+        DOWNLOAD_SERVER,
         whoami::platform(),
         profile.channel
     )
@@ -215,7 +215,7 @@ fn get_version_uri(profile: &Profile) -> String {
 fn get_artifact_uri(profile: &Profile) -> String {
     format!(
         "{}/latest/{}/{}",
-        profile.base_server_url,
+        DOWNLOAD_SERVER,
         whoami::platform(),
         profile.channel
     )
