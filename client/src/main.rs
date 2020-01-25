@@ -1,4 +1,6 @@
 mod error;
+mod filesystem;
+mod cli;
 mod gui;
 mod logger;
 mod network;
@@ -7,21 +9,12 @@ mod saved_state;
 
 use crate::error::ClientError;
 
-#[cfg(windows)]
-pub const VOXYGEN_FILE: &str = "veloren-voxygen.exe";
-#[cfg(unix)]
-pub const VOXYGEN_FILE: &str = "veloren-voxygen";
-
-#[cfg(windows)]
-pub const SERVER_CLI_FILE: &str = "veloren-server-cli.exe";
-#[cfg(unix)]
-pub const SERVER_CLI_FILE: &str = "veloren-server-cli";
-
-// TODO: * add tests
-
 pub type Result<T> = std::result::Result<T, ClientError>;
 
 fn main() {
-    let _ = logger::log(log::LevelFilter::Info);
-    gui::run();
+    if let Err(e) = cli::process() {
+        log::error!("{}", e);
+        log::info!("Press enter to exit...");
+        let _ = std::io::stdin().read_line(&mut String::new());
+    }
 }

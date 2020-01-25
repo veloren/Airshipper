@@ -1,3 +1,6 @@
+//! Takes care of all network operations
+
+use crate::filesystem;
 use crate::profiles::Profile;
 use crate::Result;
 use async_std::{fs::File, prelude::*};
@@ -5,10 +8,7 @@ use isahc::{config::RedirectPolicy, prelude::*};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-#[cfg(windows)]
-pub const DOWNLOAD_FILE: &str = "veloren.zip";
-#[cfg(unix)]
-pub const DOWNLOAD_FILE: &str = "veloren";
+pub const DOWNLOAD_SERVER: &str = "https://download.veloren.net";
 
 const CHANGELOG_URL: &str = "https://gitlab.com/veloren/veloren/raw/master/CHANGELOG.md";
 const NEWS_URL: &str = "https://veloren.net/rss.xml";
@@ -21,7 +21,7 @@ pub async fn request<T: ToString>(url: T) -> Result<Response<isahc::Body>> {
         .timeout(std::time::Duration::from_secs(20))
         .header(
             "User-Agent",
-            &format!("Airshipper v{}", env!("CARGO_PKG_VERSION")),
+            &format!("Airshipper/{}", env!("CARGO_PKG_VERSION")),
         )
         .body(())?
         .send()?)
@@ -58,7 +58,7 @@ pub fn start_download(profile: &Profile) -> Result<(isahc::Metrics, PathBuf)> {
 
     let metrics = response.metrics().unwrap().clone();
 
-    let zip_path = profile.directory.join(DOWNLOAD_FILE);
+    let zip_path = profile.directory.join(filesystem::DOWNLOAD_FILE);
     let zip_path_clone = zip_path.clone();
 
     async_std::task::spawn(async move {
@@ -136,10 +136,12 @@ pub struct Post {
 
 /// Returns a list of Posts with title, description and button url.
 pub async fn query_news() -> Result<Vec<Post>> {
+    // TODO: Do not use the from_url feature to avoid reqwest dependency!
     let feed = rss::Channel::from_url(NEWS_URL)?;
     let mut posts = Vec::new();
 
-    for post in feed.items() {
+    for post in feed.items().iter().take(15) {
+        // Only take the latest posts
         posts.push(Post {
             title: post.title().unwrap_or("Missing title").into(),
             description: process_description(post.description().unwrap_or("No description found.")),
@@ -191,12 +193,12 @@ pub async fn install(profile: &Profile, zip_path: PathBuf) -> Result<()> {
 
     // Delete downloaded zip
     log::trace!("Extracted files, deleting zip archive.");
-    std::fs::remove_file(profile.directory.join(DOWNLOAD_FILE))?;
+    std::fs::remove_file(profile.directory.join(filesystem::DOWNLOAD_FILE))?;
 
     #[cfg(unix)]
     set_permissions(vec![
-        &profile.directory.join(crate::VOXYGEN_FILE),
-        &profile.directory.join(crate::SERVER_CLI_FILE),
+        &profile.directory.join(filesystem::VOXYGEN_FILE),
+        &profile.directory.join(filesystem::SERVER_CLI_FILE),
     ])?;
 
     Ok(())
