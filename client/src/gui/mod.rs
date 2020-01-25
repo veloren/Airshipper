@@ -56,9 +56,14 @@ impl Default for Airshipper {
 
             play_button_text: "PLAY".to_owned(),
 
-            changelog: Default::default(),
+            changelog: "Loading changelog...".into(),
             changelog_etag: Default::default(),
-            news: Default::default(),
+            news: vec![network::Post {
+                title: "Loading news...".into(),
+                description: "...".into(),
+                btn_state: Default::default(),
+                button_url: "https://www.veloren.net".into(),
+            }],
             news_etag: Default::default(),
             active_profile: Default::default(),
 
@@ -204,9 +209,10 @@ impl Application for Airshipper {
             .height(Length::FillPortion(6))
             .style(style::Middle);
 
+        // TODO: Display "Ready to update..." too
         let download_text = match self.download {
             DownloadStage::None => "Ready to play...".into(),
-            DownloadStage::Download(_, _) => self.download_speed.to_string(),
+            DownloadStage::Download(_, _) => format!("{}/sec", self.download_speed.to_string()),
             DownloadStage::Install => "Installing...".into(),
         };
 
@@ -219,6 +225,7 @@ impl Application for Airshipper {
             .push(download_speed)
             .push(download_progressbar);
 
+        // TODO: Gray out/disable button while downloading, installing etc...
         let play: Element<Interaction> = Button::new(
             &mut self.play_button_state,
             Text::new(self.play_button_text.clone())

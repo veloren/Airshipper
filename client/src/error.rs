@@ -71,6 +71,12 @@ impl From<String> for ClientError {
     }
 }
 
+impl From<&str> for ClientError {
+    fn from(error: &str) -> Self {
+        Self::Custom(error.into())
+    }
+}
+
 impl From<zip::result::ZipError> for ClientError {
     fn from(error: zip::result::ZipError) -> Self {
         Self::ZipError(error)
