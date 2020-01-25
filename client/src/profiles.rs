@@ -1,6 +1,4 @@
-use crate::network;
-use crate::saved_state;
-use crate::Result;
+use crate::{filesystem, network, Result};
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -24,8 +22,7 @@ impl Default for Profile {
         Profile::new(
             "default".to_owned(),
             Channel::Nightly,
-            "https://download.veloren.net".to_owned(),
-            saved_state::get_profiles_path(),
+            network::DOWNLOAD_SERVER.to_owned(),
         )
     }
 }
@@ -39,15 +36,12 @@ pub enum Channel {
 
 impl Profile {
     /// Creates a new profile and downloads the correct files into the target directory.
-    pub fn new(name: String, channel: Channel, base_server_url: String, target: PathBuf) -> Self {
-        // TODO: check if dir is empty but available
-        let mut directory = target;
-        directory.push(name.clone());
+    pub fn new(name: String, channel: Channel, base_server_url: String) -> Self {
         Self {
+            directory: filesystem::get_profile_path(&name),
             name,
             channel,
             base_server_url,
-            directory,
             version: "".to_owned(), // Will be set by download
             newer_version: None,
         }
@@ -59,13 +53,12 @@ impl Profile {
 
     pub async fn install(mut self, zip_path: PathBuf) -> Result<Profile> {
         if let Some(newer_version) = &self.newer_version {
-            let result = network::install(&self, zip_path).await;
+            network::install(&self, zip_path).await?;
             self.version = newer_version.clone();
             self.newer_version = None;
-
-            result.map(|_| self)
+            Ok(self)
         } else {
-            Err("No newer version found".to_owned().into())
+            Err("No newer version found".into())
         }
     }
 
@@ -101,13 +94,9 @@ impl Profile {
         Ok(())
     }
 
-    pub fn _is_ready(&self) -> bool {
-        self.directory.exists()
-    }
-
     /// Returns path to voxygen binary.
     /// e.g. <base>/profiles/latest/veloren-voxygen.exe
     fn voxygen_path(&self) -> PathBuf {
-        self.directory.join(crate::VOXYGEN_FILE)
+        self.directory.join(filesystem::VOXYGEN_FILE)
     }
 }
