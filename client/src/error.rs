@@ -19,7 +19,10 @@ impl fmt::Display for ClientError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::IoError(x) => write!(f, "{}", x),
-            Self::NetworkError(x) => write!(f, "{}", x),
+            Self::NetworkError(_) => write!(
+                f,
+                "A network error occured. Please check your internet connection and try again."
+            ),
             Self::Custom(x) => write!(f, "{}", x),
 
             Self::RssError(x) => write!(f, "Failed parsing news: {}", x),
