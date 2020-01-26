@@ -44,6 +44,7 @@ pub struct Airshipper {
 
     saving: bool,
     download: DownloadStage,
+    download_text: String,
     download_speed: HumanBytes,
 }
 
@@ -53,23 +54,24 @@ impl Default for Airshipper {
             changelog_scrollable_state: Default::default(),
             news_scrollable_state: Default::default(),
             play_button_state: Default::default(),
-            progress: 100.0,
+            progress: 0.0,
 
-            play_button_text: "PLAY".to_owned(),
+            play_button_text: "Loading".to_owned(),
 
-            changelog: "Loading changelog...".into(),
+            changelog: "Loading changelog...".to_owned(),
             changelog_etag: Default::default(),
             news: vec![network::Post {
-                title: "Loading news...".into(),
-                description: "...".into(),
+                title: "Loading news...".to_owned(),
+                description: "...".to_owned(),
                 btn_state: Default::default(),
-                button_url: "https://www.veloren.net".into(),
+                button_url: "https://www.veloren.net".to_owned(),
             }],
             news_etag: Default::default(),
             active_profile: Default::default(),
 
             saving: false,
             download: DownloadStage::None,
+            download_text: "Loading...".to_owned(),
             download_speed: HumanBytes(0),
         }
     }
@@ -207,14 +209,7 @@ impl Application for Airshipper {
             .height(Length::FillPortion(6))
             .style(style::Middle);
 
-        // TODO: Display "Ready to update..." too
-        let download_text = match self.download {
-            DownloadStage::None => "Ready to play...".into(),
-            DownloadStage::Download(_, _) => format!("{}/sec", self.download_speed.to_string()),
-            DownloadStage::Install => "Installing...".into(),
-        };
-
-        let download_speed = Text::new(download_text).size(16);
+        let download_speed = Text::new(self.download_text.clone()).size(16);
         let download_progressbar =
             ProgressBar::new(0.0..=100.0, self.progress).style(style::Progress);
         let download = Column::new()
