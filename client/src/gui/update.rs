@@ -36,7 +36,8 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
                         .start_download()
                         .map(|(m, p)| DownloadStage::Download(m, p))
                         .unwrap_or(DownloadStage::None);
-                    state.play_button_text = "Download".to_owned();
+                    state.play_button_text = "Downloading".to_owned();
+                    state.download_text = "Update is being downloaded...".to_owned();
                 }
             } else {
                 return Command::perform(start(state.active_profile.clone()), Message::PlayDone);
@@ -48,31 +49,46 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
         }
         Message::UpdateCheckDone(update) => {
             // TODO: Error handling: maybe return a command which returns the error and get shown by msgbox or such?
-            if let Ok((profile, changelog, news)) = update {
-                state.active_profile = profile;
-                if state.active_profile.remote_version.is_some() {
-                    state.play_button_text = "Update".to_owned();
-                    state.progress = 0.0;
+            match update {
+                Ok((profile, changelog, news)) => {
+                    state.active_profile = profile;
+                    if state.active_profile.remote_version.is_some() {
+                        state.play_button_text = "Update".to_owned();
+                        state.download_text = "Update available".to_owned();
+                        state.progress = 0.0;
+                    } else {
+                        state.play_button_text = "PLAY".to_owned();
+                        state.download_text = "Ready to play".to_owned();
+                        state.progress = 100.0;
+                    }
+                    if let Some(changelog) = changelog {
+                        state.changelog = changelog;
+                    }
+                    if let Some(news) = news {
+                        state.news = news;
+                    }
+                    needs_save = true
                 }
-                if let Some(changelog) = changelog {
-                    state.changelog = changelog;
+                Err(e) => {
+                    state.play_button_text = "ERROR".to_owned();
+                    state.download_text = format!("{}", e);
                 }
-                if let Some(news) = news {
-                    state.news = news;
-                }
-                needs_save = true
             }
         }
         Message::InstallDone(result) => {
             // TODO: Error handling: maybe return a command which returns the error and get shown by msgbox or such?
-            if let Ok(profile) = result {
-                state.active_profile = profile;
-                state.play_button_text = "PLAY".to_owned();
-                state.progress = 100.0;
-                needs_save = true;
-            } else {
-                state.play_button_text = "ERROR".to_owned();
-                state.progress = 0.0;
+            match result {
+                Ok(profile) => {
+                    state.active_profile = profile;
+                    state.play_button_text = "PLAY".to_owned();
+                    state.download_text = "Ready to play".to_owned();
+                    state.progress = 100.0;
+                    needs_save = true;
+                } Err(e) => {
+                    state.play_button_text = "ERROR".to_owned();
+                    state.download_text = format!("{}", e);
+                    state.progress = 0.0;
+                }
             }
 
             state.download = DownloadStage::None;
@@ -87,6 +103,7 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
 
                     if portion == 100.0 {
                         state.play_button_text = "Install".to_owned();
+                        state.download_text = "Update is being installed...".to_owned();
                         state.download = DownloadStage::Install;
                         return Command::perform(
                             install(state.active_profile.clone(), p.clone()),
@@ -97,8 +114,12 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
                 _ => {}
             }
         }
-        Message::PlayDone(_start_game_result) => {
-            // TODO: Error handling: maybe return a command which returns the error and get shown by msgbox or such?
+        Message::PlayDone(result) => {
+            if let Err(e) = result {
+                state.play_button_text = "ERROR".to_owned();
+                state.download_text = format!("{}", e);
+                state.progress = 0.0;
+            }
         }
     }
 
