@@ -46,7 +46,6 @@ async-std = { version = "1.4.0", features = ["unstable", "attributes"] }
 derive_more = "0.15.0"
 lazy_static = "1.4.0"
 whoami = "0.5.3"
-msgbox = "0.4.0"
 dirs = "2.0.2"
 # TODO: use futures provides by Iced?
 futures = "0.3.1"

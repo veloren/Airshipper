@@ -1,10 +1,4 @@
 //! Deals with all filesystem specific details
-//!
-//! If Airshipper finds itself in a installation location like `/usr/bin/` or `Program Files`
-//! then all paths will be based on the respective platform defaults:
-//!
-//!
-//! If Airshipper hasn't been installed it will default to the current working directory for ease of testing/developing.
 
 use std::path::PathBuf;
 
