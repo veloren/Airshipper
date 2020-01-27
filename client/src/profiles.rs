@@ -58,7 +58,7 @@ impl Profile {
     }
 
     // TODO: add possibility to start the server too
-    pub async fn start(&self) -> Result<()> {
+    pub fn start(&self) -> Result<()> {
         let mut envs = HashMap::new();
         envs.insert("VOXYGEN_CONFIG", self.directory.clone().into_os_string());
 

@@ -6,24 +6,22 @@ use {
     std::path::PathBuf,
 };
 
-pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Message> {
+pub fn handle_message(state: &mut Airshipper, message: Message) -> Result<Command<Message>> {
     let mut needs_save = false;
 
     match message {
         Message::Loaded(saved_state) => {
-            // TODO: Error handling: maybe return a command which returns the error and get shown by msgbox or such?
-            if let Ok(saved) = saved_state {
-                state.update_from_save(saved);
-            }
+            let saved_state = saved_state?;
+            state.update_from_save(saved_state);
 
-            return Command::perform(
+            return Ok(Command::perform(
                 check_for_updates(
                     state.active_profile.clone(),
                     state.changelog_etag.clone(),
                     state.news_etag.clone(),
                 ),
                 Message::UpdateCheckDone,
-            );
+            ));
         }
         Message::Saved(_) => {
             state.saving = false;
@@ -40,57 +38,42 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
                     state.download_text = "Update is being downloaded...".to_owned();
                 }
             } else {
-                return Command::perform(start(state.active_profile.clone()), Message::PlayDone);
+                return Ok(Command::perform(start(state.active_profile.clone()), Message::PlayDone));
             }
         }
         Message::Interaction(Interaction::ReadMore(url)) => {
-            // TODO: Error handling: maybe return a command which returns the error and get shown by msgbox or such?
-            opener::open(&url).expect(&format!("Failed to open {}", url));
+            if let Err(e) = opener::open(&url) {
+                return Err(format!("failed to open {} : {}", url, e).into());
+            }
         }
         Message::UpdateCheckDone(update) => {
-            // TODO: Error handling: maybe return a command which returns the error and get shown by msgbox or such?
-            match update {
-                Ok((profile, changelog, news)) => {
-                    state.active_profile = profile;
-                    if state.active_profile.remote_version.is_some() {
-                        state.play_button_text = "Update".to_owned();
-                        state.download_text = "Update available".to_owned();
-                        state.progress = 0.0;
-                    } else {
-                        state.play_button_text = "PLAY".to_owned();
-                        state.download_text = "Ready to play".to_owned();
-                        state.progress = 100.0;
-                    }
-                    if let Some(changelog) = changelog {
-                        state.changelog = changelog;
-                    }
-                    if let Some(news) = news {
-                        state.news = news;
-                    }
-                    needs_save = true
-                }
-                Err(e) => {
-                    state.play_button_text = "ERROR".to_owned();
-                    state.download_text = format!("{}", e);
-                }
+            let (profile, changelog, news) = update?;
+            
+            state.active_profile = profile;
+            if state.active_profile.remote_version.is_some() {
+                state.play_button_text = "Update".to_owned();
+                state.download_text = "Update available".to_owned();
+                state.progress = 0.0;
+            } else {
+                state.play_button_text = "PLAY".to_owned();
+                state.download_text = "Ready to play".to_owned();
+                state.progress = 100.0;
             }
+            if let Some(changelog) = changelog {
+                state.changelog = changelog;
+            }
+            if let Some(news) = news {
+                state.news = news;
+            }
+            needs_save = true
         }
         Message::InstallDone(result) => {
-            // TODO: Error handling: maybe return a command which returns the error and get shown by msgbox or such?
-            match result {
-                Ok(profile) => {
-                    state.active_profile = profile;
-                    state.play_button_text = "PLAY".to_owned();
-                    state.download_text = "Ready to play".to_owned();
-                    state.progress = 100.0;
-                    needs_save = true;
-                } Err(e) => {
-                    state.play_button_text = "ERROR".to_owned();
-                    state.download_text = format!("{}", e);
-                    state.progress = 0.0;
-                }
-            }
-
+            let profile = result?;
+            state.active_profile = profile;
+            state.play_button_text = "PLAY".to_owned();
+            state.download_text = "Ready to play".to_owned();
+            state.progress = 100.0;
+            needs_save = true;
             state.download = DownloadStage::None;
         }
         Message::Tick(_) => {
@@ -105,30 +88,30 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Command<Messa
                         state.play_button_text = "Install".to_owned();
                         state.download_text = "Update is being installed...".to_owned();
                         state.download = DownloadStage::Install;
-                        return Command::perform(
+                        return Ok(Command::perform(
                             install(state.active_profile.clone(), p.clone()),
                             Message::InstallDone,
-                        );
+                        ));
                     }
                 }
                 _ => {}
             }
         }
-        Message::PlayDone(result) => {
-            if let Err(e) = result {
-                state.play_button_text = "ERROR".to_owned();
-                state.download_text = format!("{}", e);
-                state.progress = 0.0;
-            }
+        Message::Error(e) | Message::PlayDone(Err(e)) => {
+            state.play_button_text = "ERROR".to_owned();
+            state.download_text = format!("{}", e);
+            state.progress = 0.0;
         }
+        // Everything went fine when playing the game :O
+        Message::PlayDone(Ok(())) => {}
     }
 
     if needs_save && !state.saving {
         state.saving = true;
-        return Command::perform(state.into_save().save(), Message::Saved);
+        return Ok(Command::perform(state.into_save().save(), Message::Saved));
     }
 
-    Command::none()
+    Ok(Command::none())
 }
 
 /// Will check for profile updates and updated changelog, news.
@@ -161,5 +144,5 @@ async fn install(profile: Profile, zip_path: PathBuf) -> Result<Profile> {
 }
 
 async fn start(profile: Profile) -> Result<()> {
-    Ok(profile.start().await?)
+    Ok(profile.start()?)
 }

@@ -2,7 +2,7 @@ mod style;
 mod time;
 mod update;
 
-use crate::{filesystem, network, profiles::Profile, state::State, Result};
+use crate::{filesystem, network, profiles::Profile, state::State, Result, error::ClientError};
 use iced::{
     button, scrollable, Align, Application, Button, Column, Command, Container, Element,
     HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable, Settings, Subscription, Text,
@@ -103,6 +103,7 @@ pub enum Message {
     Tick(()), // TODO: Get rid of Tick by implementing download via subscription
     InstallDone(Result<Profile>),
     PlayDone(Result<()>),
+    Error(ClientError)
 }
 
 #[derive(Debug, Clone)]
@@ -134,7 +135,10 @@ impl Application for Airshipper {
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
-        update::handle_message(self, message)
+        match update::handle_message(self, message) {
+            Ok(x) => x,
+            Err(e) => Command::perform(async { e }, Message::Error),
+        }
     }
 
     fn view(&mut self) -> Element<Message> {
