@@ -4,6 +4,7 @@ use crate::{filesystem, network, profiles::Profile, Result};
 use async_std::prelude::*;
 use serde::{Deserialize, Serialize};
 
+/// Stores/Caches data needed
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct State {
     pub changelog: String,
@@ -16,13 +17,38 @@ pub struct State {
 }
 
 impl State {
-    // TODO: If file does not exist return default!
+    pub async fn install_profile(&mut self) -> Result<()> {
+        self.active_profile = self.active_profile.clone().install().await?;
+        Ok(())
+    }
+
+    pub async fn update_profile(&mut self) -> Result<isahc::Metrics> {
+        self.active_profile.start_download()
+    }
+
+    pub async fn check_for_profile_update(&mut self) -> Result<bool> {
+        self.active_profile.check_for_update().await
+    }
+
+    pub async fn start_profile(&mut self) -> Result<()> {
+        self.active_profile.start()
+    }
+
     pub async fn load() -> Result<Self> {
         let mut contents = String::new();
 
-        let mut file = async_std::fs::File::open(filesystem::get_savedstate_path()).await?;
-        file.read_to_string(&mut contents).await?;
-
+        match async_std::fs::File::open(filesystem::get_savedstate_path()).await {
+            Ok(mut file) => {
+                file.read_to_string(&mut contents).await?;
+            }
+            Err(e) => match e.kind() {
+                std::io::ErrorKind::NotFound => {
+                    log::debug!("saved state not found. Fallback to default!");
+                    return Ok(State::default());
+                }
+                _ => return Err(e.into()),
+            },
+        }
         Ok(ron::de::from_str(&contents)?)
     }
 

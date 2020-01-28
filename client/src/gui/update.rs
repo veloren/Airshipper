@@ -3,7 +3,6 @@ use {
     crate::{network, profiles::Profile, Result},
     iced::Command,
     indicatif::HumanBytes,
-    std::path::PathBuf,
 };
 
 pub fn handle_message(state: &mut Airshipper, message: Message) -> Result<Command<Message>> {
@@ -32,14 +31,17 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Result<Comman
                     state.download = state
                         .active_profile
                         .start_download()
-                        .map(|(m, p)| DownloadStage::Download(m, p))
+                        .map(|m| DownloadStage::Download(m))
                         .unwrap_or(DownloadStage::None);
                     state.play_button_text = "Downloading".to_owned();
                     state.download_text = "Update is being downloaded...".to_owned();
                 }
             } else if !state.loading && !state.playing {
                 state.playing = true;
-                return Ok(Command::perform(start(state.active_profile.clone()), Message::PlayDone));
+                return Ok(Command::perform(
+                    start(state.active_profile.clone()),
+                    Message::PlayDone,
+                ));
             }
         }
         Message::Interaction(Interaction::ReadMore(url)) => {
@@ -51,7 +53,7 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Result<Comman
             state.loading = false;
 
             let (profile, changelog, news) = update?;
-            
+
             state.active_profile = profile;
             if state.active_profile.remote_version.is_some() {
                 state.play_button_text = "Update".to_owned();
@@ -81,7 +83,7 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Result<Comman
         }
         Message::Tick(_) => {
             match &state.download.clone() {
-                DownloadStage::Download(m, p) => {
+                DownloadStage::Download(m) => {
                     let portion =
                         ((m.download_progress().0 * 100) / m.download_progress().1) as f32;
                     state.progress = portion * 0.8; // Leave some percentages for the install process
@@ -92,7 +94,7 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Result<Comman
                         state.download_text = "Update is being installed...".to_owned();
                         state.download = DownloadStage::Install;
                         return Ok(Command::perform(
-                            install(state.active_profile.clone(), p.clone()),
+                            install(state.active_profile.clone()),
                             Message::InstallDone,
                         ));
                     }
@@ -140,15 +142,18 @@ async fn check_for_updates(
     Ok((profile, changelog, news))
 }
 
+// TODO: call state.check_for_profile_update() instead
 async fn check_for_update(mut profile: Profile) -> Result<Profile> {
     profile.check_for_update().await?;
     Ok(profile)
 }
 
-async fn install(profile: Profile, zip_path: PathBuf) -> Result<Profile> {
-    Ok(profile.install(zip_path).await?)
+// TODO: call state.install_profile() instead
+async fn install(profile: Profile) -> Result<Profile> {
+    Ok(profile.install().await?)
 }
 
+// TODO: call state.start_profile() instead
 async fn start(profile: Profile) -> Result<()> {
     Ok(profile.start()?)
 }

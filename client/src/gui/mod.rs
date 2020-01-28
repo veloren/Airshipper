@@ -9,7 +9,7 @@ use iced::{
     VerticalAlignment,
 };
 use indicatif::HumanBytes;
-use std::{path::PathBuf, time::Duration};
+use std::time::Duration;
 
 /// Starts the GUI won't return
 pub fn run() {
@@ -23,7 +23,7 @@ pub fn run() {
 #[derive(Debug, Clone)]
 pub enum DownloadStage {
     None,
-    Download(isahc::Metrics, PathBuf),
+    Download(isahc::Metrics),
     Install,
 }
 
@@ -236,7 +236,6 @@ impl Application for Airshipper {
             .push(download_speed)
             .push(download_progressbar);
 
-        // TODO: Gray out/disable button while downloading, installing etc...
         let mut play = Button::new(
             &mut self.play_button_state,
             Text::new(self.play_button_text.clone())
@@ -251,6 +250,7 @@ impl Application for Airshipper {
         .style(style::PlayButton)
         .padding(2);
 
+        // Disable button if loading, playing or downloading the game.
         if self.loading || self.playing || !self.download.is_none() {
             play = play.style(style::PlayButtonDisabled);
         }

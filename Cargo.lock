@@ -25,6 +25,7 @@ dependencies = [
  "derive_more 0.15.0",
  "dirs 2.0.2",
  "fern",
+ "find_folder",
  "futures 0.3.1",
  "html2text",
  "iced",
@@ -1209,6 +1210,12 @@ dependencies = [
  "redox_syscall",
  "winapi 0.3.8",
 ]
+
+[[package]]
+name = "find_folder"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f6d018fb95a0b59f854aed68ecd96ce2b80af7911b92b1fed3c4b1fa516b91b"
 
 [[package]]
 name = "flate2"
