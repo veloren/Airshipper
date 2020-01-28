@@ -1,3 +1,6 @@
+// https://github.com/rust-lang/rust/pull/40870
+#![windows_subsystem = "windows"]
+
 mod cli;
 mod error;
 mod filesystem;
