@@ -23,6 +23,29 @@ impl button::StyleSheet for PlayButton {
     }
 }
 
+pub struct PlayButtonDisabled;
+impl button::StyleSheet for PlayButtonDisabled {
+    fn active(&self) -> button::Style {
+        button::Style {
+            background: Some(Background::Color(Color::from_rgb(0.25, 0.24, 0.22))),
+            border_color: Color::from_rgb(0.29, 0.19, 0.03),
+            border_width: 4,
+            shadow_offset: Vector::new(1.0, 1.0),
+            text_color: Color::from_rgb8(0xEE, 0xEE, 0xEE),
+            ..button::Style::default()
+        }
+    }
+
+    fn hovered(&self) -> button::Style {
+        button::Style {
+            background: Some(Background::Color(Color::from_rgb(0.25, 0.24, 0.22))),
+            text_color: Color::from_rgb8(0xEE, 0xEE, 0xEE),
+            shadow_offset: Vector::new(1.0, 2.0),
+            ..self.active()
+        }
+    }
+}
+
 pub struct ReadMoreButton;
 impl button::StyleSheet for ReadMoreButton {
     fn active(&self) -> button::Style {
