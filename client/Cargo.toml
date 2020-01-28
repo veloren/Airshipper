@@ -37,7 +37,7 @@ isahc = "0.8.2"
 # parsing
 html2text = "0.1.8"
 strip_markdown = "0.1.0"
-rss = { version = "1.8.0" }
+rss = "1.8.0"
 ron = "0.5.1"
 zip = "0.5.3"
 serde = "1.0.101"
@@ -47,6 +47,7 @@ derive_more = "0.15.0"
 lazy_static = "1.4.0"
 whoami = "0.5.3"
 dirs = "2.0.2"
+find_folder = "0.3.0"
 # TODO: use futures provides by Iced?
 futures = "0.3.1"
 opener = "0.4.1"

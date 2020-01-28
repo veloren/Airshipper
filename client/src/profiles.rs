@@ -41,14 +41,14 @@ impl Profile {
         }
     }
 
-    pub fn start_download(&self) -> Result<(isahc::Metrics, PathBuf)> {
+    pub fn start_download(&self) -> Result<isahc::Metrics> {
         network::start_download(&self)
     }
 
-    pub async fn install(mut self, zip_path: PathBuf) -> Result<Profile> {
+    pub async fn install(mut self) -> Result<Profile> {
         if let Some(newer_version) = &self.remote_version {
             // TODO: maybe let install return the new profile or make it all &mut
-            network::install(&self, zip_path).await?;
+            network::install(&self).await?;
             self.version = newer_version.clone();
             self.remote_version = None;
             Ok(self)
@@ -79,14 +79,15 @@ impl Profile {
         Ok(())
     }
 
-    pub async fn check_for_update(&mut self) -> Result<()> {
+    pub async fn check_for_update(&mut self) -> Result<bool> {
         let remote_version = network::get_version(&self).await?;
         if self.version != remote_version {
             self.remote_version = Some(remote_version);
+            Ok(true)
         } else {
             self.remote_version = None;
+            Ok(false)
         }
-        Ok(())
     }
 
     /// Returns path to voxygen binary.

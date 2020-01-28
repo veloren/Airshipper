@@ -1,7 +1,7 @@
-use crate::{filesystem, gui, logger, /*state::State, profiles::Profile,*/ Result};
+use crate::{filesystem, gui, logger, state::State, Result};
 use clap::{load_yaml, App};
 
-/// Process command line arguments and optionally start GUI
+/// Process command line arguments and optionally starts GUI
 pub async fn process() -> Result<()> {
     let yml = load_yaml!("clap.yml");
     let version = format!("v{}", env!("CARGO_PKG_VERSION"));
@@ -21,21 +21,104 @@ pub async fn process() -> Result<()> {
 
     log::debug!("Running on {}", whoami::os());
     log::debug!("Base Path: {}", filesystem::base_path());
-    log::debug!("Log file Path: {}", filesystem::get_log_path().display());
+    log::debug!("Log file: {}", filesystem::get_log_path().display());
+    log::debug!("Assets Path: {}", filesystem::assets_path());
 
-    //let state = State::load().await?;
+    let mut state = State::load().await?;
 
     // handle arguments
     if m.is_present("update") {
-        //update(&mut state).await?;
+        update(&mut state, true).await?;
     } else if m.is_present("start") {
+        // TODO: Check if profile is installed...
         log::info!("Starting...");
-    //start(&mut state, &state.active_profile).await?;
+        start(&mut state).await?;
     } else if m.is_present("run") {
-        //update(&mut state).await?;
-        //start(&mut state, &state.active_profile).await?;
+        update(&mut state, false).await?;
+        start(&mut state).await?;
     } else {
         gui::run();
     }
+
+    // Save state
+    state.save().await?;
+
     Ok(())
+}
+
+async fn update(state: &mut State, do_not_ask: bool) -> Result<()> {
+    if state.check_for_profile_update().await? {
+        if do_not_ask {
+            log::info!("Updating...");
+            let metrics = state.update_profile().await?;
+            print_progress(metrics).await;
+            log::info!("Extracting...");
+            state.install_profile().await?;
+            log::info!("Done!");
+        } else {
+            log::info!("Update found, do you want to update? [Y/n]");
+            if confirm_action()? {
+                let metrics = state.update_profile().await?;
+                print_progress(metrics).await;
+                log::info!("Extracting...");
+                state.install_profile().await?;
+                log::info!("Done!");
+            }
+        }
+    } else {
+        log::info!("Profile already up-to-date.");
+    }
+    Ok(())
+}
+
+async fn print_progress(metrics: isahc::Metrics) {
+    use indicatif::{FormattedDuration, HumanBytes, ProgressBar, ProgressStyle};
+
+    let bar = ProgressBar::new(0).with_style(
+        ProgressStyle::default_bar()
+            .template("[{elapsed_precise}] [{bar:40.green/white}] {bytes}/{total_bytes} ({eta})")
+            .progress_chars("=>-"),
+    );
+
+    loop {
+        let percentage =
+            ((metrics.download_progress().0 * 100) / metrics.download_progress().1) as f32;
+        if percentage >= 100.0 {
+            break;
+        }
+        bar.set_position(metrics.download_progress().0);
+        bar.set_length(metrics.download_progress().1);
+        bar.set_message(&format!(
+            "time: {}  speed: {}/sec",
+            FormattedDuration(metrics.total_time()),
+            HumanBytes(metrics.download_speed() as u64),
+        ));
+
+        std::thread::sleep(std::time::Duration::from_millis(200));
+    }
+}
+
+async fn start(state: &mut State) -> Result<()> {
+    log::info!("Starting...");
+    Ok(state.start_profile().await?)
+}
+
+/// Will read from stdin for confirmation
+/// NOTE: no input = true
+/// Temporary...
+fn confirm_action() -> Result<bool> {
+    let mut buffer = String::new();
+    let _ = std::io::stdin().read_line(&mut buffer)?;
+    buffer = buffer.to_lowercase();
+
+    if buffer.trim().is_empty() {
+        Ok(true)
+    } else if buffer.starts_with("y") {
+        Ok(true)
+    } else if buffer.starts_with("n") {
+        Ok(false)
+    } else {
+        // for the accidental key smash
+        Ok(false)
+    }
 }

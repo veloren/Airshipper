@@ -6,8 +6,8 @@ use crate::Result;
 use async_std::{fs::File, prelude::*};
 use isahc::{config::RedirectPolicy, prelude::*};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use std::io::BufReader;
+use std::path::PathBuf;
 
 pub const DOWNLOAD_SERVER: &str = "https://download.veloren.net";
 
@@ -43,7 +43,7 @@ pub async fn get_version(profile: &Profile) -> Result<String> {
 }
 
 /// Starts a download of the zip to target directory
-pub fn start_download(profile: &Profile) -> Result<(isahc::Metrics, PathBuf)> {
+pub fn start_download(profile: &Profile) -> Result<isahc::Metrics> {
     log::info!("Downloading {} - {}", profile.name, profile.channel);
 
     // Download
@@ -90,7 +90,7 @@ pub fn start_download(profile: &Profile) -> Result<(isahc::Metrics, PathBuf)> {
             }
         }
     });
-    Ok((metrics, zip_path.to_owned()))
+    Ok(metrics)
 }
 
 pub async fn compare_changelog_etag(cached: &str) -> Result<bool> {
@@ -168,10 +168,10 @@ fn process_description(post: &str) -> String {
 }
 
 /// Unzips to target directory and changes permissions
-pub async fn install(profile: &Profile, zip_path: PathBuf) -> Result<()> {
+pub async fn install(profile: &Profile) -> Result<()> {
     // Extract
     log::info!("Unzipping to {:?}", profile.directory);
-    let mut zip_file = std::fs::File::open(&zip_path)?;
+    let mut zip_file = std::fs::File::open(&profile.directory.join(filesystem::DOWNLOAD_FILE))?;
 
     let mut archive = zip::ZipArchive::new(&mut zip_file)?;
 
