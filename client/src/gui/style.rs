@@ -27,7 +27,7 @@ pub struct PlayButtonDisabled;
 impl button::StyleSheet for PlayButtonDisabled {
     fn active(&self) -> button::Style {
         button::Style {
-            background: Some(Background::Color(Color::from_rgb(0.25, 0.24, 0.22))),
+            background: Some(Background::Color(Color::from_rgb8(72, 95, 103))),
             border_color: Color::from_rgb(0.29, 0.19, 0.03),
             border_width: 4,
             shadow_offset: Vector::new(1.0, 1.0),
@@ -38,7 +38,7 @@ impl button::StyleSheet for PlayButtonDisabled {
 
     fn hovered(&self) -> button::Style {
         button::Style {
-            background: Some(Background::Color(Color::from_rgb(0.25, 0.24, 0.22))),
+            background: Some(Background::Color(Color::from_rgb8(91, 110, 117))),
             text_color: Color::from_rgb8(0xEE, 0xEE, 0xEE),
             shadow_offset: Vector::new(1.0, 2.0),
             ..self.active()
