@@ -2,7 +2,7 @@ mod style;
 mod time;
 mod update;
 
-use crate::{filesystem, network, profiles::Profile, state::State, Result, error::ClientError};
+use crate::{error::ClientError, filesystem, network, profiles::Profile, state::State, Result};
 use iced::{
     button, scrollable, Align, Application, Button, Column, Command, Container, Element,
     HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable, Settings, Subscription, Text,
@@ -27,6 +27,16 @@ pub enum DownloadStage {
     Install,
 }
 
+impl DownloadStage {
+    fn is_none(&self) -> bool {
+        if let DownloadStage::None = self {
+            true
+        } else {
+            false
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Airshipper {
     changelog_scrollable_state: scrollable::State,
@@ -35,6 +45,7 @@ pub struct Airshipper {
     progress: f32,
 
     play_button_text: String,
+    loading: bool,
 
     changelog: String,
     changelog_etag: String,
@@ -46,6 +57,7 @@ pub struct Airshipper {
     download: DownloadStage,
     download_text: String,
     download_speed: HumanBytes,
+    playing: bool,
 }
 
 impl Default for Airshipper {
@@ -57,6 +69,7 @@ impl Default for Airshipper {
             progress: 0.0,
 
             play_button_text: "Loading".to_owned(),
+            loading: true,
 
             changelog: "Loading changelog...".to_owned(),
             changelog_etag: Default::default(),
@@ -73,6 +86,7 @@ impl Default for Airshipper {
             download: DownloadStage::None,
             download_text: "Loading...".to_owned(),
             download_speed: HumanBytes(0),
+            playing: false,
         }
     }
 }
@@ -103,7 +117,7 @@ pub enum Message {
     Tick(()), // TODO: Get rid of Tick by implementing download via subscription
     InstallDone(Result<Profile>),
     PlayDone(Result<()>),
-    Error(ClientError)
+    Error(ClientError),
 }
 
 #[derive(Debug, Clone)]
@@ -223,7 +237,7 @@ impl Application for Airshipper {
             .push(download_progressbar);
 
         // TODO: Gray out/disable button while downloading, installing etc...
-        let play: Element<Interaction> = Button::new(
+        let mut play = Button::new(
             &mut self.play_button_state,
             Text::new(self.play_button_text.clone())
                 .size(30)
@@ -234,9 +248,14 @@ impl Application for Airshipper {
         .on_press(Interaction::PlayPressed)
         .width(Length::Fill)
         .height(Length::Units(60))
-        .padding(2)
         .style(style::PlayButton)
-        .into();
+        .padding(2);
+
+        if self.loading || self.playing || !self.download.is_none() {
+            play = play.style(style::PlayButtonDisabled);
+        }
+
+        let play: Element<Interaction> = play.into();
 
         let bottom = Row::new()
             .align_items(Align::End)
