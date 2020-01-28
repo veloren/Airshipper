@@ -88,6 +88,7 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Result<Comman
                         ((m.download_progress().0 * 100) / m.download_progress().1) as f32;
                     state.progress = portion * 0.8; // Leave some percentages for the install process
                     state.download_speed = HumanBytes(m.download_speed() as u64);
+                    state.download_text = format!("Update is being downloaded... {}/s", state.download_speed);
 
                     if portion == 100.0 {
                         state.play_button_text = "Install".to_owned();
