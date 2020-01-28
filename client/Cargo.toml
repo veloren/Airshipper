@@ -37,7 +37,7 @@ isahc = "0.8.2"
 # parsing
 html2text = "0.1.8"
 strip_markdown = "0.1.0"
-rss = { version = "1.8.0", features = ["from_url"] }
+rss = { version = "1.8.0" }
 ron = "0.5.1"
 zip = "0.5.3"
 serde = "1.0.101"

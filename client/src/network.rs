@@ -7,6 +7,7 @@ use async_std::{fs::File, prelude::*};
 use isahc::{config::RedirectPolicy, prelude::*};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use std::io::BufReader;
 
 pub const DOWNLOAD_SERVER: &str = "https://download.veloren.net";
 
@@ -136,8 +137,8 @@ pub struct Post {
 
 /// Returns a list of Posts with title, description and button url.
 pub async fn query_news() -> Result<Vec<Post>> {
-    // TODO: Do not use the from_url feature to avoid reqwest dependency!
-    let feed = rss::Channel::from_url(NEWS_URL)?;
+    let mut response = isahc::get(NEWS_URL)?;
+    let feed = rss::Channel::read_from(BufReader::new(response.body_mut()))?;
     let mut posts = Vec::new();
 
     for post in feed.items().iter().take(15) {
