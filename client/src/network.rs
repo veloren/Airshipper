@@ -46,28 +46,23 @@ pub async fn get_version(profile: &Profile) -> Result<String> {
 pub fn start_download(profile: &Profile) -> Result<isahc::Metrics> {
     log::info!("Downloading {} - {}", profile.name, profile.channel);
 
-    // Download
     std::fs::create_dir_all(&profile.directory)?;
 
     let mut response = Request::get(get_artifact_uri(&profile))
         .metrics(true)
         .redirect_policy(RedirectPolicy::Follow)
-        .body(())
-        .expect("error handling")
-        .send()
-        .expect("error handling");
+        .body(())?
+        .send()?;
 
     let metrics = response.metrics().unwrap().clone();
 
     let zip_path = profile.directory.join(filesystem::DOWNLOAD_FILE);
-    let zip_path_clone = zip_path.clone();
 
     async_std::task::spawn(async move {
         let body = response.body_mut();
         let mut buffer = [0; 8000]; // 8KB
-        let mut file = File::create(&zip_path_clone)
-            .await
-            .expect("TODO: error handling");
+        // TODO: deal with this error!
+        let mut file = File::create(&zip_path).await.expect("failed to create file for download!");
 
         loop {
             match body.read(&mut buffer).await {
@@ -78,6 +73,7 @@ pub fn start_download(profile: &Profile) -> Result<isahc::Metrics> {
                 Ok(x) => {
                     file.write_all(&buffer[0..x])
                         .await
+                        // TODO: deal with this error!
                         .expect("TODO: error handling");
                     for i in 0..x {
                         buffer[i] = 0;
