@@ -37,7 +37,8 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Result<Comman
                     state.play_button_text = "Downloading".to_owned();
                     state.download_text = "Update is being downloaded...".to_owned();
                 }
-            } else {
+            } else if !state.loading && !state.playing {
+                state.playing = true;
                 return Ok(Command::perform(start(state.active_profile.clone()), Message::PlayDone));
             }
         }
@@ -47,6 +48,8 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Result<Comman
             }
         }
         Message::UpdateCheckDone(update) => {
+            state.loading = false;
+
             let (profile, changelog, news) = update?;
             
             state.active_profile = profile;
@@ -101,9 +104,12 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Result<Comman
             state.play_button_text = "ERROR".to_owned();
             state.download_text = format!("{}", e);
             state.progress = 0.0;
+            state.playing = false;
         }
         // Everything went fine when playing the game :O
-        Message::PlayDone(Ok(())) => {}
+        Message::PlayDone(Ok(())) => {
+            state.playing = false;
+        }
     }
 
     if needs_save && !state.saving {
