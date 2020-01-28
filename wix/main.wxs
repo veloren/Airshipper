@@ -30,44 +30,51 @@
 <?endif ?>
 
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
-    <Product Id='*' Name='Veloren' UpgradeCode='1715788C-2FC7-44D7-912D-2B46202C2FD9' Manufacturer='Veloren' Language='1033' Codepage='1252' Version='$(var.Version)'>
-    <Package Id='*' Keywords='Installer' Description='Veloren is a multiplayer voxel RPG written in Rust.' Manufacturer='Veloren' InstallerVersion='450' Languages='1033' Compressed='yes' InstallScope='perMachine' SummaryCodepage='1252' Platform='$(var.Platform)'/>
+    <Product Id='*' Name='Airshipper' UpgradeCode='1715788C-2FC7-44D7-912D-2B46202C2FD9' Manufacturer='Airshipper contributors' Language='1033' Codepage='1252' Version='$(var.Version)'>
+    <Package Id='*' Keywords='Installer' Description='Provides automatic updates for the voxel RPG Veloren.' Manufacturer='Airshipper contributors' InstallerVersion='450' Languages='1033' Compressed='yes' InstallScope='perMachine' SummaryCodepage='1252' Platform='$(var.Platform)'/>
 
     <MajorUpgrade Schedule='afterInstallInitialize' DowngradeErrorMessage='A newer version of [ProductName] is already installed. Setup will now exit.'/>
 
     <Property Id="APPLICATIONFOLDER" Secure="yes">
       <RegistrySearch Id="FindInstallLocation"
           Root="HKCU"
-          Key="Software\Veloren"
+          Key="Software\Airshipper"
           Name="InstallationPath"
           Type="raw"
           Win64="$(var.Win64)" />
     </Property>
 
     <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1'/>
-    <Property Id='DiskPrompt' Value='Veloren Installation'/>
+    <Property Id='DiskPrompt' Value='Airshipper Installation'/>
     <Property Id="START_VIA_REGISTRY">1</Property>
 
     <Directory Id='TARGETDIR' Name='SourceDir'>
       <Directory Id="ProgramMenuFolder">
-        <Directory Id="ApplicationProgramsFolder" Name="Veloren">
-          <!-- Create shortcut to start Veloren from taskbar search -->
+        <Directory Id="ApplicationProgramsFolder" Name="Airshipper">
+          <!-- Create shortcut to start Airshipper from taskbar search -->
           <Component Id='ApplicationShortcut' Guid='{E2CD5A52-9B7C-410F-8C85-0D834C435A43}' Win64='$(var.Win64)'>
-            <Shortcut Id='ApplicationStartMenuShortcut' Name='Veloren' Description='Veloren' Target='[!veloren.exe]' WorkingDirectory='APPLICATIONFOLDER' />
+            <Shortcut Id='ApplicationStartMenuShortcut' Name='Airshipper' Description='Airshipper' Target='[!airshipper.exe]' WorkingDirectory='APPLICATIONFOLDER' />
             <RemoveFolder Id='CleanUpShortCut' Directory='ApplicationProgramsFolder' On='uninstall'/>
-            <RegistryValue Root='HKCU' Key='Software\Veloren' Name='installed' Type='integer' Value='1' KeyPath='yes'/>
+            <RegistryValue Root='HKCU' Key='Software\Airshipper' Name='installed' Type='integer' Value='1' KeyPath='yes'/>
             <!-- make upgrading easier by remembering where it was installed -->
-            <RegistryValue Root='HKCU' Key='Software\Veloren' Name='InstallationPath' Type='string' Value='[APPLICATIONFOLDER]' />
+            <RegistryValue Root='HKCU' Key='Software\Airshipper' Name='InstallationPath' Type='string' Value='[APPLICATIONFOLDER]' />
           </Component>
         </Directory>
       </Directory>
 
       <Directory Id='$(var.PlatformProgramFilesFolder)' Name='PFiles'>
-        <Directory Id='APPLICATIONFOLDER' Name='Veloren'>
-          <!-- Veloren itself-->
-          <Component Id='veloren.exe' Guid='{dd1e4a01-ff62-4d96-a9ce-a5d7d7548fad}' Win64='$(var.Win64)'>
-            <File Id='veloren.exe' Name='veloren.exe' DiskId='1' Source='target\release\veloren.exe' KeyPath='yes'/>
+        <Directory Id='APPLICATIONFOLDER' Name='Airshipper'>
+          <!-- Airshipper itself -->
+          <Component Id='airshipper.exe' Guid='{dd1e4a01-ff62-4d96-a9ce-a5d7d7548fad}' Win64='$(var.Win64)'>
+            <File Id='airshipper.exe' Name='airshipper.exe' DiskId='1' Source='target\release\airshipper.exe' KeyPath='yes'/>
           </Component>
+          <!-- All assets -->
+          <Directory Id='ASSETS' Name='assets'>
+            <!-- For each asset file you need to add a new component with a different GUID, id ... -->
+            <Component Id='veloren_logo.png' Guid='{a831abdc-435f-4acb-bdd7-c8d921c78cd6}' Win64='$(var.Win64)'>
+              <File Id='veloren_logo.png' Name='veloren-logo.png' DiskId='1' Source='client\assets\veloren-logo.png' KeyPath='yes'/>
+            </Component>
+          </Directory>
           <!-- Add to PATH for easier access over terminal -->
           <Component Id='Path' Guid='4a62682d-9dfd-4203-ad35-1e4300ad6a5a' Win64='$(var.Win64)' KeyPath='yes'>
             <Environment Id='PATH' Name='PATH' Value='[APPLICATIONFOLDER]' Permanent='no' Part='last' Action='set' System='yes'/>
@@ -76,32 +83,20 @@
       </Directory>
       
       <Directory Id="DesktopFolder" Name="Desktop">
-          <!-- Create shortcut to start Veloren from the desktop -->
+          <!-- Create shortcut to start Airshipper from the desktop -->
           <Component Id="ApplicationShortcutDesktop" Guid="c2601e65-edf8-4f5a-94ff-0b3e800fe375">
-              <Shortcut Id="ApplicationDesktopShortcut" Name="Veloren" Description="Multiplayer voxel RPG written in Rust." Target="[!veloren.exe]" WorkingDirectory='APPLICATIONFOLDER'/>
+              <Shortcut Id="ApplicationDesktopShortcut" Name="Airshipper" Description="Provides automatic updates for the voxel RPG Veloren." Target="[!airshipper.exe]" WorkingDirectory='APPLICATIONFOLDER'/>
               <RemoveFolder Id="CleanUpDesktopShortcut" On="uninstall"/>
-              <RegistryValue Root="HKCU" Key="Software\Veloren" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes"/>
+              <RegistryValue Root="HKCU" Key="Software\Airshipper" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes"/>
           </Component>
       </Directory>
-      
-      <Directory Id="AppDataFolder" Name="AppData">
-        <Directory Id="AIRSHIPPERDATA" Name="veloren">
-          <Component Id="ApplicationDataLocation" Guid="f423598e-3664-4ddf-a37c-70e5cfe63ec6">
-            <!-- Set Env var 'AIRSHIPPER_DATA' for airshipper to figure out where to put the data -->
-            <!-- TODO: For whatever reason the installer does not remove the env var :/ -->
-            <Environment Id='AIRSHIPPER_DATA' Name='AIRSHIPPER_DATA' Value='[AIRSHIPPERDATA]' Permanent='no' Action='set' System='yes'/>
-            <RemoveFolder Id="CleanUpApplicationData" On="uninstall"/>
-            <RegistryValue Root="HKCU" Key="Software\Veloren" Name="AppdataLocation" Type="integer" Value="1" KeyPath="yes"/>
-          </Component>
-        </Directory>
-      </Directory>
-      
     </Directory>
     
-    <!-- Main feature installs veloren and shortcut -->
-    <Feature Id='MainProgram' Title='Veloren' Description='Installs Veloren.' Level='1' ConfigurableDirectory='APPLICATIONFOLDER' AllowAdvertise='no' Display='expand' Absent='disallow'>
-      <ComponentRef Id='veloren.exe'/>
+    <!-- Main feature installs Airshipper and shortcut -->
+    <Feature Id='MainProgram' Title='Airshipper' Description='Installs Airshipper.' Level='1' ConfigurableDirectory='APPLICATIONFOLDER' AllowAdvertise='no' Display='expand' Absent='disallow'>
+      <ComponentRef Id='airshipper.exe'/>
       <ComponentRef Id='ApplicationShortcut'/>
+      <ComponentRef Id='veloren_logo.png'/>
       
       <!-- If choosen add to PATH for easier access over terminal -->
       <Feature Id='Environment' Title='PATH Environment Variable' Description='Add the install location of the [ProductName] executable to the PATH system environment variable. This allows the [ProductName] executable to be called from any location.' Level='1' Absent='allow'>
@@ -111,11 +106,6 @@
       <Feature Id='DesktopShortcut' Title='Add a Desktop shortcut' Description='Creates a shortcut on your desktop for easier access.' Level='1' Absent='allow'>
         <ComponentRef Id='ApplicationShortcutDesktop'/>
       </Feature>
-      <!-- If choosen allow to customize the appdata location -->
-      <Feature Id='AppDataLocation' Title='Game data location' Description='Set where all profiles, settings should be saved.' ConfigurableDirectory='AIRSHIPPERDATA' Display='expand' Level='1' Absent='allow'>
-        <ComponentRef Id='ApplicationDataLocation'/>
-      </Feature>
-      
     </Feature>
 
     <SetProperty Id='ARPINSTALLLOCATION' Value='[APPLICATIONFOLDER]' After='CostFinalize'/>
@@ -165,7 +155,7 @@
       <Publish Dialog="MaintenanceTypeDlg" Control="RepairButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
       <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
       <Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg">1</Publish>
-      <!-- Allow to start veloren after install -->
+      <!-- Allow to start Airshipper after install -->
       <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
       <UIRef Id="WixUI_Common" />
     </UI>
@@ -175,9 +165,9 @@
     <WixVariable Id='WixUIBannerBmp' Value='wix/Banner.bmp'/>
     <WixVariable Id='WixUIInfoIco' Value='wix/Veloren.ico'/>
 
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Veloren" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Airshipper" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
-    <Property Id="WixShellExecTarget" Value="[#veloren.exe]" />
+    <Property Id="WixShellExecTarget" Value="[#airshipper.exe]" />
     <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
   </Product>
 </Wix>
