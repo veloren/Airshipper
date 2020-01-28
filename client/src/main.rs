@@ -1,13 +1,10 @@
 mod cli;
 mod error;
-/// Deals with all filesystem specific details
 mod filesystem;
 mod gui;
 mod logger;
-/// Takes care of all network operations
 mod network;
 mod profiles;
-/// State which is used by the command line and GUI and also gets saved to disk
 mod state;
 
 use crate::error::ClientError;
