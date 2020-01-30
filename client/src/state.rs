@@ -46,7 +46,10 @@ impl State {
                     log::debug!("saved state not found. Fallback to default!");
                     return Ok(State::default());
                 }
-                _ => return Err(e.into()),
+                _ => {
+                    log::error!("saved state invalid!");
+                    return Err(e.into());
+                }
             },
         }
         Ok(ron::de::from_str(&contents)?)

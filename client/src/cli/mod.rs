@@ -24,7 +24,7 @@ pub async fn process() -> Result<()> {
     log::debug!("Log file: {}", filesystem::get_log_path().display());
     log::debug!("Assets Path: {}", filesystem::assets_path());
 
-    let mut state = State::load().await?;
+    let mut state = State::load().await.unwrap_or_default();
 
     // handle arguments
     if m.is_present("update") {

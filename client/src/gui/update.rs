@@ -10,7 +10,7 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Result<Comman
 
     match message {
         Message::Loaded(saved_state) => {
-            let saved_state = saved_state?;
+            let saved_state = saved_state.unwrap_or_default();
             state.update_from_save(saved_state);
 
             return Ok(Command::perform(
