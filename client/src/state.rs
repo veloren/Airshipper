@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 /// Stores/Caches data needed
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct State {
+pub struct SavedState {
     pub changelog: String,
     /// Compare this to decide whether to update the saved state
     pub changelog_etag: String,
@@ -16,7 +16,14 @@ pub struct State {
     pub active_profile: Profile,
 }
 
-impl State {
+impl SavedState {
+    pub fn empty() -> Self {
+        Self {
+            ..Default::default()
+        }
+    }
+
+    // TODO: Maybe restructure these functions! It's SavedState not state!
     pub async fn install_profile(&mut self) -> Result<()> {
         self.active_profile = self.active_profile.clone().install().await?;
         Ok(())
@@ -44,7 +51,7 @@ impl State {
             Err(e) => match e.kind() {
                 std::io::ErrorKind::NotFound => {
                     log::debug!("saved state not found. Fallback to default!");
-                    return Ok(State::default());
+                    return Ok(SavedState::default());
                 }
                 _ => {
                     log::error!("saved state invalid!");

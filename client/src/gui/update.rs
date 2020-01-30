@@ -1,47 +1,46 @@
 use {
-    super::{Airshipper, DownloadStage, Interaction, Message},
+    super::{Airshipper, Interaction, LauncherState, Message},
     crate::{network, profiles::Profile, Result},
     iced::Command,
-    indicatif::HumanBytes,
 };
 
-pub fn handle_message(state: &mut Airshipper, message: Message) -> Result<Command<Message>> {
+pub fn handle_message(airship: &mut Airshipper, message: Message) -> Result<Command<Message>> {
     let mut needs_save = false;
 
     match message {
         Message::Loaded(saved_state) => {
             let saved_state = saved_state.unwrap_or_default();
-            state.update_from_save(saved_state);
-
+            airship.update_from_save(saved_state);
+            
+            airship.state = LauncherState::QueryingChangelogAndNews;
             return Ok(Command::perform(
                 check_for_updates(
-                    state.active_profile.clone(),
-                    state.changelog_etag.clone(),
-                    state.news_etag.clone(),
+                    airship.saveable_state.active_profile.clone(),
+                    airship.saveable_state.changelog_etag.clone(),
+                    airship.saveable_state.news_etag.clone(),
                 ),
                 Message::UpdateCheckDone,
             ));
         }
         Message::Saved(_) => {
-            state.saving = false;
+            airship.saving = false;
         }
         Message::Interaction(Interaction::PlayPressed) => {
-            if state.update_available {
-                if let DownloadStage::None = state.download {
-                    state.download = state
-                        .active_profile
-                        .start_download()
-                        .map(|m| DownloadStage::Download(m))
-                        .unwrap_or(DownloadStage::None);
-                    state.play_button_text = "Downloading".to_owned();
-                    state.download_text = "Update is being downloaded...".to_owned();
+            if let LauncherState::UpdateAvailable = airship.state {
+                airship.state = LauncherState::Downloading(
+                    airship.saveable_state.active_profile.start_download()?,
+                )
+            } else {
+                match airship.state {
+                    LauncherState::ReadyToPlay => {
+                        airship.state = LauncherState::Playing;
+                        return Ok(Command::perform(
+                            start(airship.saveable_state.active_profile.clone()),
+                            Message::PlayDone,
+                        ));
+                    }
+                    _ => {}
                 }
-            } else if !state.loading && !state.playing {
-                state.playing = true;
-                return Ok(Command::perform(
-                    start(state.active_profile.clone()),
-                    Message::PlayDone,
-                ));
             }
         }
         Message::Interaction(Interaction::ReadMore(url)) => {
@@ -50,73 +49,54 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Result<Comman
             }
         }
         Message::UpdateCheckDone(update) => {
-            state.loading = false;
-
             let (update_available, changelog, news) = update?;
 
             if update_available {
-                state.play_button_text = "Update".to_owned();
-                state.download_text = "Update available".to_owned();
-                state.progress = 0.0;
+                airship.state = LauncherState::UpdateAvailable;
             } else {
-                state.play_button_text = "PLAY".to_owned();
-                state.download_text = "Ready to play".to_owned();
-                state.progress = 100.0;
+                airship.state = LauncherState::ReadyToPlay;
             }
+
             if let Some(changelog) = changelog {
-                state.changelog = changelog;
+                airship.saveable_state.changelog = changelog;
             }
             if let Some(news) = news {
-                state.news = news;
+                airship.saveable_state.news = news;
             }
-            needs_save = true
+            needs_save = true;
         }
         Message::InstallDone(result) => {
             let profile = result?;
-            state.active_profile = profile;
-            state.play_button_text = "PLAY".to_owned();
-            state.download_text = "Ready to play".to_owned();
-            state.progress = 100.0;
+            airship.saveable_state.active_profile = profile;
             needs_save = true;
-            state.download = DownloadStage::None;
+            airship.state = LauncherState::ReadyToPlay;
         }
-        Message::Tick(_) => {
-            match &state.download.clone() {
-                DownloadStage::Download(m) => {
-                    let portion =
-                        ((m.download_progress().0 * 100) / m.download_progress().1) as f32;
-                    state.progress = portion * 0.8; // Leave some percentages for the install process
-                    state.download_speed = HumanBytes(m.download_speed() as u64);
-                    state.download_text = format!("Update is being downloaded... {}/s", state.download_speed);
-
-                    if portion == 100.0 {
-                        state.play_button_text = "Install".to_owned();
-                        state.download_text = "Update is being installed...".to_owned();
-                        state.download = DownloadStage::Install;
-                        return Ok(Command::perform(
-                            install(state.active_profile.clone()),
-                            Message::InstallDone,
-                        ));
-                    }
+        Message::Tick(_) => match &airship.state {
+            LauncherState::Downloading(m) => {
+                let percentage = ((m.download_progress().0 * 100) / m.download_progress().1) as f32;
+                if percentage == 100.0 {
+                    airship.state = LauncherState::Installing;
+                    return Ok(Command::perform(
+                        install(airship.saveable_state.active_profile.clone()),
+                        Message::InstallDone,
+                    ));
                 }
-                _ => {}
             }
-        }
+            _ => {}
+        },
         Message::Error(e) | Message::PlayDone(Err(e)) => {
-            state.play_button_text = "ERROR".to_owned();
-            state.download_text = format!("{}", e);
-            state.progress = 0.0;
-            state.playing = false;
+            airship.state = LauncherState::Error(e);
         }
         // Everything went fine when playing the game :O
         Message::PlayDone(Ok(())) => {
-            state.playing = false;
+            airship.state = LauncherState::ReadyToPlay;
         }
+        Message::Interaction(Interaction::Disabled) => {}
     }
 
-    if needs_save && !state.saving {
-        state.saving = true;
-        return Ok(Command::perform(state.into_save().save(), Message::Saved));
+    if needs_save && !airship.saving {
+        airship.saving = true;
+        return Ok(Command::perform(airship.into_save().save(), Message::Saved));
     }
 
     Ok(Command::none())

@@ -61,8 +61,10 @@ pub fn start_download(profile: &Profile) -> Result<isahc::Metrics> {
     async_std::task::spawn(async move {
         let body = response.body_mut();
         let mut buffer = [0; 8000]; // 8KB
-        // TODO: deal with this error!
-        let mut file = File::create(&zip_path).await.expect("failed to create file for download!");
+                                    // TODO: deal with this error!
+        let mut file = File::create(&zip_path)
+            .await
+            .expect("failed to create file for download!");
 
         loop {
             match body.read(&mut buffer).await {
