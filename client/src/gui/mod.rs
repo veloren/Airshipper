@@ -2,7 +2,9 @@ mod style;
 mod time;
 mod update;
 
-use crate::{error::ClientError, filesystem, network, profiles::Profile, state::State, Result};
+use crate::{
+    error::ClientError, filesystem, network, profiles::Profile, state::SavedState, Result,
+};
 use iced::{
     button, scrollable, Align, Application, Button, Column, Command, Container, Element,
     HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable, Settings, Subscription, Text,
@@ -11,111 +13,68 @@ use iced::{
 use indicatif::HumanBytes;
 use std::time::Duration;
 
-/// Starts the GUI won't return
+/// Starts the GUI and won't return
 pub fn run() {
     let mut settings = Settings::default();
     settings.window.size = (1050, 620);
     Airshipper::run(settings);
 }
 
-// TODO: Clean up state handling
+#[derive(Debug)]
+pub enum LauncherState {
+    LoadingSave,
+    QueryingChangelogAndNews,
+    UpdateAvailable,
+    ReadyToPlay,
+    Downloading(isahc::Metrics),
+    Installing,
+    Playing,
 
-#[derive(Debug, Clone)]
-pub enum DownloadStage {
-    None,
-    Download(isahc::Metrics),
-    Install,
-}
-
-impl DownloadStage {
-    fn is_none(&self) -> bool {
-        if let DownloadStage::None = self {
-            true
-        } else {
-            false
-        }
-    }
+    Error(ClientError),
 }
 
 #[derive(Debug)]
 pub struct Airshipper {
+    /// Current state the GUI is in (e.g. Loading up the save file, updating veloren, ...)
+    state: LauncherState,
+    /// Persistent state which needs to get saved to disk
+    saveable_state: SavedState,
+
+    /// Other unrelated state
     changelog_scrollable_state: scrollable::State,
     news_scrollable_state: scrollable::State,
     play_button_state: button::State,
-    progress: f32,
-
-    play_button_text: String,
-    loading: bool,
-
-    update_available: bool,
-
-    changelog: String,
-    changelog_etag: String,
-    news: Vec<network::Post>,
-    news_etag: String,
-    active_profile: Profile,
 
     saving: bool,
-    download: DownloadStage,
-    download_text: String,
-    download_speed: HumanBytes,
-    playing: bool,
 }
 
 impl Default for Airshipper {
     fn default() -> Self {
         Self {
+            state: LauncherState::LoadingSave,
+            saveable_state: SavedState::empty(),
             changelog_scrollable_state: Default::default(),
             news_scrollable_state: Default::default(),
             play_button_state: Default::default(),
-            progress: 0.0,
-
-            play_button_text: "Loading".to_owned(),
-            loading: true,
-
-            update_available: false,
-
-            changelog: "Loading changelog...".to_owned(),
-            changelog_etag: Default::default(),
-            news: vec![network::Post {
-                title: "Loading news...".to_owned(),
-                description: "...".to_owned(),
-                btn_state: Default::default(),
-                button_url: "https://www.veloren.net".to_owned(),
-            }],
-            news_etag: Default::default(),
-            active_profile: Default::default(),
 
             saving: false,
-            download: DownloadStage::None,
-            download_text: "Loading...".to_owned(),
-            download_speed: HumanBytes(0),
-            playing: false,
         }
     }
 }
 
 impl Airshipper {
-    fn into_save(&self) -> State {
-        State {
-            changelog: self.changelog.clone(),
-            changelog_etag: self.changelog_etag.clone(),
-            news: self.news.clone(),
-            news_etag: self.news_etag.clone(),
-            active_profile: self.active_profile.clone(),
-        }
+    fn into_save(&self) -> SavedState {
+        self.saveable_state.clone()
     }
-    fn update_from_save(&mut self, save: State) {
-        self.changelog = save.changelog;
-        self.news = save.news;
-        self.active_profile = save.active_profile;
+    fn update_from_save(&mut self, save: SavedState) {
+        self.saveable_state = save;
     }
 }
 
 #[derive(Debug)]
 pub enum Message {
     Interaction(Interaction),
-    Loaded(Result<State>),
+    Loaded(Result<SavedState>),
     Saved(Result<()>),
     UpdateCheckDone(Result<(bool, Option<String>, Option<Vec<network::Post>>)>),
     Tick(()), // TODO: Get rid of Tick by implementing download via subscription
@@ -128,6 +87,8 @@ pub enum Message {
 pub enum Interaction {
     PlayPressed,
     ReadMore(String),
+    // Interaction won't do anything
+    Disabled,
 }
 
 impl Application for Airshipper {
@@ -137,7 +98,7 @@ impl Application for Airshipper {
     fn new() -> (Self, Command<Message>) {
         (
             Airshipper::default(),
-            Command::perform(State::load(), Message::Loaded),
+            Command::perform(SavedState::load(), Message::Loaded),
         )
     }
 
@@ -146,9 +107,11 @@ impl Application for Airshipper {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        match self.download {
-            DownloadStage::None => Subscription::none(),
-            _ => time::every(Duration::from_millis(300)).map(Message::Tick),
+        match self.state {
+            LauncherState::Downloading(_) => {
+                time::every(Duration::from_millis(300)).map(Message::Tick)
+            }
+            _ => Subscription::none(),
         }
     }
 
@@ -187,7 +150,7 @@ impl Application for Airshipper {
             .height(Length::Fill)
             .padding(15)
             .spacing(20)
-            .push(Text::new(&self.changelog).size(18));
+            .push(Text::new(&self.saveable_state.changelog).size(18));
 
         // Contains title, changelog
         let left = Column::new()
@@ -201,7 +164,7 @@ impl Application for Airshipper {
             .spacing(20)
             .padding(25);
 
-        for post in &mut self.news {
+        for post in &mut self.saveable_state.news {
             news = news.push(Text::new(post.title.clone()).size(20));
             news = news.push(Text::new(post.description.clone()).size(16));
             let read_more_btn: Element<Interaction> = Button::new(
@@ -231,9 +194,40 @@ impl Application for Airshipper {
             .height(Length::FillPortion(6))
             .style(style::Middle);
 
-        let download_speed = Text::new(self.download_text.clone()).size(16);
+        let download_text = match &self.state {
+            LauncherState::Downloading(m) => format!(
+                "Downloading... {}/sec",
+                HumanBytes(m.download_speed() as u64)
+            ),
+            LauncherState::Installing => "Installing...".into(),
+            LauncherState::LoadingSave => "Loading...".into(),
+            LauncherState::QueryingChangelogAndNews => "Checking for updates...".into(),
+            LauncherState::ReadyToPlay => "Ready to play...".into(),
+            LauncherState::UpdateAvailable => "Update available!".into(),
+            LauncherState::Playing => "Much fun playing!".into(),
+            LauncherState::Error(e) => e.to_string(),
+        };
+        let download_progress = match &self.state {
+            LauncherState::Downloading(m) => {
+                // Percentage of completed download
+                ((m.download_progress().0 * 100) / m.download_progress().1) as f32
+            }
+            _ => 0.0,
+        };
+        let play_button_text = match &self.state {
+            LauncherState::Downloading(_) => format!("Downloading"),
+            LauncherState::Installing => "Installing".into(),
+            LauncherState::LoadingSave => "Loading".into(),
+            LauncherState::QueryingChangelogAndNews => "Loading".into(),
+            LauncherState::ReadyToPlay => "Play".into(),
+            LauncherState::UpdateAvailable => "Update".into(),
+            LauncherState::Playing => "Playing".into(),
+            LauncherState::Error(_) => "ERROR".into(),
+        };
+
+        let download_speed = Text::new(&download_text).size(16);
         let download_progressbar =
-            ProgressBar::new(0.0..=100.0, self.progress).style(style::Progress);
+            ProgressBar::new(0.0..=100.0, download_progress).style(style::Progress);
         let download = Column::new()
             .width(Length::FillPortion(4))
             .spacing(5)
@@ -242,7 +236,7 @@ impl Application for Airshipper {
 
         let mut play = Button::new(
             &mut self.play_button_state,
-            Text::new(self.play_button_text.clone())
+            Text::new(&play_button_text)
                 .size(30)
                 .height(Length::Fill)
                 .horizontal_alignment(HorizontalAlignment::Center)
@@ -255,10 +249,13 @@ impl Application for Airshipper {
         .padding(2);
 
         // Disable button if loading, playing or downloading the game.
-        if self.loading || self.playing || !self.download.is_none() {
-            play = play.style(style::PlayButtonDisabled);
+        match self.state {
+            LauncherState::LoadingSave | LauncherState::Playing | LauncherState::Downloading(_) | LauncherState::QueryingChangelogAndNews => {
+                play = play.style(style::PlayButtonDisabled);
+                play = play.on_press(Interaction::Disabled);
+            }
+            _ => {}
         }
-
         let play: Element<Interaction> = play.into();
 
         let bottom = Row::new()

@@ -1,4 +1,4 @@
-use crate::{filesystem, gui, logger, state::State, Result};
+use crate::{filesystem, gui, logger, state::SavedState, Result};
 use clap::{load_yaml, App};
 
 /// Process command line arguments and optionally starts GUI
@@ -24,7 +24,7 @@ pub async fn process() -> Result<()> {
     log::debug!("Log file: {}", filesystem::get_log_path().display());
     log::debug!("Assets Path: {}", filesystem::assets_path());
 
-    let mut state = State::load().await.unwrap_or_default();
+    let mut state = SavedState::load().await.unwrap_or_default();
 
     // handle arguments
     if m.is_present("update") {
@@ -46,7 +46,7 @@ pub async fn process() -> Result<()> {
     Ok(())
 }
 
-async fn update(state: &mut State, do_not_ask: bool) -> Result<()> {
+async fn update(state: &mut SavedState, do_not_ask: bool) -> Result<()> {
     if state.check_for_profile_update().await? != state.active_profile.version {
         if do_not_ask {
             log::info!("Updating...");
@@ -98,7 +98,7 @@ async fn print_progress(metrics: isahc::Metrics) {
     }
 }
 
-async fn start(state: &mut State) -> Result<()> {
+async fn start(state: &mut SavedState) -> Result<()> {
     log::info!("Starting...");
     Ok(state.start_profile().await?)
 }
