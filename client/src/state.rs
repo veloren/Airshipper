@@ -26,7 +26,7 @@ impl State {
         self.active_profile.start_download()
     }
 
-    pub async fn check_for_profile_update(&mut self) -> Result<bool> {
+    pub async fn check_for_profile_update(&mut self) -> Result<String> {
         self.active_profile.check_for_update().await
     }
 
