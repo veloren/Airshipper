@@ -13,7 +13,6 @@ pub struct Profile {
 
     pub directory: PathBuf,
     pub version: String,
-    pub remote_version: Option<String>,
 }
 
 impl Default for Profile {
@@ -37,7 +36,6 @@ impl Profile {
             name,
             channel,
             version: "".to_owned(), // Will be set by download
-            remote_version: None,
         }
     }
 
@@ -46,11 +44,11 @@ impl Profile {
     }
 
     pub async fn install(mut self) -> Result<Profile> {
-        if let Some(newer_version) = &self.remote_version {
+        let latest_version = self.check_for_update().await?;
+        if self.version != latest_version {
             // TODO: maybe let install return the new profile or make it all &mut
             network::install(&self).await?;
-            self.version = newer_version.clone();
-            self.remote_version = None;
+            self.version = latest_version;
             Ok(self)
         } else {
             Err("No newer version found".into())
@@ -79,15 +77,8 @@ impl Profile {
         Ok(())
     }
 
-    pub async fn check_for_update(&mut self) -> Result<bool> {
-        let remote_version = network::get_version(&self).await?;
-        if self.version != remote_version {
-            self.remote_version = Some(remote_version);
-            Ok(true)
-        } else {
-            self.remote_version = None;
-            Ok(false)
-        }
+    pub async fn check_for_update(&self) -> Result<String> {
+        network::get_version(&self).await
     }
 
     /// Returns path to voxygen binary.

@@ -47,7 +47,7 @@ pub async fn process() -> Result<()> {
 }
 
 async fn update(state: &mut State, do_not_ask: bool) -> Result<()> {
-    if state.check_for_profile_update().await? {
+    if state.check_for_profile_update().await? != state.active_profile.version {
         if do_not_ask {
             log::info!("Updating...");
             let metrics = state.update_profile().await?;

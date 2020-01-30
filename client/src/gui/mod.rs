@@ -47,6 +47,8 @@ pub struct Airshipper {
     play_button_text: String,
     loading: bool,
 
+    update_available: bool,
+
     changelog: String,
     changelog_etag: String,
     news: Vec<network::Post>,
@@ -70,6 +72,8 @@ impl Default for Airshipper {
 
             play_button_text: "Loading".to_owned(),
             loading: true,
+
+            update_available: false,
 
             changelog: "Loading changelog...".to_owned(),
             changelog_etag: Default::default(),
@@ -113,7 +117,7 @@ pub enum Message {
     Interaction(Interaction),
     Loaded(Result<State>),
     Saved(Result<()>),
-    UpdateCheckDone(Result<(Profile, Option<String>, Option<Vec<network::Post>>)>),
+    UpdateCheckDone(Result<(bool, Option<String>, Option<Vec<network::Post>>)>),
     Tick(()), // TODO: Get rid of Tick by implementing download via subscription
     InstallDone(Result<Profile>),
     PlayDone(Result<()>),

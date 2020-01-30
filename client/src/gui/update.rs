@@ -26,7 +26,7 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Result<Comman
             state.saving = false;
         }
         Message::Interaction(Interaction::PlayPressed) => {
-            if state.active_profile.remote_version.is_some() {
+            if state.update_available {
                 if let DownloadStage::None = state.download {
                     state.download = state
                         .active_profile
@@ -52,10 +52,9 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Result<Comman
         Message::UpdateCheckDone(update) => {
             state.loading = false;
 
-            let (profile, changelog, news) = update?;
+            let (update_available, changelog, news) = update?;
 
-            state.active_profile = profile;
-            if state.active_profile.remote_version.is_some() {
+            if update_available {
                 state.play_button_text = "Update".to_owned();
                 state.download_text = "Update available".to_owned();
                 state.progress = 0.0;
@@ -123,13 +122,13 @@ pub fn handle_message(state: &mut Airshipper, message: Message) -> Result<Comman
     Ok(Command::none())
 }
 
-/// Will check for profile updates and updated changelog, news.
+/// Will return whether an update is available, updated changelog and news.
 async fn check_for_updates(
     profile: Profile,
     changelog_etag: String,
     news_etag: String,
-) -> Result<(Profile, Option<String>, Option<Vec<network::Post>>)> {
-    let profile = check_for_update(profile).await?;
+) -> Result<(bool, Option<String>, Option<Vec<network::Post>>)> {
+    let update_available = profile.check_for_update().await? != profile.version;
 
     let mut changelog = None;
     if network::compare_changelog_etag(&changelog_etag).await? {
@@ -140,13 +139,7 @@ async fn check_for_updates(
         news = Some(network::query_news().await?);
     }
 
-    Ok((profile, changelog, news))
-}
-
-// TODO: call state.check_for_profile_update() instead
-async fn check_for_update(mut profile: Profile) -> Result<Profile> {
-    profile.check_for_update().await?;
-    Ok(profile)
+    Ok((update_available, changelog, news))
 }
 
 // TODO: call state.install_profile() instead
