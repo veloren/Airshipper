@@ -54,3 +54,6 @@ opener = "0.4.1"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3.8", features = ["wincon"] }
