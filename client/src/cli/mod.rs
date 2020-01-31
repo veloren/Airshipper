@@ -35,7 +35,6 @@ pub async fn process() -> Result<()> {
     Ok(())
 }
 
-#[cfg(not(windows))]
 async fn process_arguments<'n, 'a>(mut state: &mut SavedState, m: clap::ArgMatches<'n>) -> Result<()> {
     if m.is_present("update") {
         update(&mut state, true).await?;
@@ -49,13 +48,6 @@ async fn process_arguments<'n, 'a>(mut state: &mut SavedState, m: clap::ArgMatch
     } else {
         gui::run();
     }
-    Ok(())
-}
-
-/// Temporarily disabled till proper stdout/stdin handling is done on windows
-#[cfg(windows)]
-async fn process_arguments<'n, 'a>(_state: &mut SavedState, _m: clap::ArgMatches<'n>) -> Result<()> {
-    gui::run();
     Ok(())
 }
 

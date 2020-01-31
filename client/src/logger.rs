@@ -12,7 +12,7 @@ pub fn log(level: log::LevelFilter) -> Result<()> {
 
     let base = fern::Dispatch::new()
         .level_for("html5ever", log::LevelFilter::Error)
-        .level_for("winit", log::LevelFilter::Warn)
+        .level_for("winit", log::LevelFilter::Error)
         .level_for("wgpu_native", log::LevelFilter::Info)
         .level_for("strip_markdown", log::LevelFilter::Warn)
         .level_for("tokio_reactor", log::LevelFilter::Warn)
@@ -20,10 +20,12 @@ pub fn log(level: log::LevelFilter) -> Result<()> {
         .level_for("iced_wgpu::renderer", log::LevelFilter::Info)
         .level_for("iced_winit", log::LevelFilter::Info)
         .level_for("wgpu_native", log::LevelFilter::Warn)
-        .level_for("gfx_backend_vulkan", log::LevelFilter::Info);
+        .level_for("gfx_backend_vulkan", log::LevelFilter::Info)
+        .level_for("isahc", log::LevelFilter::Info);
 
     let file_cfg = fern::Dispatch::new()
-        .level(log::LevelFilter::Debug)
+        .level(log::LevelFilter::Info)
+        .level_for("airshipper", log::LevelFilter::Debug)
         .format(|out, message, record| {
             out.finish(format_args!(
                 "{}[{}:{}][{}] {}",
@@ -39,8 +41,7 @@ pub fn log(level: log::LevelFilter) -> Result<()> {
         })
         .chain(fern::log_file(&filesystem::get_log_path())?);
 
-    let mut stdout_cfg = fern::Dispatch::new().level(level)
-        .level_for("isahc", log::LevelFilter::Info);
+    let mut stdout_cfg = fern::Dispatch::new().level(level);
     // If more verbose debugging is requested. We will print the lines too.
     if level == log::LevelFilter::Debug || level == log::LevelFilter::Trace {
         stdout_cfg = stdout_cfg.format(move |out, message, record| {
