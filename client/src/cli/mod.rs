@@ -27,6 +27,16 @@ pub async fn process() -> Result<()> {
     let mut state = SavedState::load().await.unwrap_or_default();
 
     // handle arguments
+    process_arguments(&mut state, m).await?;
+
+    // Save state
+    state.save().await?;
+
+    Ok(())
+}
+
+#[cfg(not(windows))]
+async fn process_arguments<'n, 'a>(mut state: &mut SavedState, m: clap::ArgMatches<'n>) -> Result<()> {
     if m.is_present("update") {
         update(&mut state, true).await?;
     } else if m.is_present("start") {
@@ -39,10 +49,13 @@ pub async fn process() -> Result<()> {
     } else {
         gui::run();
     }
+    Ok(())
+}
 
-    // Save state
-    state.save().await?;
-
+/// Temporarily disabled till proper stdout/stdin handling is done on windows
+#[cfg(windows)]
+async fn process_arguments<'n, 'a>(_state: &mut SavedState, _m: clap::ArgMatches<'n>) -> Result<()> {
+    gui::run();
     Ok(())
 }
 
