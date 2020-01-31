@@ -2,9 +2,7 @@ mod style;
 mod time;
 mod update;
 
-use crate::{
-    error::ClientError, filesystem, network, profiles::Profile, state::SavedState, Result,
-};
+use crate::{error::ClientError, filesystem, profiles::Profile, state::SavedState, Result};
 use iced::{
     button, scrollable, Align, Application, Button, Column, Command, Container, Element,
     HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable, Settings, Subscription, Text,
@@ -23,7 +21,7 @@ pub fn run() {
 #[derive(Debug)]
 pub enum LauncherState {
     LoadingSave,
-    QueryingChangelogAndNews,
+    QueryingForUpdates,
     UpdateAvailable,
     ReadyToPlay,
     Downloading(isahc::Metrics),
@@ -76,7 +74,7 @@ pub enum Message {
     Interaction(Interaction),
     Loaded(Result<SavedState>),
     Saved(Result<()>),
-    UpdateCheckDone(Result<(bool, Option<String>, Option<Vec<network::Post>>)>),
+    UpdateCheckDone(Result<Option<(SavedState, bool)>>),
     Tick(()), // TODO: Get rid of Tick by implementing download via subscription
     InstallDone(Result<Profile>),
     PlayDone(Result<()>),
@@ -201,7 +199,7 @@ impl Application for Airshipper {
             ),
             LauncherState::Installing => "Installing...".into(),
             LauncherState::LoadingSave => "Loading...".into(),
-            LauncherState::QueryingChangelogAndNews => "Checking for updates...".into(),
+            LauncherState::QueryingForUpdates => "Checking for updates...".into(),
             LauncherState::ReadyToPlay => "Ready to play...".into(),
             LauncherState::UpdateAvailable => "Update available!".into(),
             LauncherState::Playing => "Much fun playing!".into(),
@@ -218,7 +216,7 @@ impl Application for Airshipper {
             LauncherState::Downloading(_) => format!("Downloading"),
             LauncherState::Installing => "Installing".into(),
             LauncherState::LoadingSave => "Loading".into(),
-            LauncherState::QueryingChangelogAndNews => "Loading".into(),
+            LauncherState::QueryingForUpdates => "Loading".into(),
             LauncherState::ReadyToPlay => "Play".into(),
             LauncherState::UpdateAvailable => "Update".into(),
             LauncherState::Playing => "Playing".into(),
@@ -250,7 +248,10 @@ impl Application for Airshipper {
 
         // Disable button if loading, playing or downloading the game.
         match self.state {
-            LauncherState::LoadingSave | LauncherState::Playing | LauncherState::Downloading(_) | LauncherState::QueryingChangelogAndNews => {
+            LauncherState::LoadingSave
+            | LauncherState::Playing
+            | LauncherState::Downloading(_)
+            | LauncherState::QueryingForUpdates => {
                 play = play.style(style::PlayButtonDisabled);
                 play = play.on_press(Interaction::Disabled);
             }
