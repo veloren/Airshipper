@@ -63,7 +63,7 @@ impl SavedState {
     }
 
     pub async fn save(self) -> Result<()> {
-        let ron = ron::ser::to_string(&self)?;
+        let ron = ron::ser::to_string_pretty(&self, ron::ser::PrettyConfig::default())?;
 
         let path = filesystem::get_savedstate_path();
         if let Some(dir) = path.parent() {

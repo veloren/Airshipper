@@ -91,24 +91,24 @@ pub fn start_download(profile: &Profile) -> Result<isahc::Metrics> {
     Ok(metrics)
 }
 
-pub async fn compare_changelog_etag(cached: &str) -> Result<bool> {
-    Ok(request(CHANGELOG_URL)
+pub async fn compare_changelog_etag(cached: &str) -> Result<Option<String>> {
+    let remote = request(CHANGELOG_URL)
         .await?
         .headers()
         .get("etag")
-        .map(|x| x.to_str().unwrap()) // Etag will always be a valid UTF-8 due to it being ASCII
-        .unwrap_or("MissingEtag") // TODO: Decide whether to throw an error if etag does not exist
-        != cached)
+        .map(|x| x.to_str().unwrap().to_string()) // Etag will always be a valid UTF-8 due to it being ASCII
+        .unwrap_or("MissingEtag".into()); // TODO: Decide whether to throw an error if etag does not exist
+    Ok(if remote != cached { Some(remote) } else { None })
 }
 
-pub async fn compare_news_etag(cached: &str) -> Result<bool> {
-    Ok(request(CHANGELOG_URL)
+pub async fn compare_news_etag(cached: &str) -> Result<Option<String>> {
+    let remote = request(CHANGELOG_URL)
         .await?
         .headers()
         .get("etag")
-        .map(|x| x.to_str().unwrap()) // Etag will always be a valid UTF-8 due to it being ASCII
-        .unwrap_or("MissingEtag") // TODO: Decide whether to throw an error if etag does not exist
-        != cached)
+        .map(|x| x.to_str().unwrap().to_string()) // Etag will always be a valid UTF-8 due to it being ASCII
+        .unwrap_or("MissingEtag".into()); // TODO: Decide whether to throw an error if etag does not exist
+    Ok(if remote != cached { Some(remote) } else { None })
 }
 
 pub async fn query_changelog() -> Result<String> {
