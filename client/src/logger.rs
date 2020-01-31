@@ -39,9 +39,10 @@ pub fn log(level: log::LevelFilter) -> Result<()> {
         })
         .chain(fern::log_file(&filesystem::get_log_path())?);
 
-    let mut stdout_cfg = fern::Dispatch::new().level(level);
+    let mut stdout_cfg = fern::Dispatch::new().level(level)
+        .level_for("isahc", log::LevelFilter::Info);
     // If more verbose debugging is requested. We will print the lines too.
-    if level == log::LevelFilter::Trace {
+    if level == log::LevelFilter::Debug || level == log::LevelFilter::Trace {
         stdout_cfg = stdout_cfg.format(move |out, message, record| {
             out.finish(format_args!(
                 "[{}:{}][{}] {}",

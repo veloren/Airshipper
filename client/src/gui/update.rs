@@ -1,5 +1,5 @@
 use {
-    super::{Airshipper, Interaction, LauncherState, Message},
+    super::{Airshipper, Interaction, LauncherState, Message, SavedState},
     crate::{network, profiles::Profile, Result},
     iced::Command,
 };
@@ -11,14 +11,10 @@ pub fn handle_message(airship: &mut Airshipper, message: Message) -> Result<Comm
         Message::Loaded(saved_state) => {
             let saved_state = saved_state.unwrap_or_default();
             airship.update_from_save(saved_state);
-            
-            airship.state = LauncherState::QueryingChangelogAndNews;
+
+            airship.state = LauncherState::QueryingForUpdates;
             return Ok(Command::perform(
-                check_for_updates(
-                    airship.saveable_state.active_profile.clone(),
-                    airship.saveable_state.changelog_etag.clone(),
-                    airship.saveable_state.news_etag.clone(),
-                ),
+                check_for_updates(airship.saveable_state.clone()),
                 Message::UpdateCheckDone,
             ));
         }
@@ -49,19 +45,16 @@ pub fn handle_message(airship: &mut Airshipper, message: Message) -> Result<Comm
             }
         }
         Message::UpdateCheckDone(update) => {
-            let (update_available, changelog, news) = update?;
-
-            if update_available {
-                airship.state = LauncherState::UpdateAvailable;
-            } else {
-                airship.state = LauncherState::ReadyToPlay;
-            }
-
-            if let Some(changelog) = changelog {
-                airship.saveable_state.changelog = changelog;
-            }
-            if let Some(news) = news {
-                airship.saveable_state.news = news;
+            match update? {
+                Some((save, profile_update_available)) => {
+                    airship.saveable_state = save;
+                    if profile_update_available {
+                        airship.state = LauncherState::UpdateAvailable;
+                    } else {
+                        airship.state = LauncherState::ReadyToPlay;
+                    }
+                }
+                None => airship.state = LauncherState::ReadyToPlay,
             }
             needs_save = true;
         }
@@ -89,7 +82,13 @@ pub fn handle_message(airship: &mut Airshipper, message: Message) -> Result<Comm
         }
         // Everything went fine when playing the game :O
         Message::PlayDone(Ok(())) => {
-            airship.state = LauncherState::ReadyToPlay;
+            // After playing check for an possible update
+            // useful if you got kicked from the server due to an update so you can instantly update too
+            airship.state = LauncherState::QueryingForUpdates;
+            return Ok(Command::perform(
+                check_for_updates(airship.saveable_state.clone()),
+                Message::UpdateCheckDone,
+            ));
         }
         Message::Interaction(Interaction::Disabled) => {}
     }
@@ -102,24 +101,45 @@ pub fn handle_message(airship: &mut Airshipper, message: Message) -> Result<Comm
     Ok(Command::none())
 }
 
-/// Will return whether an update is available, updated changelog and news.
-async fn check_for_updates(
-    profile: Profile,
-    changelog_etag: String,
-    news_etag: String,
-) -> Result<(bool, Option<String>, Option<Vec<network::Post>>)> {
-    let update_available = profile.check_for_update().await? != profile.version;
-
-    let mut changelog = None;
-    if network::compare_changelog_etag(&changelog_etag).await? {
-        changelog = Some(network::query_changelog().await?);
+/// Returns new state if updated.
+/// the bool signifies whether an profile update is available
+async fn check_for_updates(mut saveable_state: SavedState) -> Result<Option<(SavedState, bool)>> {
+    let mut modified = false;
+    let mut profile_update_available = false;
+    
+    match network::compare_changelog_etag(&saveable_state.changelog_etag).await? {
+        Some(remote_changelog_ver) => {
+            saveable_state.changelog_etag = remote_changelog_ver;
+            saveable_state.changelog = network::query_changelog().await?;
+            modified = true;
+            log::debug!("Changelog updated.")
+        }
+        None => log::debug!("Changelog up-to-date."),
     }
-    let mut news = None;
-    if network::compare_news_etag(&news_etag).await? {
-        news = Some(network::query_news().await?);
+    
+    match network::compare_news_etag(&saveable_state.news_etag).await? {
+        Some(remote_news_ver) => {
+            saveable_state.news_etag = remote_news_ver;
+            saveable_state.news = network::query_news().await?;
+            modified = true;
+            log::debug!("News updated.")
+        },
+        None => log::debug!("News up-to-date."),
     }
 
-    Ok((update_available, changelog, news))
+    if saveable_state.active_profile.check_for_update().await?
+        != saveable_state.active_profile.version
+    {
+        modified = true;
+        profile_update_available = true;
+        log::debug!("Found profile update.")
+    }
+
+    Ok(if modified {
+        Some((saveable_state, profile_update_available))
+    } else {
+        None
+    })
 }
 
 // TODO: call state.install_profile() instead
