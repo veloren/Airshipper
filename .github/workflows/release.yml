@@ -1,0 +1,105 @@
+name: Create Release # will create artifacts for now
+      
+on: [push] # TODO: switch that!
+jobs:
+  release-win:
+    runs-on: [windows-latest]
+    steps:
+    - uses: actions/checkout@v2
+    # Prepare toolchain
+    - name: Pull toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+    # Cache
+    - name: Cache cargo index
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo build
+      uses: actions/cache@v1
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+    # Build & Package airshipper
+    - name: Build
+      run: cargo build --bin airshipper --release
+    - name: Install cargo-wix
+      run: cargo install cargo-wix        
+    - name: MSI Installer
+      run: cargo wix --nocapture -n client --install-version 0.2.0 # TODO: Dynamic release version!!!!!
+    # Upload artifact
+    - name: Upload artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: airshipper-artifact.msi
+        path: client-x86_64.msi
+  release-linux:
+    runs-on: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v2
+    # Prepare toolchain
+    - name: Pull toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+    # Cache
+    - name: Cache cargo index
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo build
+      uses: actions/cache@v1
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+    # Build & Package airshipper
+    - name: Build
+      run: cargo build --bin airshipper --release
+    - name: Package
+      run: tar -cvfz airshipper.tar.gz client/assets/** target/release/airshipper
+    # Upload artifact
+    - name: Upload artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: airshipper-artifact.tar.gz
+        path: airshipper.tar.gz
+  release-macos:
+    runs-on: [macos-latest]
+    steps:
+    - uses: actions/checkout@v2
+    # Prepare toolchain
+    - name: Pull toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+    # Cache
+    - name: Cache cargo index
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo build
+      uses: actions/cache@v1
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+    # Build & Package airshipper
+    - name: Build
+      run: cargo build --bin airshipper --release
+    - name: Package
+      run: tar -cvfz airshipper.tar.gz client/assets/** target/release/airshipper
+    # Upload artifact
+    - name: Upload artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: airshipper-artifact.tar.gz
+        path: airshipper.tar.gz
