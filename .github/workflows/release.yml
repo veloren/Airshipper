@@ -31,12 +31,14 @@ jobs:
       run: cargo build --bin airshipper --release     
     - name: MSI Installer
       run: cargo wix --no-build --nocapture -n client --install-version 0.2.0 # TODO: Dynamic release version
+    - name: proper naming
+      run: ren target/wix/client-0.2.0-x86_64.msi airshipper-0.2.0-x86_64.msi # TODO: Dynamic release version
     # Upload artifact
     - name: Upload artifact
       uses: actions/upload-artifact@v1
       with:
-        name: airshipper-windows.msi
-        path: target/wix/client-0.2.0-x86_64.msi # TODO: Dynamic release version
+        name: airshipper-windows-installer
+        path: target/wix/airshipper-0.2.0-x86_64.msi # TODO: Dynamic release version
   release-linux:
     runs-on: [ubuntu-latest]
     steps:
