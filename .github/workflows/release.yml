@@ -2,7 +2,7 @@
 # TODO: Should it compile releases incase of CI/CD gets changed (like artifacts.yml/check.yml) to verify that it works?
 
 name: Create Release
-      
+
 on: 
   push:
     tags:
@@ -13,10 +13,6 @@ jobs:
     runs-on: [windows-latest]
     steps:
     - uses: actions/checkout@v2
-    # The current Airshipper version will be grabbed by running:
-    # cd client && cargo pkgid | cut -d# -f2 | cut -d: -f2
-    - name: export VERSION
-      run: "echo '::set-env name=VERSION::$(cd client && cargo pkgid | cut -d# -f2 | cut -d: -f2)'"
     # Prepare toolchain
     - name: Pull toolchain
       uses: actions-rs/toolchain@v1
@@ -24,6 +20,16 @@ jobs:
         profile: minimal
         toolchain: nightly
         override: true
+    # The current Airshipper version will be grabbed by running:
+    # cd client && cargo pkgid | cut -d# -f2 | cut -d: -f2
+    - name: Aquire Version
+      id: vars
+      shell: pwsh
+      run: | 
+        cd client 
+        echo "::set-output name=version::$(cargo pkgid | ForEach-Object { $_.split(":")[3] })"
+    - name: Print version
+      run: echo "Airshipper v${{ steps.vars.outputs.version }}"
     # Cache
     - name: Cache cargo index
       uses: actions/cache@v1
@@ -41,15 +47,15 @@ jobs:
     - name: Build
       run: cargo build --bin airshipper --release     
     - name: MSI Installer
-      run: cargo wix --no-build --nocapture -n client --install-version ${{ env.VERSION }}
+      run: cargo wix --no-build --nocapture -n client --install-version ${{ steps.vars.outputs.version }}
     - name: proper naming
-      run: ren target/wix/client-${{ env.VERSION }}-x86_64.msi airshipper-${{ env.VERSION }}-x86_64.msi
+      run: ren target/wix/client-${{ steps.vars.outputs.version }}-x86_64.msi airshipper-${{ steps.vars.outputs.version }}-x86_64.msi
     # Upload artifact
     - name: Upload artifact
       uses: actions/upload-artifact@v1
       with:
         name: airshipper-windows-installer
-        path: target/wix/airshipper-${{ env.VERSION }}-x86_64.msi
+        path: target/wix/airshipper-${{ steps.vars.outputs.version }}-x86_64.msi
   release-linux:
     runs-on: [ubuntu-latest]
     steps:
