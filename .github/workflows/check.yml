@@ -2,6 +2,7 @@ name: Check
       
 on: [push]
 jobs:
+  # Check that airshipper compiles, emits no warnings and is formatted correctly.
   check:
     strategy:
       matrix:
@@ -9,6 +10,10 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
     - uses: actions/checkout@v2
+    # Check for correctly formatted code
+    - name: Check formatted code
+      if: runner.os == 'ubuntu'
+      run: cargo fmt --all -- --check
     # Cache
     - name: Cache cargo registry
       uses: actions/cache@v1
