@@ -38,4 +38,6 @@ jobs:
         profile: minimal
     # Actual check
     - name: Check
-      run: RUSTFLAGS="-D warnings" cargo check --verbose
+      run: cargo check --verbose
+      env:
+        RUSTFLAGS: "-D warnings"
