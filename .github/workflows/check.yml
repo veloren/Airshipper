@@ -10,6 +10,13 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
     - uses: actions/checkout@v2
+    # Prepare toolchain
+    - name: Pull toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
     # Check for correctly formatted code
     - name: Check formatted code
       run: cargo fmt --all -- --check
@@ -29,13 +36,6 @@ jobs:
       with:
         path: target
         key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-    # Prepare toolchain
-    - name: Pull toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: nightly
-        override: true
-        profile: minimal
     # Actual check
     - name: Check
       run: cargo check --verbose
