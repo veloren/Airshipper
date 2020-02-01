@@ -30,13 +30,13 @@ jobs:
     - name: Build
       run: cargo build --bin airshipper --release     
     - name: MSI Installer
-      run: cargo wix --no-build --nocapture -n client --install-version 0.2.0 # TODO: Dynamic release version!!!!!
+      run: cargo wix --no-build --nocapture -n client --install-version 0.2.0 # TODO: Dynamic release version
     # Upload artifact
     - name: Upload artifact
       uses: actions/upload-artifact@v1
       with:
-        name: airshipper-artifact.msi
-        path: target/wix/client-0.2.0-x86_64.msi # TODO: Dynamic release version!!!!!
+        name: airshipper-windows.msi
+        path: target/wix/client-0.2.0-x86_64.msi # TODO: Dynamic release version
   release-linux:
     runs-on: [ubuntu-latest]
     steps:
@@ -63,13 +63,17 @@ jobs:
     - name: Build
       run: cargo build --bin airshipper --release
     - name: Package
-      run: tar -cvzf airshipper.tar.gz client/assets/** target/release/airshipper
+      run: |
+        mkdir -p artifact/
+        mkdir -p artifact/assets/
+        cp -r client/assets/** artifact/assets/
+        cp target/release/airshipper artifact/airshipper
     # Upload artifact
     - name: Upload artifact
       uses: actions/upload-artifact@v1
       with:
-        name: airshipper-artifact.tar.gz
-        path: airshipper.tar.gz
+        name: airshipper-linux
+        path: artifact/
   release-macos:
     runs-on: [macos-latest]
     steps:
@@ -96,10 +100,14 @@ jobs:
     - name: Build
       run: cargo build --bin airshipper --release
     - name: Package
-      run: tar -cvzf airshipper.tar.gz client/assets/** target/release/airshipper
+      run: |
+        mkdir -p artifact/
+        mkdir -p artifact/assets/
+        cp -r client/assets/** artifact/assets/
+        cp target/release/airshipper artifact/airshipper
     # Upload artifact
     - name: Upload artifact
       uses: actions/upload-artifact@v1
       with:
-        name: airshipper-artifact.tar.gz
-        path: airshipper.tar.gz
+        name: airshipper-macos
+        path: artifact/
