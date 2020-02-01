@@ -1,0 +1,150 @@
+# This workflow will create a release if a tag gets pushed.
+
+name: Create Release
+      
+on: 
+  push:
+    tags:
+    - 'v*'
+
+jobs:
+  release-win:
+    runs-on: [windows-latest]
+    steps:
+    - uses: actions/checkout@v2
+    # The current Airshipper version will be grabbed by running:
+    # cd client && cargo pkgid | cut -d# -f2 | cut -d: -f2
+    - name: export VERSION
+      run: "echo '::set-env name=VERSION::$(cd client && cargo pkgid | cut -d# -f2 | cut -d: -f2)'"
+    # Prepare toolchain
+    - name: Pull toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+    # Cache
+    - name: Cache cargo index
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo build
+      uses: actions/cache@v1
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+    # Build & Package airshipper
+    - name: Install cargo-wix
+      run: cargo install cargo-wix
+    - name: Build
+      run: cargo build --bin airshipper --release     
+    - name: MSI Installer
+      run: cargo wix --no-build --nocapture -n client --install-version ${{ env.VERSION }}
+    - name: proper naming
+      run: ren target/wix/client-${{ env.VERSION }}-x86_64.msi airshipper-${{ env.VERSION }}-x86_64.msi
+    # Upload artifact
+    - name: Upload artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: airshipper-windows-installer
+        path: target/wix/airshipper-${{ env.VERSION }}-x86_64.msi
+  release-linux:
+    runs-on: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v2
+    # Prepare toolchain
+    - name: Pull toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+    # Cache
+    - name: Cache cargo index
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo build
+      uses: actions/cache@v1
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+    # Build & Package airshipper
+    - name: Build
+      run: cargo build --bin airshipper --release
+    - name: Package
+      run: |
+        mkdir -p artifact/
+        mkdir -p artifact/assets/
+        cp -r client/assets/** artifact/assets/
+        cp target/release/airshipper artifact/airshipper
+    # Upload artifact
+    - name: Upload artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: airshipper-linux
+        path: artifact/
+  release-macos:
+    runs-on: [macos-latest]
+    steps:
+    - uses: actions/checkout@v2
+    # Prepare toolchain
+    - name: Pull toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+    # Cache
+    - name: Cache cargo index
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo build
+      uses: actions/cache@v1
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+    # Build & Package airshipper
+    - name: Build
+      run: cargo build --bin airshipper --release
+    - name: Package
+      run: |
+        mkdir -p artifact/
+        mkdir -p artifact/assets/
+        cp -r client/assets/** artifact/assets/
+        cp target/release/airshipper artifact/airshipper
+    # Upload artifact
+    - name: Upload artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: airshipper-macos
+        path: artifact/
+  # Create a release draft
+  build:
+      runs-on: ubuntu-latest
+      needs: [release-win, release-linux, release-macos]
+      steps:
+      - uses: actions/checkout@v1
+      # Download windows artifact
+      - uses: actions/download-artifact@v1
+        with:
+          name: airshipper-windows-installer
+      # Download linux artifact
+      - uses: actions/download-artifact@v1
+        with:
+          name: airshipper-linux
+      # Download macos artifact
+      - uses: actions/download-artifact@v1
+        with:
+          name: airshipper-macos
+      # Create release draft with artifacts
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "airshipper-windows-installer, airshipper-linux, airshipper-macos"
+          prerelease: true
+          draft: true
+          token: ${{ secrets.GITHUB_TOKEN }}
