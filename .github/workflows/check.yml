@@ -27,4 +27,4 @@ jobs:
         key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
     # Actual check
     - name: Check
-      run: cargo check --verbose
+      run: RUSTFLAGS="-D warnings" cargo check --verbose
