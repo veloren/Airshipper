@@ -13,6 +13,8 @@ on:
      - "wix/**"
      - "rust-toolchain"
      - "Cargo.toml"
+     # Also run if only CI has been modifed
+     - ".github/workflows/**"
 jobs:
   release-win:
     runs-on: [windows-latest]

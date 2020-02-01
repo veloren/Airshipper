@@ -1,4 +1,5 @@
 # This workflow will create a release if a tag gets pushed.
+# TODO: Should it compile releases incase of CI/CD gets changed (like artifacts.yml/check.yml) to verify that it works?
 
 name: Create Release
       
