@@ -12,7 +12,6 @@ jobs:
     - uses: actions/checkout@v2
     # Check for correctly formatted code
     - name: Check formatted code
-      if: runner.os == 'ubuntu'
       run: cargo fmt --all -- --check
     # Cache
     - name: Cache cargo registry
@@ -30,6 +29,13 @@ jobs:
       with:
         path: target
         key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+    # Prepare toolchain
+    - name: Pull toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        override: true
+        profile: minimal
     # Actual check
     - name: Check
       run: RUSTFLAGS="-D warnings" cargo check --verbose
