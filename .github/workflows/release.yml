@@ -26,9 +26,11 @@ jobs:
         key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
     # Build & Package airshipper
     - name: Install cargo-wix
-      run: cargo install cargo-wix        
+      run: cargo install cargo-wix   
+    - name: Build
+      run: cargo build --bin airshipper --release     
     - name: MSI Installer
-      run: cargo wix --nocapture -n client --install-version 0.2.0 # TODO: Dynamic release version!!!!!
+      run: cargo wix --no-build --nocapture -n client --install-version 0.2.0 # TODO: Dynamic release version!!!!!
     # Upload artifact
     - name: Upload artifact
       uses: actions/upload-artifact@v1
