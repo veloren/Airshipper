@@ -1,0 +1,50 @@
+# This workflow will ensure that all MRs do compile, emit no warnings and are formatted correctly.
+
+name: Check
+      
+on: 
+  push:
+    branches-ignore:
+      - "master"
+    tags-ignore:
+      - v*
+    paths:
+     - "client/**"
+     - "server/**"
+     - "wix/**"
+     - "rust-toolchain"
+     - "Cargo.toml"
+jobs:
+  check:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+    - uses: actions/checkout@v2
+    # Prepare toolchain
+    - name: Pull toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+    # Check for correctly formatted code
+    - name: Check formatted code
+      run: cargo fmt --all -- --check
+    # Cache
+    - name: Cache cargo index
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo build
+      uses: actions/cache@v1
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+    # Actual check
+    - name: Check
+      run: cargo check --verbose
+      env:
+        RUSTFLAGS: "-D warnings"
