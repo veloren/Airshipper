@@ -1,5 +1,5 @@
 ### Git usage
-This project uses the [rebase strategy](https://git-scm.com/docs/git-rebase) and follows [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/#summary) loosely.
+This project follows [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/#summary) loosely.
 In addition, you should name your branch like `<name>/feature-x`
 
 Example commits:
