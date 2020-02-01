@@ -1,21 +1,24 @@
 # Airshipper
 A cross-platform Veloren launcher.
 
+![Airshipper](https://www.songtronix.com/airshipper.gif)
+
 ## Features
 
 - [X] Update/Download and start nightly.
-- [ ] Updates itself.
-- [ ] Fancy UI with batteries included.
+- [X] Fancy UI with batteries included.
+- [ ] Updates itself on windows.
 
 ## Download
-Currently can be downloaded on my webpage: [www.songtronix.com](https://www.songtronix.com)
+For all download options visit my website: [www.songtronix.com](https://www.songtronix.com)
 
+**NOTE:** Airshipper cannot be considered stable yet.
 
-##### Compile from source
+#### Compile from source
 ```bash
-git clone https://gitlab.com/veloren/airshipper.git
+git clone https://github.com/Songtronix/Airshipper.git
 cd airshipper
-cargo run
+cargo run --bin airshipper --release
 ```
 
 Make sure to have [rustup](https://rustup.rs/) installed to compile rust code.

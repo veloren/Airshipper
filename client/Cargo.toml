@@ -1,7 +1,7 @@
 [package]
 name = "airshipper"
 description = "Provides automatic updates for the voxel RPG Veloren."
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Songtronix <contact@songtronix.com>"]
 edition = "2018"
 publish = false
@@ -13,9 +13,9 @@ repository = "https://gitlab.com/veloren/airshipper"
 
 # Windows logo
 [package.metadata.winres]
-OriginalFilename = "Veloren.exe"
-FileDescription = "Multiplayer voxel RPG written in Rust."
-LegalCopyright = "Copyright © 2019"
+OriginalFilename = "Airshipper.exe"
+FileDescription = "Launcher for the the multiplayer voxel RPG written in Rust."
+LegalCopyright = "Copyright © 2020"
 
 [badges]
 maintenance = { status = "actively-developed" }
@@ -23,24 +23,37 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 # Cli
 clap = { version = "2.33.0", features = ["yaml"] }
-# UI
-# None yet
-# CLI
 indicatif = "0.13.0"
+# UI
+iced = { git = "https://github.com/hecrj/iced.git", features = ["debug", "svg", "image"], rev = "7f4ca711252d3994fc94218230677e026408a254" }
+iced_futures = { git = "https://github.com/hecrj/iced.git", features = ["async-std"], rev = "7f4ca711252d3994fc94218230677e026408a254" }
+iced_native = { git = "https://github.com/hecrj/iced.git", rev = "7f4ca711252d3994fc94218230677e026408a254" }
 # logging
 log = "0.4.8"
 fern = { version = "0.5.9", features = ["colored"] }
 chrono = "0.4.9"
 # networking
-reqwest = "0.9.20" # switching to something more lightweight may speed up compile time.
+isahc = "0.8.2"
+# parsing
+html2text = "0.1.8"
+strip_markdown = "0.1.0"
+rss = "1.8.0"
+ron = "0.5.1"
+zip = "0.5.3"
+serde = "1.0.101"
 # other
+async-std = { version = "1.4.0", features = ["unstable", "attributes"] }
 derive_more = "0.15.0"
 lazy_static = "1.4.0"
 whoami = "0.5.3"
-zip = "0.5.3"
 dirs = "2.0.2"
-serde = "1.0.101"
-ron = "0.5.1"
+find_folder = "0.3.0"
+# TODO: use futures provides by Iced?
+futures = "0.3.1"
+opener = "0.4.1"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3.8", features = ["wincon"] }
