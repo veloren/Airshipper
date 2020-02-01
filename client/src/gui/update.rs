@@ -106,7 +106,7 @@ pub fn handle_message(airship: &mut Airshipper, message: Message) -> Result<Comm
 async fn check_for_updates(mut saveable_state: SavedState) -> Result<Option<(SavedState, bool)>> {
     let mut modified = false;
     let mut profile_update_available = false;
-    
+
     match network::compare_changelog_etag(&saveable_state.changelog_etag).await? {
         Some(remote_changelog_ver) => {
             saveable_state.changelog_etag = remote_changelog_ver;
@@ -116,14 +116,14 @@ async fn check_for_updates(mut saveable_state: SavedState) -> Result<Option<(Sav
         }
         None => log::debug!("Changelog up-to-date."),
     }
-    
+
     match network::compare_news_etag(&saveable_state.news_etag).await? {
         Some(remote_news_ver) => {
             saveable_state.news_etag = remote_news_ver;
             saveable_state.news = network::query_news().await?;
             modified = true;
             log::debug!("News updated.")
-        },
+        }
         None => log::debug!("News up-to-date."),
     }
 

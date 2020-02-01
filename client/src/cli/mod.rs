@@ -35,7 +35,10 @@ pub async fn process() -> Result<()> {
     Ok(())
 }
 
-async fn process_arguments<'n, 'a>(mut state: &mut SavedState, m: clap::ArgMatches<'n>) -> Result<()> {
+async fn process_arguments<'n, 'a>(
+    mut state: &mut SavedState,
+    m: clap::ArgMatches<'n>,
+) -> Result<()> {
     if m.is_present("update") {
         update(&mut state, true).await?;
     } else if m.is_present("start") {
