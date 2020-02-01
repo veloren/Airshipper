@@ -5,7 +5,7 @@ A cross-platform Veloren launcher.
 
 - [X] Update/Download and start nightly.
 - [ ] Updates itself.
-- [ ] Fancy UI with batteries included.
+- [X] Fancy UI with batteries included.
 
 ## Download
 Currently can be downloaded on my webpage: [www.songtronix.com](https://www.songtronix.com)
