@@ -7,7 +7,6 @@ use async_std::{fs::File, prelude::*};
 use isahc::{config::RedirectPolicy, prelude::*};
 use serde::{Deserialize, Serialize};
 use std::io::BufReader;
-use std::path::PathBuf;
 
 pub const DOWNLOAD_SERVER: &str = "https://download.veloren.net";
 
@@ -222,7 +221,7 @@ fn get_artifact_uri(profile: &Profile) -> String {
 
 /// Tries to set executable permissions on linux
 #[cfg(unix)]
-fn set_permissions(files: Vec<&PathBuf>) -> Result<()> {
+fn set_permissions(files: Vec<&std::path::PathBuf>) -> Result<()> {
     use std::process::Command;
     for file in files {
         Command::new("chmod").arg("+x").arg(file).spawn()?;
