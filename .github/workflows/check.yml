@@ -4,10 +4,10 @@ name: Check
       
 on: 
   push:
-    branches-ignore:
-      - "master"
-    tags-ignore:
-      - v*
+    branches:
+      - "!master"
+    tags:
+      - "!v*"
     paths:
      - "client/**"
      - "server/**"
