@@ -12,7 +12,7 @@ pub const CONFIG_PATH: &str = "server.ron";
 
 /// File ending of *downloaded* artifacts
 pub const WINDOWS_FILE_ENDING: &str = "zip";
-pub const LINUX_FILE_ENDING: &str = "tar.gz";
+pub const LINUX_FILE_ENDING: &str = "zip";
 
 /// Configuration and defaults for the entire server.
 /// Provides configuration for essentials like port, addr and secrets
