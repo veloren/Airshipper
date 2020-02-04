@@ -57,7 +57,7 @@ jobs:
       run: cargo wix --no-build --nocapture -n client --install-version ${{ steps.vars.outputs.version }}
     - name: proper naming
       run: |
-        Remove-Item –path airshipper-${{ steps.vars.outputs.version }}-x86_64.msi
+        Remove-Item –path airshipper-${{ steps.vars.outputs.version }}-x86_64.msi -ErrorAction Ignore
         ren target/wix/client-${{ steps.vars.outputs.version }}-x86_64.msi airshipper-${{ steps.vars.outputs.version }}-x86_64.msi
     # Upload artifact
     - name: Upload artifact
