@@ -215,7 +215,7 @@ fn get_version_uri(profile: &Profile) -> String {
     format!(
         "{}/version/{}/{}",
         DOWNLOAD_SERVER,
-        whoami::platform(),
+        std::env::consts::OS,
         profile.channel
     )
 }
@@ -223,7 +223,7 @@ fn get_artifact_uri(profile: &Profile) -> String {
     format!(
         "{}/latest/{}/{}",
         DOWNLOAD_SERVER,
-        whoami::platform(),
+        std::env::consts::OS,
         profile.channel
     )
 }
