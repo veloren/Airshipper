@@ -21,7 +21,7 @@ pub async fn process() -> Result<()> {
         panic!("Failed to set logging: {}", e);
     }
 
-    log::debug!("Running on {}", whoami::os());
+    log::debug!("Running on {}", std::env::consts::OS);
     log::debug!("Base Path: {}", filesystem::base_path());
     log::debug!("Log file: {}", filesystem::get_log_path().display());
     log::debug!("Assets Path: {}", filesystem::assets_path());
