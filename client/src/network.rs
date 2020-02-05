@@ -6,11 +6,12 @@ use crate::Result;
 use async_std::{fs::File, prelude::*};
 use isahc::{config::RedirectPolicy, prelude::*};
 use serde::{Deserialize, Serialize};
-use std::io::BufReader;
 
 pub const DOWNLOAD_SERVER: &str = "https://download.veloren.net";
 
+#[cfg(feature = "gui")]
 const CHANGELOG_URL: &str = "https://gitlab.com/veloren/veloren/raw/master/CHANGELOG.md";
+#[cfg(feature = "gui")]
 const NEWS_URL: &str = "https://veloren.net/rss.xml";
 
 /// Use this method when making requests
@@ -90,6 +91,7 @@ pub fn start_download(profile: &Profile) -> Result<isahc::Metrics> {
     Ok(metrics)
 }
 
+#[cfg(feature = "gui")]
 pub async fn compare_changelog_etag(cached: &str) -> Result<Option<String>> {
     let remote = request(CHANGELOG_URL)
         .await?
@@ -100,6 +102,7 @@ pub async fn compare_changelog_etag(cached: &str) -> Result<Option<String>> {
     Ok(if remote != cached { Some(remote) } else { None })
 }
 
+#[cfg(feature = "gui")]
 pub async fn compare_news_etag(cached: &str) -> Result<Option<String>> {
     let remote = request(CHANGELOG_URL)
         .await?
@@ -110,6 +113,7 @@ pub async fn compare_news_etag(cached: &str) -> Result<Option<String>> {
     Ok(if remote != cached { Some(remote) } else { None })
 }
 
+#[cfg(feature = "gui")]
 pub async fn query_changelog() -> Result<String> {
     Ok(request(CHANGELOG_URL)
         .await?
@@ -129,11 +133,15 @@ pub struct Post {
     pub button_url: String,
 
     #[serde(skip)]
+    #[cfg(feature = "gui")]
     pub btn_state: iced::button::State,
 }
 
 /// Returns a list of Posts with title, description and button url.
+#[cfg(feature = "gui")]
 pub async fn query_news() -> Result<Vec<Post>> {
+    use std::io::BufReader;
+
     let mut response = isahc::get(NEWS_URL)?;
     let feed = rss::Channel::read_from(BufReader::new(response.body_mut()))?;
     let mut posts = Vec::new();
@@ -152,6 +160,7 @@ pub async fn query_news() -> Result<Vec<Post>> {
     Ok(posts)
 }
 
+#[cfg(feature = "gui")]
 fn process_description(post: &str) -> String {
     // TODO: Play with the width!
     let stripped_html = html2text::from_read(post.as_bytes(), 400)
