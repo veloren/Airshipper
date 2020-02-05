@@ -41,7 +41,6 @@ dependencies = [
  "serde 1.0.104",
  "strip_markdown",
  "whoami",
- "winapi 0.3.8",
  "winres",
  "zip",
 ]

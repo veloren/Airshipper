@@ -1,6 +1,7 @@
 mod cli;
 mod error;
 mod filesystem;
+#[cfg(feature = "gui")]
 mod gui;
 mod logger;
 mod network;

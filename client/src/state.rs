@@ -17,6 +17,7 @@ pub struct SavedState {
 }
 
 impl SavedState {
+    #[cfg(feature = "gui")]
     pub fn empty() -> Self {
         Self {
             ..Default::default()
