@@ -99,6 +99,7 @@ pub(crate) fn get_savedstate_path() -> PathBuf {
 }
 
 /// Returns path to where the assets are stored
+#[cfg(feature = "gui")]
 pub(crate) fn get_assets_path(name: &str) -> String {
     ASSETS_PATH.join(name).display().to_string()
 }
