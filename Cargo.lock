@@ -40,7 +40,6 @@ dependencies = [
  "rss",
  "serde 1.0.104",
  "strip_markdown",
- "whoami",
  "winres",
  "zip",
 ]
@@ -4861,12 +4860,6 @@ dependencies = [
  "log 0.4.8",
  "wgpu",
 ]
-
-[[package]]
-name = "whoami"
-version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7154f3f4488071a38189dfd63633df444e7be43b731cc12c41505308fc4972f3"
 
 [[package]]
 name = "winapi"
