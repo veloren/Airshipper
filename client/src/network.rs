@@ -35,8 +35,8 @@ pub async fn get_version(profile: &Profile) -> Result<String> {
         Ok(resp.text()?)
     } else {
         Err(format!(
-            "Couldn't download version information. Server returned '{}'",
-            resp.status()
+            "Couldn't download version information. Server returned: {}",
+            resp.text()?
         )
         .into())
     }

@@ -251,7 +251,8 @@ impl Application for Airshipper {
             LauncherState::LoadingSave
             | LauncherState::Playing
             | LauncherState::Downloading(_)
-            | LauncherState::QueryingForUpdates => {
+            | LauncherState::QueryingForUpdates
+            | LauncherState::Error(_) => {
                 play = play.style(style::PlayButtonDisabled);
                 play = play.on_press(Interaction::Disabled);
             }
