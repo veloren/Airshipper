@@ -51,6 +51,11 @@ jobs:
     # Build & Package airshipper
     - name: Install cargo-wix
       run: cargo install cargo-wix
+    - name: Enable static CRT linkage
+      run: |
+        mkdir .cargo
+        echo '[target.x86_64-pc-windows-msvc]' >> .cargo/config
+        echo 'rustflags = ["-Ctarget-feature=+crt-static"]' >> .cargo/config
     - name: Build
       run: cargo build --bin airshipper --release     
     - name: MSI Installer
