@@ -93,6 +93,11 @@ pub(crate) fn assets_path() -> impl std::fmt::Display {
     ASSETS_PATH.display()
 }
 
+#[cfg(windows)]
+pub(crate) fn get_cache_path() -> PathBuf {
+    dirs::cache_dir().unwrap()
+}
+
 /// Returns path to the file which saves the current state
 pub(crate) fn get_savedstate_path() -> PathBuf {
     BASE_PATH.join(SAVED_STATE_FILE)
