@@ -2,7 +2,6 @@ use rocket::http::Status;
 use rocket::*;
 use rocket_contrib::json::Json;
 
-use crate::db::DbConnection;
 use crate::guards::{GitlabEvent, GitlabSecret};
 use crate::models::PipelineUpdate;
 
@@ -13,8 +12,9 @@ pub fn post_pipeline_update<'r>(
     _secret: GitlabSecret,
     _event: GitlabEvent,
     payload: Json<PipelineUpdate>,
-    conn: DbConnection,
+    db: State<crate::Database>,
 ) -> Response<'r> {
-    webhook::process(payload.into_inner(), conn);
+    let clone = db.inner().clone().to_owned();
+    webhook::process(payload.into_inner(), clone);
     Response::build().status(Status::Ok).finalize()
 }
