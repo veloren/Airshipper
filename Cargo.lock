@@ -17,7 +17,7 @@ dependencies = [
 
 [[package]]
 name = "airshipper"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "async-std",
  "chrono",
@@ -40,6 +40,8 @@ dependencies = [
  "rss",
  "serde 1.0.104",
  "strip_markdown",
+ "url 2.1.1",
+ "winapi 0.3.8",
  "winres",
  "zip",
 ]

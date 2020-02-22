@@ -13,6 +13,7 @@ pub enum ClientError {
     HttpError(isahc::http::Error),
     SerializeError(ron::ser::Error),
     DeserializeError(ron::de::Error),
+    ParseError(url::ParseError),
 }
 
 impl fmt::Display for ClientError {
@@ -34,6 +35,7 @@ impl fmt::Display for ClientError {
             Self::SerializeError(x) => write!(f, "FATAL: Failed to save the config! {}", x),
             Self::DeserializeError(x) => write!(f, "FATAL: Failed to load the config! {}", x),
             Self::HttpError(x) => write!(f, "{}", x),
+            Self::ParseError(x) => write!(f, "{}", x),
         }
     }
 }
@@ -101,5 +103,11 @@ impl From<ron::ser::Error> for ClientError {
 impl From<ron::de::Error> for ClientError {
     fn from(error: ron::de::Error) -> Self {
         Self::DeserializeError(error)
+    }
+}
+
+impl From<url::ParseError> for ClientError {
+    fn from(error: url::ParseError) -> Self {
+        Self::ParseError(error)
     }
 }
