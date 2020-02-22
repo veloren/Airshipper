@@ -180,7 +180,10 @@ pub async fn install(profile: &Profile) -> Result<()> {
     let mut zip_file = std::fs::File::open(&profile.directory.join(filesystem::DOWNLOAD_FILE))?;
 
     let mut archive = zip::ZipArchive::new(&mut zip_file)?;
-
+    
+    // Delete all assets to ensure that no obsolete assets will remain.
+    std::fs::remove_dir_all(profile.directory.join("assets"))?;
+    
     for i in 1..archive.len() {
         let mut file = archive.by_index(i)?;
         let path = profile.directory.join(file.sanitized_name());
