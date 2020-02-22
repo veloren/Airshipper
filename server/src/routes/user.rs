@@ -5,7 +5,6 @@ use crate::Result;
 
 #[get("/")]
 pub fn index() -> &'static str {
-    // TODO: Expose static files for a download webpage or such.
     "You probably want to visit /latest/windows or /latest/linux"
 }
 
@@ -17,8 +16,5 @@ pub fn robots() -> &'static str {
 
 #[get("/favicon.ico")]
 pub fn favicon() -> Result<NamedFile> {
-    Ok(NamedFile::open(format!(
-        "{}/favicon.ico",
-        crate::CONFIG.static_files
-    ))?)
+    Ok(NamedFile::open("favicon.ico")?)
 }

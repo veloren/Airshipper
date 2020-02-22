@@ -73,6 +73,12 @@ impl Artifact {
         if req.status().is_success() {
             let mut f = File::create(&self.download_path)?;
             io::copy(&mut req, &mut f)?;
+        } else {
+            return Err(format!(
+                "Couldn't download {}-{}-{}",
+                self.channel, self.platform, self.date
+            )
+            .into());
         }
         Ok(())
     }
@@ -82,20 +88,16 @@ impl Artifact {
         platform: &Platform,
         channel: &Channel,
     ) -> Result<PathBuf> {
-        let path = PathBuf::from(&crate::CONFIG.static_files).join(format!("{}/", platform));
-        // Create base path
-        std::fs::create_dir_all(&path)?;
-        // Add file name + extension
         let file_ending = match platform {
             Platform::Windows => crate::config::WINDOWS_FILE_ENDING,
             Platform::Linux => crate::config::LINUX_FILE_ENDING,
         };
 
-        Ok(path.join(format!(
+        Ok(PathBuf::new().join(format!(
             "{}-{}.{}",
             channel,
             date.format("%Y-%m-%d-%H_%M_%S"),
-            file_ending,
+            file_ending
         )))
     }
 

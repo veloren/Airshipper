@@ -1,13 +1,12 @@
 use std::thread::JoinHandle;
 
-use crate::db::DbConnection;
 use crate::models::{Artifact, PipelineUpdate};
-use crate::Result;
+use crate::{Result, CONFIG};
 
 /// NOTE: This just spawns another thread! This might break if multiple
 /// pipeline updates get received in short time (shouldn't happen at all due to compile time)
 /// TODO: Replace with static background thread which communicates via channels.
-pub fn process(update: PipelineUpdate, conn: DbConnection) -> JoinHandle<()> {
+pub fn process(update: PipelineUpdate, mut db: crate::Database) -> JoinHandle<()> {
     std::thread::spawn(move || {
         log::info!(
             "[1] Received new update: {} - {}",
@@ -28,14 +27,54 @@ pub fn process(update: PipelineUpdate, conn: DbConnection) -> JoinHandle<()> {
                         artifact.platform,
                         artifact.merged_by
                     );
-                    if let Err(e) = artifact.download() {
+                    if let Err(e) = &artifact.download() {
                         log::error!("Encountered error while downloading artifact: {:?}", e);
                         return;
                     }
                     log::info!("[3] Downloaded to {}", artifact.download_path.display());
+                    // NOTE: Only 3 artifacts should exist. So they will need to be overwritten and db needs to keep track of them too.
+                    log::info!("[4] Uploading artifact...");
+                    let credentials = s3::credentials::Credentials::new(
+                        Some(CONFIG.bucket_access_key.clone()),
+                        Some(CONFIG.bucket_secret_key.clone()),
+                        None,
+                        None,
+                    );
+                    let mut bucket = match s3::bucket::Bucket::new(
+                        &CONFIG.bucket_name,
+                        CONFIG.bucket_region.clone(),
+                        credentials,
+                    ) {
+                        Ok(x) => x,
+                        Err(e) => {
+                            log::error!("Encountered error while uploading artifact: {:?}", e);
+                            return;
+                        }
+                    };
+                    bucket.add_header("x-amz-acl", "public-read");
 
-                    // Hopefully update database with new information
-                    if let Err(e) = conn.insert_artifact(artifact) {
+                    let (_, code) = bucket
+                        .put_object(
+                            &format!("/{:?}", &artifact.download_path.file_name().unwrap()),
+                            "ABC".as_bytes(), // TODO: Actual content
+                            "text/plain", // TODO: Actual content type
+                        )
+                        .unwrap();
+                    log::info!("[4] Bucket responded with {}", code);
+
+                    // Update database with new information
+                    if let Err(e) = db.update_artifact(
+                        artifact.platform,
+                        artifact.channel,
+                        &artifact.hash,
+                        &format!(
+                            "https://{}.{}.{}/{:?}",
+                            CONFIG.bucket_name,
+                            CONFIG.bucket_region,
+                            CONFIG.bucket_endpoint,
+                            artifact.download_path.file_name().unwrap()
+                        ),
+                    ) {
                         log::error!("Encountered error when inserting an artifact: {:?}", e);
                         return;
                     }

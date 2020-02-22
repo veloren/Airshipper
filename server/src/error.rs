@@ -9,8 +9,10 @@ pub enum ServerError {
     // Internal errors
     IoError(std::io::Error),
     ReqwestError(reqwest::Error),
-    PostgresError(postgres::Error),
     DateParseError(chrono::format::ParseError),
+    ConfigError(std::env::VarError),
+    DatabaseError(sled::Error),
+    Custom(String),
 
     // Web facing
     InvalidPlatform,
@@ -51,9 +53,22 @@ fn internal<'r, T: std::fmt::Debug>(resp: &mut ResponseBuilder<'r>, error: T) {
     log::error!("Internal Error: {:?}", error);
 }
 
-impl From<postgres::Error> for ServerError {
-    fn from(error: postgres::Error) -> Self {
-        Self::PostgresError(error)
+impl From<String> for ServerError {
+    fn from(error: String) -> Self {
+        Self::Custom(error)
+    }
+}
+
+impl From<std::env::VarError> for ServerError {
+    fn from(error: std::env::VarError) -> Self {
+        // TODO: Should probably add context **which** env var is missing/incorrect!
+        Self::ConfigError(error)
+    }
+}
+
+impl From<sled::Error> for ServerError {
+    fn from(error: sled::Error) -> Self {
+        Self::DatabaseError(error)
     }
 }
 
