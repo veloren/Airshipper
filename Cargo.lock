@@ -38,6 +38,7 @@ dependencies = [
  "opener",
  "ron",
  "rss",
+ "semver",
  "serde 1.0.104",
  "strip_markdown",
  "url 2.1.1",
@@ -990,9 +991,9 @@ dependencies = [
 
 [[package]]
 name = "dispatch"
-version = "0.1.4"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04e93ca78226c51902d7aa8c12c988338aadd9e85ed9c6be8aaac39192ff3605"
+checksum = "bd0c93bb4b0c6d9b77f4435b0ae98c24d17f1c45b2ff844c6151a07256ca923b"
 
 [[package]]
 name = "dlib"
@@ -1911,8 +1912,9 @@ dependencies = [
 [[package]]
 name = "iced"
 version = "0.1.0-beta"
-source = "git+https://github.com/hecrj/iced.git?rev=7f4ca711252d3994fc94218230677e026408a254#7f4ca711252d3994fc94218230677e026408a254"
+source = "git+https://github.com/hecrj/iced.git?rev=e680fd27e754aead4003cae72f401090662851b2#e680fd27e754aead4003cae72f401090662851b2"
 dependencies = [
+ "iced_futures",
  "iced_web",
  "iced_wgpu",
  "iced_winit",
@@ -1921,12 +1923,12 @@ dependencies = [
 [[package]]
 name = "iced_core"
 version = "0.1.0"
-source = "git+https://github.com/hecrj/iced.git?rev=7f4ca711252d3994fc94218230677e026408a254#7f4ca711252d3994fc94218230677e026408a254"
+source = "git+https://github.com/hecrj/iced.git?rev=e680fd27e754aead4003cae72f401090662851b2#e680fd27e754aead4003cae72f401090662851b2"
 
 [[package]]
 name = "iced_futures"
 version = "0.1.0-alpha"
-source = "git+https://github.com/hecrj/iced.git?rev=7f4ca711252d3994fc94218230677e026408a254#7f4ca711252d3994fc94218230677e026408a254"
+source = "git+https://github.com/hecrj/iced.git?rev=e680fd27e754aead4003cae72f401090662851b2#e680fd27e754aead4003cae72f401090662851b2"
 dependencies = [
  "async-std",
  "futures 0.3.1",
@@ -1937,7 +1939,7 @@ dependencies = [
 [[package]]
 name = "iced_native"
 version = "0.1.0"
-source = "git+https://github.com/hecrj/iced.git?rev=7f4ca711252d3994fc94218230677e026408a254#7f4ca711252d3994fc94218230677e026408a254"
+source = "git+https://github.com/hecrj/iced.git?rev=e680fd27e754aead4003cae72f401090662851b2#e680fd27e754aead4003cae72f401090662851b2"
 dependencies = [
  "iced_core",
  "iced_futures",
@@ -1949,7 +1951,7 @@ dependencies = [
 [[package]]
 name = "iced_style"
 version = "0.1.0-alpha"
-source = "git+https://github.com/hecrj/iced.git?rev=7f4ca711252d3994fc94218230677e026408a254#7f4ca711252d3994fc94218230677e026408a254"
+source = "git+https://github.com/hecrj/iced.git?rev=e680fd27e754aead4003cae72f401090662851b2#e680fd27e754aead4003cae72f401090662851b2"
 dependencies = [
  "iced_core",
 ]
@@ -1957,11 +1959,13 @@ dependencies = [
 [[package]]
 name = "iced_web"
 version = "0.1.0"
-source = "git+https://github.com/hecrj/iced.git?rev=7f4ca711252d3994fc94218230677e026408a254#7f4ca711252d3994fc94218230677e026408a254"
+source = "git+https://github.com/hecrj/iced.git?rev=e680fd27e754aead4003cae72f401090662851b2#e680fd27e754aead4003cae72f401090662851b2"
 dependencies = [
  "dodrio",
  "iced_core",
  "iced_futures",
+ "iced_style",
+ "url 2.1.1",
  "wasm-bindgen",
  "wasm-bindgen-futures 0.4.8",
  "web-sys",
@@ -1970,7 +1974,7 @@ dependencies = [
 [[package]]
 name = "iced_wgpu"
 version = "0.1.0"
-source = "git+https://github.com/hecrj/iced.git?rev=7f4ca711252d3994fc94218230677e026408a254#7f4ca711252d3994fc94218230677e026408a254"
+source = "git+https://github.com/hecrj/iced.git?rev=e680fd27e754aead4003cae72f401090662851b2#e680fd27e754aead4003cae72f401090662851b2"
 dependencies = [
  "font-kit",
  "glam",
@@ -1988,7 +1992,7 @@ dependencies = [
 [[package]]
 name = "iced_winit"
 version = "0.1.0-alpha"
-source = "git+https://github.com/hecrj/iced.git?rev=7f4ca711252d3994fc94218230677e026408a254#7f4ca711252d3994fc94218230677e026408a254"
+source = "git+https://github.com/hecrj/iced.git?rev=e680fd27e754aead4003cae72f401090662851b2#e680fd27e754aead4003cae72f401090662851b2"
 dependencies = [
  "iced_native",
  "log 0.4.8",
@@ -4920,12 +4924,12 @@ dependencies = [
 
 [[package]]
 name = "winit"
-version = "0.20.0-alpha4"
-source = "git+https://github.com/hecrj/winit?rev=709808eb4e69044705fcb214bcc30556db761405#709808eb4e69044705fcb214bcc30556db761405"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65a5c1a5ef76ac31cc97ad29489acdbed2178f3fc12ca00ee6cb11d60adb5a3a"
 dependencies = [
  "android_glue",
  "bitflags",
- "calloop",
  "cocoa",
  "core-foundation",
  "core-graphics",
@@ -4935,8 +4939,10 @@ dependencies = [
  "lazy_static 1.4.0",
  "libc",
  "log 0.4.8",
+ "mio",
+ "mio-extras",
  "objc",
- "parking_lot 0.9.0",
+ "parking_lot 0.10.0",
  "percent-encoding 2.1.0",
  "raw-window-handle",
  "smithay-client-toolkit",
