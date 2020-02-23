@@ -7,6 +7,8 @@ mod logger;
 mod network;
 mod profiles;
 mod state;
+#[cfg(windows)]
+mod updater;
 
 use crate::error::ClientError;
 

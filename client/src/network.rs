@@ -8,6 +8,8 @@ use isahc::{config::RedirectPolicy, prelude::*};
 use serde::{Deserialize, Serialize};
 
 pub const DOWNLOAD_SERVER: &str = "https://download.veloren.net";
+#[cfg(windows)]
+pub const UPDATE_SERVER: &str = "https://www.songtronix.com";
 
 #[cfg(feature = "gui")]
 const CHANGELOG_URL: &str = "https://gitlab.com/veloren/veloren/raw/master/CHANGELOG.md";
@@ -22,7 +24,8 @@ pub async fn request<T: ToString>(url: T) -> Result<Response<isahc::Body>> {
         .timeout(std::time::Duration::from_secs(20))
         .header(
             "User-Agent",
-            &format!("Airshipper/{}", env!("CARGO_PKG_VERSION")),
+            // TODO: Add platform info
+            &format!("Airshipper/({})", env!("CARGO_PKG_VERSION")),
         )
         .body(())?
         .send()?)
@@ -36,6 +39,29 @@ pub async fn get_version(profile: &Profile) -> Result<String> {
     } else {
         Err(format!(
             "Couldn't download version information. Server returned: {}",
+            resp.text()?
+        )
+        .into())
+    }
+}
+
+/// Returns the download url if a new version of airshipper has been released.
+#[cfg(windows)]
+pub async fn check_win_update() -> Result<Option<String>> {
+    let mut resp = request(&format!("{}/download/latest", UPDATE_SERVER)).await?;
+    if resp.status().is_success() {
+        let text = resp.text()?;
+        let lines = text.lines().take(2).collect::<Vec<&str>>();
+        let (version, url) = (lines[0].trim(), lines[1].trim());
+
+        if version != env!("CARGO_PKG_VERSION") {
+            Ok(Some(url.into()))
+        } else {
+            Ok(None)
+        }
+    } else {
+        Err(format!(
+            "Couldn't check for airshipper updates. Server returned: {}",
             resp.text()?
         )
         .into())
