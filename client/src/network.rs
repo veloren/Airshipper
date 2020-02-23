@@ -24,8 +24,11 @@ pub async fn request<T: ToString>(url: T) -> Result<Response<isahc::Body>> {
         .timeout(std::time::Duration::from_secs(20))
         .header(
             "User-Agent",
-            // TODO: Add platform info
-            &format!("Airshipper/({})", env!("CARGO_PKG_VERSION")),
+            &format!(
+                "Airshipper/{} ({})",
+                env!("CARGO_PKG_VERSION"),
+                std::env::consts::OS
+            ),
         )
         .body(())?
         .send()?)
