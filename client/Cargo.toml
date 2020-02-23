@@ -29,9 +29,9 @@ maintenance = { status = "actively-developed" }
 clap = { version = "2.33.0", features = ["yaml"] }
 indicatif = "0.13.0"
 # UI
-iced = { git = "https://github.com/hecrj/iced.git", features = ["debug", "svg", "image"], rev = "7f4ca711252d3994fc94218230677e026408a254", optional = true }
-iced_futures = { git = "https://github.com/hecrj/iced.git", features = ["async-std"], rev = "7f4ca711252d3994fc94218230677e026408a254", optional = true }
-iced_native = { git = "https://github.com/hecrj/iced.git", rev = "7f4ca711252d3994fc94218230677e026408a254", optional = true }
+iced = { git = "https://github.com/hecrj/iced.git", features = ["debug", "svg", "image"], rev = "e680fd27e754aead4003cae72f401090662851b2", optional = true }
+iced_futures = { git = "https://github.com/hecrj/iced.git", features = ["async-std"], rev = "e680fd27e754aead4003cae72f401090662851b2", optional = true }
+iced_native = { git = "https://github.com/hecrj/iced.git", rev = "e680fd27e754aead4003cae72f401090662851b2", optional = true }
 # logging
 log = "0.4.8"
 fern = { version = "0.5.9", features = ["colored"] }
@@ -46,6 +46,7 @@ ron = "0.5.1"
 zip = "0.5.3"
 serde = "1.0.101"
 url = "2.1.1"
+semver = "0.9.0"
 # other
 async-std = { version = "1.4.0", features = ["unstable", "attributes"] }
 derive_more = "0.15.0"

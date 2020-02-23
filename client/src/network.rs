@@ -24,8 +24,11 @@ pub async fn request<T: ToString>(url: T) -> Result<Response<isahc::Body>> {
         .timeout(std::time::Duration::from_secs(20))
         .header(
             "User-Agent",
-            // TODO: Add platform info
-            &format!("Airshipper/({})", env!("CARGO_PKG_VERSION")),
+            &format!(
+                "Airshipper/{} ({})",
+                env!("CARGO_PKG_VERSION"),
+                std::env::consts::OS
+            ),
         )
         .body(())?
         .send()?)
@@ -48,13 +51,22 @@ pub async fn get_version(profile: &Profile) -> Result<String> {
 /// Returns the download url if a new version of airshipper has been released.
 #[cfg(windows)]
 pub async fn check_win_update() -> Result<Option<String>> {
+    use semver::Version;
+
     let mut resp = request(&format!("{}/download/latest", UPDATE_SERVER)).await?;
     if resp.status().is_success() {
         let text = resp.text()?;
         let lines = text.lines().take(2).collect::<Vec<&str>>();
-        let (version, url) = (lines[0].trim(), lines[1].trim());
+        let (version, url) = (
+            // Incase the remote version cannot be parsed we default to the current one.
+            Version::parse(lines[0].trim()).unwrap_or({
+                log::warn!("Ignoring corrupted remote version!");
+                Version::parse(env!("CARGO_PKG_VERSION")).unwrap()
+            }),
+            lines[1].trim(),
+        );
 
-        if version != env!("CARGO_PKG_VERSION") {
+        if version > Version::parse(env!("CARGO_PKG_VERSION")).unwrap() {
             Ok(Some(url.into()))
         } else {
             Ok(None)
@@ -206,6 +218,9 @@ pub async fn install(profile: &Profile) -> Result<()> {
     let mut zip_file = std::fs::File::open(&profile.directory.join(filesystem::DOWNLOAD_FILE))?;
 
     let mut archive = zip::ZipArchive::new(&mut zip_file)?;
+
+    // Delete all assets to ensure that no obsolete assets will remain.
+    std::fs::remove_dir_all(profile.directory.join("assets"))?;
 
     for i in 1..archive.len() {
         let mut file = archive.by_index(i)?;
