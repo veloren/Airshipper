@@ -38,6 +38,7 @@ dependencies = [
  "opener",
  "ron",
  "rss",
+ "semver",
  "serde 1.0.104",
  "strip_markdown",
  "url 2.1.1",

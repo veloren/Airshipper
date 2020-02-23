@@ -51,13 +51,22 @@ pub async fn get_version(profile: &Profile) -> Result<String> {
 /// Returns the download url if a new version of airshipper has been released.
 #[cfg(windows)]
 pub async fn check_win_update() -> Result<Option<String>> {
+    use semver::Version;
+
     let mut resp = request(&format!("{}/download/latest", UPDATE_SERVER)).await?;
     if resp.status().is_success() {
         let text = resp.text()?;
         let lines = text.lines().take(2).collect::<Vec<&str>>();
-        let (version, url) = (lines[0].trim(), lines[1].trim());
+        let (version, url) = (
+            // Incase the remote version cannot be parsed we default to the current one.
+            Version::parse(lines[0].trim()).unwrap_or({
+                log::warn!("Ignoring corrupted remote version!");
+                Version::parse(env!("CARGO_PKG_VERSION")).unwrap()
+            }),
+            lines[1].trim(),
+        );
 
-        if version != env!("CARGO_PKG_VERSION") {
+        if version > Version::parse(env!("CARGO_PKG_VERSION")).unwrap() {
             Ok(Some(url.into()))
         } else {
             Ok(None)
