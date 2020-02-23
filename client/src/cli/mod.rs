@@ -26,7 +26,7 @@ pub async fn process() -> Result<()> {
     log::debug!("Log file: {}", filesystem::get_log_path().display());
     log::debug!("Assets Path: {}", filesystem::assets_path());
     #[cfg(windows)]
-    log::debug!("Cache Path: {}", filesystem::get_cache_path());
+    log::debug!("Cache Path: {}", filesystem::get_cache_path().display());
 
     // Check for updates (windows only)
     #[cfg(windows)]

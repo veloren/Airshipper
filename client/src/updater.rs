@@ -5,7 +5,8 @@ use std::ffi::OsStr;
 // TODO: We should remove the installer after successful update!
 
 pub(crate) async fn update() -> Result<()> {
-    if let Some(url) = network::check_win_update().await? {
+    // Note: this will ignore network errors silently.
+    if let Some(url) = network::check_win_update().await.ok().flatten() {
         log::info!("Found airshipper update! It's highly recommended to update. Install? [Y/n]");
         if crate::cli::confirm_action()? {
             let mut resp = network::request(&url).await?;
@@ -41,7 +42,7 @@ pub(crate) async fn update() -> Result<()> {
                 let bin = OsStr::new("msiexec\0").encode_wide().collect::<Vec<u16>>();
 
                 let arguments: Vec<u16> = OsStr::new(&format!(
-                    "/quiet /i {} /L*V {}\0",
+                    "/passive /i {} /L*V {} AUTOSTART=1\0",
                     path.join(&filename).display(),
                     path.join("airshipper-install.log").display()
                 ))
