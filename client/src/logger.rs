@@ -21,6 +21,7 @@ pub fn log(level: log::LevelFilter) -> Result<()> {
         .level_for("iced_winit", log::LevelFilter::Info)
         .level_for("wgpu_native", log::LevelFilter::Warn)
         .level_for("gfx_backend_vulkan", log::LevelFilter::Info)
+        .level_for("gfx_backend_dx12", log::LevelFilter::Info)
         .level_for("isahc", log::LevelFilter::Info);
 
     let file_cfg = fern::Dispatch::new()
