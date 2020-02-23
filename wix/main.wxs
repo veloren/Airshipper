@@ -114,6 +114,9 @@
     <Icon Id='ProductICO' SourceFile='wix/Veloren.ico'/>
     <Property Id='ARPPRODUCTICON' Value='ProductICO' />
     <Property Id='ARPHELPLINK' Value='veloren.net'/>
+	
+	  <!-- Use this property with silent install to start airshipper -->
+	  <Property Id="AUTOSTART" Value ="0" />
 
     <!-- Customize UI -->
     <UI>
@@ -164,6 +167,11 @@
     <WixVariable Id='WixUIDialogBmp' Value='wix/Dialog.bmp'/>
     <WixVariable Id='WixUIBannerBmp' Value='wix/Banner.bmp'/>
     <WixVariable Id='WixUIInfoIco' Value='wix/Veloren.ico'/>
+	
+	  <!-- Start airshipper incase it was a slient update -->
+	  <InstallExecuteSequence>
+     <Custom Action='LaunchApplication' After='InstallFinalize'>AUTOSTART = 1</Custom>
+    </InstallExecuteSequence>
 
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Airshipper" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
