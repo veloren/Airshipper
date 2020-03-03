@@ -1,6 +1,5 @@
 use derive_more::Display;
-use rocket::config::*;
-use rocket::Rocket;
+use rocket::{config::*, Rocket};
 use std::convert::TryFrom;
 
 /// The project ID of veloren on gitlab.
@@ -22,7 +21,6 @@ pub struct ServerConfig {
     pub log_level: LogLevel,
     /// Development, Staging, Production
     pub rocket_env: Env,
-    pub log_colors: bool,
     /// DO Space details
     pub bucket_name: String,
     pub bucket_endpoint: String,
@@ -44,30 +42,28 @@ pub struct ServerConfig {
 impl ServerConfig {
     pub fn load() -> crate::Result<Self> {
         Ok(Self {
-            gitlab_secret: std::env::var("AIRSHIPPER_GITLAB_SECRET").expect("AIRSHIPPER_GITLAB_SECRET not set!"),
-            artifact_stage: std::env::var("AIRSHPPER_ARTIFACT_STAGE").expect("AIRSHPPER_ARTIFACT_STAGE not set!"),
-            target_branch: std::env::var("AIRSHIPPER_TARGET_BRANCH").expect("AIRSHIPPER_TARGET_BRANCH not set!"),
-            target_executable: std::env::var("AIRSHIPPER_TARGET_EXECUTABLES").expect("AIRSHIPPER_TARGET_EXECUTABLES not set!")
+            gitlab_secret: Self::expect_env_key("AIRSHIPPER_GITLAB_SECRET"),
+            artifact_stage: Self::expect_env_key("AIRSHPPER_ARTIFACT_STAGE"),
+            target_branch: Self::expect_env_key("AIRSHIPPER_TARGET_BRANCH"),
+            target_executable: Self::expect_env_key("AIRSHIPPER_TARGET_EXECUTABLES")
                 .split(",")
                 .map(|x| x.to_string())
                 .collect(),
-            bucket_name: std::env::var("AIRSHIPPER_BUCKET_NAME").expect("AIRSHIPPER_BUCKET_NAME not set!"),
-            bucket_endpoint: std::env::var("AIRSHIPPER_BUCKET_ENDPOINT").expect("AIRSHIPPER_BUCKET_ENDPOINT not set!"),
+            bucket_name: Self::expect_env_key("AIRSHIPPER_BUCKET_NAME"),
+            bucket_endpoint: Self::expect_env_key("AIRSHIPPER_BUCKET_ENDPOINT"),
             bucket_region: s3::region::Region::Custom {
-                region: std::env::var("AIRSHIPPER_BUCKET_REGION").expect("AIRSHIPPER_BUCKET_REGION not set!"),
-                endpoint: std::env::var("AIRSHIPPER_BUCKET_ENDPOINT").expect("AIRSHIPPER_BUCKET_ENDPOINT not set!"),
+                region: Self::expect_env_key("AIRSHIPPER_BUCKET_REGION"),
+                endpoint: Self::expect_env_key("AIRSHIPPER_BUCKET_ENDPOINT"),
             },
-            bucket_access_key: std::env::var("AIRSHIPPER_BUCKET_ACCESS_KEY").expect("AIRSHIPPER_BUCKET_ACCESS_KEY not set!"),
-            bucket_secret_key: std::env::var("AIRSHIPPER_BUCKET_SECRET_KEY").expect("AIRSHIPPER_BUCKET_SECRET_KEY not set!"),
+            bucket_access_key: Self::expect_env_key("AIRSHIPPER_BUCKET_ACCESS_KEY"),
+            bucket_secret_key: Self::expect_env_key("AIRSHIPPER_BUCKET_SECRET_KEY"),
             // Optional
-            address: std::env::var("AIRSHIPPER_ADDRESS").unwrap_or("0.0.0.0:8080".into())
+            address: std::env::var("AIRSHIPPER_ADDRESS")
+                .unwrap_or("0.0.0.0:8080".into())
                 .parse()
                 .unwrap_or("0.0.0.0:8080".parse().unwrap()),
-            log_level: LogLevel::try_from(std::env::var("AIRSHIPPER_LOG_LEVEL").unwrap_or("critical".into()))
-                .unwrap_or(LogLevel::Critical),
-            rocket_env: Env::try_from(std::env::var("AIRSHIPPER_ROCKET_ENV").unwrap_or("production".into()))
-                .unwrap_or(Env::Production),
-            log_colors: std::env::var("AIRSHIPPER_COLORS").unwrap_or("false".into()).parse().unwrap_or(false),
+            log_level: LogLevel::try_from(Self::get_env_key_or("AIRSHIPPER_LOG_LEVEL", "critical"))?,
+            rocket_env: Env::try_from(Self::get_env_key_or("AIRSHIPPER_ROCKET_ENV", "production"))?,
         })
     }
 
@@ -78,10 +74,16 @@ impl ServerConfig {
             .limits(Limits::default())
             .log_level(self.log_level.into());
 
-        if !self.log_colors {
-            std::env::set_var("ROCKET_CLI_COLORS", "off");
-        }
+        std::env::set_var("ROCKET_CLI_COLORS", "off");
         rocket::custom(config.finalize().expect("Invalid Config!"))
+    }
+
+    fn expect_env_key(name: &str) -> String {
+        std::env::var(name).expect(&format!("required '{}' env key is not set!", name))
+    }
+
+    fn get_env_key_or(name: &str, unwrap_or: &str) -> String {
+        std::env::var(name).unwrap_or(unwrap_or.into())
     }
 }
 
@@ -109,8 +111,8 @@ impl TryFrom<String> for LogLevel {
         match value.to_lowercase().as_str() {
             "off" => Ok(LogLevel::Off),
             "normal" => Ok(LogLevel::Normal),
-            "Debug" => Ok(LogLevel::Debug),
-            "Critical" => Ok(LogLevel::Critical),
+            "debug" => Ok(LogLevel::Debug),
+            "critical" => Ok(LogLevel::Critical),
             x => Err(format!("Unknown LogLevel '{}'!", x).into()),
         }
     }
