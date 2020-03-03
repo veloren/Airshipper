@@ -1,8 +1,10 @@
 use std::io::Cursor;
 
-use rocket::http::Status;
-use rocket::request::Request;
-use rocket::response::{self, Responder, Response, ResponseBuilder};
+use rocket::{
+    http::Status,
+    request::Request,
+    response::{self, Responder, Response, ResponseBuilder},
+};
 
 #[derive(Debug)]
 pub enum ServerError {
@@ -11,7 +13,7 @@ pub enum ServerError {
     ReqwestError(reqwest::Error),
     DateParseError(chrono::format::ParseError),
     ConfigError(std::env::VarError),
-    DatabaseError(sled::Error),
+    DatabaseError(rusqlite::Error),
     Custom(String),
 
     // Web facing
@@ -27,19 +29,17 @@ impl Responder<'_> for ServerError {
         match self {
             Self::InvalidPlatform => {
                 resp.status(Status::BadRequest);
-                resp.sized_body(Cursor::new(format!(
-                    "Invalid platform. Currently supported are windows and linux."
-                ))); // TODO: Do not hardcode
-            }
+                resp.sized_body(Cursor::new(format!("Invalid platform. Currently supported are windows and linux."))); // TODO: Do not hardcode
+            },
             Self::InvalidChannel => {
                 resp.status(Status::BadRequest);
                 resp.sized_body(Cursor::new(format!(
                     "Invalid channel. Currently supported is nightly with upcoming support for releases."
                 ))); // TODO: Do not hardcode
-            }
+            },
             Self::StatusCode(x) => {
                 resp.status(x);
-            }
+            },
 
             x => internal(&mut resp, x),
         }
@@ -59,15 +59,8 @@ impl From<String> for ServerError {
     }
 }
 
-impl From<std::env::VarError> for ServerError {
-    fn from(error: std::env::VarError) -> Self {
-        // TODO: Should probably add context **which** env var is missing/incorrect!
-        Self::ConfigError(error)
-    }
-}
-
-impl From<sled::Error> for ServerError {
-    fn from(error: sled::Error) -> Self {
+impl From<rusqlite::Error> for ServerError {
+    fn from(error: rusqlite::Error) -> Self {
         Self::DatabaseError(error)
     }
 }
