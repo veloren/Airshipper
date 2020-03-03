@@ -1,6 +1,5 @@
 use crate::models::Platform;
-use rocket::http::RawStr;
-use rocket::request::FromParam;
+use rocket::{http::RawStr, request::FromParam};
 
 impl<'a> FromParam<'a> for Platform {
     type Error = String;

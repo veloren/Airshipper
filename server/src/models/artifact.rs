@@ -1,11 +1,11 @@
-use crate::error::ServerError;
-use crate::models::{Build, PipelineUpdate};
-use crate::Result;
+use crate::{
+    error::ServerError,
+    models::{Build, PipelineUpdate},
+    Result,
+};
 use chrono::NaiveDateTime;
 use derive_more::Display;
-use std::fs::File;
-use std::io;
-use std::path::PathBuf;
+use std::{fs::File, io, path::PathBuf};
 
 #[derive(Debug)]
 pub struct Artifact {
@@ -35,19 +35,10 @@ pub enum Channel {
 impl Artifact {
     pub fn try_from(pipe: &PipelineUpdate, build: &Build) -> Result<Option<Self>> {
         // Check if it contains artifact
-        if crate::CONFIG.target_executable.contains(&build.name)
-            && build.artifacts_file.filename.is_some()
-        {
+        if crate::CONFIG.target_executable.contains(&build.name) && build.artifacts_file.filename.is_some() {
             // Ex: 2019-10-18T16:21:28Z
             // TODO: Find a better way to convert it...
-            let date = NaiveDateTime::parse_from_str(
-                &pipe
-                    .commit
-                    .timestamp
-                    .format("%Y-%m-%dT%H:%M:%SZ")
-                    .to_string(),
-                "%Y-%m-%dT%H:%M:%SZ",
-            )?;
+            let date = NaiveDateTime::parse_from_str(&pipe.commit.timestamp.format("%Y-%m-%dT%H:%M:%SZ").to_string(), "%Y-%m-%dT%H:%M:%SZ")?;
             let id = build.id;
             let platform = Self::get_platform(&build.name)?;
             let channel = Self::get_channel();
@@ -74,31 +65,18 @@ impl Artifact {
             let mut f = File::create(&self.download_path)?;
             io::copy(&mut req, &mut f)?;
         } else {
-            return Err(format!(
-                "Couldn't download {}-{}-{}",
-                self.channel, self.platform, self.date
-            )
-            .into());
+            return Err(format!("Couldn't download {}-{}-{}", self.channel, self.platform, self.date).into());
         }
         Ok(())
     }
 
-    fn get_download_path(
-        date: &NaiveDateTime,
-        platform: &Platform,
-        channel: &Channel,
-    ) -> Result<PathBuf> {
+    fn get_download_path(date: &NaiveDateTime, platform: &Platform, channel: &Channel) -> Result<PathBuf> {
         let file_ending = match platform {
             Platform::Windows => crate::config::WINDOWS_FILE_ENDING,
             Platform::Linux => crate::config::LINUX_FILE_ENDING,
         };
 
-        Ok(PathBuf::new().join(format!(
-            "{}-{}.{}",
-            channel,
-            date.format("%Y-%m-%d-%H_%M_%S"),
-            file_ending
-        )))
+        Ok(PathBuf::new().join(format!("{}-{}.{}", channel, date.format("%Y-%m-%d-%H_%M_%S"), file_ending)))
     }
 
     fn get_url(&self) -> String {

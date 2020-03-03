@@ -1,5 +1,7 @@
-use rocket::http::Status;
-use rocket::request::{FromRequest, Outcome, Request};
+use rocket::{
+    http::Status,
+    request::{FromRequest, Outcome, Request},
+};
 
 /// This Request Guard ensures that the event type is "Pipeline Hook"
 pub struct GitlabEvent;

@@ -1,6 +1,5 @@
 use crate::models::Channel;
-use rocket::http::RawStr;
-use rocket::request::FromParam;
+use rocket::{http::RawStr, request::FromParam};
 
 impl<'a> FromParam<'a> for Channel {
     type Error = String;

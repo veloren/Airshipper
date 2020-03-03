@@ -1,7 +1,4 @@
-use rocket::response::NamedFile;
 use rocket::*;
-
-use crate::Result;
 
 #[get("/")]
 pub fn index() -> &'static str {
@@ -15,6 +12,4 @@ pub fn robots() -> &'static str {
 }
 
 #[get("/favicon.ico")]
-pub fn favicon() -> Result<NamedFile> {
-    Ok(NamedFile::open("favicon.ico")?)
-}
+pub fn favicon() {}

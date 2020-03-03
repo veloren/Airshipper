@@ -1307,16 +1307,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fs2"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9564fc758e15025b46aa6643b1b77d047d1a56a1aea6e01002ac0c7026876213"
-dependencies = [
- "libc",
- "winapi 0.3.8",
-]
-
-[[package]]
 name = "fsevent"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2263,6 +2253,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "libsqlite3-sys"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e9eb7b8e152b6a01be6a4a2917248381875758250dc3df5d46caf9250341dda"
+dependencies = [
+ "cc",
+ "pkg-config",
+ "vcpkg",
+]
+
+[[package]]
 name = "libz-sys"
 version = "1.0.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2314,6 +2315,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "14b6052be84e6b71ab17edffc2eeabf5c2c3ae1fdb464aae35ac50c67a44e1f7"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "lru-cache"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "31e24f1ad8321ca0e8a1e0ac13f23cb668e6f5466c2c57319f6a5cf1cc8e3b1c"
+dependencies = [
+ "linked-hash-map",
 ]
 
 [[package]]
@@ -2955,6 +2965,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "prometheus"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0575e258dab62268e7236d7307caa38848acbda7ec7ab87bd9093791e999d20"
+dependencies = [
+ "cfg-if",
+ "fnv",
+ "lazy_static 1.4.0",
+ "protobuf",
+ "spin",
+ "thiserror",
+]
+
+[[package]]
+name = "protobuf"
+version = "2.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37a5325d019a4d837d3abde0a836920f959e33d350f77b5f1e289e061e774942"
+
+[[package]]
 name = "publicsuffix"
 version = "1.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3012,6 +3042,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "053a8c8bcc71fcce321828dc897a98ab9760bef03a4fc36693c231e5b3216cfe"
 dependencies = [
  "proc-macro2 1.0.7",
+]
+
+[[package]]
+name = "r2d2"
+version = "0.8.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1497e40855348e4a8a40767d8e55174bce1e445a3ac9254ad44ad468ee0485af"
+dependencies = [
+ "log 0.4.8",
+ "parking_lot 0.10.0",
+ "scheduled-thread-pool",
+]
+
+[[package]]
+name = "r2d2_sqlite"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7353e4cee1aef402161e78c9a17367c018d47157625dd9e01f9651aafd098426"
+dependencies = [
+ "r2d2",
+ "rusqlite",
 ]
 
 [[package]]
@@ -3425,9 +3476,25 @@ checksum = "e0fa5c1392135adc0f96a02ba150ac4c765e27c58dbfd32aa40678e948f6e56f"
 dependencies = [
  "log 0.4.8",
  "notify",
+ "r2d2",
+ "r2d2_sqlite",
  "rocket",
+ "rocket_contrib_codegen",
+ "rusqlite",
  "serde 1.0.104",
  "serde_json",
+]
+
+[[package]]
+name = "rocket_contrib_codegen"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9bd54196728b177f2b5ef79a5e9766765a4bfc09f61d7f4c02a7604fe5f194a7"
+dependencies = [
+ "devise",
+ "quote 0.6.13",
+ "version_check 0.9.1",
+ "yansi 0.5.0",
 ]
 
 [[package]]
@@ -3445,6 +3512,16 @@ dependencies = [
  "state",
  "time",
  "unicode-xid 0.1.0",
+]
+
+[[package]]
+name = "rocket_prometheus"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da320c747c27c53ad07eaec0f51c058c76b46f7a3628807edbcc3d29e29894f0"
+dependencies = [
+ "prometheus",
+ "rocket",
 ]
 
 [[package]]
@@ -3476,6 +3553,19 @@ dependencies = [
  "derive_builder",
  "failure",
  "quick-xml",
+]
+
+[[package]]
+name = "rusqlite"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9d9118f1ce84d8d0b67f9779936432fb42bb620cef2122409d786892cce9a3c"
+dependencies = [
+ "bitflags",
+ "chrono",
+ "libsqlite3-sys",
+ "lru-cache",
+ "time",
 ]
 
 [[package]]
@@ -3607,6 +3697,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "scheduled-thread-pool"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f5de7bc31f28f8e6c28df5e1bf3d10610f5fdc14cc95f272853512c70a2bd779"
+dependencies = [
+ "parking_lot 0.10.0",
+]
+
+[[package]]
 name = "scoped_threadpool"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3729,10 +3828,11 @@ dependencies = [
  "reqwest",
  "rocket",
  "rocket_contrib",
+ "rocket_prometheus",
+ "rusqlite",
  "rust-s3",
  "serde 1.0.104",
  "serde_json",
- "sled",
 ]
 
 [[package]]
@@ -3810,22 +3910,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c111b5bd5695e56cffe5129854aa230b39c93a305372fdbb2668ca2394eea9f8"
 
 [[package]]
-name = "sled"
-version = "0.31.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fb6824dde66ad33bf20c6e8476f5b82b871bc8bc3c129a10ea2f7dae5060fa3"
-dependencies = [
- "crc32fast",
- "crossbeam-epoch",
- "crossbeam-utils 0.7.0",
- "fs2",
- "fxhash",
- "libc",
- "log 0.4.8",
- "parking_lot 0.10.0",
-]
-
-[[package]]
 name = "sluice"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3895,6 +3979,12 @@ name = "sourcefile"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4bf77cb82ba8453b42b6ae1d692e4cdc92f9a47beaf89a847c8be83f4e328ad3"
+
+[[package]]
+name = "spin"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "spirv_cross"
@@ -4131,6 +4221,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
 dependencies = [
  "unicode-width",
+]
+
+[[package]]
+name = "thiserror"
+version = "1.0.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee14bf8e6767ab4c687c9e8bc003879e042a96fd67a3ba5934eadb6536bef4db"
+dependencies = [
+ "thiserror-impl",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "1.0.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7b51e1fbc44b5a0840be594fbc0f960be09050f2617e61e6aa43bef97cd3ef4"
+dependencies = [
+ "proc-macro2 1.0.7",
+ "quote 1.0.2",
+ "syn 1.0.13",
 ]
 
 [[package]]

@@ -12,6 +12,7 @@ pub const WINDOWS_FILE_ENDING: &str = "zip";
 pub const LINUX_FILE_ENDING: &str = "zip";
 
 pub const DATABASE_FILE: &str = "airshipper.db";
+pub const AIRSHIPPER_TABLE: &str = "airshipper";
 
 /// Configuration and defaults for the entire server.
 #[derive(Clone, Debug)]
@@ -68,11 +69,19 @@ impl ServerConfig {
     }
 
     pub fn rocket(&self) -> Rocket {
+        use std::collections::HashMap;
+        // Set database url
+        let mut database_config = HashMap::new();
+        let mut databases = HashMap::new();
+        database_config.insert("url", Value::from(DATABASE_FILE));
+        databases.insert("sqlite", Value::from(database_config));
+
         let config = Config::build(self.rocket_env.into())
             .address(self.address.ip().to_string())
             .port(self.address.port())
             .limits(Limits::default())
-            .log_level(self.log_level.into());
+            .log_level(self.log_level.into())
+            .extra("databases", databases);
 
         std::env::set_var("ROCKET_CLI_COLORS", "off");
         rocket::custom(config.finalize().expect("Invalid Config!"))
