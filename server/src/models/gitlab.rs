@@ -1,3 +1,4 @@
+use super::Artifact;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 
@@ -9,6 +10,21 @@ pub struct PipelineUpdate {
     pub project: Project,
     pub commit: Commit,
     pub builds: Vec<Build>,
+}
+
+impl PipelineUpdate {
+    pub(crate) fn has_artifacts(&self) -> bool {
+        for build in &self.builds {
+            // Skip non-artifact builds.
+            if build.stage != crate::CONFIG.artifact_stage {
+                continue;
+            }
+            if let Some(_) = Artifact::try_from(&self, build).ok().flatten() {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]

@@ -1,9 +1,9 @@
-use std::thread::JoinHandle;
-
 use crate::{
     models::{Artifact, PipelineUpdate},
     Result, CONFIG,
 };
+use rocket::http::ContentType;
+use std::thread::JoinHandle;
 
 /// NOTE: This just spawns another thread! This might break if multiple
 /// pipeline updates get received in short time (shouldn't happen at all due to compile time)
@@ -49,12 +49,21 @@ pub fn process(update: PipelineUpdate, mut db: crate::DbConnection) -> JoinHandl
 
                     let (_, code) = bucket
                         .put_object(
-                            &format!("/{:?}", &artifact.download_path.file_name().unwrap()),
-                            "ABC".as_bytes(), // TODO: Actual content
-                            "text/plain",     // TODO: Actual content type
+                            &format!("/nightly/{}", &artifact.download_path.file_name().unwrap().to_string_lossy()), /* Unwrap safe. We always
+                                                                                                                      * have a file extension! */
+                            &std::fs::read(&artifact.download_path).expect("Failed to read file for upload!"),
+                            &ContentType::from_extension(
+                                &artifact
+                                    .download_path
+                                    .extension()
+                                    .unwrap_or(std::ffi::OsStr::new("zip"))
+                                    .to_string_lossy(),
+                            )
+                            .unwrap_or(ContentType::ZIP)
+                            .to_string(),
                         )
-                        .unwrap();
-                    log::info!("[4] Bucket responded with {}", code);
+                        .expect("Failed to upload!");
+                    log::info!("[5] Bucket responded with {}", code);
 
                     // Update database with new information
                     if let Err(e) = db.update_artifact(
@@ -63,16 +72,17 @@ pub fn process(update: PipelineUpdate, mut db: crate::DbConnection) -> JoinHandl
                         artifact.platform,
                         artifact.channel,
                         &format!(
-                            "https://{}.{}.{}/{:?}",
+                            "https://{}.{}/nightly/{}",
                             CONFIG.bucket_name,
-                            CONFIG.bucket_region,
                             CONFIG.bucket_endpoint,
-                            artifact.download_path.file_name().unwrap()
+                            artifact.download_path.file_name().unwrap().to_string_lossy()
                         ),
                     ) {
                         log::error!("Encountered error when inserting an artifact: {:?}", e);
                         return;
                     }
+                    // Delete obselete artifact
+                    std::fs::remove_file(artifact.download_path).expect("Failed to clean up artifact!");
                 }
             },
             Err(e) => log::info!("[2] Failed to process PipelineUpdate! {:?}", e),

@@ -9,7 +9,21 @@ use crate::{
 use crate::webhook;
 
 #[post("/", format = "json", data = "<payload>")]
-pub fn post_pipeline_update<'r>(_secret: GitlabSecret, _event: GitlabEvent, payload: Json<PipelineUpdate>, db: crate::DbConnection) -> Response<'r> {
-    webhook::process(payload.into_inner(), db);
-    Response::build().status(Status::Ok).finalize()
+pub fn post_pipeline_update<'r>(
+    _secret: GitlabSecret,
+    _event: GitlabEvent,
+    payload: Option<Json<PipelineUpdate>>,
+    db: crate::DbConnection,
+) -> Response<'r> {
+    match payload {
+        Some(update) => {
+            webhook::process(update.clone(), db);
+            if update.has_artifacts() {
+                Response::build().status(Status::Accepted).finalize()
+            } else {
+                Response::build().status(Status::Ok).finalize()
+            }
+        },
+        None => Response::build().status(Status::UnprocessableEntity).finalize(),
+    }
 }
