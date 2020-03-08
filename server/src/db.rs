@@ -26,7 +26,10 @@ impl DbConnection {
             &[&platform.to_string(), &channel.to_string()],
             |row| row.get(0),
         ) {
-            Ok(uri) => Ok(Some(uri)),
+            Ok(uri) => {
+                log::error!("URI: {}", uri);
+                Ok(Some(uri))
+            },
             Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
             Err(e) => Err(e.into()),
         }

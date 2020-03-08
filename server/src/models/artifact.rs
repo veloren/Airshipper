@@ -75,8 +75,7 @@ impl Artifact {
             Platform::Windows => crate::config::WINDOWS_FILE_ENDING,
             Platform::Linux => crate::config::LINUX_FILE_ENDING,
         };
-
-        Ok(PathBuf::new().join(format!("{}-{}.{}", channel, date.format("%Y-%m-%d-%H_%M_%S"), file_ending)))
+        Ok(PathBuf::new().join(format!("{}-{}-{}.{}", channel, platform, date.format("%Y-%m-%d-%H_%M_%S"), file_ending)))
     }
 
     fn get_url(&self) -> String {
