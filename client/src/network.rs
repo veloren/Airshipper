@@ -136,18 +136,18 @@ pub async fn compare_changelog_etag(cached: &str) -> Result<Option<String>> {
         .headers()
         .get("etag")
         .map(|x| x.to_str().unwrap().to_string()) // Etag will always be a valid UTF-8 due to it being ASCII
-        .unwrap_or("MissingEtag".into()); // TODO: Decide whether to throw an error if etag does not exist
+        .unwrap_or("MissingEtag".into());
     Ok(if remote != cached { Some(remote) } else { None })
 }
 
 #[cfg(feature = "gui")]
 pub async fn compare_news_etag(cached: &str) -> Result<Option<String>> {
-    let remote = request(CHANGELOG_URL)
+    let remote = request(NEWS_URL)
         .await?
         .headers()
         .get("etag")
         .map(|x| x.to_str().unwrap().to_string()) // Etag will always be a valid UTF-8 due to it being ASCII
-        .unwrap_or("MissingEtag".into()); // TODO: Decide whether to throw an error if etag does not exist
+        .unwrap_or("MissingEtag".into());
     Ok(if remote != cached { Some(remote) } else { None })
 }
 
