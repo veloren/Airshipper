@@ -15,6 +15,8 @@ use std::time::Duration;
 pub fn run() {
     let mut settings = Settings::default();
     settings.window.size = (1050, 620);
+    // Enforce the usage of dedicated gpu if available
+    settings.antialiasing = true;
     Airshipper::run(settings);
 }
 
