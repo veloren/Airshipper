@@ -20,6 +20,7 @@ name = "airshipper"
 version = "0.3.1"
 dependencies = [
  "async-std",
+ "backtrace 0.3.45",
  "chrono",
  "clap",
  "derive_more 0.15.0",
@@ -214,9 +215,9 @@ dependencies = [
 
 [[package]]
 name = "backtrace"
-version = "0.3.40"
+version = "0.3.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "924c76597f0d9ca25d762c25a4d369d51267536465dc5064bdf0eb073ed477ea"
+checksum = "ad235dabf00f36301792cfe82499880ba54c6486be094d1047b02bacb67c14e8"
 dependencies = [
  "backtrace-sys",
  "cfg-if",
@@ -226,9 +227,9 @@ dependencies = [
 
 [[package]]
 name = "backtrace-sys"
-version = "0.1.32"
+version = "0.1.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d6575f128516de27e3ce99689419835fce9643a9b215a14d2b5b685be018491"
+checksum = "ca797db0057bae1a7aa2eef3283a874695455cecf08a43bfb8507ee0ebc1ed69"
 dependencies = [
  "cc",
  "libc",
@@ -1162,7 +1163,7 @@ version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8273f13c977665c5db7eb2b99ae520952fe5ac831ae4cd09d80c4c7042b5ed9"
 dependencies = [
- "backtrace 0.3.40",
+ "backtrace 0.3.45",
  "failure_derive",
 ]
 
