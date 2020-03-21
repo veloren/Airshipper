@@ -27,34 +27,34 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 # Cli
 clap = { version = "2.33.0", features = ["yaml"] }
-indicatif = "0.13.0"
+indicatif = "0.14.0"
 # UI
-iced = { git = "https://github.com/hecrj/iced.git", features = ["debug", "svg", "image"], rev = "e680fd27e754aead4003cae72f401090662851b2", optional = true }
-iced_futures = { git = "https://github.com/hecrj/iced.git", features = ["async-std"], rev = "e680fd27e754aead4003cae72f401090662851b2", optional = true }
-iced_native = { git = "https://github.com/hecrj/iced.git", rev = "e680fd27e754aead4003cae72f401090662851b2", optional = true }
+iced = { git = "https://github.com/hecrj/iced.git", features = ["debug", "svg", "image"], rev = "99a6f8dbc6f9f50f799906c8104dfff961469fd0", optional = true }
+iced_futures = { git = "https://github.com/hecrj/iced.git", features = ["async-std"], rev = "99a6f8dbc6f9f50f799906c8104dfff961469fd0", optional = true }
+iced_native = { git = "https://github.com/hecrj/iced.git", rev = "99a6f8dbc6f9f50f799906c8104dfff961469fd0", optional = true }
 # logging
 log = "0.4.8"
-fern = { version = "0.5.9", features = ["colored"] }
-chrono = "0.4.9"
+fern = { version = "0.6.0", features = ["colored"] }
+chrono = "0.4.11"
 # networking
-isahc = "0.8.2"
+isahc = "0.9.1"
 # parsing
-html2text = { version = "0.1.8" }
-strip_markdown = { version = "0.1.0" }
-rss = { version = "1.8.0" }
+html2text = "0.1.11"
+strip_markdown = "0.1.0"
+rss = "1.9.0"
 ron = "0.5.1"
-zip = "0.5.3"
-serde = "1.0.101"
+zip = "0.5.5"
+serde = "1.0.105"
 url = "2.1.1"
 semver = "0.9.0"
 # other
-async-std = { version = "1.4.0", features = ["unstable", "attributes"] }
-derive_more = "0.15.0"
+async-std = { version = "1.5.0", features = ["unstable", "attributes"] }
+derive_more = "0.99.3"
 lazy_static = "1.4.0"
 dirs = "2.0.2"
 find_folder = "0.3.0"
 # TODO: use futures provides by Iced?
-futures = "0.3.1"
+futures = "0.3.4"
 opener = "0.4.1"
 backtrace = "0.3.45"
 
@@ -62,4 +62,4 @@ backtrace = "0.3.45"
 winapi = { version = "0.3.8", features = ["shellapi", "winuser"] }
 
 [target.'cfg(windows)'.build-dependencies]
-winres = "0.1"
+winres = "0.1.11"
