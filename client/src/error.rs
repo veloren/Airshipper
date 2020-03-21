@@ -40,6 +40,35 @@ impl fmt::Display for ClientError {
     }
 }
 
+pub fn setup_panic_hook() {
+    use std::panic;
+
+    let default_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |panic_info| {
+        let panic_info_payload = panic_info.payload();
+        let payload_string = panic_info_payload.downcast_ref::<String>();
+        let reason = match payload_string {
+            Some(s) => &s,
+            None => {
+                let payload_str = panic_info_payload.downcast_ref::<&str>();
+                match payload_str {
+                    Some(st) => st,
+                    None => "Payload is not a string",
+                }
+            }
+        };
+
+        log::error!(
+            "Airshipper panicked: {}\nBacktrace:\n{:?}\nLogFile: '{}'",
+            reason,
+            backtrace::Backtrace::new(),
+            crate::filesystem::get_log_path().display(),
+        );
+
+        default_hook(panic_info);
+    }));
+}
+
 impl From<std::io::Error> for ClientError {
     fn from(error: std::io::Error) -> Self {
         Self::IoError(error)
