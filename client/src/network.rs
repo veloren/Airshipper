@@ -59,7 +59,7 @@ pub async fn check_win_update() -> Result<Option<String>> {
         let lines = text.lines().take(2).collect::<Vec<&str>>();
         let (version, url) = (
             // Incase the remote version cannot be parsed we default to the current one.
-            Version::parse(lines[0].trim()).unwrap_or({
+            Version::parse(lines[0].trim()).unwrap_or_else(|_| {
                 log::warn!("Ignoring corrupted remote version!");
                 Version::parse(env!("CARGO_PKG_VERSION")).unwrap()
             }),
