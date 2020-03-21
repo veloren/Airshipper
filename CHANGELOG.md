@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2020-03-21
+
+## Changed
+
+- fix: update news when remote is newer [#40](https://github.com/Songtronix/Airshipper/pull/40)
+- prefer dedicated gpu [#41](https://github.com/Songtronix/Airshipper/pull/41)
+- log crashes in file [#45](https://github.com/Songtronix/Airshipper/pull/45)
+- updated all dependencies [#46](https://github.com/Songtronix/Airshipper/pull/46)
+- fix: avoid unneeded warning about corrupted version [#47](https://github.com/Songtronix/Airshipper/pull/47)
+
+## [0.3.1] - 2020-03-09
+
+## Changed
+
+- Fixes critical issues for new users trying out airshipper. [#38](https://github.com/Songtronix/Airshipper/issues/38)
+
 ## [0.3.0] - 2020-02-23
 
 ### Added
@@ -15,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changelog [#26](https://github.com/Songtronix/Airshipper/issues/26)
 
 ### Changed
+
 - remove outdated assets automatically [#28](https://github.com/Songtronix/Airshipper/issues/28)
 - Updated iced to latest version [#31](https://github.com/Songtronix/Airshipper/issues/31)
 - include platform in request header [#34](https://github.com/Songtronix/Airshipper/issues/34)
@@ -38,3 +55,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.1]: https://github.com/Songtronix/Airshipper/releases/tag/v0.2.1
 [0.2.0]: https://github.com/Songtronix/Airshipper/releases/tag/v0.2.0
 [0.3.0]: https://github.com/Songtronix/Airshipper/releases/tag/v0.3.0
+[0.3.1]: https://github.com/Songtronix/Airshipper/releases/tag/v0.3.1
+[0.3.2]: https://github.com/Songtronix/Airshipper/releases/tag/v0.3.2
