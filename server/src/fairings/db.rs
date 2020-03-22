@@ -24,7 +24,8 @@ impl Fairing for DbInit {
     fn on_launch(&self, _rocket: &Rocket) {
         use rusqlite::Connection;
 
-        let con = Connection::open(crate::config::DATABASE_FILE).expect("Could not establish connection to the database to initialise the table!");
+        let con = Connection::open(crate::config::DATABASE_FILE)
+            .expect("Could not establish connection to the database to initialise the table!");
         // Create table
         con.execute_batch(&DbConnection::table(
             "CREATE TABLE IF NOT EXISTS {table} (

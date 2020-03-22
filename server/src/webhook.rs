@@ -7,10 +7,10 @@ use std::thread::JoinHandle;
 
 /// NOTE: This just spawns another thread! This might break if multiple
 /// pipeline updates get received in short time (shouldn't happen at all due to compile time)
-/// TODO: Replace with static background thread which communicates via channels.
+/// TODO: Make it an async task!
 pub fn process(update: PipelineUpdate, mut db: crate::DbConnection) -> JoinHandle<()> {
     std::thread::spawn(move || {
-        log::info!(
+        tracing::info!(
             "[1] Received new update: {} - {}",
             short_desc(&update),
             update.commit.timestamp.format("%Y-%m-%d | %H:%M:%S")
@@ -18,39 +18,48 @@ pub fn process(update: PipelineUpdate, mut db: crate::DbConnection) -> JoinHandl
         match extract_all(update) {
             Ok(artifacts) => {
                 if artifacts.is_empty() {
-                    log::info!("[2] No artifacts found.");
+                    tracing::info!("[2] No artifacts found.");
                     return;
                 }
 
                 for artifact in artifacts {
-                    log::info!(
+                    tracing::info!(
                         "[2] Downloading {}-{} merged by {}",
                         artifact.channel,
                         artifact.platform,
                         artifact.merged_by
                     );
                     if let Err(e) = &artifact.download() {
-                        log::error!("Encountered error while downloading artifact: {:?}", e);
+                        tracing::error!("Encountered error while downloading artifact: {:?}", e);
                         return;
                     }
-                    log::info!("[3] Downloaded to {}", artifact.download_path.display());
-                    // NOTE: Only 3 artifacts should exist. So they will need to be overwritten and db needs to keep track of them too.
-                    log::info!("[4] Uploading artifact...");
-                    let credentials =
-                        s3::credentials::Credentials::new(Some(CONFIG.bucket_access_key.clone()), Some(CONFIG.bucket_secret_key.clone()), None, None);
-                    let mut bucket = match s3::bucket::Bucket::new(&CONFIG.bucket_name, CONFIG.bucket_region.clone(), credentials) {
-                        Ok(x) => x,
-                        Err(e) => {
-                            log::error!("Encountered error while uploading artifact: {:?}", e);
-                            return;
-                        },
-                    };
+                    tracing::info!("[3] Downloaded to {}", artifact.download_path.display());
+                    // NOTE: Only 3 artifacts should exist. So they will need to be overwritten and db needs to keep
+                    // track of them too.
+                    tracing::info!("[4] Uploading artifact...");
+                    let credentials = s3::credentials::Credentials::new(
+                        Some(CONFIG.bucket_access_key.clone()),
+                        Some(CONFIG.bucket_secret_key.clone()),
+                        None,
+                        None,
+                    );
+                    let mut bucket =
+                        match s3::bucket::Bucket::new(&CONFIG.bucket_name, CONFIG.bucket_region.clone(), credentials) {
+                            Ok(x) => x,
+                            Err(e) => {
+                                tracing::error!("Encountered error while uploading artifact: {:?}", e);
+                                return;
+                            },
+                        };
                     bucket.add_header("x-amz-acl", "public-read");
 
                     let (_, code) = bucket
                         .put_object(
-                            &format!("/nightly/{}", &artifact.download_path.file_name().unwrap().to_string_lossy()), /* Unwrap safe. We always
-                                                                                                                      * have a file extension! */
+                            &format!(
+                                "/nightly/{}",
+                                &artifact.download_path.file_name().unwrap().to_string_lossy()
+                            ), /* Unwrap safe. We always
+                                * have a file extension! */
                             &std::fs::read(&artifact.download_path).expect("Failed to read file for upload!"),
                             &ContentType::from_extension(
                                 &artifact
@@ -63,7 +72,7 @@ pub fn process(update: PipelineUpdate, mut db: crate::DbConnection) -> JoinHandl
                             .to_string(),
                         )
                         .expect("Failed to upload!");
-                    log::info!("[5] Bucket responded with {}", code);
+                    tracing::info!("[5] Bucket responded with {}", code);
 
                     // Update database with new information
                     if let Err(e) = db.update_artifact(
@@ -78,14 +87,14 @@ pub fn process(update: PipelineUpdate, mut db: crate::DbConnection) -> JoinHandl
                             artifact.download_path.file_name().unwrap().to_string_lossy()
                         ),
                     ) {
-                        log::error!("Encountered error when inserting an artifact: {:?}", e);
+                        tracing::error!("Encountered error when inserting an artifact: {:?}", e);
                         return;
                     }
                     // Delete obselete artifact
                     std::fs::remove_file(artifact.download_path).expect("Failed to clean up artifact!");
                 }
             },
-            Err(e) => log::info!("[2] Failed to process PipelineUpdate! {:?}", e),
+            Err(e) => tracing::info!("[2] Failed to process PipelineUpdate! {:?}", e),
         }
     })
 }

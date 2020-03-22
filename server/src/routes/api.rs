@@ -20,7 +20,11 @@ pub async fn version(db: crate::DbConnection, platform: Option<Platform>) -> Res
 }
 
 #[get("/version/<platform>/<channel>")]
-pub async fn channel_version(db: crate::DbConnection, platform: Option<Platform>, channel: Option<Channel>) -> Result<String> {
+pub async fn channel_version(
+    db: crate::DbConnection,
+    platform: Option<Platform>,
+    channel: Option<Channel>,
+) -> Result<String> {
     match platform {
         Some(platform) => match channel {
             Some(channel) => match db.get_latest_channel_version(platform, channel)? {
@@ -47,7 +51,11 @@ pub async fn download(db: crate::DbConnection, platform: Option<Platform>) -> Re
 }
 
 #[get("/latest/<platform>/<channel>")]
-pub async fn channel_download(db: crate::DbConnection, platform: Option<Platform>, channel: Option<Channel>) -> Result<Redirect> {
+pub async fn channel_download(
+    db: crate::DbConnection,
+    platform: Option<Platform>,
+    channel: Option<Channel>,
+) -> Result<Redirect> {
     match platform {
         Some(platform) => match channel {
             Some(channel) => match db.get_latest_uri(platform, channel)? {

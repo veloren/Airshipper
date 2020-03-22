@@ -14,5 +14,5 @@ match_block_trailing_comma = true
 merge_imports = true
 overflow_delimited_expr = true
 use_field_init_shorthand = true
-max_width = 150
+max_width = 120
 comment_width = 150
