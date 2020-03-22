@@ -8,6 +8,8 @@ use isahc::{config::RedirectPolicy, prelude::*};
 use serde::{Deserialize, Serialize};
 
 pub const DOWNLOAD_SERVER: &str = "https://download.veloren.net";
+#[cfg(windows)]
+pub const UPDATE_SERVER: &str = "https://www.songtronix.com";
 
 #[cfg(feature = "gui")]
 const CHANGELOG_URL: &str = "https://gitlab.com/veloren/veloren/raw/master/CHANGELOG.md";
@@ -22,7 +24,11 @@ pub async fn request<T: ToString>(url: T) -> Result<Response<isahc::Body>> {
         .timeout(std::time::Duration::from_secs(20))
         .header(
             "User-Agent",
-            &format!("Airshipper/{}", env!("CARGO_PKG_VERSION")),
+            &format!(
+                "Airshipper/{} ({})",
+                env!("CARGO_PKG_VERSION"),
+                std::env::consts::OS
+            ),
         )
         .body(())?
         .send()?)
@@ -36,6 +42,38 @@ pub async fn get_version(profile: &Profile) -> Result<String> {
     } else {
         Err(format!(
             "Couldn't download version information. Server returned: {}",
+            resp.text()?
+        )
+        .into())
+    }
+}
+
+/// Returns the download url if a new version of airshipper has been released.
+#[cfg(windows)]
+pub async fn check_win_update() -> Result<Option<String>> {
+    use semver::Version;
+
+    let mut resp = request(&format!("{}/download/latest", UPDATE_SERVER)).await?;
+    if resp.status().is_success() {
+        let text = resp.text()?;
+        let lines = text.lines().take(2).collect::<Vec<&str>>();
+        let (version, url) = (
+            // Incase the remote version cannot be parsed we default to the current one.
+            Version::parse(lines[0].trim()).unwrap_or_else(|_| {
+                log::warn!("Ignoring corrupted remote version!");
+                Version::parse(env!("CARGO_PKG_VERSION")).unwrap()
+            }),
+            lines[1].trim(),
+        );
+
+        if version > Version::parse(env!("CARGO_PKG_VERSION")).unwrap() {
+            Ok(Some(url.into()))
+        } else {
+            Ok(None)
+        }
+    } else {
+        Err(format!(
+            "Couldn't check for airshipper updates. Server returned: {}",
             resp.text()?
         )
         .into())
@@ -98,18 +136,18 @@ pub async fn compare_changelog_etag(cached: &str) -> Result<Option<String>> {
         .headers()
         .get("etag")
         .map(|x| x.to_str().unwrap().to_string()) // Etag will always be a valid UTF-8 due to it being ASCII
-        .unwrap_or("MissingEtag".into()); // TODO: Decide whether to throw an error if etag does not exist
+        .unwrap_or("MissingEtag".into());
     Ok(if remote != cached { Some(remote) } else { None })
 }
 
 #[cfg(feature = "gui")]
 pub async fn compare_news_etag(cached: &str) -> Result<Option<String>> {
-    let remote = request(CHANGELOG_URL)
+    let remote = request(NEWS_URL)
         .await?
         .headers()
         .get("etag")
         .map(|x| x.to_str().unwrap().to_string()) // Etag will always be a valid UTF-8 due to it being ASCII
-        .unwrap_or("MissingEtag".into()); // TODO: Decide whether to throw an error if etag does not exist
+        .unwrap_or("MissingEtag".into());
     Ok(if remote != cached { Some(remote) } else { None })
 }
 
@@ -180,6 +218,11 @@ pub async fn install(profile: &Profile) -> Result<()> {
     let mut zip_file = std::fs::File::open(&profile.directory.join(filesystem::DOWNLOAD_FILE))?;
 
     let mut archive = zip::ZipArchive::new(&mut zip_file)?;
+
+    // Delete all assets to ensure that no obsolete assets will remain.
+    if profile.directory.join("assets").exists() {
+        std::fs::remove_dir_all(profile.directory.join("assets"))?;
+    }
 
     for i in 1..archive.len() {
         let mut file = archive.by_index(i)?;
