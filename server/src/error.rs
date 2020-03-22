@@ -22,22 +22,25 @@ pub enum ServerError {
     StatusCode(rocket::http::Status),
 }
 
-impl Responder<'_> for ServerError {
-    fn respond_to(self, _: &Request) -> response::Result<'static> {
+#[rocket::async_trait]
+impl<'r> Responder<'r> for ServerError {
+    async fn respond_to(self, _: &'r Request<'_>) -> response::Result<'r> {
         let mut resp = Response::build();
 
         match self {
-            Self::InvalidPlatform => {
+            ServerError::InvalidPlatform => {
                 resp.status(Status::BadRequest);
-                resp.sized_body(Cursor::new(format!("Invalid platform. Currently supported are windows and linux."))); // TODO: Do not hardcode
+                resp.sized_body(Cursor::new(format!("Invalid platform. Currently supported are windows and linux.")))
+                    .await; // TODO: Do not hardcode
             },
-            Self::InvalidChannel => {
+            ServerError::InvalidChannel => {
                 resp.status(Status::BadRequest);
                 resp.sized_body(Cursor::new(format!(
                     "Invalid channel. Currently supported is nightly with upcoming support for releases."
-                ))); // TODO: Do not hardcode
+                )))
+                .await; // TODO: Do not hardcode
             },
-            Self::StatusCode(x) => {
+            ServerError::StatusCode(x) => {
                 resp.status(x);
             },
 

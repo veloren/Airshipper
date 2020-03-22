@@ -9,7 +9,7 @@ use crate::{
 use crate::webhook;
 
 #[post("/", format = "json", data = "<payload>")]
-pub fn post_pipeline_update<'r>(
+pub async fn post_pipeline_update<'r>(
     _secret: GitlabSecret,
     _event: GitlabEvent,
     payload: Option<Json<PipelineUpdate>>,

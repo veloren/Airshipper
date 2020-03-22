@@ -26,10 +26,7 @@ impl DbConnection {
             &[&platform.to_string(), &channel.to_string()],
             |row| row.get(0),
         ) {
-            Ok(uri) => {
-                log::error!("URI: {}", uri);
-                Ok(Some(uri))
-            },
+            Ok(uri) => Ok(Some(uri)),
             Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
             Err(e) => Err(e.into()),
         }
@@ -48,7 +45,13 @@ impl DbConnection {
                 "INSERT INTO {table} (date, hash, platform, channel, download_uri)
                         VALUES (?1, ?2, ?3, ?4, ?5);",
             ),
-            &[&date, &hash, &platform.to_string(), &channel.to_string(), &download_uri],
+            vec![
+                date.to_string(),
+                hash.to_string(),
+                platform.to_string(),
+                channel.to_string(),
+                download_uri.to_string(),
+            ],
         )?;
         Ok(())
     }
