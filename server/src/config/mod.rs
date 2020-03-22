@@ -44,8 +44,7 @@ impl ServerConfig {
     pub fn load() -> crate::Result<Self> {
         Ok(Self {
             gitlab_secret: Self::expect_env_key("AIRSHIPPER_GITLAB_SECRET"),
-            artifact_stage: Self::expect_env_key("AIRSHPPER_ARTIFACT_STAGE"),
-            target_branch: Self::expect_env_key("AIRSHIPPER_TARGET_BRANCH"),
+            artifact_stage: Self::expect_env_key("AIRSHIPPER_ARTIFACT_STAGE"),
             target_executable: Self::expect_env_key("AIRSHIPPER_TARGET_EXECUTABLES")
                 .split(",")
                 .map(|x| x.to_string())
@@ -59,6 +58,7 @@ impl ServerConfig {
             bucket_access_key: Self::expect_env_key("AIRSHIPPER_BUCKET_ACCESS_KEY"),
             bucket_secret_key: Self::expect_env_key("AIRSHIPPER_BUCKET_SECRET_KEY"),
             // Optional
+            target_branch: Self::get_env_key_or("AIRSHIPPER_TARGET_BRANCH", "master"),
             address: std::env::var("AIRSHIPPER_ADDRESS")
                 .unwrap_or("0.0.0.0:8080".into())
                 .parse()
