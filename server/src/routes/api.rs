@@ -9,7 +9,7 @@ use crate::{
 // If no channel specified we default to nightly.
 // NOTE: We want to change this behaviour once stable releases are more used than nightly
 #[get("/version/<platform>")]
-pub fn version(db: crate::DbConnection, platform: Option<Platform>) -> Result<String> {
+pub async fn version(db: crate::DbConnection, platform: Option<Platform>) -> Result<String> {
     match platform {
         Some(platform) => match db.get_latest_channel_version(platform, Channel::Nightly)? {
             Some(ver) => Ok(ver),
@@ -20,7 +20,7 @@ pub fn version(db: crate::DbConnection, platform: Option<Platform>) -> Result<St
 }
 
 #[get("/version/<platform>/<channel>")]
-pub fn channel_version(db: crate::DbConnection, platform: Option<Platform>, channel: Option<Channel>) -> Result<String> {
+pub async fn channel_version(db: crate::DbConnection, platform: Option<Platform>, channel: Option<Channel>) -> Result<String> {
     match platform {
         Some(platform) => match channel {
             Some(channel) => match db.get_latest_channel_version(platform, channel)? {
@@ -36,7 +36,7 @@ pub fn channel_version(db: crate::DbConnection, platform: Option<Platform>, chan
 // If no channel specified we default to nightly.
 // NOTE: We want to change this behaviour once stable releases are more used than nightly
 #[get("/latest/<platform>")]
-pub fn download(db: crate::DbConnection, platform: Option<Platform>) -> Result<Redirect> {
+pub async fn download(db: crate::DbConnection, platform: Option<Platform>) -> Result<Redirect> {
     match platform {
         Some(platform) => match db.get_latest_uri(platform, Channel::Nightly)? {
             Some(uri) => Ok(Redirect::to(uri)),
@@ -47,7 +47,7 @@ pub fn download(db: crate::DbConnection, platform: Option<Platform>) -> Result<R
 }
 
 #[get("/latest/<platform>/<channel>")]
-pub fn channel_download(db: crate::DbConnection, platform: Option<Platform>, channel: Option<Channel>) -> Result<Redirect> {
+pub async fn channel_download(db: crate::DbConnection, platform: Option<Platform>, channel: Option<Channel>) -> Result<Redirect> {
     match platform {
         Some(platform) => match channel {
             Some(channel) => match db.get_latest_uri(platform, channel)? {

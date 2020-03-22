@@ -12,10 +12,11 @@ pub enum GitlabError {
     InvalidEvent,
 }
 
+#[rocket::async_trait]
 impl<'a, 'r> FromRequest<'a, 'r> for GitlabEvent {
     type Error = GitlabError;
 
-    fn from_request(request: &'a Request<'r>) -> Outcome<Self, Self::Error> {
+    async fn from_request(request: &'a Request<'r>) -> Outcome<Self, Self::Error> {
         let keys: Vec<_> = request.headers().get("X-Gitlab-Event").collect();
         match keys.len() {
             0 => Outcome::Failure((Status::BadRequest, GitlabError::MissingEvent)),

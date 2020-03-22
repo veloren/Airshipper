@@ -26,9 +26,8 @@ impl Fairing for DbInit {
 
         let con = Connection::open(crate::config::DATABASE_FILE).expect("Could not establish connection to the database to initialise the table!");
         // Create table
-        con.execute(
-            &DbConnection::table(
-                "CREATE TABLE IF NOT EXISTS {table} (
+        con.execute_batch(&DbConnection::table(
+            "CREATE TABLE IF NOT EXISTS {table} (
                         id SERIAL PRIMARY KEY,
                         date timestamp without time zone NOT NULL,
                         hash varchar NOT NULL,
@@ -36,9 +35,7 @@ impl Fairing for DbInit {
                         channel varchar NOT NULL,
                         download_uri varchar NOT NULL
                     );",
-            ),
-            &[],
-        )
+        ))
         .expect("failed to create table!");
     }
 }
