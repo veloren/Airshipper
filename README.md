@@ -7,7 +7,7 @@ A cross-platform Veloren launcher.
 
 - [X] Update/Download and start nightly.
 - [X] Fancy UI with batteries included.
-- [ ] Updates itself on windows.
+- [X] Updates itself on windows.
 
 ## Download
 For all download options visit my website: [www.songtronix.com](https://www.songtronix.com)

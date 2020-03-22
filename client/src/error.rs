@@ -13,6 +13,7 @@ pub enum ClientError {
     HttpError(isahc::http::Error),
     SerializeError(ron::ser::Error),
     DeserializeError(ron::de::Error),
+    ParseError(url::ParseError),
 }
 
 impl fmt::Display for ClientError {
@@ -34,8 +35,38 @@ impl fmt::Display for ClientError {
             Self::SerializeError(x) => write!(f, "FATAL: Failed to save the config! {}", x),
             Self::DeserializeError(x) => write!(f, "FATAL: Failed to load the config! {}", x),
             Self::HttpError(x) => write!(f, "{}", x),
+            Self::ParseError(x) => write!(f, "{}", x),
         }
     }
+}
+
+pub fn setup_panic_hook() {
+    use std::panic;
+
+    let default_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |panic_info| {
+        let panic_info_payload = panic_info.payload();
+        let payload_string = panic_info_payload.downcast_ref::<String>();
+        let reason = match payload_string {
+            Some(s) => &s,
+            None => {
+                let payload_str = panic_info_payload.downcast_ref::<&str>();
+                match payload_str {
+                    Some(st) => st,
+                    None => "Payload is not a string",
+                }
+            }
+        };
+
+        log::error!(
+            "Airshipper panicked: {}\nBacktrace:\n{:?}\nLogFile: '{}'",
+            reason,
+            backtrace::Backtrace::new(),
+            crate::filesystem::get_log_path().display(),
+        );
+
+        default_hook(panic_info);
+    }));
 }
 
 impl From<std::io::Error> for ClientError {
@@ -101,5 +132,11 @@ impl From<ron::ser::Error> for ClientError {
 impl From<ron::de::Error> for ClientError {
     fn from(error: ron::de::Error) -> Self {
         Self::DeserializeError(error)
+    }
+}
+
+impl From<url::ParseError> for ClientError {
+    fn from(error: url::ParseError) -> Self {
+        Self::ParseError(error)
     }
 }
