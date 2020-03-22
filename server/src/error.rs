@@ -30,8 +30,10 @@ impl<'r> Responder<'r> for ServerError {
         match self {
             ServerError::InvalidPlatform => {
                 resp.status(Status::BadRequest);
-                resp.sized_body(Cursor::new(format!("Invalid platform. Currently supported are windows and linux.")))
-                    .await; // TODO: Do not hardcode
+                resp.sized_body(Cursor::new(format!(
+                    "Invalid platform. Currently supported are windows and linux."
+                )))
+                .await; // TODO: Do not hardcode
             },
             ServerError::InvalidChannel => {
                 resp.status(Status::BadRequest);
@@ -53,7 +55,7 @@ impl<'r> Responder<'r> for ServerError {
 
 fn internal<'r, T: std::fmt::Debug>(resp: &mut ResponseBuilder<'r>, error: T) {
     resp.status(Status::InternalServerError);
-    log::error!("Internal Error: {:?}", error);
+    tracing::error!("Internal Error: {:?}", error);
 }
 
 impl From<String> for ServerError {

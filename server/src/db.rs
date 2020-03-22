@@ -10,7 +10,9 @@ pub struct DbConnection(rusqlite::Connection);
 impl DbConnection {
     pub fn get_latest_channel_version(&self, platform: Platform, channel: Channel) -> Result<Option<String>> {
         match self.0.query_row(
-            &Self::table("SELECT hash FROM {table} WHERE platform = (?1) AND channel = (?2) ORDER BY date DESC LIMIT 1;"),
+            &Self::table(
+                "SELECT hash FROM {table} WHERE platform = (?1) AND channel = (?2) ORDER BY date DESC LIMIT 1;",
+            ),
             &[&platform.to_string(), &channel.to_string()],
             |row| row.get(0),
         ) {
@@ -22,7 +24,9 @@ impl DbConnection {
 
     pub fn get_latest_uri(&self, platform: Platform, channel: Channel) -> Result<Option<String>> {
         match self.0.query_row(
-            &Self::table("SELECT download_uri FROM {table} WHERE platform = (?1) AND channel = (?2) ORDER BY date DESC LIMIT 1;"),
+            &Self::table(
+                "SELECT download_uri FROM {table} WHERE platform = (?1) AND channel = (?2) ORDER BY date DESC LIMIT 1;",
+            ),
             &[&platform.to_string(), &channel.to_string()],
             |row| row.get(0),
         ) {

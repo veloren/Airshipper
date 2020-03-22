@@ -19,17 +19,12 @@ pub use db::DbConnection;
 
 lazy_static::lazy_static! {
     /// Contains all configuration needed.
-    pub static ref CONFIG: ServerConfig = {
-            match ServerConfig::load() {
-                Ok(x) => x,
-                Err(e) => { println!("Failed to load config: {:?}", e); std::process::exit(-1); },
-            }
-    };
+    pub static ref CONFIG: ServerConfig = ServerConfig::load();
 }
 
-pub fn rocket() -> Result<rocket::Rocket> {
+pub fn rocket() -> rocket::Rocket {
     // Base of the config and attach everything else
-    Ok(CONFIG
+    CONFIG
         .rocket()
         .attach(fairings::DbInit::default())
         .attach(DbConnection::fairing())
@@ -43,5 +38,5 @@ pub fn rocket() -> Result<rocket::Rocket> {
             routes::api::download,
             routes::api::channel_download,
         ])
-        .register(catchers![routes::catchers::not_found, routes::catchers::internal_error]))
+        .register(catchers![routes::catchers::not_found, routes::catchers::internal_error])
 }

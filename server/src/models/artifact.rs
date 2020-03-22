@@ -18,6 +18,7 @@ pub struct Artifact {
     pub platform: Platform,
     pub channel: Channel,
     pub download_path: PathBuf,
+    pub file_ending: String,
 }
 
 #[derive(Debug, Display, Clone, Copy)]
@@ -38,11 +39,18 @@ impl Artifact {
         if crate::CONFIG.target_executable.contains(&build.name) && build.artifacts_file.filename.is_some() {
             // Ex: 2019-10-18T16:21:28Z
             // TODO: Find a better way to convert it...
-            let date = NaiveDateTime::parse_from_str(&pipe.commit.timestamp.format("%Y-%m-%dT%H:%M:%SZ").to_string(), "%Y-%m-%dT%H:%M:%SZ")?;
+            let date = NaiveDateTime::parse_from_str(
+                &pipe.commit.timestamp.format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+                "%Y-%m-%dT%H:%M:%SZ",
+            )?;
             let id = build.id;
             let platform = Self::get_platform(&build.name)?;
             let channel = Self::get_channel();
-            let download_path = Self::get_download_path(&date, &platform, &channel)?;
+            let file_ending = std::path::Path::new(&build.artifacts_file.filename.clone().unwrap()) // Unwrap fine. See above.
+                .extension()
+                .map(|x| x.to_string_lossy().to_string())
+                .unwrap_or("zip".into());
+            let download_path = Self::get_download_path(&date, &platform, &channel, &file_ending)?;
 
             Ok(Some(Self {
                 id,
@@ -53,6 +61,7 @@ impl Artifact {
                 platform,
                 channel,
                 download_path,
+                file_ending,
             }))
         } else {
             Ok(None)
@@ -70,12 +79,19 @@ impl Artifact {
         Ok(())
     }
 
-    fn get_download_path(date: &NaiveDateTime, platform: &Platform, channel: &Channel) -> Result<PathBuf> {
-        let file_ending = match platform {
-            Platform::Windows => crate::config::WINDOWS_FILE_ENDING,
-            Platform::Linux => crate::config::LINUX_FILE_ENDING,
-        };
-        Ok(PathBuf::new().join(format!("{}-{}-{}.{}", channel, platform, date.format("%Y-%m-%d-%H_%M_%S"), file_ending)))
+    fn get_download_path(
+        date: &NaiveDateTime,
+        platform: &Platform,
+        channel: &Channel,
+        file_ending: &String,
+    ) -> Result<PathBuf> {
+        Ok(PathBuf::new().join(format!(
+            "{}-{}-{}.{}",
+            channel,
+            platform,
+            date.format("%Y-%m-%d-%H_%M"),
+            file_ending
+        )))
     }
 
     fn get_url(&self) -> String {
