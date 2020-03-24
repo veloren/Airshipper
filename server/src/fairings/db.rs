@@ -29,12 +29,11 @@ impl Fairing for DbInit {
         // Create table
         con.execute_batch(&DbConnection::table(
             "CREATE TABLE IF NOT EXISTS {table} (
-                        id SERIAL PRIMARY KEY,
                         date timestamp without time zone NOT NULL,
                         hash varchar NOT NULL,
                         platform varchar NOT NULL,
                         channel varchar NOT NULL,
-                        download_uri varchar NOT NULL
+                        download_uri varchar NOT NULL PRIMARY KEY
                     );",
         ))
         .expect("failed to create table!");

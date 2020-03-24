@@ -8,7 +8,7 @@ use crate::{
 
 use crate::webhook;
 
-#[tracing::instrument(skip(db, _secret, _event))]
+#[tracing::instrument(skip(db, _secret, _event, payload))]
 #[post("/", format = "json", data = "<payload>")]
 pub async fn post_pipeline_update<'r>(
     _secret: GitlabSecret,
@@ -27,9 +27,6 @@ pub async fn post_pipeline_update<'r>(
                 Response::build().status(Status::Ok).finalize()
             }
         },
-        None => {
-            tracing::error!("Received invalid Json.");
-            Response::build().status(Status::UnprocessableEntity).finalize()
-        },
+        None => Response::build().status(Status::UnprocessableEntity).finalize(),
     }
 }

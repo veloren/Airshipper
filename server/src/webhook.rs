@@ -20,15 +20,10 @@ async fn download(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()
     use async_std::fs::File;
     use s3::{bucket::Bucket, credentials::Credentials};
 
-    tracing::info!(
-        "Downloading {}-{} merged by {}",
-        artifact.channel,
-        artifact.platform,
-        artifact.merged_by
-    );
+    tracing::info!("Downloading...");
 
     let req = isahc::get_async(&artifact.get_url()).await?;
-    if req.status().is_success() {
+    if req.status().as_u16() < 400 && req.status().as_u16() >= 200 {
         let mut f = File::create(&artifact.download_path).await?;
         async_std::io::copy(&mut req.into_body(), &mut f).await?;
     } else {

@@ -48,7 +48,7 @@ impl DbConnection {
         tracing::debug!("Inserting into db...");
         self.0.execute(
             &Self::table(
-                "INSERT INTO {table} (date, hash, platform, channel, download_uri)
+                "INSERT OR IGNORE INTO {table} (date, hash, platform, channel, download_uri)
                         VALUES (?1, ?2, ?3, ?4, ?5);",
             ),
             vec![
