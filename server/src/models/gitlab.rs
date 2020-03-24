@@ -13,17 +13,21 @@ pub struct PipelineUpdate {
 }
 
 impl PipelineUpdate {
-    pub(crate) fn has_artifacts(&self) -> bool {
+    pub(crate) fn artifacts(&self) -> Option<Vec<Artifact>> {
+        let mut artifacts = Vec::new();
+
         for build in &self.builds {
             // Skip non-artifact builds.
             if build.stage != crate::CONFIG.artifact_stage {
                 continue;
             }
-            if let Some(_) = Artifact::try_from(&self, build).ok().flatten() {
-                return true;
+
+            if let Some(artifact) = Artifact::try_from(&self, build) {
+                artifacts.push(artifact);
             }
         }
-        false
+
+        if artifacts.is_empty() { None } else { Some(artifacts) }
     }
 }
 

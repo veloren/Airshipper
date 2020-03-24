@@ -8,6 +8,7 @@ use crate::{
 
 use crate::webhook;
 
+#[tracing::instrument(skip(db, _secret, _event))]
 #[post("/", format = "json", data = "<payload>")]
 pub async fn post_pipeline_update<'r>(
     _secret: GitlabSecret,
@@ -17,13 +18,18 @@ pub async fn post_pipeline_update<'r>(
 ) -> Response<'r> {
     match payload {
         Some(update) => {
-            webhook::process(update.clone(), db);
-            if update.has_artifacts() {
+            if let Some(artifacts) = update.artifacts() {
+                tracing::debug!("Found {} artifacts.", artifacts.len());
+                webhook::process(artifacts, db);
                 Response::build().status(Status::Accepted).finalize()
             } else {
+                tracing::debug!("No Artifacts found.");
                 Response::build().status(Status::Ok).finalize()
             }
         },
-        None => Response::build().status(Status::UnprocessableEntity).finalize(),
+        None => {
+            tracing::error!("Received invalid Json.");
+            Response::build().status(Status::UnprocessableEntity).finalize()
+        },
     }
 }

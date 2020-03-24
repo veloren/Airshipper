@@ -36,6 +36,7 @@ impl DbConnection {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     pub fn update_artifact(
         &mut self,
         date: chrono::NaiveDateTime,
@@ -44,6 +45,7 @@ impl DbConnection {
         channel: Channel,
         download_uri: &str,
     ) -> Result<()> {
+        tracing::debug!("Inserting into db...");
         self.0.execute(
             &Self::table(
                 "INSERT INTO {table} (date, hash, platform, channel, download_uri)
@@ -57,6 +59,7 @@ impl DbConnection {
                 download_uri.to_string(),
             ],
         )?;
+        tracing::debug!("Done.");
         Ok(())
     }
 
