@@ -32,12 +32,6 @@ pub struct ServerConfig {
 impl ServerConfig {
     pub fn load() -> Self {
         Self {
-            gitlab_secret: Self::expect_env_key("AIRSHIPPER_GITLAB_SECRET"),
-            artifact_stage: Self::expect_env_key("AIRSHIPPER_ARTIFACT_STAGE"),
-            target_executable: Self::expect_env_key("AIRSHIPPER_TARGET_EXECUTABLES")
-                .split(",")
-                .map(|x| x.to_string())
-                .collect(),
             bucket_name: Self::expect_env_key("AIRSHIPPER_BUCKET_NAME"),
             bucket_endpoint: Self::expect_env_key("AIRSHIPPER_BUCKET_ENDPOINT"),
             bucket_region: s3::region::Region::Custom {
@@ -46,6 +40,13 @@ impl ServerConfig {
             },
             bucket_access_key: Self::expect_env_key("AIRSHIPPER_BUCKET_ACCESS_KEY"),
             bucket_secret_key: Self::expect_env_key("AIRSHIPPER_BUCKET_SECRET_KEY"),
+
+            gitlab_secret: Self::expect_env_key("AIRSHIPPER_GITLAB_SECRET"),
+            artifact_stage: Self::expect_env_key("AIRSHIPPER_ARTIFACT_STAGE"),
+            target_executable: Self::expect_env_key("AIRSHIPPER_TARGET_EXECUTABLES")
+                .split(",")
+                .map(|x| x.to_string())
+                .collect(),
             // Optional
             target_branch: Self::get_env_key_or("AIRSHIPPER_TARGET_BRANCH", "master"),
         }

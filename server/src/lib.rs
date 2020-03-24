@@ -38,5 +38,5 @@ pub fn rocket() -> rocket::Rocket {
             routes::api::download,
             routes::api::channel_download,
         ])
-        .register(catchers![routes::catchers::not_found, routes::catchers::internal_error])
+        .register(catchers![routes::catchers::not_found])
 }

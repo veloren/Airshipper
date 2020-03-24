@@ -3746,19 +3746,22 @@ dependencies = [
 name = "server"
 version = "0.1.0"
 dependencies = [
+ "async-std",
  "chrono",
  "derive_more 0.15.0",
  "dotenv",
+ "isahc",
  "lazy_static 1.4.0",
  "regex",
- "reqwest",
  "rocket",
  "rocket_contrib",
  "rusqlite",
  "rust-s3",
  "serde 1.0.105",
  "serde_json",
+ "thiserror",
  "tracing",
+ "tracing-futures",
  "tracing-subscriber",
 ]
 
@@ -4165,6 +4168,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "thiserror"
+version = "1.0.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3711fd1c4e75b3eff12ba5c40dba762b6b65c5476e8174c1a664772060c49bf"
+dependencies = [
+ "thiserror-impl",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "1.0.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae2b85ba4c9aa32dd3343bd80eb8d22e9b54b7688c17ea3907f236885353b233"
+dependencies = [
+ "proc-macro2 1.0.9",
+ "quote 1.0.3",
+ "syn 1.0.17",
+]
+
+[[package]]
 name = "thread_local"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4477,6 +4500,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0aa83a9a47081cd522c09c81b31aec2c9273424976f922ad61c053b58350b715"
 dependencies = [
  "lazy_static 1.4.0",
+]
+
+[[package]]
+name = "tracing-futures"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "58b0b7fd92dc7b71f29623cc6836dd7200f32161a2313dd78be233a8405694f6"
+dependencies = [
+ "pin-project",
+ "tracing",
 ]
 
 [[package]]
