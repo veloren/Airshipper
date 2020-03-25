@@ -1,32 +1,35 @@
-use rocket::{http::Status, *};
-use rocket_contrib::json::Json;
-
 use crate::{
     guards::{GitlabEvent, GitlabSecret},
     models::PipelineUpdate,
+    webhook, Result,
 };
+use rocket::{http::Status, *};
+use rocket_contrib::json::Json;
 
-use crate::webhook;
-
-#[tracing::instrument(skip(db, _secret, _event, payload))]
+#[tracing::instrument(skip(_secret, _event, payload, db))]
 #[post("/", format = "json", data = "<payload>")]
 pub async fn post_pipeline_update<'r>(
     _secret: GitlabSecret,
     _event: GitlabEvent,
     payload: Option<Json<PipelineUpdate>>,
     db: crate::DbConnection,
-) -> Response<'r> {
+) -> Result<Response<'r>> {
     match payload {
         Some(update) => {
             if let Some(artifacts) = update.artifacts() {
-                tracing::debug!("Found {} artifacts.", artifacts.len());
-                webhook::process(artifacts, db);
-                Response::build().status(Status::Accepted).finalize()
+                if db.does_not_exist(&artifacts)? {
+                    tracing::debug!("Found {} artifacts.", artifacts.len());
+                    webhook::process(artifacts, db);
+                    Ok(Response::build().status(Status::Accepted).finalize())
+                } else {
+                    tracing::warn!("Received duplicate artifacts!");
+                    Ok(Response::build().status(Status::BadRequest).finalize())
+                }
             } else {
                 tracing::debug!("No Artifacts found.");
-                Response::build().status(Status::Ok).finalize()
+                Ok(Response::build().status(Status::Ok).finalize())
             }
         },
-        None => Response::build().status(Status::UnprocessableEntity).finalize(),
+        None => Ok(Response::build().status(Status::UnprocessableEntity).finalize()),
     }
 }

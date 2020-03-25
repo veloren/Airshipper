@@ -1,29 +1,30 @@
 [package]
 name = "server"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Songtronix <contact@songtronix.com>"]
 edition = "2018"
 
 [dependencies]
-async-std = "1.5.0"
+tokio = "0.2.13"
 # logging
 tracing = { version = "0.1.13", features = ["log"] }
 tracing-futures = "0.2.3"
 tracing-subscriber = "0.2.3"
 # Webserver
 rocket = { git = "https://github.com/SergioBenitez/Rocket", branch = "async" }
-rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket", branch = "async", features = ["json", "sqlite_pool"] }
+rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket", branch = "async", features = ["json", "diesel_sqlite_pool"] }
 # Networking
-isahc = "0.9.1"
+reqwest = "0.10.4"
 # Serialising/Deserialising
 serde = "1.0.101"
 serde_json = "1.0.41"
 # Database
-rusqlite = { version = "0.16.0", features = ["chrono", "bundled"] }
-rust-s3 = "0.18.11"
+diesel = { version = "1.4.4", features = ["sqlite", "chrono"] }
+rust-s3 = { version = "0.19.0" }
 # Error handling
 thiserror = "1.0.13"
 # other
+diesel_migrations = "1.4.0"
 chrono = { version = "0.4.7", features = ["serde"] }
 derive_more = "0.15.0"
 regex = "1.3.1"

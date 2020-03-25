@@ -23,13 +23,13 @@ pub enum ServerError {
     #[error("S3Bucker error: {0}")]
     S3Bucket(#[from] s3::error::S3Error),
     #[error("Internal Error: {0}")]
-    IsahcError(#[from] isahc::Error),
+    ReqwestError(#[from] reqwest::Error),
+    #[error("Diesel error: {0}")]
+    DieselError(#[from] diesel::result::Error),
     #[error("Internal Error: {0}")]
     IoError(#[from] std::io::Error),
-    #[error("Sqlite Error: {0}")]
-    SqliteError(#[from] rusqlite::Error),
     #[error("Code '{0}' received when requesting artifact {1:?}")]
-    InvalidResponseCode(isahc::http::StatusCode, crate::models::Artifact),
+    InvalidResponseCode(reqwest::StatusCode, crate::models::Artifact),
 }
 
 #[rocket::async_trait]
