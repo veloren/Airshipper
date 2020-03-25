@@ -1,8 +1,9 @@
-use crate::db::DbConnection;
 use rocket::{
     fairing::{Fairing, Info, Kind},
     Rocket,
 };
+
+embed_migrations!();
 
 /// Will initialise the database if necessary.
 pub struct DbInit;
@@ -16,15 +17,16 @@ impl Default for DbInit {
 impl Fairing for DbInit {
     fn info(&self) -> Info {
         Info {
-            name: "DbInit - Initialise artifact table",
+            name: "DbInit - Run migrations",
             kind: Kind::Launch,
         }
     }
 
-    fn on_launch(&self, rocket: &Rocket) {
-        let con = DbConnection::get_one(&rocket)
+    fn on_launch(&self, _: &Rocket) {
+        use crate::diesel::Connection;
+        let con = diesel::SqliteConnection::establish(crate::config::DATABASE_FILE)
             .expect("Could not establish connection to the database to initialise the table!");
-        // Create table
-        con.create_table().expect("Failed to create table!");
+        // Run migrations
+        embedded_migrations::run(&con).expect("Failed to run migrations!");
     }
 }

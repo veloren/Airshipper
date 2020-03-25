@@ -1,120 +1,97 @@
-use crate::{
-    models::{Channel, Platform},
-    Result,
-};
+use super::schema;
+use crate::{models::Artifact, Result};
+use diesel::prelude::*;
 use rocket_contrib::database;
-use rusqlite::NO_PARAMS;
 
 #[database("sqlite")]
-pub struct DbConnection(rusqlite::Connection);
+pub struct DbConnection(diesel::SqliteConnection);
+
+#[derive(Debug, Queryable)]
+pub struct DbArtifact {
+    pub id: i32,
+    pub build_id: i32,
+    pub date: chrono::NaiveDateTime,
+    pub hash: String,
+    pub author: String,
+    pub merged_by: String,
+
+    pub platform: String,
+    pub channel: String,
+    pub file_name: String,
+    pub download_uri: String,
+}
 
 impl DbConnection {
-    pub fn create_table(&self) -> Result<()> {
-        self.0.execute_batch(&DbConnection::table(
-            "CREATE TABLE IF NOT EXISTS {table} (
-                        date timestamp without time zone NOT NULL,
-                        hash varchar NOT NULL,
-                        platform varchar NOT NULL,
-                        channel varchar NOT NULL,
-                        download_uri varchar NOT NULL PRIMARY KEY
-                    );",
-        ))?;
-        Ok(())
+    pub fn get_latest_version<T: ToString>(&self, searched_platform: T, searched_channel: T) -> Result<Option<String>> {
+        use schema::artifacts::dsl::*;
+        Ok(artifacts
+            .select(hash)
+            .order(date.desc())
+            .filter(platform.eq(searched_platform.to_string().to_lowercase()))
+            .filter(channel.eq(searched_channel.to_string().to_lowercase()))
+            .first(&self.0)
+            .optional()?)
     }
 
-    pub fn get_latest_channel_version(&self, platform: Platform, channel: Channel) -> Result<Option<String>> {
-        match self.0.query_row(
-            &Self::table(
-                "SELECT hash FROM {table} WHERE platform = (?1) AND channel = (?2) ORDER BY date DESC LIMIT 1;",
-            ),
-            &[&platform.to_string(), &channel.to_string()],
-            |row| row.get(0),
-        ) {
-            Ok(version) => Ok(Some(version)),
-            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-            Err(e) => Err(e.into()),
-        }
+    pub fn get_latest_uri<T: ToString>(&self, searched_platform: T, searched_channel: T) -> Result<Option<String>> {
+        use schema::artifacts::dsl::*;
+        Ok(artifacts
+            .select(download_uri)
+            .order(date.desc())
+            .filter(platform.eq(searched_platform.to_string().to_lowercase()))
+            .filter(channel.eq(searched_channel.to_string().to_lowercase()))
+            .first(&self.0)
+            .optional()?)
     }
 
-    pub fn get_latest_uri(&self, platform: Platform, channel: Channel) -> Result<Option<String>> {
-        match self.0.query_row(
-            &Self::table(
-                "SELECT download_uri FROM {table} WHERE platform = (?1) AND channel = (?2) ORDER BY date DESC LIMIT 1;",
-            ),
-            &[&platform.to_string(), &channel.to_string()],
-            |row| row.get(0),
-        ) {
-            Ok(uri) => Ok(Some(uri)),
-            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-            Err(e) => Err(e.into()),
-        }
-    }
-
-    #[tracing::instrument(skip(self))]
-    pub fn update_artifact(
-        &mut self,
-        date: chrono::NaiveDateTime,
-        hash: &str,
-        platform: Platform,
-        channel: Channel,
-        download_uri: &str,
-    ) -> Result<()> {
-        tracing::debug!("Inserting into db...");
-        self.0.execute(
-            &Self::table(
-                "INSERT OR IGNORE INTO {table} (date, hash, platform, channel, download_uri)
-                        VALUES (?1, ?2, ?3, ?4, ?5);",
-            ),
-            vec![
-                date.to_string(),
-                hash.to_string(),
-                platform.to_string(),
-                channel.to_string(),
-                download_uri.to_string(),
-            ],
-        )?;
-        tracing::debug!("Done.");
+    pub fn insert_artifact(&mut self, new_artifact: Artifact) -> Result<()> {
+        use schema::artifacts;
+        // TODO: Check whether UNIQUE constraint gets violated and throw a warning but proceed!
+        diesel::insert_or_ignore_into(artifacts::table)
+            .values(&new_artifact)
+            .execute(&self.0)?;
         Ok(())
     }
 
     pub fn has_pruneable_artifacts(&self) -> Result<bool> {
-        match self
-            .0
-            .query_row(&Self::table("SELECT COUNT(*) FROM {table}"), NO_PARAMS, |row| {
-                row.get::<_, i64>(0)
-            }) {
-            Ok(candidates) => Ok(if candidates > 10 { true } else { false }),
-            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(false),
-            Err(e) => Err(e.into()),
+        use schema::artifacts::dsl::*;
+        let count: Option<i64> = artifacts.count().get_result(&self.0).optional()?;
+        match count {
+            Some(candidates) => {
+                if candidates > 10 {
+                    Ok(true)
+                } else {
+                    Ok(false)
+                }
+            },
+            None => Ok(false),
         }
     }
 
-    // Returns a list of the urls of the pruned artifacts.
-    /*#[tracing::instrument(skip(self))]
-    pub fn prune_artifacts(&mut self) -> Result<Vec<Artifact>> {
-        let tx = self.0.transaction()?;
-        let mut pruneable_artifacts = Vec::new();
-        {
-            let mut query = tx.prepare(&Self::table(
-                "Select date,platform,channel,download_uri FROM {table} ORDER BY date DESC LIMIT 100 OFFSET 6;",
-            ))?;
-            let rows = query.query_map(NO_PARAMS, |row| row.get(0))?;
+    pub fn prune_artifacts(&self) -> Result<Vec<Artifact>> {
+        use schema::artifacts::dsl::*;
+        let artis = artifacts
+            .order(date.desc())
+            .limit(1000)
+            .offset(6)
+            .load::<DbArtifact>(&self.0)?;
 
-            Artifact::get_download_path(date, platform, channel, file_ending);
+        let ids: Vec<i32> = artis.iter().map(|x| x.id).collect();
+        diesel::delete(artifacts.filter(id.eq_any(ids))).execute(&self.0)?;
+        Ok(artis.iter().map(|x| x.into()).collect())
+    }
 
-            for pruneable in rows {
-                pruneable_artifacts.push(pruneable?);
-            }
-
-            let mut delete = tx.prepare(&Self::table("DELETE FROM {table} WHERE download_uri = (?)"))?;
-            delete.execute(&pruneable_artifacts)?;
+    pub fn does_not_exist(&self, cmp: &Vec<Artifact>) -> Result<bool> {
+        use schema::artifacts::dsl::*;
+        let uris: Vec<&String> = cmp.iter().map(|x| &x.download_uri).collect();
+        let count: Option<i64> = artifacts
+            .filter(download_uri.eq_any(uris))
+            .count()
+            .get_result(&self.0)
+            .optional()?;
+        match count {
+            Some(_) => Ok(false),
+            None => Ok(true),
         }
-        tx.commit()?;
-
-        Ok(pruneable_artifacts)
-    }*/
-
-    pub fn table(query: &str) -> String {
-        query.replace("{table}", crate::config::AIRSHIPPER_TABLE)
     }
 }

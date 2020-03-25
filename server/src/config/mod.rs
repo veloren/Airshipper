@@ -6,15 +6,14 @@ pub const PROJECT_ID: u64 = 10174980;
 pub const HOOK_TYPE: &str = "Pipeline Hook";
 
 pub const DATABASE_FILE: &str = "airshipper.db";
-pub const AIRSHIPPER_TABLE: &str = "airshipper";
 
 /// Configuration and defaults for the entire server.
 #[derive(Clone, Debug)]
 pub struct ServerConfig {
     /// DO Space details
     pub bucket_name: String,
+    pub bucket_region: String,
     pub bucket_endpoint: String,
-    pub bucket_region: s3::region::Region,
     pub bucket_access_key: String,
     pub bucket_secret_key: String,
 
@@ -34,10 +33,7 @@ impl ServerConfig {
         Self {
             bucket_name: Self::expect_env_key("AIRSHIPPER_BUCKET_NAME"),
             bucket_endpoint: Self::expect_env_key("AIRSHIPPER_BUCKET_ENDPOINT"),
-            bucket_region: s3::region::Region::Custom {
-                region: Self::expect_env_key("AIRSHIPPER_BUCKET_REGION"),
-                endpoint: Self::expect_env_key("AIRSHIPPER_BUCKET_ENDPOINT"),
-            },
+            bucket_region: Self::expect_env_key("AIRSHIPPER_BUCKET_REGION"),
             bucket_access_key: Self::expect_env_key("AIRSHIPPER_BUCKET_ACCESS_KEY"),
             bucket_secret_key: Self::expect_env_key("AIRSHIPPER_BUCKET_SECRET_KEY"),
 

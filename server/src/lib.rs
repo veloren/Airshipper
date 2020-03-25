@@ -1,13 +1,14 @@
 #![feature(proc_macro_hygiene)]
 use rocket::*;
+#[macro_use] extern crate diesel;
+#[macro_use] extern crate diesel_migrations;
 
-pub mod config;
+mod config;
 mod db;
 mod error;
 mod fairings;
 mod guards;
 mod models;
-mod params;
 mod prune;
 mod routes;
 mod webhook;
@@ -27,8 +28,8 @@ pub fn rocket() -> rocket::Rocket {
     // Base of the config and attach everything else
     CONFIG
         .rocket()
-        .attach(fairings::DbInit::default())
         .attach(DbConnection::fairing())
+        .attach(fairings::db::DbInit)
         .mount("/", routes![
             routes::gitlab::post_pipeline_update,
             routes::user::index,
