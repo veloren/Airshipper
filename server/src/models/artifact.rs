@@ -71,7 +71,7 @@ impl Artifact {
         )
     }
 
-    fn get_download_path(
+    pub fn get_download_path(
         date: &NaiveDateTime,
         platform: &Platform,
         channel: &Channel,

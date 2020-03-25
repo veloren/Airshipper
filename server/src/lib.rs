@@ -8,6 +8,7 @@ mod fairings;
 mod guards;
 mod models;
 mod params;
+mod prune;
 mod routes;
 mod webhook;
 
@@ -15,7 +16,7 @@ use crate::error::ServerError;
 use config::ServerConfig;
 
 pub type Result<T> = std::result::Result<T, ServerError>;
-pub use db::DbConnection;
+pub use db::{DbConnection, S3Connection};
 
 lazy_static::lazy_static! {
     /// Contains all configuration needed.
