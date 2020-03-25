@@ -1,5 +1,4 @@
 use crate::{error::ServerError, models::Artifact, Result, CONFIG};
-use rocket::http::ContentType;
 use tracing_futures::Instrument;
 
 pub fn process(artifacts: Vec<Artifact>, mut db: crate::DbConnection) {
@@ -10,6 +9,9 @@ pub fn process(artifacts: Vec<Artifact>, mut db: crate::DbConnection) {
                     tracing::error!("Failed to download artifact: {}.", e);
                 }
             }
+            if let Err(e) = crate::prune::prune(&mut db).await {
+                tracing::error!("Pruning failed: {}.", e);
+            }
         }
         .instrument(tracing::info_span!("PipelineUpdate")),
     );
@@ -18,7 +20,6 @@ pub fn process(artifacts: Vec<Artifact>, mut db: crate::DbConnection) {
 #[tracing::instrument(skip(db))]
 async fn download(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()> {
     use async_std::fs::File;
-    use s3::{bucket::Bucket, credentials::Credentials};
 
     tracing::info!("Downloading...");
 
@@ -33,35 +34,10 @@ async fn download(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()
     tracing::info!("Downloaded to {}", artifact.download_path.display());
 
     tracing::info!("Uploading artifact...");
-    let credentials = Credentials::new(
-        Some(CONFIG.bucket_access_key.clone()),
-        Some(CONFIG.bucket_secret_key.clone()),
-        None,
-        None,
-    );
-    let mut bucket = Bucket::new(&CONFIG.bucket_name, CONFIG.bucket_region.clone(), credentials)?;
-    bucket.add_header("x-amz-acl", "public-read");
+    crate::S3Connection::new()?.upload(&artifact)?;
 
-    let (_, code) = bucket
-        .put_object(
-            &format!(
-                "/nightly/{}",
-                &artifact.download_path.file_name().unwrap().to_string_lossy()
-            ), /* Unwrap safe. We always
-                * have a file extension! */
-            &std::fs::read(&artifact.download_path).expect("Failed to read file for upload!"),
-            &ContentType::from_extension(
-                &artifact
-                    .download_path
-                    .extension()
-                    .unwrap_or(std::ffi::OsStr::new("zip"))
-                    .to_string_lossy(),
-            )
-            .unwrap_or(ContentType::ZIP)
-            .to_string(),
-        )
-        .expect("Failed to upload!");
-    tracing::info!("Bucket responded with {}", code); // TODO: Check if that code is success!
+    // Delete obselete artifact
+    let _ = std::fs::remove_file(&artifact.download_path);
 
     // Update database with new information
     db.update_artifact(
@@ -76,7 +52,5 @@ async fn download(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()
             artifact.download_path.file_name().unwrap().to_string_lossy()
         ),
     )?;
-    // Delete obselete artifact if it exists
-    let _ = std::fs::remove_file(artifact.download_path);
     Ok(())
 }

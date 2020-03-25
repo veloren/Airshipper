@@ -21,21 +21,10 @@ impl Fairing for DbInit {
         }
     }
 
-    fn on_launch(&self, _rocket: &Rocket) {
-        use rusqlite::Connection;
-
-        let con = Connection::open(crate::config::DATABASE_FILE)
+    fn on_launch(&self, rocket: &Rocket) {
+        let con = DbConnection::get_one(&rocket)
             .expect("Could not establish connection to the database to initialise the table!");
         // Create table
-        con.execute_batch(&DbConnection::table(
-            "CREATE TABLE IF NOT EXISTS {table} (
-                        date timestamp without time zone NOT NULL,
-                        hash varchar NOT NULL,
-                        platform varchar NOT NULL,
-                        channel varchar NOT NULL,
-                        download_uri varchar NOT NULL PRIMARY KEY
-                    );",
-        ))
-        .expect("failed to create table!");
+        con.create_table().expect("Failed to create table!");
     }
 }
