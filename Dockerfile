@@ -4,7 +4,8 @@ RUN pacman -Sy rustup base-devel --noconfirm
 RUN rustup set profile minimal
 RUN rustup default nightly
 
-COPY . /app
+# TODO: Avoid copying the client into that crap!
+COPY . /app 
 
 WORKDIR /app/
 

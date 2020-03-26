@@ -1,5 +1,7 @@
-use rocket::http::Status;
-use rocket::request::{FromRequest, Outcome, Request};
+use rocket::{
+    http::Status,
+    request::{FromRequest, Outcome, Request},
+};
 
 /// This Request Guard ensures that the event type is "Pipeline Hook"
 pub struct GitlabEvent;
@@ -10,10 +12,11 @@ pub enum GitlabError {
     InvalidEvent,
 }
 
+#[rocket::async_trait]
 impl<'a, 'r> FromRequest<'a, 'r> for GitlabEvent {
     type Error = GitlabError;
 
-    fn from_request(request: &'a Request<'r>) -> Outcome<Self, Self::Error> {
+    async fn from_request(request: &'a Request<'r>) -> Outcome<Self, Self::Error> {
         let keys: Vec<_> = request.headers().get("X-Gitlab-Event").collect();
         match keys.len() {
             0 => Outcome::Failure((Status::BadRequest, GitlabError::MissingEvent)),

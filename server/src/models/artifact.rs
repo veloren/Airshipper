@@ -1,123 +1,106 @@
-use crate::error::ServerError;
-use crate::models::{Build, PipelineUpdate};
-use crate::Result;
+use crate::{
+    db::{schema::artifacts, DbArtifact},
+    models::{Build, PipelineUpdate},
+    CONFIG,
+};
 use chrono::NaiveDateTime;
-use derive_more::Display;
-use std::fs::File;
-use std::io;
-use std::path::PathBuf;
+use diesel::Queryable;
 
-#[derive(Debug)]
+#[derive(Debug, Queryable, Insertable)]
+#[table_name = "artifacts"]
 pub struct Artifact {
-    pub id: u64,
+    pub build_id: i32,
     pub date: NaiveDateTime,
     pub hash: String,
     pub author: String,
     pub merged_by: String,
 
-    pub platform: Platform,
-    pub channel: Channel,
-    pub download_path: PathBuf,
+    pub platform: String,
+    pub channel: String,
+    pub file_name: String,
+    pub download_uri: String,
 }
 
-#[derive(Debug, Display, Clone, Copy)]
-pub enum Platform {
-    Windows,
-    Linux,
-}
-
-#[derive(Debug, Display, Clone, Copy)]
-pub enum Channel {
-    Nightly,
-    // TODO: Release,
+impl From<&DbArtifact> for Artifact {
+    fn from(db: &DbArtifact) -> Self {
+        Self {
+            build_id: db.build_id,
+            date: db.date,
+            hash: db.hash.clone(),
+            author: db.author.clone(),
+            merged_by: db.merged_by.clone(),
+            platform: db.platform.clone(),
+            channel: db.channel.clone(),
+            file_name: db.file_name.clone(),
+            download_uri: db.download_uri.clone(),
+        }
+    }
 }
 
 impl Artifact {
-    pub fn try_from(pipe: &PipelineUpdate, build: &Build) -> Result<Option<Self>> {
+    pub fn try_from(pipe: &PipelineUpdate, build: &Build) -> Option<Self> {
         // Check if it contains artifact
-        if crate::CONFIG.target_executable.contains(&build.name)
-            && build.artifacts_file.filename.is_some()
-        {
-            // Ex: 2019-10-18T16:21:28Z
-            // TODO: Find a better way to convert it...
+        if crate::CONFIG.target_executable.contains(&build.name) && build.artifacts_file.filename.is_some() {
             let date = NaiveDateTime::parse_from_str(
-                &pipe
-                    .commit
-                    .timestamp
-                    .format("%Y-%m-%dT%H:%M:%SZ")
-                    .to_string(),
+                &pipe.commit.timestamp.format("%Y-%m-%dT%H:%M:%SZ").to_string(),
                 "%Y-%m-%dT%H:%M:%SZ",
-            )?;
-            let id = build.id;
+            )
+            .expect("Failed to parse date!");
+            let build_id = build.id as i32;
             let platform = Self::get_platform(&build.name)?;
             let channel = Self::get_channel();
-            let download_path = Self::get_download_path(&date, &platform, &channel)?;
+            let file_name = format!("{}-{}-{}.zip", channel, platform, date.format("%Y-%m-%d-%H_%M"));
+            let download_uri = format!(
+                "https://{}.{}.cdn.{}/nightly/{}",
+                CONFIG.bucket_name, CONFIG.bucket_region, CONFIG.bucket_endpoint, file_name
+            );
 
-            Ok(Some(Self {
-                id,
+            Some(Self {
+                build_id,
                 date,
                 hash: pipe.object_attributes.sha.clone(),
                 author: pipe.commit.author.name.clone(),
                 merged_by: pipe.user.name.clone(),
                 platform,
                 channel,
-                download_path,
-            }))
+                file_name,
+                download_uri,
+            })
         } else {
-            Ok(None)
+            None
         }
     }
 
-    pub fn download(&self) -> Result<()> {
-        let mut req = reqwest::get(&self.get_url())?;
-        if req.status().is_success() {
-            let mut f = File::create(&self.download_path)?;
-            io::copy(&mut req, &mut f)?;
-        }
-        Ok(())
-    }
-
-    fn get_download_path(
-        date: &NaiveDateTime,
-        platform: &Platform,
-        channel: &Channel,
-    ) -> Result<PathBuf> {
-        let path = PathBuf::from(&crate::CONFIG.static_files).join(format!("{}/", platform));
-        // Create base path
-        std::fs::create_dir_all(&path)?;
-        // Add file name + extension
-        let file_ending = match platform {
-            Platform::Windows => crate::config::WINDOWS_FILE_ENDING,
-            Platform::Linux => crate::config::LINUX_FILE_ENDING,
-        };
-
-        Ok(path.join(format!(
-            "{}-{}.{}",
-            channel,
-            date.format("%Y-%m-%d-%H_%M_%S"),
-            file_ending,
-        )))
-    }
-
-    fn get_url(&self) -> String {
+    pub fn get_url(&self) -> String {
         format!(
             "https://gitlab.com/api/v4/projects/{}/jobs/{}/artifacts",
             crate::config::PROJECT_ID,
-            self.id
+            self.build_id
         )
     }
 
-    fn get_platform(name: &str) -> Result<Platform> {
+    /// Returns the file extension
+    /// NOTE: without dot (e.g. zip)
+    pub fn extension(&self) -> String {
+        use std::{ffi::OsStr, path::PathBuf};
+        PathBuf::from(&self.file_name)
+            .extension()
+            .unwrap_or(OsStr::new("zip"))
+            .to_string_lossy()
+            .into()
+    }
+
+    fn get_platform(name: &str) -> Option<String> {
         if name.contains("windows") {
-            Ok(Platform::Windows)
+            Some("windows".into())
         } else if name.contains("linux") {
-            Ok(Platform::Linux)
+            Some("linux".into())
         } else {
-            Err(ServerError::InvalidPlatform)
+            None
         }
     }
 
-    fn get_channel() -> Channel {
-        Channel::Nightly
+    fn get_channel() -> String {
+        "nightly".into()
     }
 }

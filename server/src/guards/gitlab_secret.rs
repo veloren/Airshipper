@@ -1,5 +1,7 @@
-use rocket::http::Status;
-use rocket::request::{FromRequest, Outcome, Request};
+use rocket::{
+    http::Status,
+    request::{FromRequest, Outcome, Request},
+};
 
 /// This Request Guard ensures the authenticity of the request is valid
 pub struct GitlabSecret;
@@ -11,10 +13,11 @@ pub enum SecretError {
     MultipleSecrets,
 }
 
+#[rocket::async_trait]
 impl<'a, 'r> FromRequest<'a, 'r> for GitlabSecret {
     type Error = SecretError;
 
-    fn from_request(request: &'a Request<'r>) -> Outcome<Self, Self::Error> {
+    async fn from_request(request: &'a Request<'r>) -> Outcome<Self, Self::Error> {
         let keys: Vec<_> = request.headers().get("X-Gitlab-Token").collect();
         match keys.len() {
             0 => Outcome::Failure((Status::Unauthorized, SecretError::MissingSecret)),

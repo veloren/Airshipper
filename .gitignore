@@ -17,6 +17,8 @@
 # Miscellaneous
 *.log
 *.ron
+.airshipper-env
+airshipper.db
 public/
 profiles/
 .packages/
