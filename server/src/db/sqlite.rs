@@ -90,6 +90,7 @@ impl DbConnection {
             .get_result(&self.0)
             .optional()?;
         match count {
+            Some(0) => Ok(true),
             Some(_) => Ok(false),
             None => Ok(true),
         }

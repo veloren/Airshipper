@@ -22,22 +22,20 @@ impl S3Connection {
     }
 
     #[tracing::instrument]
-    pub async fn upload(&self, artifact: &Artifact) -> Result<()> {
+    pub async fn upload(&self, artifact: &Artifact) -> Result<u16> {
         let code = self
             .0
             .put_object_stream(&artifact.file_name, &format!("/nightly/{}", &artifact.file_name))
             .await?;
-        tracing::info!("Bucket responded with {}", code); // TODO: Check if that code is success!
-        Ok(())
+        Ok(code)
     }
 
     #[tracing::instrument]
-    pub async fn delete(&self, artifact: &Artifact) -> Result<()> {
+    pub async fn delete(&self, artifact: &Artifact) -> Result<u16> {
         let (_, code) = self
             .0
             .delete_object(&format!("/nightly/{}", &artifact.file_name))
             .await?;
-        tracing::info!("Bucket responded with {}", code); // TODO: Check if that code is success!
-        Ok(())
+        Ok(code)
     }
 }

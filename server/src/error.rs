@@ -28,7 +28,7 @@ pub enum ServerError {
     DieselError(#[from] diesel::result::Error),
     #[error("Internal Error: {0}")]
     IoError(#[from] std::io::Error),
-    #[error("Code '{0}' received when requesting artifact {1:?}")]
+    #[error("Code '{0}' received with artifact {1:?}")]
     InvalidResponseCode(reqwest::StatusCode, crate::models::Artifact),
 }
 
