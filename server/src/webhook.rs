@@ -1,77 +1,50 @@
-use std::thread::JoinHandle;
+use crate::{error::ServerError, models::Artifact, Result};
+use reqwest::StatusCode;
 
-use crate::db::DbConnection;
-use crate::models::{Artifact, PipelineUpdate};
-use crate::Result;
-
-/// NOTE: This just spawns another thread! This might break if multiple
-/// pipeline updates get received in short time (shouldn't happen at all due to compile time)
-/// TODO: Replace with static background thread which communicates via channels.
-pub fn process(update: PipelineUpdate, conn: DbConnection) -> JoinHandle<()> {
-    std::thread::spawn(move || {
-        log::info!(
-            "[1] Received new update: {} - {}",
-            short_desc(&update),
-            update.commit.timestamp.format("%Y-%m-%d | %H:%M:%S")
-        );
-        match extract_all(update) {
-            Ok(artifacts) => {
-                if artifacts.is_empty() {
-                    log::info!("[2] No artifacts found.");
-                    return;
-                }
-
-                for artifact in artifacts {
-                    log::info!(
-                        "[2] Downloading {}-{} merged by {}",
-                        artifact.channel,
-                        artifact.platform,
-                        artifact.merged_by
-                    );
-                    if let Err(e) = artifact.download() {
-                        log::error!("Encountered error while downloading artifact: {:?}", e);
-                        return;
-                    }
-                    log::info!("[3] Downloaded to {}", artifact.download_path.display());
-
-                    // Hopefully update database with new information
-                    if let Err(e) = conn.insert_artifact(artifact) {
-                        log::error!("Encountered error when inserting an artifact: {:?}", e);
-                        return;
-                    }
-                }
+pub fn process(artifacts: Vec<Artifact>, mut db: crate::DbConnection) {
+    tokio::task::spawn(async move {
+        for artifact in artifacts {
+            if let Err(e) = transfer(artifact, &mut db).await {
+                tracing::error!("Failed to transfer artifact: {}.", e);
             }
-            Err(e) => log::info!("[2] Failed to process PipelineUpdate! {:?}", e),
         }
-    })
+        if let Err(e) = crate::prune::prune(&mut db).await {
+            tracing::error!("Pruning failed: {}.", e);
+        }
+    });
 }
 
-/// Returns all artifacts which needs to be downloaded
-fn extract_all(pipe: PipelineUpdate) -> Result<Vec<Artifact>> {
-    let mut artifacts = Vec::new();
+#[tracing::instrument(skip(db))]
+async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()> {
+    use tokio::{fs::File, prelude::*};
 
-    for build in &pipe.builds {
-        // Skip non-artifact builds.
-        if build.stage != crate::CONFIG.artifact_stage {
-            continue;
-        }
+    tracing::info!("Downloading...");
 
-        if let Some(artifact) = Artifact::try_from(&pipe, build)? {
-            artifacts.push(artifact);
-        }
+    let mut resp = reqwest::get(&artifact.get_url()).await?;
+    let mut file = File::create(&artifact.file_name).await?;
+    while let Some(chunk) = resp.chunk().await? {
+        file.write_all(&chunk).await?;
     }
 
-    Ok(artifacts)
+    tracing::info!("Uploading...");
+    let code = crate::S3Connection::new()?.upload(&artifact).await?;
+
+    // Delete obselete artifact
+    let _ = std::fs::remove_file(&artifact.file_name);
+
+    if is_success(code) {
+        // Update database with new information
+        tracing::info!("Update database...");
+        db.insert_artifact(artifact)?;
+        Ok(())
+    } else {
+        Err(ServerError::InvalidResponseCode(
+            StatusCode::from_u16(code).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            artifact,
+        ))
+    }
 }
 
-/// Returns a short preview of the commit message
-fn short_desc(update: &PipelineUpdate) -> String {
-    update.commit.message[..update
-        .commit
-        .message
-        .find("\n")
-        .unwrap_or(update.commit.message.len())]
-        .chars()
-        .take(40)
-        .collect()
+fn is_success(code: u16) -> bool {
+    if code < 399 && code > 199 { true } else { false }
 }
