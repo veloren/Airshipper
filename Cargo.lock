@@ -2121,6 +2121,7 @@ version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3567bc1a0c84e2c0d71eeb4a1f08451babf7843babd733158777d9c686dad9f3"
 dependencies = [
+ "cc",
  "pkg-config",
  "vcpkg",
 ]
@@ -3661,6 +3662,7 @@ dependencies = [
  "diesel_migrations",
  "dotenv",
  "lazy_static 1.4.0",
+ "libsqlite3-sys",
  "regex",
  "reqwest",
  "rocket",
