@@ -22,11 +22,12 @@ impl Fairing for DbInit {
         }
     }
 
-    fn on_launch(&self, _: &Rocket) {
-        use crate::diesel::Connection;
-        let con = diesel::SqliteConnection::establish(crate::config::DATABASE_FILE)
+    fn on_launch(&self, rocket: &Rocket) {
+        use crate::DbConnection;
+
+        let con = DbConnection::get_one(&rocket)
             .expect("Could not establish connection to the database to initialise the table!");
         // Run migrations
-        embedded_migrations::run(&con).expect("Failed to run migrations!");
+        embedded_migrations::run(&con.inner()).expect("Failed to run migrations!");
     }
 }
