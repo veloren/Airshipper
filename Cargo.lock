@@ -28,6 +28,14 @@ dependencies = [
 name = "airshipper"
 version = "0.3.2"
 dependencies = [
+ "airshipper_client",
+ "airshipper_server",
+]
+
+[[package]]
+name = "airshipper_client"
+version = "0.3.2"
+dependencies = [
  "async-std",
  "backtrace",
  "chrono",
@@ -55,6 +63,32 @@ dependencies = [
  "winapi 0.3.8",
  "winres",
  "zip",
+]
+
+[[package]]
+name = "airshipper_server"
+version = "0.2.0"
+dependencies = [
+ "chrono",
+ "derive_more 0.15.0",
+ "diesel",
+ "diesel_migrations",
+ "dotenv",
+ "lazy_static 1.4.0",
+ "libsqlite3-sys",
+ "openssl-sys",
+ "regex",
+ "reqwest",
+ "rocket",
+ "rocket_contrib",
+ "rust-s3",
+ "serde 1.0.105",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "tracing-futures",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -180,9 +214,9 @@ dependencies = [
 
 [[package]]
 name = "async-trait"
-version = "0.1.24"
+version = "0.1.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "750b1c38a1dfadd108da0f01c08f4cdc7ff1bb39b325f9c82cc972361780a6e1"
+checksum = "21a03abb7c9b93ae229356151a083d26218c0358866a2a59d4280c856e9482e6"
 dependencies = [
  "proc-macro2 1.0.9",
  "quote 1.0.3",
@@ -220,9 +254,9 @@ checksum = "f8aac770f1885fd7e387acedd76065302551364496e46b3dd00860b2f8359b9d"
 
 [[package]]
 name = "backtrace"
-version = "0.3.45"
+version = "0.3.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad235dabf00f36301792cfe82499880ba54c6486be094d1047b02bacb67c14e8"
+checksum = "b1e692897359247cc6bb902933361652380af0f1b7651ae5c5013407f30e109e"
 dependencies = [
  "backtrace-sys",
  "cfg-if",
@@ -232,9 +266,9 @@ dependencies = [
 
 [[package]]
 name = "backtrace-sys"
-version = "0.1.34"
+version = "0.1.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca797db0057bae1a7aa2eef3283a874695455cecf08a43bfb8507ee0ebc1ed69"
+checksum = "7de8aba10a69c8e8d7622c5710229485ec32e9d55fdad160ea559c086fdcd118"
 dependencies = [
  "cc",
  "libc",
@@ -333,9 +367,9 @@ checksum = "ad807f2fc2bf185eeb98ff3a901bd46dc5ad58163d0fa4577ba0d25674d71708"
 
 [[package]]
 name = "bumpalo"
-version = "3.2.0"
+version = "3.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f359dc14ff8911330a51ef78022d376f25ed00248912803b58f00cb1c27f742"
+checksum = "12ae9db68ad7fac5fe51304d20f016c911539251075a214f8e663babefa35187"
 
 [[package]]
 name = "byte-tools"
@@ -1098,9 +1132,9 @@ dependencies = [
 
 [[package]]
 name = "euclid"
-version = "0.20.7"
+version = "0.20.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f852d320142e1cceb15dccef32ed72a9970b83109d8a4e24b1ab04d579f485d"
+checksum = "57d9ae79e19d69ffb5b47b0a744c4215c115dfed4039314c9ca1b8ddc6c333be"
 dependencies = [
  "num-traits",
 ]
@@ -1202,7 +1236,7 @@ dependencies = [
  "core-text",
  "dirs 1.0.5",
  "dwrote",
- "euclid 0.20.7",
+ "euclid 0.20.8",
  "float-ord",
  "freetype",
  "lazy_static 1.4.0",
@@ -1606,9 +1640,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d5c295d1c0c68e4e42003d75f908f5e16a1edd1cbe0b0d02e4dc2006a384f47"
+checksum = "7938e6aa2a31df4e21f224dc84704bd31c089a6d1355c535b03667371cccc843"
 dependencies = [
  "bytes",
  "fnv",
@@ -1729,9 +1763,9 @@ dependencies = [
 
 [[package]]
 name = "http"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b708cc7f06493459026f53b9a61a7a121a5d1ec6238dee58ea4941132b30156b"
+checksum = "28d569972648b2c512421b5f2a405ad6ac9666547189d0c5477a3f200f3e02f9"
 dependencies = [
  "bytes",
  "fnv",
@@ -1815,7 +1849,7 @@ dependencies = [
  "async-std",
  "futures 0.3.4",
  "log",
- "wasm-bindgen-futures 0.4.9",
+ "wasm-bindgen-futures 0.4.10",
 ]
 
 [[package]]
@@ -1849,7 +1883,7 @@ dependencies = [
  "iced_style",
  "url",
  "wasm-bindgen",
- "wasm-bindgen-futures 0.4.9",
+ "wasm-bindgen-futures 0.4.10",
  "web-sys",
 ]
 
@@ -2024,9 +2058,9 @@ dependencies = [
 
 [[package]]
 name = "js-sys"
-version = "0.3.36"
+version = "0.3.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1cb931d43e71f560c81badb0191596562bafad2be06a3f9025b845c847c60df5"
+checksum = "6a27d435371a2fa5b6d2b028a74bbdb1234f308da363226a2854ca3ff8ba7055"
 dependencies = [
  "wasm-bindgen",
 ]
@@ -2117,9 +2151,9 @@ dependencies = [
 
 [[package]]
 name = "libsqlite3-sys"
-version = "0.11.1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3567bc1a0c84e2c0d71eeb4a1f08451babf7843babd733158777d9c686dad9f3"
+checksum = "fd6457c70bbff456d9fe49deaba35ec47c3e598bf8d7950ff0575ceb7a8a6ad1"
 dependencies = [
  "cc",
  "pkg-config",
@@ -2178,7 +2212,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ca04310c9807612a311506106000b6eccb2e27bca9bfb594ce80fb8a31231f9d"
 dependencies = [
  "arrayvec 0.4.12",
- "euclid 0.20.7",
+ "euclid 0.20.8",
  "num-traits",
 ]
 
@@ -2617,6 +2651,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77af24da69f9d9341038eba93a073b1fdaaa1b788221b00a69bce9e762cb32de"
 
 [[package]]
+name = "openssl-src"
+version = "111.7.0+1.1.1e"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6fde5a8c01ef8aa31ff8d0aaf9bae248581ed8840fca0b66e51cc9f294a8cb2c"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "openssl-sys"
 version = "0.9.54"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2625,6 +2668,7 @@ dependencies = [
  "autocfg 1.0.0",
  "cc",
  "libc",
+ "openssl-src",
  "pkg-config",
  "vcpkg",
 ]
@@ -3076,7 +3120,7 @@ version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8947997d2e439fdf92c5531d9992e23b5ffedacedd5465b8a227fcb1b73459ab"
 dependencies = [
- "euclid 0.20.7",
+ "euclid 0.20.8",
  "lyon_geom",
  "png",
  "sw-composite",
@@ -3150,9 +3194,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.3.5"
+version = "1.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8900ebc1363efa7ea1c399ccc32daed870b4002651e0bed86e72d501ebbe0048"
+checksum = "7f6946991529684867e47d86474e3a6d0c0ab9b82d5821e314b1ede31fa3a4b3"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -3253,7 +3297,7 @@ dependencies = [
  "tokio-tls",
  "url",
  "wasm-bindgen",
- "wasm-bindgen-futures 0.4.9",
+ "wasm-bindgen-futures 0.4.10",
  "web-sys",
  "winreg",
 ]
@@ -3438,9 +3482,9 @@ dependencies = [
 
 [[package]]
 name = "rust-s3"
-version = "0.19.0"
+version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a30c90144f83f87dfb49a412493ff8a91576696a5d13103484531aaac1387e7c"
+checksum = "cfe40505bb6689be3930ec6b8280a6bdc594e5902d7f680410d7ede08be22221"
 dependencies = [
  "base64 0.12.0",
  "chrono",
@@ -3650,31 +3694,6 @@ dependencies = [
  "itoa",
  "serde 1.0.105",
  "url",
-]
-
-[[package]]
-name = "server"
-version = "0.2.0"
-dependencies = [
- "chrono",
- "derive_more 0.15.0",
- "diesel",
- "diesel_migrations",
- "dotenv",
- "lazy_static 1.4.0",
- "libsqlite3-sys",
- "regex",
- "reqwest",
- "rocket",
- "rocket_contrib",
- "rust-s3",
- "serde 1.0.105",
- "serde_json",
- "thiserror",
- "tokio",
- "tracing",
- "tracing-futures",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -4491,9 +4510,9 @@ checksum = "cccddf32554fecc6acb585f82a32a72e28b48f8c4c1883ddfeeeaa96f7d8e519"
 
 [[package]]
 name = "wasm-bindgen"
-version = "0.2.59"
+version = "0.2.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3557c397ab5a8e347d434782bcd31fc1483d927a6826804cec05cc792ee2519d"
+checksum = "2cc57ce05287f8376e998cbddfb4c8cb43b84a7ec55cf4551d7c00eef317a47f"
 dependencies = [
  "cfg-if",
  "serde 1.0.105",
@@ -4503,11 +4522,11 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-backend"
-version = "0.2.59"
+version = "0.2.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0da9c9a19850d3af6df1cb9574970b566d617ecfaf36eb0b706b6f3ef9bd2f8"
+checksum = "d967d37bf6c16cca2973ca3af071d0a2523392e4a594548155d89a678f4237cd"
 dependencies = [
- "bumpalo 3.2.0",
+ "bumpalo 3.2.1",
  "lazy_static 1.4.0",
  "log",
  "proc-macro2 1.0.9",
@@ -4531,9 +4550,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-futures"
-version = "0.4.9"
+version = "0.4.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "457414a91863c0ec00090dba537f88ab955d93ca6555862c29b6d860990b8a8a"
+checksum = "7add542ea1ac7fdaa9dc25e031a6af33b7d63376292bd24140c637d00d1c312a"
 dependencies = [
  "cfg-if",
  "js-sys",
@@ -4543,9 +4562,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro"
-version = "0.2.59"
+version = "0.2.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f6fde1d36e75a714b5fe0cffbb78978f222ea6baebb726af13c78869fdb4205"
+checksum = "8bd151b63e1ea881bb742cd20e1d6127cef28399558f3b5d415289bc41eee3a4"
 dependencies = [
  "quote 1.0.3",
  "wasm-bindgen-macro-support",
@@ -4553,9 +4572,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro-support"
-version = "0.2.59"
+version = "0.2.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25bda4168030a6412ea8a047e27238cadf56f0e53516e1e83fec0a8b7c786f6d"
+checksum = "d68a5b36eef1be7868f668632863292e37739656a80fc4b9acec7b0bd35a4931"
 dependencies = [
  "proc-macro2 1.0.9",
  "quote 1.0.3",
@@ -4566,9 +4585,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-shared"
-version = "0.2.59"
+version = "0.2.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc9f36ad51f25b0219a3d4d13b90eb44cd075dff8b6280cca015775d7acaddd8"
+checksum = "daf76fe7d25ac79748a37538b7daeed1c7a6867c92d3245c12c6222e4a20d639"
 
 [[package]]
 name = "wayland-client"
@@ -4632,9 +4651,9 @@ dependencies = [
 
 [[package]]
 name = "web-sys"
-version = "0.3.36"
+version = "0.3.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "721c6263e2c66fd44501cc5efbfa2b7dfa775d13e4ea38c46299646ed1f9c70a"
+checksum = "2d6f51648d8c56c366144378a33290049eafdd784071077f6fe37dae64c1c4cb"
 dependencies = [
  "js-sys",
  "wasm-bindgen",

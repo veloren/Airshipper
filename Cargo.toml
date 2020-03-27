@@ -1,5 +1,34 @@
+[package]
+name = "airshipper"
+description = "Provides automatic updates for the voxel RPG Veloren."
+version = "0.3.2"
+authors = ["Songtronix <contact@songtronix.com>"]
+edition = "2018"
+publish = false
+default-run = "airshipper"
+
+license = "GPL-3.0"
+homepage = "https://www.veloren.net"
+repository = "https://github.com/songtronix/airshipper"
+
+[features]
+# By default we run the client with the gui
+default = ["client", "gui"]
+# client features
+client = ["airshipper_client"]
+gui = ["airshipper_client/gui"]
+# server features (to run the server use `--no-default-features --features server`)
+server = ["airshipper_server"]
+
+[badges]
+maintenance = { status = "actively-developed" }
+
 [workspace]
 members = [
-	"client",
-	"server",
+    "client",
+    "server",
 ]
+
+[dependencies]
+airshipper_client = { path = "client", optional = true }
+airshipper_server = { path = "server", optional = true }

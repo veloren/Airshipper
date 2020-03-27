@@ -1,18 +1,10 @@
 [package]
-name = "airshipper"
-description = "Provides automatic updates for the voxel RPG Veloren."
+name = "airshipper_client"
 version = "0.3.2"
 authors = ["Songtronix <contact@songtronix.com>"]
 edition = "2018"
-publish = false
-default-run = "airshipper"
-
-license = "GPL-3.0"
-homepage = "https://www.veloren.net"
-repository = "https://gitlab.com/veloren/airshipper"
 
 [features]
-default = ["gui"]
 gui = ["iced", "iced_native", "iced_futures"]
 
 # Windows logo
@@ -20,9 +12,6 @@ gui = ["iced", "iced_native", "iced_futures"]
 OriginalFilename = "Airshipper.exe"
 FileDescription = "Launcher for the the multiplayer voxel RPG written in Rust."
 LegalCopyright = "Copyright © 2020"
-
-[badges]
-maintenance = { status = "actively-developed" }
 
 [dependencies]
 # Cli

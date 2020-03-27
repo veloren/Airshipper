@@ -4,13 +4,13 @@ version: "3"
 services:
   airshipper:
     container_name: Airshipper
-    restart: always
+    #restart: always
     image: airshipper:latest
     volumes:
       # Note: Do not forget to `touch /opt/airshipper/data/airshipper.db` before starting
-      - "/opt/airshipper/data/airshipper.db:/app/airshipper.db"
+      - "./airshipper.db:/opt/app/airshipper.db"
     # You can use `environment:` too
     env_file:
-      - .airshipper-env
+      - server/.airshipper-env
     ports:
-      - "8080:8080"
+      - "8000:8000"

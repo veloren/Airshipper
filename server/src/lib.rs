@@ -1,3 +1,6 @@
+// How to send manual webhooks:
+// curl --header "Content-Type: application/json" --request POST --data "@<FILE_WITH_WEBHOOK_DATA>" --header "X-Gitlab-Event: Pipeline Hook" --header "X-Gitlab-Token: <TOKEN>" http://<ADDRESS>
+
 #![feature(proc_macro_hygiene)]
 use rocket::*;
 #[macro_use] extern crate diesel;
@@ -8,6 +11,7 @@ mod db;
 mod error;
 mod fairings;
 mod guards;
+mod logger;
 mod models;
 mod prune;
 mod routes;
@@ -24,7 +28,7 @@ lazy_static::lazy_static! {
     pub static ref CONFIG: ServerConfig = ServerConfig::load();
 }
 
-pub fn rocket() -> rocket::Rocket {
+fn rocket() -> rocket::Rocket {
     // Base of the config and attach everything else
     CONFIG
         .rocket()
@@ -41,4 +45,10 @@ pub fn rocket() -> rocket::Rocket {
             routes::api::channel_download,
         ])
         .register(catchers![routes::catchers::not_found])
+}
+
+pub fn start() {
+    dotenv::from_filename("server/.airshipper-env").ok();
+    logger::init();
+    rocket().launch().expect("Server failed!");
 }

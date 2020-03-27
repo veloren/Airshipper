@@ -1,6 +1,10 @@
 use super::schema;
 use crate::{models::Artifact, Result};
-use diesel::prelude::*;
+use diesel::{
+    prelude::*,
+    r2d2::{ConnectionManager, PooledConnection},
+    SqliteConnection,
+};
 use rocket_contrib::database;
 
 #[database("sqlite")]
@@ -94,5 +98,9 @@ impl DbConnection {
             Some(_) => Ok(false),
             None => Ok(true),
         }
+    }
+
+    pub fn inner(self) -> PooledConnection<ConnectionManager<SqliteConnection>> {
+        self.0
     }
 }
