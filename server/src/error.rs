@@ -15,8 +15,10 @@ pub enum ServerError {
     Status(Status),
 
     // Internal errors
-    #[error("S3Bucker error: {0}")]
-    S3Bucket(#[from] s3::error::S3Error),
+    #[error("S3Bucket error: {0}")]
+    S3Bucket(#[from] s3::S3Error),
+    #[error("S3CredentialsBucket error: {0}")]
+    CredentialsBucket(#[from] awscreds::AwsCredsError),
     #[error("Internal Error: {0}")]
     ReqwestError(#[from] reqwest::Error),
     #[error("Diesel error: {0}")]

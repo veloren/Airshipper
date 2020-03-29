@@ -52,7 +52,11 @@ jobs:
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
       # Compile
       - name: Compile
-        run: cargo test --no-run
+        run: cargo test --no-run --features client
+      - name: Compile
+        run: cargo test --no-run --no-default-features --features server
       # Test
       - name: Test
-        run: cargo test
+        run: cargo test --features client
+      - name: Test
+        run: cargo test --no-default-features --features server
