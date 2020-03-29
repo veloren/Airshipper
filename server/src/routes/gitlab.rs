@@ -26,7 +26,6 @@ pub async fn post_pipeline_update<'r>(
                     Ok(Response::build().status(Status::BadRequest).finalize())
                 }
             } else {
-                tracing::debug!("No Artifacts found.");
                 Ok(Response::build().status(Status::Ok).finalize())
             }
         },

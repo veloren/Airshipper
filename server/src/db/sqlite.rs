@@ -48,11 +48,11 @@ impl DbConnection {
             .optional()?)
     }
 
-    pub fn insert_artifact(&mut self, new_artifact: Artifact) -> Result<()> {
+    pub fn insert_artifact(&mut self, new_artifact: &Artifact) -> Result<()> {
         use schema::artifacts;
         // TODO: Check whether UNIQUE constraint gets violated and throw a warning but proceed!
         diesel::insert_or_ignore_into(artifacts::table)
-            .values(&new_artifact)
+            .values(new_artifact)
             .execute(&self.0)?;
         Ok(())
     }
