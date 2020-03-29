@@ -10,7 +10,6 @@ jobs:
   artifacts:
     name: Artifact
     runs-on: ${{ matrix.os }}
-    needs: ["rust-test"] # We only create artifacts if the tests succeed
     strategy:
       fail-fast: false
       matrix:

@@ -13,21 +13,6 @@ env:
   RUSTUP_MAX_RETRIES: 10
 
 jobs:
-  rust-audit:
-    name: Audit Rust vulnerabilities
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - run: sudo chown -R $(whoami):$(id -ng) ~/.cargo/
-      - name: Cache cargo-audit
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/bin/cargo-audit
-          key: ${{ runner.os }}-cargo-audit-${{ hashFiles('**/Cargo.lock') }}
-      - run: cargo install cargo-audit
-      - run: ls ~/.cargo/bin
-      - run: cargo audit || exit 0
   rust-fmt:
     name: Audit Rust formatting
     runs-on: ubuntu-latest
