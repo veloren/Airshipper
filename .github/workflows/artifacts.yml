@@ -61,7 +61,7 @@ jobs:
         run: cargo install cargo-wix #--vers 0.3.0
       - name: MSI Installer
         if: matrix.os == 'windows-latest'
-        run: cargo wix --nocapture -n client --install-version ${{ steps.vars.outputs.version }}
+        run: cd client && cargo wix --nocapture
       - name: proper naming
         if: matrix.os == 'windows-latest'
         run: |

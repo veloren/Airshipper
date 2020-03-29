@@ -40,7 +40,7 @@ dependencies = [
  "backtrace",
  "chrono",
  "clap",
- "derive_more 0.99.3",
+ "derive_more",
  "dirs 2.0.2",
  "fern",
  "find_folder",
@@ -69,15 +69,16 @@ dependencies = [
 name = "airshipper_server"
 version = "0.2.0"
 dependencies = [
+ "aws-creds",
+ "aws-region",
  "chrono",
- "derive_more 0.15.0",
  "diesel",
  "diesel_migrations",
  "dotenv",
  "lazy_static 1.4.0",
  "libsqlite3-sys",
+ "md5",
  "openssl-sys",
- "regex",
  "reqwest",
  "rocket",
  "rocket_contrib",
@@ -214,9 +215,9 @@ dependencies = [
 
 [[package]]
 name = "async-trait"
-version = "0.1.26"
+version = "0.1.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21a03abb7c9b93ae229356151a083d26218c0358866a2a59d4280c856e9482e6"
+checksum = "991d0a1a3e790c835fd54ab41742a59251338d8c7577fe7d7f0170c7072be708"
 dependencies = [
  "proc-macro2 1.0.9",
  "quote 1.0.3",
@@ -251,6 +252,28 @@ name = "autocfg"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8aac770f1885fd7e387acedd76065302551364496e46b3dd00860b2f8359b9d"
+
+[[package]]
+name = "aws-creds"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22da48e4ed176cf0ae046be8a43eb9d087bbc4234eb3c4e9555a339cbd250135"
+dependencies = [
+ "dirs 2.0.2",
+ "reqwest",
+ "rust-ini",
+ "simpl",
+ "tokio",
+]
+
+[[package]]
+name = "aws-region"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6bc82757b564511ed96024fbe8705ba2dabe049a1afb1c71ec405c45fce1b0c"
+dependencies = [
+ "simpl",
+]
 
 [[package]]
 name = "backtrace"
@@ -902,23 +925,9 @@ dependencies = [
 
 [[package]]
 name = "derive_more"
-version = "0.15.0"
+version = "0.99.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a141330240c921ec6d074a3e188a7c7ef95668bb95e7d44fa0e5778ec2a7afe"
-dependencies = [
- "lazy_static 1.4.0",
- "proc-macro2 0.4.30",
- "quote 0.6.13",
- "regex",
- "rustc_version",
- "syn 0.15.44",
-]
-
-[[package]]
-name = "derive_more"
-version = "0.99.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a806e96c59a76a5ba6e18735b6cf833344671e61e7863f2edb5c518ea2cac95c"
+checksum = "e2323f3f47db9a0e77ce7a300605d8d2098597fc451ed1a97bb1f6411bb550a7"
 dependencies = [
  "proc-macro2 1.0.9",
  "quote 1.0.3",
@@ -2151,9 +2160,9 @@ dependencies = [
 
 [[package]]
 name = "libsqlite3-sys"
-version = "0.12.0"
+version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd6457c70bbff456d9fe49deaba35ec47c3e598bf8d7950ff0575ceb7a8a6ad1"
+checksum = "266eb8c361198e8d1f682bc974e5d9e2ae90049fb1943890904d11dad7d4a77d"
 dependencies = [
  "cc",
  "pkg-config",
@@ -3324,9 +3333,9 @@ checksum = "5ec4ab2cf0b27e111e266e161cf7f9efd20125a161190da1c0945c4a4408fef3"
 
 [[package]]
 name = "ring"
-version = "0.16.11"
+version = "0.16.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "741ba1704ae21999c00942f9f5944f801e977f54302af346b596287599ad1862"
+checksum = "1ba5a8ec64ee89a76c98c549af81ff14813df09c3e6dc4766c3856da48597a0c"
 dependencies = [
  "cc",
  "lazy_static 1.4.0",
@@ -3482,20 +3491,20 @@ dependencies = [
 
 [[package]]
 name = "rust-s3"
-version = "0.19.1"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfe40505bb6689be3930ec6b8280a6bdc594e5902d7f680410d7ede08be22221"
+checksum = "81b680dec6b6c9bb0f9afbd85cbba618b0fdb2ca0f93248a2e7edcf61c70729c"
 dependencies = [
+ "aws-creds",
+ "aws-region",
  "base64 0.12.0",
  "chrono",
- "dirs 2.0.2",
  "futures 0.3.4",
  "hex",
  "hmac",
  "md5",
  "rand 0.7.3",
  "reqwest",
- "rust-ini",
  "serde 1.0.105",
  "serde-xml-rs",
  "serde_derive",
@@ -3675,9 +3684,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.48"
+version = "1.0.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9371ade75d4c2d6cb154141b9752cf3781ec9c05e0e5cf35060e1e70ee7b9c25"
+checksum = "78a7a12c167809363ec3bd7329fc0a3369056996de43c4b37ef3cd54a6ce4867"
 dependencies = [
  "itoa",
  "ryu",
@@ -4085,18 +4094,18 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.13"
+version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3711fd1c4e75b3eff12ba5c40dba762b6b65c5476e8174c1a664772060c49bf"
+checksum = "f0570dc61221295909abdb95c739f2e74325e14293b2026b0a7e195091ec54ae"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.13"
+version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae2b85ba4c9aa32dd3343bd80eb8d22e9b54b7688c17ea3907f236885353b233"
+checksum = "227362df41d566be41a28f64401e07a043157c21c14b9785a0d8e256f940a8fd"
 dependencies = [
  "proc-macro2 1.0.9",
  "quote 1.0.3",
