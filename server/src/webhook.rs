@@ -30,7 +30,7 @@ async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()
     file.sync_data().await?;
 
     let hash = format!("{:x}", md5::compute(content));
-    let remote_hash = remote_hash(&resp);
+    let remote_hash = get_remote_hash(&resp);
 
     if hash != remote_hash {
         tracing::error!(
@@ -38,23 +38,32 @@ async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()
             hash,
             remote_hash
         );
+        // Clean up
+        tokio::fs::remove_file(&artifact.file_name).await?;
     } else {
+        tracing::debug!("Computed hash: {}, remote_hash: {}", hash, remote_hash);
         tracing::info!("Uploading...");
         let code = crate::S3Connection::new().await?.upload(&artifact).await?;
 
-        // Delete obselete artifact
-        tokio::fs::remove_file(&artifact.file_name).await?;
-
         if is_success(code) {
-            // Update database with new information
-            tracing::info!("Update database...");
-            db.insert_artifact(artifact)?;
+            tracing::debug!("Validating remote hash...");
+            let uploaded_hash = get_remote_hash(&reqwest::get(&artifact.download_uri).await?);
+            if uploaded_hash != hash {
+                tracing::error!("Uploaded file is corrupted! Deleting...");
+                crate::S3Connection::new().await?.delete(&artifact).await?;
+            } else {
+                // Update database with new information
+                tracing::info!("Remote hash valid. Update database...");
+                db.insert_artifact(&artifact)?;
+            }
         } else {
             return Err(ServerError::InvalidResponseCode(
                 StatusCode::from_u16(code).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
                 artifact,
             ));
         }
+        // Delete obselete artifact
+        tokio::fs::remove_file(&artifact.file_name).await?;
     }
     Ok(())
 }
@@ -63,13 +72,10 @@ fn is_success(code: u16) -> bool {
     if code < 399 && code > 199 { true } else { false }
 }
 
-fn remote_hash(resp: &reqwest::Response) -> String {
+fn get_remote_hash(resp: &reqwest::Response) -> String {
     resp.headers()
         .get(reqwest::header::ETAG)
         .map(|x| x.to_str().expect("always valid ascii?"))
-        .unwrap_or_else(|| {
-            tracing::warn!("Remote does not have etag hash!");
-            ""
-        })
-        .to_string()
+        .unwrap_or("REMOTE_ETAG_MISSING")
+        .replace("\"", "")
 }
