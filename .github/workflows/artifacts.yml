@@ -1,125 +1,97 @@
-# This workflow will create artifacts for all merges into master
-# It will include linux, macos binaries with assets and an msi installer.
-
 name: Artifacts
 
 on:
   push:
     branches:
-      - master
-    paths:
-      - "client/**"
-      - "server/**"
-      - "wix/**"
-      - "rust-toolchain"
-      - "Cargo.toml"
-      # Also run if only CI has been modifed
-      - ".github/workflows/**"
+      #- master
+      - release
+      - staging
 jobs:
-  release-win:
-    runs-on: [windows-latest]
+  artifacts:
+    name: Artifact
+    runs-on: ${{ matrix.os }}
+    needs: ["rust-test"] # We only create artifacts if the tests succeed
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v2
-      # The current Airshipper version will be grabbed by running:
-      # cd client && cargo pkgid | cut -d# -f2 | cut -d: -f2
       - name: Aquire Version
         id: vars
-        shell: pwsh
+        shell: bash
         run: |
           cd client 
-          echo "::set-output name=version::$(cargo pkgid | ForEach-Object { $_.split(":")[3] })"
+          echo "::set-output name=version::$(cargo pkgid | cut -d# -f2 | cut -d: -f2)"
       - name: Print version
         run: echo "Airshipper v${{ steps.vars.outputs.version }}"
       # Cache
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
       - name: Cache cargo index
         uses: actions/cache@v1
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache cargo build
+      - name: Cache cargo target dir
         uses: actions/cache@v1
         with:
           path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
       # Build & Package airshipper
-      - name: Install cargo-wix
-        run: cargo install cargo-wix
+
+      # Windows
       - name: Enable static CRT linkage
+        if: matrix.os == 'windows-latest'
         run: |
           mkdir .cargo
           echo '[target.x86_64-pc-windows-msvc]' >> .cargo/config
           echo 'rustflags = ["-Ctarget-feature=+crt-static"]' >> .cargo/config
-      - name: Build
-        run: cargo build --bin airshipper --release
+      - name: Cache cargo-wix
+        if: matrix.os == 'windows-latest'
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/bin/cargo-wix
+          key: ${{ runner.os }}-cargo-wix-${{ hashFiles('**/Cargo.lock') }}
+      - name: Install cargo-wix
+        if: matrix.os == 'windows-latest'
+        run: cargo install cargo-wix #--vers 0.3.0
       - name: MSI Installer
-        run: cargo wix --no-build --nocapture -n client --install-version ${{ steps.vars.outputs.version }}
+        if: matrix.os == 'windows-latest'
+        run: cargo wix --nocapture -n client --install-version ${{ steps.vars.outputs.version }}
       - name: proper naming
+        if: matrix.os == 'windows-latest'
         run: |
           Remove-Item –path target/wix/airshipper-${{ steps.vars.outputs.version }}-x86_64.msi -ErrorAction Ignore
           ren target/wix/client-${{ steps.vars.outputs.version }}-x86_64.msi airshipper-${{ steps.vars.outputs.version }}-x86_64.msi
-      # Upload artifact
+
+      # Linux & MacOS
+      - name: Build
+        if: matrix.os != 'windows-latest'
+        run: cargo build --bin airshipper --release
+      - name: Package
+        if: matrix.os != 'windows-latest'
+        run: |
+          mkdir -p artifact/
+          mkdir -p artifact/assets/
+          cp -r client/assets/** artifact/assets/
+          cp target/release/airshipper artifact/airshipper-${{ matrix.os }}-${{ steps.vars.outputs.version }}
+      # Upload Artifacts
+
+      # Windows
       - name: Upload artifact
+        if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v1
         with:
           name: airshipper-windows-installer
           path: target/wix/airshipper-${{ steps.vars.outputs.version }}-x86_64.msi
-  release-linux:
-    runs-on: [ubuntu-latest]
-    steps:
-      - uses: actions/checkout@v2
-      # Cache
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache cargo build
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-      # Build & Package airshipper
-      - name: Build
-        run: cargo build --bin airshipper --release
-      - name: Package
-        run: |
-          mkdir -p artifact/
-          mkdir -p artifact/assets/
-          cp -r client/assets/** artifact/assets/
-          cp target/release/airshipper artifact/airshipper
-      # Upload artifact
+
+      # Linux & MacOS
       - name: Upload artifact
+        if: matrix.os != 'windows-latest'
         uses: actions/upload-artifact@v1
         with:
-          name: airshipper-linux
-          path: artifact/
-  release-macos:
-    runs-on: [macos-latest]
-    steps:
-      - uses: actions/checkout@v2
-      # Cache
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache cargo build
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-      # Build & Package airshipper
-      - name: Build
-        run: cargo build --bin airshipper --release
-      - name: Package
-        run: |
-          mkdir -p artifact/
-          mkdir -p artifact/assets/
-          cp -r client/assets/** artifact/assets/
-          cp target/release/airshipper artifact/airshipper
-      # Upload artifact
-      - name: Upload artifact
-        uses: actions/upload-artifact@v1
-        with:
-          name: airshipper-macos
-          path: artifact/
+          name: airshipper-${{ matrix.os }}
+          path: artifact/airshipper-${{ matrix.os }}-${{ steps.vars.outputs.version }}
