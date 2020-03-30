@@ -66,13 +66,13 @@
         <Directory Id='APPLICATIONFOLDER' Name='Airshipper'>
           <!-- Airshipper itself -->
           <Component Id='airshipper.exe' Guid='{dd1e4a01-ff62-4d96-a9ce-a5d7d7548fad}' Win64='$(var.Win64)'>
-            <File Id='airshipper.exe' Name='airshipper.exe' DiskId='1' Source='target\release\airshipper.exe' KeyPath='yes'/>
+            <File Id='airshipper.exe' Name='airshipper.exe' DiskId='1' Source='..\..\target\release\airshipper.exe' KeyPath='yes'/>
           </Component>
           <!-- All assets -->
           <Directory Id='ASSETS' Name='assets'>
             <!-- For each asset file you need to add a new component with a different GUID, id ... -->
             <Component Id='veloren_logo.png' Guid='{a831abdc-435f-4acb-bdd7-c8d921c78cd6}' Win64='$(var.Win64)'>
-              <File Id='veloren_logo.png' Name='veloren-logo.png' DiskId='1' Source='client\assets\veloren-logo.png' KeyPath='yes'/>
+              <File Id='veloren_logo.png' Name='veloren-logo.png' DiskId='1' Source='..\..\client\assets\veloren-logo.png' KeyPath='yes'/>
             </Component>
           </Directory>
           <!-- Add to PATH for easier access over terminal -->
