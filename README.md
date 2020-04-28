@@ -2,6 +2,7 @@
 A cross-platform Veloren launcher.
 
 ![Airshipper](https://www.songtronix.com/airshipper.gif)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FSongtronix%2FAirshipper.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FSongtronix%2FAirshipper?ref=badge_shield)
 
 ## Features
 
@@ -22,3 +23,6 @@ cargo run --bin airshipper --release
 ```
 
 Make sure to have [rustup](https://rustup.rs/) installed to compile rust code.
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FSongtronix%2FAirshipper.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FSongtronix%2FAirshipper?ref=badge_large)
