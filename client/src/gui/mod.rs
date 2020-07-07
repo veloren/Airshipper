@@ -2,13 +2,11 @@ mod style;
 mod time;
 mod update;
 
-use crate::{
-    error::ClientError, filesystem, profiles::Profile, state::SavedState, Result,
-};
+use crate::{error::ClientError, profiles::Profile, state::SavedState, Result};
 use iced::{
-    button, scrollable, Align, Application, Button, Column, Command, Container, Element,
-    HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable, Settings,
-    Subscription, Text, VerticalAlignment,
+    button, image::Handle, scrollable, Align, Application, Button, Column, Command,
+    Container, Element, HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable,
+    Settings, Subscription, Text, VerticalAlignment,
 };
 use indicatif::HumanBytes;
 use std::time::Duration;
@@ -126,9 +124,10 @@ impl Application for Airshipper {
     }
 
     fn view(&mut self) -> Element<Message> {
-        let title =
-            Container::new(Image::new(filesystem::get_assets_path("veloren-logo.png")))
-                .width(Length::FillPortion(10));
+        let title = Container::new(Image::new(Handle::from_memory(
+            crate::assets::VELOREN_LOGO.to_vec(),
+        )))
+        .width(Length::FillPortion(10));
         // Will be reenabled once finished
         //let discord = Svg::new(manifest_dir.clone() +
         // "/assets/discord.svg").width(Length::Fill); let gitlab =

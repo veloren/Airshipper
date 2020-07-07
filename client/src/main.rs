@@ -1,3 +1,4 @@
+mod assets;
 mod cli;
 mod error;
 mod filesystem;
