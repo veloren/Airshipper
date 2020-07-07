@@ -1,4 +1,5 @@
 use super::Artifact;
+use crate::CONFIG;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 
@@ -16,9 +17,19 @@ impl PipelineUpdate {
     pub(crate) fn artifacts(&self) -> Option<Vec<Artifact>> {
         let mut artifacts = Vec::new();
 
+        if self.object_attributes.branch != CONFIG.target_branch {
+            tracing::debug!(
+                "Branch '{}' does not match target '{}'",
+                self.object_attributes.branch,
+                CONFIG.target_branch
+            );
+            return None;
+        }
+
         for build in &self.builds {
             // Skip non-artifact builds.
             if build.stage != crate::CONFIG.artifact_stage {
+                tracing::debug!("Skipping artifact in '{}' stage...", build.stage);
                 continue;
             }
 
