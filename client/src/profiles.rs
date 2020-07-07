@@ -49,7 +49,7 @@ impl Profile {
             self.version = latest_version;
             Ok(self)
         } else {
-            Err("No newer version found".into())
+            Err("No newer version found".to_string().into())
         }
     }
 

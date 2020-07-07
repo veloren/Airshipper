@@ -51,6 +51,7 @@ find_folder = "0.3.0"
 opener = "0.4.1"
 backtrace = "0.3.45"
 image = { version = "0.23.6", default-features = false, features = ["ico"] }
+thiserror = "1.0.19"
 # bundle all the things!
 openssl-sys = { version = "*", features = ["vendored"] }
 
