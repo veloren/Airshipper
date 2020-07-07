@@ -1,6 +1,4 @@
-#[cfg(feature = "gui")]
-use crate::gui;
-use crate::{filesystem, logger, state::SavedState, Result};
+use crate::{filesystem, gui, logger, state::SavedState, Result};
 use clap::{load_yaml, App};
 
 /// Process command line arguments and optionally starts GUI
@@ -56,13 +54,7 @@ async fn process_arguments<'n, 'a>(
         update(&mut state, false).await?;
         start(&mut state).await?;
     } else {
-        #[cfg(feature = "gui")]
         gui::run();
-        #[cfg(not(feature = "gui"))]
-        {
-            update(&mut state, false).await?;
-            start(&mut state).await?;
-        }
     }
     Ok(())
 }
