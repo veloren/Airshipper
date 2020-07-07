@@ -2,11 +2,13 @@ mod style;
 mod time;
 mod update;
 
-use crate::{error::ClientError, filesystem, profiles::Profile, state::SavedState, Result};
+use crate::{
+    error::ClientError, filesystem, profiles::Profile, state::SavedState, Result,
+};
 use iced::{
     button, scrollable, Align, Application, Button, Column, Command, Container, Element,
-    HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable, Settings, Subscription, Text,
-    VerticalAlignment,
+    HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable, Settings,
+    Subscription, Text, VerticalAlignment,
 };
 use indicatif::HumanBytes;
 use std::time::Duration;
@@ -35,7 +37,8 @@ pub enum LauncherState {
 
 #[derive(Debug)]
 pub struct Airshipper {
-    /// Current state the GUI is in (e.g. Loading up the save file, updating veloren, ...)
+    /// Current state the GUI is in (e.g. Loading up the save file, updating veloren,
+    /// ...)
     state: LauncherState,
     /// Persistent state which needs to get saved to disk
     saveable_state: SavedState,
@@ -110,7 +113,7 @@ impl Application for Airshipper {
         match self.state {
             LauncherState::Downloading(_) => {
                 time::every(Duration::from_millis(300)).map(Message::Tick)
-            }
+            },
             _ => Subscription::none(),
         }
     }
@@ -123,14 +126,18 @@ impl Application for Airshipper {
     }
 
     fn view(&mut self) -> Element<Message> {
-        let title = Container::new(Image::new(filesystem::get_assets_path("veloren-logo.png")))
-            .width(Length::FillPortion(10));
+        let title =
+            Container::new(Image::new(filesystem::get_assets_path("veloren-logo.png")))
+                .width(Length::FillPortion(10));
         // Will be reenabled once finished
-        //let discord = Svg::new(manifest_dir.clone() + "/assets/discord.svg").width(Length::Fill);
-        //let gitlab = Svg::new(manifest_dir.clone() + "/assets/gitlab.svg").width(Length::Fill);
-        //let youtube = Svg::new(manifest_dir.clone() + "/assets/youtube.svg").width(Length::Fill);
-        //let reddit = Svg::new(manifest_dir.clone() + "/assets/reddit.svg").width(Length::Fill);
-        //let twitter = Svg::new(manifest_dir.clone() + "/assets/twitter.svg").width(Length::Fill);
+        //let discord = Svg::new(manifest_dir.clone() +
+        // "/assets/discord.svg").width(Length::Fill); let gitlab =
+        // Svg::new(manifest_dir.clone() + "/assets/gitlab.svg").width(Length::Fill);
+        // let youtube = Svg::new(manifest_dir.clone() +
+        // "/assets/youtube.svg").width(Length::Fill); let reddit =
+        // Svg::new(manifest_dir.clone() + "/assets/reddit.svg").width(Length::Fill);
+        // let twitter = Svg::new(manifest_dir.clone() +
+        // "/assets/twitter.svg").width(Length::Fill);
 
         let icons = Row::new()
             .width(Length::Fill)
@@ -211,7 +218,7 @@ impl Application for Airshipper {
             LauncherState::Downloading(m) => {
                 // Percentage of completed download
                 ((m.download_progress().0 * 100) / m.download_progress().1) as f32
-            }
+            },
             _ => 0.0,
         };
         let play_button_text = match &self.state {
@@ -257,8 +264,8 @@ impl Application for Airshipper {
             | LauncherState::Error(_) => {
                 play = play.style(style::PlayButtonDisabled);
                 play = play.on_press(Interaction::Disabled);
-            }
-            _ => {}
+            },
+            _ => {},
         }
         let play: Element<Interaction> = play.into();
 

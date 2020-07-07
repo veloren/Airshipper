@@ -1,10 +1,11 @@
-use {
-    super::{Airshipper, Interaction, LauncherState, Message, SavedState},
-    crate::{network, profiles::Profile, Result},
-    iced::Command,
-};
+use super::{Airshipper, Interaction, LauncherState, Message, SavedState};
+use crate::{network, profiles::Profile, Result};
+use iced::Command;
 
-pub fn handle_message(airship: &mut Airshipper, message: Message) -> Result<Command<Message>> {
+pub fn handle_message(
+    airship: &mut Airshipper,
+    message: Message,
+) -> Result<Command<Message>> {
     let mut needs_save = false;
 
     match message {
@@ -17,10 +18,10 @@ pub fn handle_message(airship: &mut Airshipper, message: Message) -> Result<Comm
                 check_for_updates(airship.saveable_state.clone()),
                 Message::UpdateCheckDone,
             ));
-        }
+        },
         Message::Saved(_) => {
             airship.saving = false;
-        }
+        },
         Message::Interaction(Interaction::PlayPressed) => {
             if let LauncherState::UpdateAvailable = airship.state {
                 airship.state = LauncherState::Downloading(
@@ -33,12 +34,12 @@ pub fn handle_message(airship: &mut Airshipper, message: Message) -> Result<Comm
                     Message::PlayDone,
                 ));
             }
-        }
+        },
         Message::Interaction(Interaction::ReadMore(url)) => {
             if let Err(e) = opener::open(&url) {
                 return Err(format!("failed to open {} : {}", url, e).into());
             }
-        }
+        },
         Message::UpdateCheckDone(update) => {
             match update? {
                 Some((save, profile_update_available)) => {
@@ -48,20 +49,21 @@ pub fn handle_message(airship: &mut Airshipper, message: Message) -> Result<Comm
                     } else {
                         airship.state = LauncherState::ReadyToPlay;
                     }
-                }
+                },
                 None => airship.state = LauncherState::ReadyToPlay,
             }
             needs_save = true;
-        }
+        },
         Message::InstallDone(result) => {
             let profile = result?;
             airship.saveable_state.active_profile = profile;
             needs_save = true;
             airship.state = LauncherState::ReadyToPlay;
-        }
+        },
         Message::Tick(_) => {
             if let LauncherState::Downloading(m) = &airship.state {
-                let percentage = ((m.download_progress().0 * 100) / m.download_progress().1) as f32;
+                let percentage =
+                    ((m.download_progress().0 * 100) / m.download_progress().1) as f32;
                 if (percentage - 100.0).abs() < 0.1 {
                     airship.state = LauncherState::Installing;
                     return Ok(Command::perform(
@@ -70,21 +72,22 @@ pub fn handle_message(airship: &mut Airshipper, message: Message) -> Result<Comm
                     ));
                 }
             }
-        }
+        },
         Message::Error(e) | Message::PlayDone(Err(e)) => {
             airship.state = LauncherState::Error(e);
-        }
+        },
         // Everything went fine when playing the game :O
         Message::PlayDone(Ok(())) => {
             // After playing check for an possible update
-            // useful if you got kicked from the server due to an update so you can instantly update too
+            // useful if you got kicked from the server due to an update so you can
+            // instantly update too
             airship.state = LauncherState::QueryingForUpdates;
             return Ok(Command::perform(
                 check_for_updates(airship.saveable_state.clone()),
                 Message::UpdateCheckDone,
             ));
-        }
-        Message::Interaction(Interaction::Disabled) => {}
+        },
+        Message::Interaction(Interaction::Disabled) => {},
     }
 
     if needs_save && !airship.saving {
@@ -100,7 +103,9 @@ pub fn handle_message(airship: &mut Airshipper, message: Message) -> Result<Comm
 
 /// Returns new state if updated.
 /// the bool signifies whether an profile update is available
-async fn check_for_updates(mut saveable_state: SavedState) -> Result<Option<(SavedState, bool)>> {
+async fn check_for_updates(
+    mut saveable_state: SavedState,
+) -> Result<Option<(SavedState, bool)>> {
     let mut modified = false;
     let mut profile_update_available = false;
 
@@ -110,7 +115,7 @@ async fn check_for_updates(mut saveable_state: SavedState) -> Result<Option<(Sav
             saveable_state.changelog = network::query_changelog().await?;
             modified = true;
             log::debug!("Changelog updated.")
-        }
+        },
         None => log::debug!("Changelog up-to-date."),
     }
 
@@ -120,7 +125,7 @@ async fn check_for_updates(mut saveable_state: SavedState) -> Result<Option<(Sav
             saveable_state.news = network::query_news().await?;
             modified = true;
             log::debug!("News updated.")
-        }
+        },
         None => log::debug!("News up-to-date."),
     }
 

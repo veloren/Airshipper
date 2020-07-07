@@ -28,7 +28,8 @@ lazy_static::lazy_static! {
 }
 
 // TODO: Is there a way to figure out whether airshipper has been installed or not
-//       to allow to use another base location and avoid polluting the current install while developing?
+//       to allow to use another base location and avoid polluting the current install
+// while developing?
 
 /// Returns the base path where all airshipper files like config, profiles belong.
 ///
@@ -46,7 +47,8 @@ fn base() -> PathBuf {
 }
 
 /// Tries to locate the static assets at various places.
-/// Priorities relative over absolute paths (e.g. next to the executable before checking /usr/share/airshipper/.. etc)
+/// Priorities relative over absolute paths (e.g. next to the executable before checking
+/// /usr/share/airshipper/.. etc)
 fn assets() -> PathBuf {
     let mut paths = Vec::new();
 

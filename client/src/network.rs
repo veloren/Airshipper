@@ -1,8 +1,6 @@
 //! Takes care of all network operations
 
-use crate::filesystem;
-use crate::profiles::Profile;
-use crate::Result;
+use crate::{filesystem, profiles::Profile, Result};
 use async_std::{fs::File, prelude::*};
 use isahc::{config::RedirectPolicy, prelude::*};
 use serde::{Deserialize, Serialize};
@@ -99,7 +97,7 @@ pub fn start_download(profile: &Profile) -> Result<isahc::Metrics> {
     async_std::task::spawn(async move {
         let body = response.body_mut();
         let mut buffer = [0; 8000]; // 8KB
-                                    // TODO: deal with this error!
+        // TODO: deal with this error!
         let mut file = File::create(&zip_path)
             .await
             .expect("failed to create file for download!");
@@ -109,7 +107,7 @@ pub fn start_download(profile: &Profile) -> Result<isahc::Metrics> {
                 Ok(0) => {
                     log::info!("Download finished!");
                     break;
-                }
+                },
                 Ok(x) => {
                     file.write_all(&buffer[0..x])
                         .await
@@ -119,11 +117,11 @@ pub fn start_download(profile: &Profile) -> Result<isahc::Metrics> {
                     for i in 0..x {
                         buffer[i] = 0;
                     }
-                }
+                },
                 Err(e) => {
                     log::error!("ERROR: {}", e);
                     break;
-                }
+                },
             }
         }
     });
@@ -189,7 +187,9 @@ pub async fn query_news() -> Result<Vec<Post>> {
         // Only take the latest posts
         posts.push(Post {
             title: post.title().unwrap_or("Missing title").into(),
-            description: process_description(post.description().unwrap_or("No description found.")),
+            description: process_description(
+                post.description().unwrap_or("No description found."),
+            ),
             button_url: post.link().unwrap_or("https://www.veloren.net").into(),
 
             btn_state: Default::default(),
@@ -215,7 +215,8 @@ fn process_description(post: &str) -> String {
 pub async fn install(profile: &Profile) -> Result<()> {
     // Extract
     log::info!("Unzipping to {:?}", profile.directory);
-    let mut zip_file = std::fs::File::open(&profile.directory.join(filesystem::DOWNLOAD_FILE))?;
+    let mut zip_file =
+        std::fs::File::open(&profile.directory.join(filesystem::DOWNLOAD_FILE))?;
 
     let mut archive = zip::ZipArchive::new(&mut zip_file)?;
 

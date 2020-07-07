@@ -1,12 +1,10 @@
 // TODO: rewrite download with subscription so this gets obsolete
 // https://github.com/hecrj/iced/pull/164 `subscription::Tracker`
 
-use {
-    async_std::stream::interval,
-    futures::stream::{BoxStream, StreamExt},
-    iced_native::subscription::Recipe,
-    std::{hash::Hash, time::Duration},
-};
+use async_std::stream::interval;
+use futures::stream::{BoxStream, StreamExt};
+use iced_native::subscription::Recipe;
+use std::{hash::Hash, time::Duration};
 
 pub fn every(duration: std::time::Duration) -> iced::Subscription<()> {
     iced::Subscription::from_recipe(Every(duration))
