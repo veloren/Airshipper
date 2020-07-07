@@ -1,7 +1,7 @@
 use rocket::{config::*, Rocket};
 
 /// The project ID of veloren on gitlab.
-pub const PROJECT_ID: u64 = 10174980;
+pub const PROJECT_ID: u64 = 10_174_980;
 /// The Hook Type which gets parsed for artifacts.
 pub const HOOK_TYPE: &str = "Pipeline Hook";
 
@@ -40,7 +40,7 @@ impl ServerConfig {
             gitlab_secret: Self::expect_env_key("AIRSHIPPER_GITLAB_SECRET"),
             artifact_stage: Self::expect_env_key("AIRSHIPPER_ARTIFACT_STAGE"),
             target_executable: Self::expect_env_key("AIRSHIPPER_TARGET_EXECUTABLES")
-                .split(",")
+                .split(',')
                 .map(|x| x.to_string())
                 .collect(),
             // Optional
@@ -63,10 +63,10 @@ impl ServerConfig {
     }
 
     fn expect_env_key(name: &str) -> String {
-        std::env::var(name).expect(&format!("required '{}' env key is not set!", name))
+        std::env::var(name).unwrap_or_else(|_| panic!("required '{}' env key is not set!", name))
     }
 
     fn get_env_key_or(name: &str, unwrap_or: &str) -> String {
-        std::env::var(name).unwrap_or(unwrap_or.into())
+        std::env::var(name).unwrap_or_else(|_| unwrap_or.into())
     }
 }
