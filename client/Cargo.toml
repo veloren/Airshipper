@@ -11,10 +11,6 @@ license = "GPL-3.0"
 homepage = "https://www.veloren.net"
 repository = "https://gitlab.com/veloren/airshipper"
 
-[features]
-default = ["gui"]
-gui = ["iced", "iced_native", "iced_futures"]
-
 # Windows logo
 [package.metadata.winres]
 OriginalFilename = "Airshipper.exe"
@@ -29,9 +25,9 @@ maintenance = { status = "actively-developed" }
 clap = { version = "2.33.0", features = ["yaml"] }
 indicatif = "0.14.0"
 # UI
-iced = { git = "https://github.com/hecrj/iced.git", features = ["debug", "svg", "image"], rev = "99a6f8dbc6f9f50f799906c8104dfff961469fd0", optional = true }
-iced_futures = { git = "https://github.com/hecrj/iced.git", features = ["async-std"], rev = "99a6f8dbc6f9f50f799906c8104dfff961469fd0", optional = true }
-iced_native = { git = "https://github.com/hecrj/iced.git", rev = "99a6f8dbc6f9f50f799906c8104dfff961469fd0", optional = true }
+iced = { git = "https://github.com/hecrj/iced.git", features = ["debug", "svg", "image"], rev = "99a6f8dbc6f9f50f799906c8104dfff961469fd0" }
+iced_futures = { git = "https://github.com/hecrj/iced.git", features = ["async-std"], rev = "99a6f8dbc6f9f50f799906c8104dfff961469fd0" }
+iced_native = { git = "https://github.com/hecrj/iced.git", rev = "99a6f8dbc6f9f50f799906c8104dfff961469fd0" }
 # logging
 log = "0.4.8"
 fern = { version = "0.6.0", features = ["colored"] }
