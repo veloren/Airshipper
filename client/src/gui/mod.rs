@@ -13,11 +13,7 @@ use std::time::Duration;
 
 /// Starts the GUI and won't return
 pub fn run() {
-    let mut settings = Settings::default();
-    settings.window.size = (1050, 620);
-    // Enforce the usage of dedicated gpu if available
-    settings.antialiasing = true;
-    Airshipper::run(settings);
+    Airshipper::run(settings())
 }
 
 #[derive(Debug)]
@@ -93,10 +89,11 @@ pub enum Interaction {
 }
 
 impl Application for Airshipper {
-    type Executor = iced_futures::executor::AsyncStd;
+    type Executor = iced::executor::Default;
     type Message = Message;
+    type Flags = ();
 
-    fn new() -> (Self, Command<Message>) {
+    fn new(_flags: ()) -> (Self, Command<Message>) {
         (
             Airshipper::default(),
             Command::perform(SavedState::load(), Message::Loaded),
@@ -156,7 +153,7 @@ impl Application for Airshipper {
             .height(Length::Fill)
             .padding(15)
             .spacing(20)
-            .push(Text::new(&self.saveable_state.changelog).size(18));
+            .push(Text::new(&self.saveable_state.changelog).size(14));
 
         // Contains title, changelog
         let left = Column::new()
@@ -171,12 +168,12 @@ impl Application for Airshipper {
             .padding(25);
 
         for post in &mut self.saveable_state.news {
-            news = news.push(Text::new(post.title.clone()).size(20));
-            news = news.push(Text::new(post.description.clone()).size(16));
+            news = news.push(Text::new(post.title.clone()).size(16));
+            news = news.push(Text::new(post.description.clone()).size(14));
             let read_more_btn: Element<Interaction> = Button::new(
                 &mut post.btn_state,
                 Text::new("Read More")
-                    .size(14)
+                    .size(12)
                     .horizontal_alignment(HorizontalAlignment::Center)
                     .vertical_alignment(VerticalAlignment::Center),
             )
@@ -231,7 +228,7 @@ impl Application for Airshipper {
             LauncherState::Error(_) => "ERROR".into(),
         };
 
-        let download_speed = Text::new(&download_text).size(16);
+        let download_speed = Text::new(&download_text).size(14);
         let download_progressbar =
             ProgressBar::new(0.0..=100.0, download_progress).style(style::Progress);
         let download = Column::new()
@@ -243,7 +240,7 @@ impl Application for Airshipper {
         let mut play = Button::new(
             &mut self.play_button_state,
             Text::new(&play_button_text)
-                .size(30)
+                .size(25)
                 .height(Length::Fill)
                 .horizontal_alignment(HorizontalAlignment::Center)
                 .vertical_alignment(VerticalAlignment::Center),
@@ -289,5 +286,25 @@ impl Application for Airshipper {
             .height(Length::Fill)
             .style(style::Content)
             .into()
+    }
+}
+
+fn settings() -> Settings<()> {
+    use iced::window::Settings as Window;
+
+    Settings {
+        window: Window {
+            size: (1050, 620),
+            resizable: true,
+            decorations: true,
+            icon: None,
+            min_size: Some((1050, 620)),
+            ..Default::default()
+        },
+        flags: (),
+        default_font: None,
+        default_text_size: 20,
+        // Enforce the usage of dedicated gpu if available
+        antialiasing: true,
     }
 }

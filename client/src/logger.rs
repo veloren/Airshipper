@@ -23,7 +23,9 @@ pub fn log(level: log::LevelFilter) -> Result<()> {
         .level_for("gfx_backend_vulkan", log::LevelFilter::Info)
         .level_for("gfx_backend_dx12", log::LevelFilter::Info)
         .level_for("isahc", log::LevelFilter::Info)
-        .level_for("iced_wgpu::image::atlas", log::LevelFilter::Warn);
+        .level_for("iced_wgpu::image::atlas", log::LevelFilter::Warn)
+        .level_for("wgpu_core", log::LevelFilter::Warn)
+        .level_for("iced_wgpu::backend", log::LevelFilter::Warn);
 
     let file_cfg = fern::Dispatch::new()
         .level(log::LevelFilter::Info)
