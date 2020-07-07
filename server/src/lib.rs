@@ -1,4 +1,5 @@
 #![feature(proc_macro_hygiene)]
+#![allow(clippy::unit_arg)]
 use rocket::*;
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_migrations;
