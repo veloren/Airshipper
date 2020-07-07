@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"] // Removes terminal window
+
 mod assets;
 mod cli;
 mod error;
