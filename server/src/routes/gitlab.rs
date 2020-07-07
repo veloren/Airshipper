@@ -17,16 +17,14 @@ pub async fn post_pipeline_update<'r>(
     match payload {
         Some(update) => {
             if let Some(artifacts) = update.artifacts() {
-                if db.does_not_exist(&artifacts)? {
-                    tracing::debug!("Found {} artifacts.", artifacts.len());
-                    webhook::process(artifacts, db);
-                    Ok(Response::build().status(Status::Accepted).finalize())
-                } else {
+                if !db.does_not_exist(&artifacts)? {
                     tracing::warn!("Received duplicate artifacts!");
-                    Ok(Response::build().status(Status::BadRequest).finalize())
                 }
+
+                tracing::debug!("Found {} artifacts.", artifacts.len());
+                webhook::process(artifacts, db);
+                Ok(Response::build().status(Status::Accepted).finalize())
             } else {
-                tracing::debug!("No Artifacts found.");
                 Ok(Response::build().status(Status::Ok).finalize())
             }
         },
