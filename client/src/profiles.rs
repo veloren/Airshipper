@@ -1,9 +1,7 @@
 use crate::{filesystem, network, Result};
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::process::Command;
+use std::{collections::HashMap, path::PathBuf, process::Command};
 
 /// Represents a version with channel, name and path.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -24,8 +22,8 @@ impl Default for Profile {
 #[derive(Debug, Display, Clone, Copy, Serialize, Deserialize)]
 pub enum Channel {
     Nightly,
-    // TODO: Release,
-    // TODO: Source,
+    /* TODO: Release,
+     * TODO: Source, */
 }
 
 impl Profile {

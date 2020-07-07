@@ -22,7 +22,8 @@ impl fmt::Display for ClientError {
             Self::IoError(x) => write!(f, "{}", x),
             Self::NetworkError(_) => write!(
                 f,
-                "A network error occured. Please check your internet connection and try again."
+                "A network error occured. Please check your internet connection and try \
+                 again."
             ),
             Self::Custom(x) => write!(f, "{}", x),
 
@@ -30,10 +31,14 @@ impl fmt::Display for ClientError {
             Self::ZipError(x) => write!(f, "{}", x),
             Self::StripPrefixError(x) => {
                 write!(f, "Failed to convert absolute to relative path: {}", x)
-            }
+            },
             Self::LogError(_) => unreachable!(),
-            Self::SerializeError(x) => write!(f, "FATAL: Failed to save the config! {}", x),
-            Self::DeserializeError(x) => write!(f, "FATAL: Failed to load the config! {}", x),
+            Self::SerializeError(x) => {
+                write!(f, "FATAL: Failed to save the config! {}", x)
+            },
+            Self::DeserializeError(x) => {
+                write!(f, "FATAL: Failed to load the config! {}", x)
+            },
             Self::HttpError(x) => write!(f, "{}", x),
             Self::ParseError(x) => write!(f, "{}", x),
         }
@@ -55,7 +60,7 @@ pub fn setup_panic_hook() {
                     Some(st) => st,
                     None => "Payload is not a string",
                 }
-            }
+            },
         };
 
         log::error!(
