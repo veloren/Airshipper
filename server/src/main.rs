@@ -3,7 +3,7 @@
 mod logger;
 
 fn main() {
-    dotenv::from_filename(".airshipper-env").ok();
+    dotenv::dotenv().ok();
     logger::init();
     server::rocket().launch().expect("Server failed!");
 }
