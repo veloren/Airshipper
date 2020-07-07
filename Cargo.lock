@@ -3682,6 +3682,7 @@ dependencies = [
  "dotenv",
  "lazy_static 1.4.0",
  "libsqlite3-sys",
+ "md5",
  "openssl-sys",
  "reqwest",
  "rocket",
