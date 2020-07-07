@@ -26,17 +26,12 @@ pub fn handle_message(airship: &mut Airshipper, message: Message) -> Result<Comm
                 airship.state = LauncherState::Downloading(
                     airship.saveable_state.active_profile.start_download()?,
                 )
-            } else {
-                match airship.state {
-                    LauncherState::ReadyToPlay => {
-                        airship.state = LauncherState::Playing;
-                        return Ok(Command::perform(
-                            start(airship.saveable_state.active_profile.clone()),
-                            Message::PlayDone,
-                        ));
-                    }
-                    _ => {}
-                }
+            } else if let LauncherState::ReadyToPlay = airship.state {
+                airship.state = LauncherState::Playing;
+                return Ok(Command::perform(
+                    start(airship.saveable_state.active_profile.clone()),
+                    Message::PlayDone,
+                ));
             }
         }
         Message::Interaction(Interaction::ReadMore(url)) => {
@@ -64,10 +59,10 @@ pub fn handle_message(airship: &mut Airshipper, message: Message) -> Result<Comm
             needs_save = true;
             airship.state = LauncherState::ReadyToPlay;
         }
-        Message::Tick(_) => match &airship.state {
-            LauncherState::Downloading(m) => {
+        Message::Tick(_) => {
+            if let LauncherState::Downloading(m) = &airship.state {
                 let percentage = ((m.download_progress().0 * 100) / m.download_progress().1) as f32;
-                if percentage == 100.0 {
+                if (percentage - 100.0).abs() < 0.1 {
                     airship.state = LauncherState::Installing;
                     return Ok(Command::perform(
                         install(airship.saveable_state.active_profile.clone()),
@@ -75,8 +70,7 @@ pub fn handle_message(airship: &mut Airshipper, message: Message) -> Result<Comm
                     ));
                 }
             }
-            _ => {}
-        },
+        }
         Message::Error(e) | Message::PlayDone(Err(e)) => {
             airship.state = LauncherState::Error(e);
         }
@@ -95,7 +89,10 @@ pub fn handle_message(airship: &mut Airshipper, message: Message) -> Result<Comm
 
     if needs_save && !airship.saving {
         airship.saving = true;
-        return Ok(Command::perform(airship.into_save().save(), Message::Saved));
+        return Ok(Command::perform(
+            airship.save_state().save(),
+            Message::Saved,
+        ));
     }
 
     Ok(Command::none())

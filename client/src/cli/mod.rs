@@ -96,7 +96,7 @@ async fn update(state: &mut SavedState, do_not_ask: bool) -> Result<()> {
 async fn print_progress(metrics: isahc::Metrics) {
     use indicatif::{FormattedDuration, HumanBytes, ProgressBar, ProgressStyle};
 
-    let bar = ProgressBar::new(0).with_style(
+    let progress_bar = ProgressBar::new(0).with_style(
         ProgressStyle::default_bar()
             .template("[{elapsed_precise}] [{bar:40.green/white}] {bytes}/{total_bytes} ({eta})")
             .progress_chars("=>-"),
@@ -108,9 +108,9 @@ async fn print_progress(metrics: isahc::Metrics) {
         if percentage >= 100.0 {
             break;
         }
-        bar.set_position(metrics.download_progress().0);
-        bar.set_length(metrics.download_progress().1);
-        bar.set_message(&format!(
+        progress_bar.set_position(metrics.download_progress().0);
+        progress_bar.set_length(metrics.download_progress().1);
+        progress_bar.set_message(&format!(
             "time: {}  speed: {}/sec",
             FormattedDuration(metrics.total_time()),
             HumanBytes(metrics.download_speed() as u64),
@@ -133,14 +133,11 @@ pub fn confirm_action() -> Result<bool> {
     let _ = std::io::stdin().read_line(&mut buffer)?;
     buffer = buffer.to_lowercase();
 
-    if buffer.trim().is_empty() {
-        Ok(true)
-    } else if buffer.starts_with("y") {
-        Ok(true)
-    } else if buffer.starts_with("n") {
-        Ok(false)
-    } else {
-        // for the accidental key smash
-        Ok(false)
+    if buffer.trim().is_empty() || buffer.starts_with('y') {
+        return Ok(true);
+    } else if buffer.starts_with('n') {
+        return Ok(false);
     }
+    // for the accidental key smash
+    Ok(false)
 }

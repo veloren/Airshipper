@@ -46,5 +46,5 @@ async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()
 }
 
 fn is_success(code: u16) -> bool {
-    if code < 399 && code > 199 { true } else { false }
+    code < 399 && code > 199
 }

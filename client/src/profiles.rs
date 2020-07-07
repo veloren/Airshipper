@@ -72,7 +72,7 @@ impl Profile {
             "Veloren exited with code: {}",
             cmd.code()
                 .map(|x| x.to_string())
-                .unwrap_or("Exit code unavailable.".to_string())
+                .unwrap_or_else(|| "Exit code unavailable.".to_string())
         );
         Ok(())
     }
