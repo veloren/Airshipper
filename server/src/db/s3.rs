@@ -29,10 +29,7 @@ impl S3Connection {
     pub async fn upload(&self, artifact: &Artifact) -> Result<u16> {
         let code = self
             .0
-            .put_object_stream(
-                &artifact.file_name,
-                &format!("/nightly/{}", &artifact.file_name),
-            )
+            .put_object_stream(&artifact.file_name, &format!("/nightly/{}", &artifact.file_name))
             .await?;
         Ok(code)
     }

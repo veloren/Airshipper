@@ -1,5 +1,4 @@
-use crate::Result;
-use crate::{filesystem, network};
+use crate::{filesystem, network, Result};
 use std::ffi::OsStr;
 
 // TODO: We should remove the installer after successful update!
@@ -7,7 +6,9 @@ use std::ffi::OsStr;
 pub(crate) async fn update() -> Result<()> {
     // Note: this will ignore network errors silently.
     if let Some(url) = network::check_win_update().await.ok().flatten() {
-        log::info!("Found airshipper update! It's highly recommended to update. Install? [Y/n]");
+        log::info!(
+            "Found airshipper update! It's highly recommended to update. Install? [Y/n]"
+        );
         if crate::cli::confirm_action()? {
             let mut resp = network::request(&url).await?;
             let path = filesystem::get_cache_path();
@@ -18,14 +19,19 @@ pub(crate) async fn update() -> Result<()> {
                 .flatten()
             {
                 Some(name) => name.to_string(),
-                None => return Err(format!("Malformed update url for airshipper! {}", url).into()),
+                None => {
+                    return Err(
+                        format!("Malformed update url for airshipper! {}", url).into()
+                    );
+                },
             };
 
             if resp.status().is_success() {
-                use std::os::windows::ffi::OsStrExt;
-                use std::ptr;
-                use winapi::um::winuser::SW_SHOW;
-                use winapi::{ctypes::c_int, um::shellapi::ShellExecuteW};
+                use std::{os::windows::ffi::OsStrExt, ptr};
+                use winapi::{
+                    ctypes::c_int,
+                    um::{shellapi::ShellExecuteW, winuser::SW_SHOW},
+                };
 
                 log::debug!(
                     "Download airshipper update to: {}",
