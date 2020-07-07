@@ -61,6 +61,7 @@ dependencies = [
  "lazy_static 1.4.0",
  "log",
  "opener",
+ "openssl-sys",
  "ron",
  "rss",
  "semver",
