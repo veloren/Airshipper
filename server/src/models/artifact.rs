@@ -85,7 +85,7 @@ impl Artifact {
         use std::{ffi::OsStr, path::PathBuf};
         PathBuf::from(&self.file_name)
             .extension()
-            .unwrap_or(OsStr::new("zip"))
+            .unwrap_or_else(|| OsStr::new("zip"))
             .to_string_lossy()
             .into()
     }

@@ -63,7 +63,7 @@ impl Default for Airshipper {
 }
 
 impl Airshipper {
-    fn into_save(&self) -> SavedState {
+    fn save_state(&self) -> SavedState {
         self.saveable_state.clone()
     }
     fn update_from_save(&mut self, save: SavedState) {
@@ -215,7 +215,7 @@ impl Application for Airshipper {
             _ => 0.0,
         };
         let play_button_text = match &self.state {
-            LauncherState::Downloading(_) => format!("Downloading"),
+            LauncherState::Downloading(_) => "Downloading".to_string(),
             LauncherState::Installing => "Installing".into(),
             LauncherState::LoadingSave => "Loading".into(),
             LauncherState::QueryingForUpdates => "Loading".into(),

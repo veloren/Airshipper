@@ -32,6 +32,7 @@ pub enum ServerError {
     InvalidResponseCode(reqwest::StatusCode, crate::models::Artifact),
 }
 
+#[allow(clippy::needless_lifetimes)]
 #[rocket::async_trait]
 impl<'r> Responder<'r> for ServerError {
     async fn respond_to(self, req: &'r Request<'_>) -> response::Result<'r> {
@@ -41,16 +42,16 @@ impl<'r> Responder<'r> for ServerError {
             // Web facing errors
             ServerError::InvalidPlatform => {
                 resp.status(Status::BadRequest);
-                resp.sized_body(Cursor::new(format!(
-                    "Invalid platform. Currently supported are windows and linux."
-                )))
+                resp.sized_body(Cursor::new(
+                    "Invalid platform. Currently supported are windows and linux.",
+                ))
                 .await; // TODO: Do not hardcode (use enum_iterator or such)
             },
             ServerError::InvalidChannel => {
                 resp.status(Status::BadRequest);
-                resp.sized_body(Cursor::new(format!(
-                    "Invalid channel. Currently supported is nightly with upcoming support for releases."
-                )))
+                resp.sized_body(Cursor::new(
+                    "Invalid channel. Currently supported is nightly with upcoming support for releases.",
+                ))
                 .await; // TODO: Do not hardcode (use enum_iterator or such)
             },
             ServerError::Status(status) => {

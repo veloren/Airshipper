@@ -81,7 +81,7 @@ impl DbConnection {
         Ok(artis.iter().map(|x| x.into()).collect())
     }
 
-    pub fn does_not_exist(&self, cmp: &Vec<Artifact>) -> Result<bool> {
+    pub fn does_not_exist(&self, cmp: &[Artifact]) -> Result<bool> {
         use schema::artifacts::dsl::*;
         let uris: Vec<&String> = cmp.iter().map(|x| &x.download_uri).collect();
         let count: Option<i64> = artifacts

@@ -36,7 +36,7 @@ pub fn log(level: log::LevelFilter) -> Result<()> {
                 record
                     .line()
                     .map(|x| x.to_string())
-                    .unwrap_or("X".to_string()),
+                    .unwrap_or_else(|| "X".to_string()),
                 record.level(),
                 message
             ))
@@ -53,7 +53,7 @@ pub fn log(level: log::LevelFilter) -> Result<()> {
                 record
                     .line()
                     .map(|x| x.to_string())
-                    .unwrap_or("X".to_string()),
+                    .unwrap_or_else(|| "X".to_string()),
                 colors.color(record.level()),
                 message
             ))
