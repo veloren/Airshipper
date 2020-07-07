@@ -22,7 +22,7 @@ RUN cargo vendor > .cargo/config
 # Copy the source and build the application.
 COPY src ./src
 COPY migrations ./migrations
-RUN cargo build --release --target x86_64-unknown-linux-musl
+RUN cargo build --release --locked --target x86_64-unknown-linux-musl
 
 # Copy the statically-linked binary into a scratch container.
 FROM alpine
