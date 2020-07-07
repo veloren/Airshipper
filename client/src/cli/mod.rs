@@ -98,13 +98,16 @@ async fn print_progress(metrics: isahc::Metrics) {
 
     let progress_bar = ProgressBar::new(0).with_style(
         ProgressStyle::default_bar()
-            .template("[{elapsed_precise}] [{bar:40.green/white}] {bytes}/{total_bytes} ({eta})")
+            .template(
+                "[{elapsed_precise}] [{bar:40.green/white}] {bytes}/{total_bytes} \
+                 ({eta})",
+            )
             .progress_chars("=>-"),
     );
 
     loop {
-        let percentage =
-            ((metrics.download_progress().0 * 100) / metrics.download_progress().1) as f32;
+        let percentage = ((metrics.download_progress().0 * 100)
+            / metrics.download_progress().1) as f32;
         if percentage >= 100.0 {
             break;
         }

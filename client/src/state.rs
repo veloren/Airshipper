@@ -48,16 +48,16 @@ impl SavedState {
         match async_std::fs::File::open(filesystem::get_savedstate_path()).await {
             Ok(mut file) => {
                 file.read_to_string(&mut contents).await?;
-            }
+            },
             Err(e) => match e.kind() {
                 std::io::ErrorKind::NotFound => {
                     log::debug!("saved state not found. Fallback to default!");
                     return Ok(SavedState::default());
-                }
+                },
                 _ => {
                     log::error!("saved state invalid!");
                     return Err(e.into());
-                }
+                },
             },
         }
         Ok(ron::de::from_str(&contents)?)
