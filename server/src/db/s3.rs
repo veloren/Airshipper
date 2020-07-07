@@ -1,16 +1,20 @@
 use crate::{models::Artifact, Result, CONFIG};
-use s3::{bucket::Bucket, credentials::Credentials, region::Region};
+use awscreds::Credentials;
+use awsregion::Region;
+use s3::bucket::Bucket;
+
 #[derive(Debug)]
 pub struct S3Connection(Bucket);
 
 impl S3Connection {
-    pub fn new() -> Result<Self> {
+    pub async fn new() -> Result<Self> {
         let credentials = Credentials::new(
             Some(CONFIG.bucket_access_key.clone()),
             Some(CONFIG.bucket_secret_key.clone()),
             None,
             None,
-        );
+        )
+        .await?;
         let region = Region::Custom {
             region: CONFIG.bucket_region.clone(),
             // For some reason the region needs to be included in the endpoint.
@@ -25,7 +29,10 @@ impl S3Connection {
     pub async fn upload(&self, artifact: &Artifact) -> Result<u16> {
         let code = self
             .0
-            .put_object_stream(&artifact.file_name, &format!("/nightly/{}", &artifact.file_name))
+            .put_object_stream(
+                &artifact.file_name,
+                &format!("/nightly/{}", &artifact.file_name),
+            )
             .await?;
         Ok(code)
     }

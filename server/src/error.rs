@@ -11,17 +11,14 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum ServerError {
     // Web facing
-    #[error("Invalid platform. Currently supported are windows and linux.")]
-    InvalidPlatform,
-    #[error("Invalid channel. Currently supported is nightly with upcoming support for releases.")]
-    InvalidChannel,
-    // Not really a serious error (see routes/api.rs)
     #[error("Respond with Status: {0}")]
     Status(Status),
 
     // Internal errors
-    #[error("S3Bucker error: {0}")]
-    S3Bucket(#[from] s3::error::S3Error),
+    #[error("S3Bucket error: {0}")]
+    S3Bucket(#[from] s3::S3Error),
+    #[error("S3CredentialsBucket error: {0}")]
+    CredentialsBucket(#[from] awscreds::AwsCredsError),
     #[error("Internal Error: {0}")]
     ReqwestError(#[from] reqwest::Error),
     #[error("Diesel error: {0}")]
@@ -40,22 +37,8 @@ impl<'r> Responder<'r> for ServerError {
 
         match self {
             // Web facing errors
-            ServerError::InvalidPlatform => {
-                resp.status(Status::BadRequest);
-                resp.sized_body(Cursor::new(
-                    "Invalid platform. Currently supported are windows and linux.",
-                ))
-                .await; // TODO: Do not hardcode (use enum_iterator or such)
-            },
-            ServerError::InvalidChannel => {
-                resp.status(Status::BadRequest);
-                resp.sized_body(Cursor::new(
-                    "Invalid channel. Currently supported is nightly with upcoming support for releases.",
-                ))
-                .await; // TODO: Do not hardcode (use enum_iterator or such)
-            },
             ServerError::Status(status) => {
-                resp.status(status).finalize();
+                resp.status(status);
             },
 
             // Internal errors
