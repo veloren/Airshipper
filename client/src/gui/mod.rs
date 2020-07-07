@@ -2,7 +2,9 @@ mod style;
 mod time;
 mod update;
 
-use crate::{error::ClientError, profiles::Profile, state::SavedState, Result};
+use crate::{
+    cli::CmdLine, error::ClientError, profiles::Profile, state::SavedState, Result,
+};
 use iced::{
     button, image::Handle, scrollable, Align, Application, Button, Column, Command,
     Container, Element, HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable,
@@ -12,8 +14,8 @@ use indicatif::HumanBytes;
 use std::time::Duration;
 
 /// Starts the GUI and won't return
-pub fn run() {
-    Airshipper::run(settings())
+pub fn run(cmd: CmdLine) {
+    Airshipper::run(settings(cmd))
 }
 
 #[derive(Debug)]
@@ -91,9 +93,9 @@ pub enum Interaction {
 impl Application for Airshipper {
     type Executor = iced::executor::Default;
     type Message = Message;
-    type Flags = ();
+    type Flags = CmdLine;
 
-    fn new(_flags: ()) -> (Self, Command<Message>) {
+    fn new(_flags: CmdLine) -> (Self, Command<Message>) {
         (
             Airshipper::default(),
             Command::perform(SavedState::load(), Message::Loaded),
@@ -289,7 +291,7 @@ impl Application for Airshipper {
     }
 }
 
-fn settings() -> Settings<()> {
+fn settings(cmd: CmdLine) -> Settings<CmdLine> {
     use iced::window::{Icon, Settings as Window};
     use image::GenericImageView;
     let icon = image::load_from_memory(crate::assets::VELOREN_ICON).unwrap();
@@ -306,7 +308,7 @@ fn settings() -> Settings<()> {
             min_size: Some((1050, 620)),
             ..Default::default()
         },
-        flags: (),
+        flags: cmd,
         default_font: Some(crate::assets::FONT),
         default_text_size: 20,
         // Enforce the usage of dedicated gpu if available

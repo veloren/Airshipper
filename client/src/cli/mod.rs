@@ -1,14 +1,14 @@
 use crate::{filesystem, gui, logger, state::SavedState, Result};
-use clap::{load_yaml, App};
+use parse::Action;
+mod parse;
+
+pub use parse::CmdLine;
 
 /// Process command line arguments and optionally starts GUI
 pub async fn process() -> Result<()> {
-    let yml = load_yaml!("clap.yml");
-    let version = format!("v{}", env!("CARGO_PKG_VERSION"));
-    let app = App::from_yaml(yml).version(&*version);
-    let m = app.clone().get_matches();
+    let cmd = CmdLine::new();
 
-    let level = match m.occurrences_of("log") {
+    let level = match cmd.debug {
         0 => log::LevelFilter::Info,
         1 => log::LevelFilter::Debug,
         2 => log::LevelFilter::Trace,
@@ -24,6 +24,7 @@ pub async fn process() -> Result<()> {
     log::debug!("Log file: {}", filesystem::get_log_path().display());
     #[cfg(windows)]
     log::debug!("Cache Path: {}", filesystem::get_cache_path().display());
+    log::debug!("Cmdline args: {:?}", cmd);
 
     // Check for updates (windows only)
     #[cfg(windows)]
@@ -32,7 +33,7 @@ pub async fn process() -> Result<()> {
     let mut state = SavedState::load().await.unwrap_or_default();
 
     // handle arguments
-    process_arguments(&mut state, m).await?;
+    process_arguments(&mut state, cmd).await?;
 
     // Save state
     state.save().await?;
@@ -40,21 +41,19 @@ pub async fn process() -> Result<()> {
     Ok(())
 }
 
-async fn process_arguments<'n, 'a>(
-    mut state: &mut SavedState,
-    m: clap::ArgMatches<'n>,
-) -> Result<()> {
-    if m.is_present("update") {
-        update(&mut state, true).await?;
-    } else if m.is_present("start") {
-        // TODO: Check if profile is installed...
-        log::info!("Starting...");
-        start(&mut state).await?;
-    } else if m.is_present("run") {
-        update(&mut state, false).await?;
-        start(&mut state).await?;
-    } else {
-        gui::run();
+async fn process_arguments(mut state: &mut SavedState, cmd: CmdLine) -> Result<()> {
+    match cmd.action {
+        // Cli only
+        Some(action) => match action {
+            Action::Update => update(&mut state, true).await?,
+            Action::Start => start(&mut state).await?,
+            Action::Run => {
+                update(&mut state, false).await?;
+                start(&mut state).await?
+            },
+        },
+        // GUI
+        None => gui::run(cmd),
     }
     Ok(())
 }
