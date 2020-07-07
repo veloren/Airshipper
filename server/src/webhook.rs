@@ -27,7 +27,7 @@ async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()
     }
 
     tracing::info!("Uploading...");
-    let code = crate::S3Connection::new()?.upload(&artifact).await?;
+    let code = crate::S3Connection::new().await?.upload(&artifact).await?;
 
     // Delete obselete artifact
     let _ = std::fs::remove_file(&artifact.file_name);
