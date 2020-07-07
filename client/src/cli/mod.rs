@@ -15,9 +15,7 @@ pub async fn process() -> Result<()> {
         _ => log::LevelFilter::Trace,
     };
 
-    if let Err(e) = logger::log(level) {
-        panic!("Failed to set logging: {}", e);
-    }
+    logger::log(level);
 
     log::debug!("Running on {}", std::env::consts::OS);
     log::debug!("Base Path: {}", filesystem::base_path());
@@ -43,7 +41,7 @@ pub async fn process() -> Result<()> {
 
 async fn process_arguments(mut state: &mut SavedState, cmd: CmdLine) -> Result<()> {
     match cmd.action {
-        // Cli only
+        // CLI
         Some(action) => match action {
             Action::Update => update(&mut state, true).await?,
             Action::Start => start(&mut state).await?,

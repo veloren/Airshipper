@@ -1,8 +1,8 @@
-use crate::{filesystem, Result};
+use crate::filesystem;
 use fern::colors::{Color, ColoredLevelConfig};
 
 /// Setup logging.
-pub fn log(level: log::LevelFilter) -> Result<()> {
+pub fn log(level: log::LevelFilter) {
     let colors = ColoredLevelConfig::new()
         .error(Color::Red)
         .warn(Color::Yellow)
@@ -43,7 +43,10 @@ pub fn log(level: log::LevelFilter) -> Result<()> {
                 message
             ))
         })
-        .chain(fern::log_file(&filesystem::get_log_path())?);
+        .chain(
+            fern::log_file(&filesystem::get_log_path())
+                .expect("Failed to setup log file!"),
+        );
 
     let mut stdout_cfg = fern::Dispatch::new().level(level);
     // If more verbose debugging is requested. We will print the lines too.
@@ -72,7 +75,8 @@ pub fn log(level: log::LevelFilter) -> Result<()> {
 
     stdout_cfg = stdout_cfg.chain(std::io::stdout());
 
-    base.chain(file_cfg).chain(stdout_cfg).apply()?;
-
-    Ok(())
+    base.chain(file_cfg)
+        .chain(stdout_cfg)
+        .apply()
+        .expect("Failed to setup logging.");
 }
