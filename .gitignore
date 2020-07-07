@@ -1,24 +1,5 @@
-# Rust
-
-/target/
-/*/target/
-
-# IntelliJ
-
-**/.idea/
-**/*.iml
-
-# VSCode
-
-/.vscode/*
-!/.vscode/launch.json
-*.code-workspace
-
-# Miscellaneous
-*.log
-*.ron
-.airshipper-env
+target/
+airshipper.ron
 airshipper.db
-public/
-profiles/
-.packages/
+.env
+*.log
