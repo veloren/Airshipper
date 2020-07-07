@@ -23,8 +23,6 @@ const LOG_FILE: &str = "airshipper.log";
 lazy_static::lazy_static! {
     // Base for config, profiles, ...
     static ref BASE_PATH: PathBuf = base();
-    // Base for the assets
-    static ref ASSETS_PATH: PathBuf = assets();
 }
 
 // TODO: Is there a way to figure out whether airshipper has been installed or not
@@ -46,53 +44,8 @@ fn base() -> PathBuf {
     path
 }
 
-/// Tries to locate the static assets at various places.
-/// Priorities relative over absolute paths (e.g. next to the executable before checking
-/// /usr/share/airshipper/.. etc)
-fn assets() -> PathBuf {
-    let mut paths = Vec::new();
-
-    // Executable path
-    if let Ok(mut path) = std::env::current_exe() {
-        path.pop();
-        paths.push(path);
-    }
-
-    // current working directory
-    if let Ok(path) = std::env::current_dir() {
-        paths.push(path);
-    }
-
-    // System paths
-    #[cfg(target_os = "linux")]
-    paths.push("/usr/share/airshipper/assets".into());
-
-    for path in paths.clone() {
-        match find_folder::Search::ParentsThenKids(3, 1)
-            .of(path)
-            .for_folder("assets")
-        {
-            Ok(assets_path) => return assets_path,
-            Err(_) => continue,
-        }
-    }
-
-    panic!(
-        "Airshipper assets could not be found! Searched folders:\n{})",
-        paths.iter().fold(String::new(), |mut a, path| {
-            a += &path.to_string_lossy();
-            a += "\n";
-            a
-        }),
-    );
-}
-
 pub(crate) fn base_path() -> impl std::fmt::Display {
     BASE_PATH.display()
-}
-
-pub(crate) fn assets_path() -> impl std::fmt::Display {
-    ASSETS_PATH.display()
 }
 
 #[cfg(windows)]
@@ -103,12 +56,6 @@ pub(crate) fn get_cache_path() -> PathBuf {
 /// Returns path to the file which saves the current state
 pub(crate) fn get_savedstate_path() -> PathBuf {
     BASE_PATH.join(SAVED_STATE_FILE)
-}
-
-/// Returns path to where the assets are stored
-#[cfg(feature = "gui")]
-pub(crate) fn get_assets_path(name: &str) -> String {
-    ASSETS_PATH.join(name).display().to_string()
 }
 
 /// Returns path to a profile while creating the folder
