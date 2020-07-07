@@ -55,6 +55,7 @@ dependencies = [
  "html2text",
  "iced",
  "iced_native",
+ "image",
  "indicatif",
  "isahc",
  "lazy_static 1.4.0",

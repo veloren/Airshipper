@@ -153,7 +153,7 @@ impl Application for Airshipper {
             .height(Length::Fill)
             .padding(15)
             .spacing(20)
-            .push(Text::new(&self.saveable_state.changelog).size(14));
+            .push(Text::new(&self.saveable_state.changelog).size(18));
 
         // Contains title, changelog
         let left = Column::new()
@@ -168,12 +168,12 @@ impl Application for Airshipper {
             .padding(25);
 
         for post in &mut self.saveable_state.news {
-            news = news.push(Text::new(post.title.clone()).size(16));
-            news = news.push(Text::new(post.description.clone()).size(14));
+            news = news.push(Text::new(post.title.clone()).size(20));
+            news = news.push(Text::new(post.description.clone()).size(18));
             let read_more_btn: Element<Interaction> = Button::new(
                 &mut post.btn_state,
                 Text::new("Read More")
-                    .size(12)
+                    .size(14)
                     .horizontal_alignment(HorizontalAlignment::Center)
                     .vertical_alignment(VerticalAlignment::Center),
             )
@@ -228,7 +228,7 @@ impl Application for Airshipper {
             LauncherState::Error(_) => "ERROR".into(),
         };
 
-        let download_speed = Text::new(&download_text).size(14);
+        let download_speed = Text::new(&download_text).size(16);
         let download_progressbar =
             ProgressBar::new(0.0..=100.0, download_progress).style(style::Progress);
         let download = Column::new()
@@ -240,7 +240,7 @@ impl Application for Airshipper {
         let mut play = Button::new(
             &mut self.play_button_state,
             Text::new(&play_button_text)
-                .size(25)
+                .size(30)
                 .height(Length::Fill)
                 .horizontal_alignment(HorizontalAlignment::Center)
                 .vertical_alignment(VerticalAlignment::Center),
@@ -290,19 +290,24 @@ impl Application for Airshipper {
 }
 
 fn settings() -> Settings<()> {
-    use iced::window::Settings as Window;
+    use iced::window::{Icon, Settings as Window};
+    use image::GenericImageView;
+    let icon = image::load_from_memory(crate::assets::VELOREN_ICON).unwrap();
 
     Settings {
         window: Window {
             size: (1050, 620),
             resizable: true,
             decorations: true,
-            icon: None,
+            icon: Some(
+                Icon::from_rgba(icon.to_rgba().into_raw(), icon.width(), icon.height())
+                    .unwrap(),
+            ),
             min_size: Some((1050, 620)),
             ..Default::default()
         },
         flags: (),
-        default_font: None,
+        default_font: Some(crate::assets::FONT),
         default_text_size: 20,
         // Enforce the usage of dedicated gpu if available
         antialiasing: true,
