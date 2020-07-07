@@ -115,6 +115,7 @@ pub fn start_download(profile: &Profile) -> Result<isahc::Metrics> {
                         .await
                         // TODO: deal with this error!
                         .expect("TODO: error handling");
+                    #[allow(clippy::needless_range_loop)]
                     for i in 0..x {
                         buffer[i] = 0;
                     }
@@ -136,7 +137,7 @@ pub async fn compare_changelog_etag(cached: &str) -> Result<Option<String>> {
         .headers()
         .get("etag")
         .map(|x| x.to_str().unwrap().to_string()) // Etag will always be a valid UTF-8 due to it being ASCII
-        .unwrap_or("MissingEtag".into());
+        .unwrap_or_else(|| "MissingEtag".into());
     Ok(if remote != cached { Some(remote) } else { None })
 }
 
@@ -147,7 +148,7 @@ pub async fn compare_news_etag(cached: &str) -> Result<Option<String>> {
         .headers()
         .get("etag")
         .map(|x| x.to_str().unwrap().to_string()) // Etag will always be a valid UTF-8 due to it being ASCII
-        .unwrap_or("MissingEtag".into());
+        .unwrap_or_else(|| "MissingEtag".into());
     Ok(if remote != cached { Some(remote) } else { None })
 }
 
@@ -207,8 +208,7 @@ fn process_description(post: &str) -> String {
         .filter(|x| !x.contains("[banner]"))
         .map(|x| format!("{}\n", x))
         .collect::<String>();
-    let stripped_markdown = strip_markdown::strip_markdown(&stripped_html);
-    stripped_markdown
+    strip_markdown::strip_markdown(&stripped_html)
 }
 
 /// Unzips to target directory and changes permissions
