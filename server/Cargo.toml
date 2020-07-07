@@ -31,6 +31,7 @@ thiserror = "1.0.13"
 chrono = { version = "0.4.11", features = ["serde"] }
 lazy_static = "1.4.0"
 dotenv = "0.15.0"
+md5 = "0.7.0"
 # bundle all the things!
 libsqlite3-sys = { version = "*", features = ["bundled"] }
 openssl-sys = { version = "*", features = ["vendored"] }
