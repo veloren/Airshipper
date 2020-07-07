@@ -2,7 +2,7 @@
 // https://github.com/hecrj/iced/pull/164 `subscription::Tracker`
 
 use async_std::stream::interval;
-use futures::stream::{BoxStream, StreamExt};
+use iced::futures::stream::{BoxStream, StreamExt};
 use iced_native::subscription::Recipe;
 use std::{hash::Hash, time::Duration};
 
@@ -25,7 +25,7 @@ where
 
     fn stream(
         self: Box<Self>,
-        _input: futures::stream::BoxStream<'static, I>,
+        _input: iced::futures::stream::BoxStream<'static, I>,
     ) -> BoxStream<'static, Self::Output> {
         interval(self.0).boxed()
     }
