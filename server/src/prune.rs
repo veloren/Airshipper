@@ -4,7 +4,7 @@ use crate::Result;
 #[tracing::instrument(skip(db))]
 pub async fn prune(db: &mut crate::DbConnection) -> Result<()> {
     if db.has_pruneable_artifacts()? {
-        let s3con = crate::S3Connection::new()?;
+        let s3con = crate::S3Connection::new().await?;
         let artifacts = db.prune_artifacts()?;
 
         for artifact in artifacts {

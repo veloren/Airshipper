@@ -32,7 +32,7 @@ dependencies = [
  "backtrace",
  "chrono",
  "clap",
- "derive_more 0.99.3",
+ "derive_more",
  "dirs 2.0.2",
  "fern",
  "find_folder",
@@ -217,6 +217,28 @@ name = "autocfg"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8aac770f1885fd7e387acedd76065302551364496e46b3dd00860b2f8359b9d"
+
+[[package]]
+name = "aws-creds"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22da48e4ed176cf0ae046be8a43eb9d087bbc4234eb3c4e9555a339cbd250135"
+dependencies = [
+ "dirs 2.0.2",
+ "reqwest",
+ "rust-ini",
+ "simpl",
+ "tokio",
+]
+
+[[package]]
+name = "aws-region"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6bc82757b564511ed96024fbe8705ba2dabe049a1afb1c71ec405c45fce1b0c"
+dependencies = [
+ "simpl",
+]
 
 [[package]]
 name = "backtrace"
@@ -864,20 +886,6 @@ dependencies = [
  "proc-macro2 1.0.9",
  "quote 1.0.3",
  "syn 1.0.17",
-]
-
-[[package]]
-name = "derive_more"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a141330240c921ec6d074a3e188a7c7ef95668bb95e7d44fa0e5778ec2a7afe"
-dependencies = [
- "lazy_static 1.4.0",
- "proc-macro2 0.4.30",
- "quote 0.6.13",
- "regex",
- "rustc_version",
- "syn 0.15.44",
 ]
 
 [[package]]
@@ -3448,20 +3456,20 @@ dependencies = [
 
 [[package]]
 name = "rust-s3"
-version = "0.19.0"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a30c90144f83f87dfb49a412493ff8a91576696a5d13103484531aaac1387e7c"
+checksum = "3df16c0de224dbb2388da1d261b6f52073e29f7bf1dd9c340d1e90a15b0ba503"
 dependencies = [
+ "aws-creds",
+ "aws-region",
  "base64 0.12.0",
  "chrono",
- "dirs 2.0.2",
  "futures 0.3.4",
  "hex",
  "hmac",
  "md5",
  "rand 0.7.3",
  "reqwest",
- "rust-ini",
  "serde 1.0.105",
  "serde-xml-rs",
  "serde_derive",
@@ -3641,9 +3649,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.48"
+version = "1.0.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9371ade75d4c2d6cb154141b9752cf3781ec9c05e0e5cf35060e1e70ee7b9c25"
+checksum = "3433e879a558dde8b5e8feb2a04899cf34fdde1fafb894687e52105fc1162ac3"
 dependencies = [
  "itoa",
  "ryu",
@@ -3666,15 +3674,15 @@ dependencies = [
 name = "server"
 version = "0.2.0"
 dependencies = [
+ "aws-creds",
+ "aws-region",
  "chrono",
- "derive_more 0.15.0",
  "diesel",
  "diesel_migrations",
  "dotenv",
  "lazy_static 1.4.0",
  "libsqlite3-sys",
  "openssl-sys",
- "regex",
  "reqwest",
  "rocket",
  "rocket_contrib",
