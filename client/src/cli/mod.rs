@@ -1,4 +1,4 @@
-use crate::{filesystem, gui, logger, state::SavedState, Result};
+use crate::{fs, gui, logger, state::SavedState, Result};
 use parse::Action;
 mod parse;
 
@@ -18,10 +18,10 @@ pub async fn process() -> Result<()> {
     logger::log(level);
 
     log::debug!("Running on {}", std::env::consts::OS);
-    log::debug!("Base Path: {}", filesystem::base_path());
-    log::debug!("Log file: {}", filesystem::get_log_path().display());
+    log::debug!("Base Path: {}", fs::base_path());
+    log::debug!("Log file: {}", fs::get_log_path().display());
     #[cfg(windows)]
-    log::debug!("Cache Path: {}", filesystem::get_cache_path().display());
+    log::debug!("Cache Path: {}", fs::get_cache_path().display());
     log::debug!("Cmdline args: {:?}", cmd);
 
     // Check for updates (windows only)
