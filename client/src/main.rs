@@ -2,17 +2,21 @@
 
 mod assets;
 mod cli;
+mod consts;
 mod error;
-mod filesystem;
 mod gui;
+mod io;
 mod logger;
-mod network;
+mod net;
 mod profiles;
 mod state;
 #[cfg(windows)]
 mod updater;
 
 use crate::error::ClientError;
+
+pub use io::*;
+pub use net::*;
 
 pub type Result<T> = std::result::Result<T, ClientError>;
 

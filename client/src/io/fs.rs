@@ -1,24 +1,7 @@
 //! Deals with all filesystem specific details
 
+use crate::consts;
 use std::path::PathBuf;
-
-#[cfg(windows)]
-pub const DOWNLOAD_FILE: &str = "veloren.zip";
-#[cfg(unix)]
-pub const DOWNLOAD_FILE: &str = "veloren";
-
-#[cfg(windows)]
-pub const VOXYGEN_FILE: &str = "veloren-voxygen.exe";
-#[cfg(unix)]
-pub const VOXYGEN_FILE: &str = "veloren-voxygen";
-
-//#[cfg(windows)]
-//pub const SERVER_CLI_FILE: &str = "veloren-server-cli.exe";
-#[cfg(unix)]
-pub const SERVER_CLI_FILE: &str = "veloren-server-cli";
-
-const SAVED_STATE_FILE: &str = "airshipper_state.ron";
-const LOG_FILE: &str = "airshipper.log";
 
 lazy_static::lazy_static! {
     // Base for config, profiles, ...
@@ -44,28 +27,28 @@ fn base() -> PathBuf {
     path
 }
 
-pub(crate) fn base_path() -> impl std::fmt::Display {
+pub fn base_path() -> impl std::fmt::Display {
     BASE_PATH.display()
 }
 
 #[cfg(windows)]
-pub(crate) fn get_cache_path() -> PathBuf {
+pub fn get_cache_path() -> PathBuf {
     dirs::cache_dir().unwrap()
 }
 
 /// Returns path to the file which saves the current state
-pub(crate) fn get_savedstate_path() -> PathBuf {
-    BASE_PATH.join(SAVED_STATE_FILE)
+pub fn get_savedstate_path() -> PathBuf {
+    BASE_PATH.join(consts::SAVED_STATE_FILE)
 }
 
 /// Returns path to a profile while creating the folder
-pub(crate) fn get_profile_path(profile_name: &str) -> std::path::PathBuf {
+pub fn get_profile_path(profile_name: &str) -> std::path::PathBuf {
     let path = BASE_PATH.join("profiles").join(profile_name);
     std::fs::create_dir_all(&path).expect("failed to profile directory!");
     path
 }
 
 /// Returns path to the file where the logs will be stored
-pub(crate) fn get_log_path() -> PathBuf {
-    BASE_PATH.join(LOG_FILE)
+pub fn get_log_path() -> PathBuf {
+    BASE_PATH.join(consts::LOG_FILE)
 }

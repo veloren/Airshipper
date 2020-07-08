@@ -1,4 +1,4 @@
-use crate::{filesystem, network, Result};
+use crate::{consts, fs, net, Result};
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf, process::Command};
@@ -30,7 +30,7 @@ impl Profile {
     /// Creates a new profile and downloads the correct files into the target directory.
     pub fn new(name: String, channel: Channel) -> Self {
         Self {
-            directory: filesystem::get_profile_path(&name),
+            directory: fs::get_profile_path(&name),
             name,
             channel,
             version: "".to_owned(), // Will be set by download
@@ -38,14 +38,14 @@ impl Profile {
     }
 
     pub fn start_download(&self) -> Result<isahc::Metrics> {
-        network::start_download(&self)
+        net::start_download(&self)
     }
 
     pub async fn install(mut self) -> Result<Profile> {
         let latest_version = self.check_for_update().await?;
         if self.version != latest_version {
             // TODO: maybe let install return the new profile or make it all &mut
-            network::install(&self).await?;
+            net::install(&self).await?;
             self.version = latest_version;
             Ok(self)
         } else {
@@ -76,12 +76,12 @@ impl Profile {
     }
 
     pub async fn check_for_update(&self) -> Result<String> {
-        network::get_version(&self).await
+        net::get_version(&self).await
     }
 
     /// Returns path to voxygen binary.
     /// e.g. <base>/profiles/latest/veloren-voxygen.exe
     fn voxygen_path(&self) -> PathBuf {
-        self.directory.join(filesystem::VOXYGEN_FILE)
+        self.directory.join(consts::VOXYGEN_FILE)
     }
 }
