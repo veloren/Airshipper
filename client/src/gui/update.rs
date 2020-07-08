@@ -1,5 +1,5 @@
 use super::{Airshipper, Interaction, LauncherState, Message, SavedState};
-use crate::{network, profiles::Profile, Result};
+use crate::{net, profiles::Profile, Result};
 use iced::Command;
 
 pub fn handle_message(
@@ -109,20 +109,20 @@ async fn check_for_updates(
     let mut modified = false;
     let mut profile_update_available = false;
 
-    match network::compare_changelog_etag(&saveable_state.changelog_etag).await? {
+    match net::compare_changelog_etag(&saveable_state.changelog_etag).await? {
         Some(remote_changelog_ver) => {
             saveable_state.changelog_etag = remote_changelog_ver;
-            saveable_state.changelog = network::query_changelog().await?;
+            saveable_state.changelog = net::query_changelog().await?;
             modified = true;
             log::debug!("Changelog updated.")
         },
         None => log::debug!("Changelog up-to-date."),
     }
 
-    match network::compare_news_etag(&saveable_state.news_etag).await? {
+    match net::compare_news_etag(&saveable_state.news_etag).await? {
         Some(remote_news_ver) => {
             saveable_state.news_etag = remote_news_ver;
-            saveable_state.news = network::query_news().await?;
+            saveable_state.news = net::query_news().await?;
             modified = true;
             log::debug!("News updated.")
         },

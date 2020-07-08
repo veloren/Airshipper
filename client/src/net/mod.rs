@@ -1,16 +1,9 @@
 //! Takes care of all network operations
 
-use crate::{filesystem, profiles::Profile, Result};
+use crate::{consts, profiles::Profile, Result};
 use async_std::{fs::File, prelude::*};
 use isahc::{config::RedirectPolicy, prelude::*};
 use serde::{Deserialize, Serialize};
-
-pub const DOWNLOAD_SERVER: &str = "https://download.veloren.net";
-#[cfg(windows)]
-pub const UPDATE_SERVER: &str = "https://www.songtronix.com";
-
-const CHANGELOG_URL: &str = "https://gitlab.com/veloren/veloren/raw/master/CHANGELOG.md";
-const NEWS_URL: &str = "https://veloren.net/rss.xml";
 
 /// Use this method when making requests
 /// it will include required defaults to make secure https requests.
@@ -90,7 +83,7 @@ pub fn start_download(profile: &Profile) -> Result<isahc::Metrics> {
 
     let metrics = response.metrics().unwrap().clone();
 
-    let zip_path = profile.directory.join(filesystem::DOWNLOAD_FILE);
+    let zip_path = profile.directory.join(consts::DOWNLOAD_FILE);
 
     async_std::task::spawn(async move {
         let body = response.body_mut();
@@ -127,7 +120,7 @@ pub fn start_download(profile: &Profile) -> Result<isahc::Metrics> {
 }
 
 pub async fn compare_changelog_etag(cached: &str) -> Result<Option<String>> {
-    let remote = request(CHANGELOG_URL)
+    let remote = request(consts::CHANGELOG_URL)
         .await?
         .headers()
         .get("etag")
@@ -137,7 +130,7 @@ pub async fn compare_changelog_etag(cached: &str) -> Result<Option<String>> {
 }
 
 pub async fn compare_news_etag(cached: &str) -> Result<Option<String>> {
-    let remote = request(NEWS_URL)
+    let remote = request(consts::NEWS_URL)
         .await?
         .headers()
         .get("etag")
@@ -147,7 +140,7 @@ pub async fn compare_news_etag(cached: &str) -> Result<Option<String>> {
 }
 
 pub async fn query_changelog() -> Result<String> {
-    Ok(request(CHANGELOG_URL)
+    Ok(request(consts::CHANGELOG_URL)
         .await?
         .text()?
         .lines()
@@ -172,7 +165,7 @@ pub struct Post {
 pub async fn query_news() -> Result<Vec<Post>> {
     use std::io::BufReader;
 
-    let mut response = isahc::get(NEWS_URL)?;
+    let mut response = isahc::get(consts::NEWS_URL)?;
     let feed = rss::Channel::read_from(BufReader::new(response.body_mut()))?;
     let mut posts = Vec::new();
 
@@ -208,7 +201,7 @@ pub async fn install(profile: &Profile) -> Result<()> {
     // Extract
     log::info!("Unzipping to {:?}", profile.directory);
     let mut zip_file =
-        std::fs::File::open(&profile.directory.join(filesystem::DOWNLOAD_FILE))?;
+        std::fs::File::open(&profile.directory.join(consts::DOWNLOAD_FILE))?;
 
     let mut archive = zip::ZipArchive::new(&mut zip_file)?;
 
@@ -236,12 +229,12 @@ pub async fn install(profile: &Profile) -> Result<()> {
 
     // Delete downloaded zip
     log::trace!("Extracted files, deleting zip archive.");
-    std::fs::remove_file(profile.directory.join(filesystem::DOWNLOAD_FILE))?;
+    std::fs::remove_file(profile.directory.join(consts::DOWNLOAD_FILE))?;
 
     #[cfg(unix)]
     set_permissions(vec![
-        &profile.directory.join(filesystem::VOXYGEN_FILE),
-        &profile.directory.join(filesystem::SERVER_CLI_FILE),
+        &profile.directory.join(consts::VOXYGEN_FILE),
+        &profile.directory.join(consts::SERVER_CLI_FILE),
     ])?;
 
     Ok(())
@@ -250,7 +243,7 @@ pub async fn install(profile: &Profile) -> Result<()> {
 fn get_version_uri(profile: &Profile) -> String {
     format!(
         "{}/version/{}/{}",
-        DOWNLOAD_SERVER,
+        consts::DOWNLOAD_SERVER,
         std::env::consts::OS,
         profile.channel
     )
@@ -258,7 +251,7 @@ fn get_version_uri(profile: &Profile) -> String {
 fn get_artifact_uri(profile: &Profile) -> String {
     format!(
         "{}/latest/{}/{}",
-        DOWNLOAD_SERVER,
+        consts::DOWNLOAD_SERVER,
         std::env::consts::OS,
         profile.channel
     )
