@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Added
+
+- bundle ssl for better cross distro compatibility [#TBD]()
+- embed assets for easier distribution [#TBD]()
+- use same font as Veloren [#TBD]()
+
+## Removed
+
+- extra terminal window [#TBD]()
+
 ## [0.3.2] - 2020-03-21
 
 ## Changed
