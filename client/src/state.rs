@@ -1,6 +1,6 @@
 //! State which is used by the command line and GUI and also gets saved to disk
 
-use crate::{filesystem, network, profiles::Profile, Result};
+use crate::{fs, net, profiles::Profile, Result};
 use async_std::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -10,7 +10,7 @@ pub struct SavedState {
     pub changelog: String,
     /// Compare this to decide whether to update the saved state
     pub changelog_etag: String,
-    pub news: Vec<network::Post>,
+    pub news: Vec<net::Post>,
     /// Compare this to decide whether to update the saved state
     pub news_etag: String,
     pub active_profile: Profile,
@@ -44,7 +44,7 @@ impl SavedState {
     pub async fn load() -> Result<Self> {
         let mut contents = String::new();
 
-        match async_std::fs::File::open(filesystem::get_savedstate_path()).await {
+        match async_std::fs::File::open(fs::get_savedstate_path()).await {
             Ok(mut file) => {
                 file.read_to_string(&mut contents).await?;
             },
@@ -65,7 +65,7 @@ impl SavedState {
     pub async fn save(self) -> Result<()> {
         let ron = ron::ser::to_string_pretty(&self, ron::ser::PrettyConfig::default())?;
 
-        let path = filesystem::get_savedstate_path();
+        let path = fs::get_savedstate_path();
         if let Some(dir) = path.parent() {
             async_std::fs::create_dir_all(dir).await?;
         }
