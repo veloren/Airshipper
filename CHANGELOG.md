@@ -9,13 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Added
 
-- bundle ssl for better cross distro compatibility [#TBD]()
-- embed assets for easier distribution [#TBD]()
-- use same font as Veloren [#TBD]()
+- bundle ssl for better cross distro compatibility [#67](https://github.com/Songtronix/Airshipper/pull/67)
+- embed assets for easier distribution [#67](https://github.com/Songtronix/Airshipper/pull/67)
+- use same font as Veloren [#67](https://github.com/Songtronix/Airshipper/pull/67)
 
 ## Removed
 
-- extra terminal window [#TBD]()
+- extra terminal window [#67](https://github.com/Songtronix/Airshipper/pull/67)
 
 ## [0.3.2] - 2020-03-21
 
