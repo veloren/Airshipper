@@ -1,6 +1,6 @@
 //! Deals with all filesystem specific details
 
-use crate::consts;
+use crate::{consts, profiles::Profile, Result};
 use std::path::PathBuf;
 
 lazy_static::lazy_static! {
@@ -51,4 +51,43 @@ pub fn get_profile_path(profile_name: &str) -> std::path::PathBuf {
 /// Returns path to the file where the logs will be stored
 pub fn get_log_path() -> PathBuf {
     BASE_PATH.join(consts::LOG_FILE)
+}
+
+/// Extracts downloaded zip file and deletes it after successful extraction.
+///
+/// Note: it's synchronous!
+pub fn unzip(profile: &Profile) -> Result<()> {
+    log::info!("Unzipping to {:?}", profile.directory);
+    let mut zip_file =
+        std::fs::File::open(&profile.directory.join(consts::DOWNLOAD_FILE))?;
+
+    let mut archive = zip::ZipArchive::new(&mut zip_file)?;
+
+    // Delete all assets to ensure that no obsolete assets will remain.
+    if profile.directory.join("assets").exists() {
+        std::fs::remove_dir_all(profile.directory.join("assets"))?;
+    }
+
+    for i in 1..archive.len() {
+        let mut file = archive.by_index(i)?;
+        let path = profile.directory.join(file.sanitized_name());
+
+        if file.is_dir() {
+            std::fs::create_dir_all(path)?;
+        } else {
+            let mut target = std::fs::OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(path)?;
+
+            std::io::copy(&mut file, &mut target)?;
+        }
+    }
+
+    // Delete downloaded zip
+    log::trace!("Extracted files, deleting zip archive.");
+    std::fs::remove_file(profile.directory.join(consts::DOWNLOAD_FILE))?;
+
+    Ok(())
 }

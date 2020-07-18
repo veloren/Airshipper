@@ -1,17 +1,19 @@
 mod style;
-mod time;
+mod subscriptions;
 mod update;
+pub mod widgets;
 
 use crate::{
-    cli::CmdLine, error::ClientError, profiles::Profile, state::SavedState, Result,
+    cli::CmdLine, error::ClientError, io, net, profiles::Profile, state::SavedState,
+    CommandBuilder, Result,
 };
 use iced::{
-    button, image::Handle, scrollable, Align, Application, Button, Column, Command,
-    Container, Element, HorizontalAlignment, Image, Length, ProgressBar, Row, Scrollable,
-    Settings, Subscription, Text, VerticalAlignment,
+    button, image::Handle, Align, Application, Column, Command, Container, Element,
+    Image, Length, ProgressBar, Row, Settings, Subscription, Text,
 };
-use indicatif::HumanBytes;
-use std::time::Duration;
+use std::path::PathBuf;
+use subscriptions::{download, process};
+use widgets::{Changelog, News};
 
 /// Starts the GUI and won't return
 pub fn run(cmd: CmdLine) {
@@ -22,11 +24,12 @@ pub fn run(cmd: CmdLine) {
 pub enum LauncherState {
     LoadingSave,
     QueryingForUpdates,
-    UpdateAvailable,
+    UpdateAvailable(String),
     ReadyToPlay,
-    Downloading(isahc::Metrics),
+    /// Url, Download Path, Version
+    Downloading(String, PathBuf, String),
     Installing,
-    Playing,
+    Playing(CommandBuilder),
 
     Error(ClientError),
 }
@@ -35,15 +38,16 @@ pub enum LauncherState {
 pub struct Airshipper {
     /// Current state the GUI is in (e.g. Loading up the save file, updating veloren,
     /// ...)
+    /// TODO: Use a state machine to make impossible states impossible
     state: LauncherState,
     /// Persistent state which needs to get saved to disk
     saveable_state: SavedState,
 
     /// Other unrelated state
-    changelog_scrollable_state: scrollable::State,
-    news_scrollable_state: scrollable::State,
     play_button_state: button::State,
+    download_progress: Option<net::Progress>,
 
+    needs_save: bool,
     saving: bool,
 }
 
@@ -52,10 +56,10 @@ impl Default for Airshipper {
         Self {
             state: LauncherState::LoadingSave,
             saveable_state: SavedState::empty(),
-            changelog_scrollable_state: Default::default(),
-            news_scrollable_state: Default::default(),
             play_button_state: Default::default(),
+            download_progress: None,
 
+            needs_save: false,
             saving: false,
         }
     }
@@ -75,10 +79,12 @@ pub enum Message {
     Interaction(Interaction),
     Loaded(Result<SavedState>),
     Saved(Result<()>),
-    UpdateCheckDone(Result<Option<(SavedState, bool)>>),
-    Tick(()), // TODO: Get rid of Tick by implementing download via subscription
+    ChangelogUpdate(Result<Option<Changelog>>),
+    NewsUpdate(Result<Option<News>>),
+    GameUpdate(Result<Option<String>>),
+    ProcessUpdate(io::ProcessUpdate),
+    DownloadProgress(net::Progress),
     InstallDone(Result<Profile>),
-    PlayDone(Result<()>),
     Error(ClientError),
 }
 
@@ -103,13 +109,20 @@ impl Application for Airshipper {
     }
 
     fn title(&self) -> String {
-        format!("Airshipper v{}", env!("CARGO_PKG_VERSION"))
+        format!(
+            "Airshipper{} v{}",
+            if self.needs_save { "*" } else { "" },
+            env!("CARGO_PKG_VERSION")
+        )
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        match self.state {
-            LauncherState::Downloading(_) => {
-                time::every(Duration::from_millis(300)).map(Message::Tick)
+        match &self.state {
+            LauncherState::Downloading(url, location, _) => {
+                download::file(&url, &location).map(Message::DownloadProgress)
+            },
+            LauncherState::Playing(cmd) => {
+                process::stream(cmd).map(Message::ProcessUpdate)
             },
             _ => Subscription::none(),
         }
@@ -123,19 +136,16 @@ impl Application for Airshipper {
     }
 
     fn view(&mut self) -> Element<Message> {
-        let title = Container::new(Image::new(Handle::from_memory(
-            crate::assets::VELOREN_LOGO.to_vec(),
-        )))
-        .width(Length::FillPortion(10));
-        // Will be reenabled once finished
-        //let discord = Svg::new(manifest_dir.clone() +
-        // "/assets/discord.svg").width(Length::Fill); let gitlab =
-        // Svg::new(manifest_dir.clone() + "/assets/gitlab.svg").width(Length::Fill);
-        // let youtube = Svg::new(manifest_dir.clone() +
-        // "/assets/youtube.svg").width(Length::Fill); let reddit =
-        // Svg::new(manifest_dir.clone() + "/assets/reddit.svg").width(Length::Fill);
-        // let twitter = Svg::new(manifest_dir.clone() +
-        // "/assets/twitter.svg").width(Length::Fill);
+        let Airshipper {
+            saveable_state,
+            play_button_state,
+            ..
+        } = self;
+
+        let logo = Container::new(
+            Image::new(Handle::from_memory(crate::assets::VELOREN_LOGO.to_vec()))
+                .width(Length::FillPortion(10)),
+        );
 
         let icons = Row::new()
             .width(Length::Fill)
@@ -143,19 +153,7 @@ impl Application for Airshipper {
             .align_items(Align::Center)
             .spacing(10)
             .padding(15)
-            .push(title);
-        //.push(Space::with_width(Length::FillPortion(5)))
-        //.push(discord)
-        //.push(gitlab)
-        //.push(youtube)
-        //.push(reddit)
-        //.push(twitter);
-
-        let changelog = Scrollable::new(&mut self.changelog_scrollable_state)
-            .height(Length::Fill)
-            .padding(15)
-            .spacing(20)
-            .push(Text::new(&self.saveable_state.changelog).size(18));
+            .push(logo);
 
         // Contains title, changelog
         let left = Column::new()
@@ -163,73 +161,57 @@ impl Application for Airshipper {
             .height(Length::Fill)
             .padding(15)
             .push(icons)
-            .push(changelog);
-
-        let mut news = Scrollable::new(&mut self.news_scrollable_state)
-            .spacing(20)
-            .padding(25);
-
-        for post in &mut self.saveable_state.news {
-            news = news.push(Text::new(post.title.clone()).size(20));
-            news = news.push(Text::new(post.description.clone()).size(18));
-            let read_more_btn: Element<Interaction> = Button::new(
-                &mut post.btn_state,
-                Text::new("Read More")
-                    .size(14)
-                    .horizontal_alignment(HorizontalAlignment::Center)
-                    .vertical_alignment(VerticalAlignment::Center),
-            )
-            .on_press(Interaction::ReadMore(post.button_url.clone()))
-            .width(Length::Units(80))
-            .height(Length::Units(25))
-            .padding(2)
-            .style(style::ReadMoreButton)
-            .into();
-            news = news.push(read_more_btn.map(Message::Interaction));
-        }
-
-        let news_container = Container::new(news)
-            .width(Length::FillPortion(2))
-            .height(Length::Fill)
-            .style(style::News);
+            .push(saveable_state.changelog.view());
 
         // Contains logo, changelog and news
-        let middle = Row::new().padding(2).push(left).push(news_container);
-        let middle_container = Container::new(middle)
-            .height(Length::FillPortion(6))
-            .style(style::Middle);
+        let middle = Container::new(
+            Row::new()
+                .padding(2)
+                .push(left)
+                .push(saveable_state.news.view()),
+        )
+        .height(Length::FillPortion(6))
+        .style(style::Middle);
 
-        let download_text = match &self.state {
-            LauncherState::Downloading(m) => format!(
-                "Downloading... {}/sec",
-                HumanBytes(m.download_speed() as u64)
-            ),
-            LauncherState::Installing => "Installing...".into(),
-            LauncherState::LoadingSave => "Loading...".into(),
-            LauncherState::QueryingForUpdates => "Checking for updates...".into(),
-            LauncherState::ReadyToPlay => "Ready to play...".into(),
-            LauncherState::UpdateAvailable => "Update available!".into(),
-            LauncherState::Playing => "Much fun playing!".into(),
-            LauncherState::Error(e) => e.to_string(),
-        };
         let download_progress = match &self.state {
-            LauncherState::Downloading(m) => {
-                // Percentage of completed download
-                ((m.download_progress().0 * 100) / m.download_progress().1) as f32
+            LauncherState::Downloading(_, _, _) => {
+                if let Some(prog) = &self.download_progress {
+                    match prog {
+                        net::Progress::Advanced(_msg, percentage) => *percentage as f32,
+                        net::Progress::Finished => 100.0,
+                        _ => 0.0,
+                    }
+                } else {
+                    0.0
+                }
             },
             _ => 0.0,
         };
         let play_button_text = match &self.state {
-            LauncherState::Downloading(_) => "Downloading".to_string(),
+            LauncherState::Downloading(_, _, _) => "Downloading".to_string(),
             LauncherState::Installing => "Installing".into(),
             LauncherState::LoadingSave => "Loading".into(),
             LauncherState::QueryingForUpdates => "Loading".into(),
             LauncherState::ReadyToPlay => "Play".into(),
-            LauncherState::UpdateAvailable => "Update".into(),
-            LauncherState::Playing => "Playing".into(),
+            LauncherState::UpdateAvailable(_) => "Update".into(),
+            LauncherState::Playing(_) => "Playing".into(),
             LauncherState::Error(_) => "ERROR".into(),
         };
 
+        let download_text = match &self.state {
+            LauncherState::Downloading(_, _, _) => self
+                .download_progress
+                .as_ref()
+                .map(|x| x.to_string())
+                .unwrap_or("Downloading...".to_string()),
+            LauncherState::Installing => "Installing...".to_string(),
+            LauncherState::LoadingSave => "Loading...".to_string(),
+            LauncherState::QueryingForUpdates => "Checking for updates...".to_string(),
+            LauncherState::ReadyToPlay => "Ready to play...".to_string(),
+            LauncherState::UpdateAvailable(_) => "Update available!".to_string(),
+            LauncherState::Playing(_) => "Much fun playing!".to_string(),
+            LauncherState::Error(e) => e.to_string(),
+        };
         let download_speed = Text::new(&download_text).size(16);
         let download_progressbar =
             ProgressBar::new(0.0..=100.0, download_progress).style(style::Progress);
@@ -239,49 +221,40 @@ impl Application for Airshipper {
             .push(download_speed)
             .push(download_progressbar);
 
-        let mut play = Button::new(
-            &mut self.play_button_state,
-            Text::new(&play_button_text)
-                .size(30)
-                .height(Length::Fill)
-                .horizontal_alignment(HorizontalAlignment::Center)
-                .vertical_alignment(VerticalAlignment::Center),
-        )
-        .on_press(Interaction::PlayPressed)
-        .width(Length::Fill)
-        .height(Length::Units(60))
-        .style(style::PlayButton)
-        .padding(2);
-
-        // Disable button if loading, playing or downloading the game.
-        match self.state {
-            LauncherState::LoadingSave
-            | LauncherState::Playing
-            | LauncherState::Downloading(_)
-            | LauncherState::QueryingForUpdates
-            | LauncherState::Error(_) => {
-                play = play.style(style::PlayButtonDisabled);
-                play = play.on_press(Interaction::Disabled);
+        let play = widgets::primary_button(
+            play_button_state,
+            play_button_text,
+            match self.state {
+                LauncherState::ReadyToPlay | LauncherState::UpdateAvailable(_) => {
+                    Interaction::PlayPressed
+                },
+                _ => Interaction::Disabled,
             },
-            _ => {},
-        }
-        let play: Element<Interaction> = play.into();
+            match self.state {
+                LauncherState::ReadyToPlay | LauncherState::UpdateAvailable(_) => {
+                    style::PrimaryButton::Enabled
+                },
+                _ => style::PrimaryButton::Disabled,
+            },
+        );
 
-        let bottom = Row::new()
-            .align_items(Align::End)
-            .spacing(20)
-            .padding(10)
-            .push(download)
-            .push(play.map(Message::Interaction));
-        let bottom_container = Container::new(bottom).style(style::Bottom);
+        let bottom = Container::new(
+            Row::new()
+                .align_items(Align::End)
+                .spacing(20)
+                .padding(10)
+                .push(download)
+                .push(play),
+        )
+        .style(style::Bottom);
 
         // Contains everything
         let content = Column::new()
             .padding(2)
             .width(Length::Fill)
             .height(Length::Fill)
-            .push(middle_container)
-            .push(bottom_container);
+            .push(middle)
+            .push(bottom);
 
         Container::new(content)
             .width(Length::Fill)
