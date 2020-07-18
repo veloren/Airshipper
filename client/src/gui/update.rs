@@ -1,37 +1,85 @@
-use super::{Airshipper, Interaction, LauncherState, Message, SavedState};
-use crate::{net, profiles::Profile, Result};
+use super::{
+    widgets::{Changelog, News},
+    Airshipper, Interaction, LauncherState, Message,
+};
+use crate::{net, profiles::Profile, ProcessUpdate, Result};
 use iced::Command;
 
 pub fn handle_message(
     airship: &mut Airshipper,
     message: Message,
 ) -> Result<Command<Message>> {
-    let mut needs_save = false;
-
     match message {
         Message::Loaded(saved_state) => {
             let saved_state = saved_state.unwrap_or_default();
             airship.update_from_save(saved_state);
 
             airship.state = LauncherState::QueryingForUpdates;
-            return Ok(Command::perform(
-                check_for_updates(airship.saveable_state.clone()),
-                Message::UpdateCheckDone,
-            ));
+            return Ok(Command::batch(vec![
+                Command::perform(
+                    Changelog::update(airship.saveable_state.changelog.etag.clone()),
+                    Message::ChangelogUpdate,
+                ),
+                Command::perform(
+                    News::update(airship.saveable_state.news.etag.clone()),
+                    Message::NewsUpdate,
+                ),
+                Command::perform(
+                    Profile::update(airship.saveable_state.active_profile.clone()),
+                    Message::GameUpdate,
+                ),
+            ]));
         },
-        Message::Saved(_) => {
+        Message::ChangelogUpdate(update) => {
+            if let Some(update) = update? {
+                airship.saveable_state.changelog = update;
+                airship.needs_save = true;
+            }
+        },
+        Message::NewsUpdate(update) => {
+            if let Some(update) = update? {
+                airship.saveable_state.news = update;
+                airship.needs_save = true;
+            }
+        },
+        Message::ProcessUpdate(update) => match update {
+            ProcessUpdate::Line(msg) => {
+                log::info!("[Veloren] {}", msg);
+            },
+            ProcessUpdate::Exit(code) => {
+                log::debug!("Veloren exited with {}", code);
+                airship.state = LauncherState::QueryingForUpdates;
+                return Ok(Command::perform(
+                    Profile::update(airship.saveable_state.active_profile.clone()),
+                    Message::GameUpdate,
+                ));
+            },
+            ProcessUpdate::Error(err) => return Err(err.into()),
+        },
+        Message::GameUpdate(update) => match update? {
+            Some(version) => {
+                airship.state = LauncherState::UpdateAvailable(version);
+            },
+            None => {
+                airship.state = LauncherState::ReadyToPlay;
+            },
+        },
+        Message::Saved(res) => {
+            let _ = res?;
+            airship.needs_save = false;
             airship.saving = false;
+            log::trace!("State saved.");
         },
         Message::Interaction(Interaction::PlayPressed) => {
-            if let LauncherState::UpdateAvailable = airship.state {
+            if let LauncherState::UpdateAvailable(version) = &airship.state {
                 airship.state = LauncherState::Downloading(
-                    airship.saveable_state.active_profile.start_download()?,
+                    airship.saveable_state.active_profile.url(),
+                    airship.saveable_state.active_profile.download_path(),
+                    version.clone(),
                 )
             } else if let LauncherState::ReadyToPlay = airship.state {
-                airship.state = LauncherState::Playing;
-                return Ok(Command::perform(
-                    start(airship.saveable_state.active_profile.clone()),
-                    Message::PlayDone,
+                airship.state = LauncherState::Playing(Profile::start(
+                    airship.saveable_state.active_profile.clone(),
                 ));
             }
         },
@@ -40,58 +88,42 @@ pub fn handle_message(
                 return Err(format!("failed to open {} : {}", url, e).into());
             }
         },
-        Message::UpdateCheckDone(update) => {
-            match update? {
-                Some((save, profile_update_available)) => {
-                    airship.saveable_state = save;
-                    if profile_update_available {
-                        airship.state = LauncherState::UpdateAvailable;
-                    } else {
-                        airship.state = LauncherState::ReadyToPlay;
-                    }
-                },
-                None => airship.state = LauncherState::ReadyToPlay,
-            }
-            needs_save = true;
-        },
         Message::InstallDone(result) => {
             let profile = result?;
             airship.saveable_state.active_profile = profile;
-            needs_save = true;
+            airship.needs_save = true;
             airship.state = LauncherState::ReadyToPlay;
         },
-        Message::Tick(_) => {
-            if let LauncherState::Downloading(m) = &airship.state {
-                let percentage =
-                    ((m.download_progress().0 * 100) / m.download_progress().1) as f32;
-                if (percentage - 100.0).abs() < 0.1 {
-                    airship.state = LauncherState::Installing;
-                    return Ok(Command::perform(
-                        install(airship.saveable_state.active_profile.clone()),
-                        Message::InstallDone,
-                    ));
-                }
-            }
+        Message::DownloadProgress(progress) => match progress {
+            net::Progress::Errored(e) => return Err(e.into()),
+            net::Progress::Finished => {
+                let version = match &airship.state {
+                    LauncherState::Downloading(_, _, version) => version.to_string(),
+                    _ => panic!(
+                        "Reached impossible state: Downloading while not in download \
+                         state!"
+                    ),
+                };
+                airship.state = LauncherState::Installing;
+                return Ok(Command::perform(
+                    Profile::install(
+                        airship.saveable_state.active_profile.clone(),
+                        version.clone(),
+                    ),
+                    Message::InstallDone,
+                ));
+            },
+            p => airship.download_progress = Some(p),
         },
-        Message::Error(e) | Message::PlayDone(Err(e)) => {
+        Message::Error(e) => {
             airship.state = LauncherState::Error(e);
-        },
-        // Everything went fine when playing the game :O
-        Message::PlayDone(Ok(())) => {
-            // After playing check for an possible update
-            // useful if you got kicked from the server due to an update so you can
-            // instantly update too
-            airship.state = LauncherState::QueryingForUpdates;
-            return Ok(Command::perform(
-                check_for_updates(airship.saveable_state.clone()),
-                Message::UpdateCheckDone,
-            ));
         },
         Message::Interaction(Interaction::Disabled) => {},
     }
 
-    if needs_save && !airship.saving {
+    if airship.needs_save && !airship.saving {
         airship.saving = true;
+        log::trace!("Saving state...");
         return Ok(Command::perform(
             airship.save_state().save(),
             Message::Saved,
@@ -99,57 +131,4 @@ pub fn handle_message(
     }
 
     Ok(Command::none())
-}
-
-/// Returns new state if updated.
-/// the bool signifies whether an profile update is available
-async fn check_for_updates(
-    mut saveable_state: SavedState,
-) -> Result<Option<(SavedState, bool)>> {
-    let mut modified = false;
-    let mut profile_update_available = false;
-
-    match net::compare_changelog_etag(&saveable_state.changelog_etag).await? {
-        Some(remote_changelog_ver) => {
-            saveable_state.changelog_etag = remote_changelog_ver;
-            saveable_state.changelog = net::query_changelog().await?;
-            modified = true;
-            log::debug!("Changelog updated.")
-        },
-        None => log::debug!("Changelog up-to-date."),
-    }
-
-    match net::compare_news_etag(&saveable_state.news_etag).await? {
-        Some(remote_news_ver) => {
-            saveable_state.news_etag = remote_news_ver;
-            saveable_state.news = net::query_news().await?;
-            modified = true;
-            log::debug!("News updated.")
-        },
-        None => log::debug!("News up-to-date."),
-    }
-
-    if saveable_state.active_profile.check_for_update().await?
-        != saveable_state.active_profile.version
-    {
-        modified = true;
-        profile_update_available = true;
-        log::debug!("Found profile update.")
-    }
-
-    Ok(if modified {
-        Some((saveable_state, profile_update_available))
-    } else {
-        None
-    })
-}
-
-// TODO: call state.install_profile() instead
-async fn install(profile: Profile) -> Result<Profile> {
-    Ok(profile.install().await?)
-}
-
-// TODO: call state.start_profile() instead
-async fn start(profile: Profile) -> Result<()> {
-    Ok(profile.start()?)
 }

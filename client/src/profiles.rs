@@ -1,7 +1,8 @@
-use crate::{consts, fs, net, Result};
+use crate::{consts, fs, net, CommandBuilder, Result};
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, path::PathBuf, process::Command};
+use std::{collections::HashMap, path::PathBuf};
+use tokio::process::Command;
 
 /// Represents a version with channel, name and path.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -10,7 +11,7 @@ pub struct Profile {
     pub channel: Channel,
 
     pub directory: PathBuf,
-    pub version: String,
+    pub version: Option<String>,
 }
 
 impl Default for Profile {
@@ -27,61 +28,91 @@ pub enum Channel {
 }
 
 impl Profile {
-    /// Creates a new profile and downloads the correct files into the target directory.
     pub fn new(name: String, channel: Channel) -> Self {
         Self {
             directory: fs::get_profile_path(&name),
             name,
             channel,
-            version: "".to_owned(), // Will be set by download
+            version: None,
         }
     }
-
-    pub fn start_download(&self) -> Result<isahc::Metrics> {
-        net::start_download(&self)
-    }
-
-    pub async fn install(mut self) -> Result<Profile> {
-        let latest_version = self.check_for_update().await?;
-        if self.version != latest_version {
-            // TODO: maybe let install return the new profile or make it all &mut
-            net::install(&self).await?;
-            self.version = latest_version;
-            Ok(self)
-        } else {
-            Err("No newer version found".to_string().into())
-        }
-    }
-
-    // TODO: add possibility to start the server too
-    pub fn start(&self) -> Result<()> {
-        let mut envs = HashMap::new();
-        envs.insert("VOXYGEN_CONFIG", self.directory.clone().into_os_string());
-
-        log::debug!("Launching {}", self.voxygen_path().display());
-        log::debug!("CWD: {:?}", self.directory);
-        log::debug!("ENV: {:?}", envs);
-
-        let cmd = Command::new(self.voxygen_path())
-            .current_dir(&self.directory)
-            .envs(envs)
-            .status()?;
-        log::debug!(
-            "Veloren exited with code: {}",
-            cmd.code()
-                .map(|x| x.to_string())
-                .unwrap_or_else(|| "Exit code unavailable.".to_string())
-        );
-        Ok(())
-    }
-
-    pub async fn check_for_update(&self) -> Result<String> {
-        net::get_version(&self).await
-    }
-
     /// Returns path to voxygen binary.
-    /// e.g. <base>/profiles/latest/veloren-voxygen.exe
+    /// e.g. <base>/profiles/default/veloren-voxygen.exe
     fn voxygen_path(&self) -> PathBuf {
         self.directory.join(consts::VOXYGEN_FILE)
     }
+
+    /// Returns the download url for this profile
+    pub fn url(&self) -> String {
+        format!(
+            "{}/latest/{}/{}",
+            consts::DOWNLOAD_SERVER,
+            std::env::consts::OS,
+            self.channel
+        )
+    }
+
+    pub fn download_path(&self) -> PathBuf {
+        self.directory.join(consts::DOWNLOAD_FILE)
+    }
+
+    fn version_url(&self) -> String {
+        format!(
+            "{}/version/{}/{}",
+            consts::DOWNLOAD_SERVER,
+            std::env::consts::OS,
+            self.channel
+        )
+    }
+
+    // TODO: add possibility to start the server too
+    pub fn start(profile: Profile) -> CommandBuilder {
+        let mut envs = HashMap::new();
+        envs.insert("VOXYGEN_CONFIG", profile.directory.clone().into_os_string());
+        // TODO: make use of all Veloren env vars!
+
+        log::debug!("Launching {}", profile.voxygen_path().display());
+        log::debug!("CWD: {:?}", profile.directory);
+        log::debug!("ENV: {:?}", envs);
+
+        let mut cmd = CommandBuilder::new(profile.voxygen_path());
+        cmd.current_dir(&profile.directory);
+        cmd.envs(envs);
+
+        cmd
+    }
+
+    pub async fn update(profile: Profile) -> Result<Option<String>> {
+        let remote = net::query(&profile.version_url()).await?.text().await?;
+
+        if remote != profile.version.unwrap_or_default() {
+            Ok(Some(remote))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub async fn install(mut profile: Profile, version: String) -> Result<Profile> {
+        tokio::task::block_in_place(|| fs::unzip(&profile))?;
+
+        #[cfg(unix)]
+        set_permissions(vec![
+            &profile.directory.join(consts::VOXYGEN_FILE),
+            &profile.directory.join(consts::SERVER_CLI_FILE),
+        ])
+        .await?;
+        // After successful install, update the profile.
+        profile.version = Some(version);
+
+        Ok(profile)
+    }
+}
+
+/// Tries to set executable permissions on linux
+#[cfg(unix)]
+async fn set_permissions(files: Vec<&std::path::PathBuf>) -> Result<()> {
+    for file in files {
+        Command::new("chmod").arg("+x").arg(file).spawn()?.await?;
+    }
+    Ok(())
 }
