@@ -1,19 +1,22 @@
-use crate::{filesystem, network, Result};
+use crate::{fs, net, Result};
 use std::ffi::OsStr;
+use tokio::{fs::File, io::AsyncWriteExt};
+use url::Url;
 
 // TODO: We should remove the installer after successful update!
+// TODO: Directly download from github!
 
 pub(crate) async fn update() -> Result<()> {
     // Note: this will ignore network errors silently.
-    if let Some(url) = network::check_win_update().await.ok().flatten() {
+    if let Some(url) = net::check_win_update().await.ok().flatten() {
         log::info!(
             "Found airshipper update! It's highly recommended to update. Install? [Y/n]"
         );
         if crate::cli::confirm_action()? {
-            let mut resp = network::request(&url).await?;
-            let path = filesystem::get_cache_path();
+            let mut resp = net::query(&url).await?;
+            let path = fs::get_cache_path();
 
-            let filename = match url::Url::parse(&url)?
+            let filename = match Url::parse(&url)?
                 .path_segments()
                 .map(|x| x.last())
                 .flatten()
@@ -37,8 +40,12 @@ pub(crate) async fn update() -> Result<()> {
                     "Download airshipper update to: {}",
                     path.join(&filename).display()
                 );
-                let mut file = std::fs::File::create(&path.join(&filename))?;
-                std::io::copy(&mut resp.body_mut(), &mut file)?;
+
+                let mut file = File::create(&path.join(&filename)).await?;
+                while let Some(chunk) = resp.chunk().await? {
+                    file.write_all(&chunk).await?;
+                }
+                file.sync_all().await?;
 
                 // Free up access to file.
                 drop(file);

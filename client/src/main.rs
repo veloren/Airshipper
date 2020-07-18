@@ -20,9 +20,8 @@ pub use net::*;
 
 pub type Result<T> = std::result::Result<T, ClientError>;
 
-#[async_std::main]
-async fn main() {
-    if let Err(e) = cli::process().await {
+fn main() {
+    if let Err(e) = cli::process() {
         log::error!("{}", e);
         log::info!("Press enter to exit...");
         let _ = std::io::stdin().read_line(&mut String::new());

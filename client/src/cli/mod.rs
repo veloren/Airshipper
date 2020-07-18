@@ -1,11 +1,12 @@
-use crate::{fs, gui, logger, state::SavedState, Result};
+use crate::{fs, gui, io, logger, net, profiles::Profile, state::SavedState, Result};
 use parse::Action;
 mod parse;
+use iced::futures::stream::StreamExt;
 
 pub use parse::CmdLine;
 
 /// Process command line arguments and optionally starts GUI
-pub async fn process() -> Result<()> {
+pub fn process() -> Result<()> {
     let cmd = CmdLine::new();
 
     let level = match cmd.debug {
@@ -24,18 +25,25 @@ pub async fn process() -> Result<()> {
     log::debug!("Cache Path: {}", fs::get_cache_path().display());
     log::debug!("Cmdline args: {:?}", cmd);
 
-    // Check for updates (windows only)
-    #[cfg(windows)]
-    crate::updater::update().await?;
+    // TODO: Iced does not allow us to create the async runtime ourself :/
+    if let Some(_) = cmd.action {
+        let mut rt = tokio::runtime::Runtime::new()?;
+        rt.block_on(async {
+            // Check for updates (windows only)
+            #[cfg(windows)]
+            crate::updater::update().await?;
 
-    let mut state = SavedState::load().await.unwrap_or_default();
+            let mut state = SavedState::load().await.unwrap_or_default();
 
-    // handle arguments
-    process_arguments(&mut state, cmd).await?;
+            // handle arguments
+            process_arguments(&mut state, cmd).await.unwrap();
 
-    // Save state
-    state.save().await?;
-
+            // Save state
+            state.save().await.unwrap();
+        });
+    } else {
+        gui::run(cmd);
+    }
     Ok(())
 }
 
@@ -57,21 +65,22 @@ async fn process_arguments(mut state: &mut SavedState, cmd: CmdLine) -> Result<(
 }
 
 async fn update(state: &mut SavedState, do_not_ask: bool) -> Result<()> {
-    if state.check_for_profile_update().await? != state.active_profile.version {
+    if let Some(version) = Profile::update(state.active_profile.clone()).await? {
         if do_not_ask {
             log::info!("Updating...");
-            let metrics = state.update_profile().await?;
-            print_progress(metrics).await;
+            download(state.active_profile.clone()).await?;
             log::info!("Extracting...");
-            state.install_profile().await?;
+            state.active_profile =
+                Profile::install(state.active_profile.clone(), version).await?;
             log::info!("Done!");
         } else {
             log::info!("Update found, do you want to update? [Y/n]");
             if confirm_action()? {
-                let metrics = state.update_profile().await?;
-                print_progress(metrics).await;
+                log::info!("Updating...");
+                download(state.active_profile.clone()).await?;
                 log::info!("Extracting...");
-                state.install_profile().await?;
+                state.active_profile =
+                    Profile::install(state.active_profile.clone(), version).await?;
                 log::info!("Done!");
             }
         }
@@ -81,39 +90,45 @@ async fn update(state: &mut SavedState, do_not_ask: bool) -> Result<()> {
     Ok(())
 }
 
-async fn print_progress(metrics: isahc::Metrics) {
-    use indicatif::{FormattedDuration, HumanBytes, ProgressBar, ProgressStyle};
+async fn download(profile: Profile) -> Result<()> {
+    use indicatif::{ProgressBar, ProgressStyle};
 
     let progress_bar = ProgressBar::new(0).with_style(
         ProgressStyle::default_bar()
-            .template(
-                "[{elapsed_precise}] [{bar:40.green/white}] {bytes}/{total_bytes} \
-                 ({eta})",
-            )
+            .template("[{elapsed_precise}] [{bar:40.green/white}] {msg} [{eta}]")
             .progress_chars("=>-"),
     );
+    progress_bar.set_length(100);
 
-    loop {
-        let percentage = ((metrics.download_progress().0 * 100)
-            / metrics.download_progress().1) as f32;
-        if percentage >= 100.0 {
-            break;
+    let mut stream = crate::net::download(profile.url(), profile.download_path()).boxed();
+
+    while let Some(progress) = stream.next().await {
+        match progress {
+            net::Progress::Started => {},
+            net::Progress::Errored(e) => return Err(e.into()),
+            net::Progress::Finished => return Ok(()),
+            net::Progress::Advanced(msg, percentage) => {
+                progress_bar.set_position(percentage);
+                progress_bar.set_message(&msg);
+            },
         }
-        progress_bar.set_position(metrics.download_progress().0);
-        progress_bar.set_length(metrics.download_progress().1);
-        progress_bar.set_message(&format!(
-            "time: {}  speed: {}/sec",
-            FormattedDuration(metrics.total_time()),
-            HumanBytes(metrics.download_speed() as u64),
-        ));
-
-        std::thread::sleep(std::time::Duration::from_millis(200));
     }
+    Ok(())
 }
 
 async fn start(state: &mut SavedState) -> Result<()> {
     log::info!("Starting...");
-    Ok(state.start_profile().await?)
+    let mut stream =
+        crate::io::stream_process(Profile::start(state.active_profile.clone())).boxed();
+
+    while let Some(progress) = stream.next().await {
+        match progress {
+            io::ProcessUpdate::Line(line) => log::info!("[Veloren] {}", line),
+            io::ProcessUpdate::Exit(exit) => log::info!("Veloren exited with {}", exit),
+            io::ProcessUpdate::Error(e) => return Err(e.into()),
+        }
+    }
+    Ok(())
 }
 
 /// Will read from stdin for confirmation
@@ -129,6 +144,5 @@ pub fn confirm_action() -> Result<bool> {
     } else if buffer.starts_with('n') {
         return Ok(false);
     }
-    // for the accidental key smash
     Ok(false)
 }
