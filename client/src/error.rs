@@ -5,9 +5,7 @@ pub enum ClientError {
     #[error("IoError: {0}")]
     IoError(#[from] std::io::Error),
     #[error("A network error occured: {0}")]
-    NetworkError(#[from] isahc::Error),
-    #[error("A network error occured: {0}")]
-    HttpError(#[from] isahc::http::Error),
+    NetworkError(#[from] reqwest::Error),
     // hopefully rare errors
     #[error("FATAL: Failed to save state: {0}")]
     SerializeError(#[from] ron::ser::Error),
@@ -19,6 +17,8 @@ pub enum ClientError {
     OpenerError(#[from] opener::OpenError),
     #[error("Error with archive: {0}")]
     ArchiveError(#[from] zip::result::ZipError),
+    #[error("Error parsing url: {0}")]
+    UrlParseError(#[from] url::ParseError),
 
     #[error("{0}")]
     Custom(String),

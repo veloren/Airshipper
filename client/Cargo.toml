@@ -25,33 +25,34 @@ maintenance = { status = "actively-developed" }
 clap = { git = "https://github.com/clap-rs/clap/", rev = "8145717", features = ["derive"] }
 indicatif = "0.14.0"
 # UI
-iced = { git = "https://github.com/hecrj/iced.git", features = ["async-std", "image"], rev = "3f44d331d9c7afe14416130f54abd2b327a686bf" }
+iced = { git = "https://github.com/hecrj/iced.git", features = ["tokio", "image"], rev = "3f44d331d9c7afe14416130f54abd2b327a686bf" }
 iced_native = { git = "https://github.com/hecrj/iced.git", rev = "3f44d331d9c7afe14416130f54abd2b327a686bf" }
-# logging
-log = "0.4.8"
+# Logging
 fern = { version = "0.6.0", features = ["colored"] }
 chrono = "0.4.11"
-# networking
-isahc = "0.9.1"
-# parsing
-html2text = "0.1.11"
+log = "0.4.8"
+# Networking
+reqwest = "0.10.4"
+# Parsing
 strip_markdown = "0.1.0"
+html2text = "0.1.11"
+serde = "1.0.105"
+semver = "0.9.0"
 rss = "1.9.0"
 ron = "0.5.1"
 zip = "0.5.5"
-serde = "1.0.105"
 url = "2.1.1"
-semver = "0.9.0"
-# other
-async-std = { version = "1.5.0", features = ["unstable", "attributes"] }
-derive_more = "0.99.3"
-lazy_static = "1.4.0"
-dirs = "2.0.2"
-find_folder = "0.3.0"
-opener = "0.4.1"
-backtrace = "0.3.45"
+# Other
 image = { version = "0.23.6", default-features = false, features = ["ico"] }
+tokio = { version = "0.2.20", features = ["stream", "process"] }
+derive_more = "0.99.3"
+find_folder = "0.3.0"
+lazy_static = "1.4.0"
+backtrace = "0.3.45"
 thiserror = "1.0.19"
+bytesize = "1.0.0"
+opener = "0.4.1"
+dirs = "2.0.2"
 # bundle all the things!
 openssl-sys = { version = "*", features = ["vendored"] }
 
