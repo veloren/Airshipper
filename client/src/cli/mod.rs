@@ -26,7 +26,7 @@ pub fn process() -> Result<()> {
     log::debug!("Cmdline args: {:?}", cmd);
 
     // TODO: Iced does not allow us to create the async runtime ourself :/
-    if let Some(_) = cmd.action {
+    if cmd.action.is_some() {
         let mut rt = tokio::runtime::Runtime::new()?;
         rt.block_on(async {
             // Check for updates (windows only)
