@@ -31,7 +31,7 @@ pub fn process() -> Result<()> {
         rt.block_on(async {
             // Check for updates (windows only)
             #[cfg(windows)]
-            crate::updater::update().await?;
+            let _ = crate::updater::update().await;
 
             let mut state = SavedState::load().await.unwrap_or_default();
 

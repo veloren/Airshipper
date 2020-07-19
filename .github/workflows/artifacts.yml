@@ -66,21 +66,15 @@ jobs:
           echo '[target.x86_64-pc-windows-msvc]' >> .cargo/config
           echo 'rustflags = ["-Ctarget-feature=+crt-static"]' >> .cargo/config
 
-      # Build
-      - name: Build
-        run: cargo build --bin airshipper --release
-
       # Create Installer
       - name: MSI Installer
-        run: cargo wix --no-build --nocapture -n client --install-version ${{ steps.vars.outputs.version }}
-
-      # TODO: Sign Installer
+        run: cargo wix client/Cargo.toml -o .\target\wix\ --nocapture
 
       # Rename installer
       - name: Rename
         run: |
           Remove-Item –path target/wix/airshipper-windows.msi -ErrorAction Ignore
-          ren target/wix/client-${{ steps.vars.outputs.version }}-x86_64.msi airshipper-windows.msi
+          ren target/wix/airshipper-${{ steps.vars.outputs.version }}-x86_64.msi airshipper-windows.msi
 
       # Upload artifact
       - name: Upload artifact
