@@ -5,7 +5,8 @@ use rocket::{http::Status, response::Redirect, *};
 // NOTE: We want to change this behaviour once stable releases are more used than nightly
 #[get("/version/<platform>")]
 pub async fn version(db: crate::DbConnection, platform: String) -> Result<String> {
-    match db.get_latest_version(platform, "nightly".into())? {
+    let query = tokio::task::block_in_place(|| db.get_latest_version(platform, "nightly".into()))?;
+    match query {
         Some(ver) => Ok(ver),
         None => Err(Status::NotFound.into()),
     }
@@ -13,7 +14,8 @@ pub async fn version(db: crate::DbConnection, platform: String) -> Result<String
 
 #[get("/version/<platform>/<channel>")]
 pub async fn channel_version(db: crate::DbConnection, platform: String, channel: String) -> Result<String> {
-    match db.get_latest_version(platform, channel)? {
+    let query = tokio::task::block_in_place(|| db.get_latest_version(platform, channel))?;
+    match query {
         Some(ver) => Ok(ver),
         None => Err(Status::NotFound.into()),
     }
@@ -23,7 +25,8 @@ pub async fn channel_version(db: crate::DbConnection, platform: String, channel:
 // NOTE: We want to change this behaviour once stable releases are more used than nightly
 #[get("/latest/<platform>")]
 pub async fn download(db: crate::DbConnection, platform: String) -> Result<Redirect> {
-    match db.get_latest_uri(platform, "nightly".into())? {
+    let query = tokio::task::block_in_place(|| db.get_latest_uri(platform, "nightly".into()))?;
+    match query {
         Some(uri) => Ok(Redirect::to(uri)),
         None => Err(Status::NotFound.into()),
     }
@@ -31,7 +34,8 @@ pub async fn download(db: crate::DbConnection, platform: String) -> Result<Redir
 
 #[get("/latest/<platform>/<channel>")]
 pub async fn channel_download(db: crate::DbConnection, platform: String, channel: String) -> Result<Redirect> {
-    match db.get_latest_uri(platform, channel)? {
+    let query = tokio::task::block_in_place(|| db.get_latest_uri(platform, channel))?;
+    match query {
         Some(uri) => Ok(Redirect::to(uri)),
         None => Err(Status::NotFound.into()),
     }
