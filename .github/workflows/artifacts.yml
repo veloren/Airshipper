@@ -1,5 +1,5 @@
 # This workflow will create artifacts for all merges into master
-# It will include linux, macos binaries with assets and an msi installer.
+# It will include linux, macos binaries and an msi installer.
 
 name: Artifacts
 
@@ -7,21 +7,19 @@ on:
   push:
     branches:
       - master
-    paths:
-      - "client/**"
-      - "server/**"
-      - "wix/**"
-      - "rust-toolchain"
-      - "Cargo.toml"
-      # Also run if only CI has been modifed
-      - ".github/workflows/**"
+      - staging
+
 jobs:
-  release-win:
+  windows:
     runs-on: [windows-latest]
     steps:
-      - uses: actions/checkout@v2
-      # The current Airshipper version will be grabbed by running:
-      # cd client && cargo pkgid | cut -d# -f2 | cut -d: -f2
+      # Checkout
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      # Airshipper Version
+      # cd client && cargo pkgid | cut -d# -f2 | cut -d: -f2 (Linux)
+      # cargo pkgid | ForEach-Object { $_.split(":")[3] } (Windows)
       - name: Aquire Version
         id: vars
         shell: pwsh
@@ -30,6 +28,7 @@ jobs:
           echo "::set-output name=version::$(cargo pkgid | ForEach-Object { $_.split(":")[3] })"
       - name: Print version
         run: echo "Airshipper v${{ steps.vars.outputs.version }}"
+
       # Cache
       - name: Cache cargo index
         uses: actions/cache@v1
@@ -41,32 +40,62 @@ jobs:
         with:
           path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-      # Build & Package airshipper
+
+      # Toolchain Version
+      - name: Aquire Toolchain Version
+        id: vars
+        shell: pwsh
+        run: echo "::set-output name=rust_toolchain::$(cat rust-toolchain)"
+
+      # Toolchain
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ steps.vars.outputs.rust_toolchain }}
+          override: true
+
+      # Cargo Wix
       - name: Install cargo-wix
         run: cargo install cargo-wix
+
+      # Enable CRT linkage to avoid VCRUNTIME140_1.dll being missing
       - name: Enable static CRT linkage
         run: |
           mkdir .cargo
           echo '[target.x86_64-pc-windows-msvc]' >> .cargo/config
           echo 'rustflags = ["-Ctarget-feature=+crt-static"]' >> .cargo/config
+
+      # Build
       - name: Build
         run: cargo build --bin airshipper --release
+
+      # Create Installer
       - name: MSI Installer
         run: cargo wix --no-build --nocapture -n client --install-version ${{ steps.vars.outputs.version }}
-      - name: proper naming
+
+      # TODO: Sign Installer
+
+      # Rename installer
+      - name: Rename
         run: |
-          Remove-Item –path target/wix/airshipper-${{ steps.vars.outputs.version }}-x86_64.msi -ErrorAction Ignore
-          ren target/wix/client-${{ steps.vars.outputs.version }}-x86_64.msi airshipper-${{ steps.vars.outputs.version }}-x86_64.msi
+          Remove-Item –path target/wix/airshipper-windows.msi -ErrorAction Ignore
+          ren target/wix/client-${{ steps.vars.outputs.version }}-x86_64.msi airshipper-windows.msi
+
       # Upload artifact
       - name: Upload artifact
         uses: actions/upload-artifact@v1
         with:
           name: airshipper-windows-installer
-          path: target/wix/airshipper-${{ steps.vars.outputs.version }}-x86_64.msi
-  release-linux:
+          path: target/wix/airshipper-windows.msi
+
+  linux:
     runs-on: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@v2
+      # Checkout
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
       # Cache
       - name: Cache cargo index
         uses: actions/cache@v1
@@ -78,25 +107,39 @@ jobs:
         with:
           path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-      # Build & Package airshipper
+
+      # Toolchain Version
+      - name: Aquire Toolchain Version
+        id: vars
+        shell: pwsh
+        run: echo "::set-output name=rust_toolchain::$(cat rust-toolchain)"
+
+      # Toolchain
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ steps.vars.outputs.rust_toolchain }}
+          override: true
+
+      # Build
       - name: Build
         run: cargo build --bin airshipper --release
-      - name: Package
-        run: |
-          mkdir -p artifact/
-          mkdir -p artifact/assets/
-          cp -r client/assets/** artifact/assets/
-          cp target/release/airshipper artifact/airshipper
+
       # Upload artifact
       - name: Upload artifact
         uses: actions/upload-artifact@v1
         with:
           name: airshipper-linux
-          path: artifact/
-  release-macos:
+          path: target/release/airshipper
+
+  macos:
     runs-on: [macos-latest]
     steps:
-      - uses: actions/checkout@v2
+      # Checkout
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
       # Cache
       - name: Cache cargo index
         uses: actions/cache@v1
@@ -108,18 +151,28 @@ jobs:
         with:
           path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-      # Build & Package airshipper
+
+      # Toolchain Version
+      - name: Aquire Toolchain Version
+        id: vars
+        shell: pwsh
+        run: echo "::set-output name=rust_toolchain::$(cat rust-toolchain)"
+
+      # Toolchain
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ steps.vars.outputs.rust_toolchain }}
+          override: true
+
+      # Build
       - name: Build
         run: cargo build --bin airshipper --release
-      - name: Package
-        run: |
-          mkdir -p artifact/
-          mkdir -p artifact/assets/
-          cp -r client/assets/** artifact/assets/
-          cp target/release/airshipper artifact/airshipper
+
       # Upload artifact
       - name: Upload artifact
         uses: actions/upload-artifact@v1
         with:
           name: airshipper-macos
-          path: artifact/
+          path: target/release/airshipper
