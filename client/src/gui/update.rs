@@ -108,7 +108,7 @@ pub fn handle_message(
                 return Ok(Command::perform(
                     Profile::install(
                         airship.saveable_state.active_profile.clone(),
-                        version.clone(),
+                        version,
                     ),
                     Message::InstallDone,
                 ));

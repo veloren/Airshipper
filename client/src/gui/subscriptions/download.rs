@@ -2,7 +2,7 @@ use crate::net;
 use iced::{futures, Subscription};
 use std::path::PathBuf;
 
-pub fn file(url: &String, location: &PathBuf) -> iced::Subscription<net::Progress> {
+pub fn file(url: &str, location: &PathBuf) -> iced::Subscription<net::Progress> {
     Subscription::from_recipe(Download(url.to_string(), location.clone()))
 }
 

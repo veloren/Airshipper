@@ -203,7 +203,7 @@ impl Application for Airshipper {
                 .download_progress
                 .as_ref()
                 .map(|x| x.to_string())
-                .unwrap_or("Downloading...".to_string()),
+                .unwrap_or_else(|| "Downloading...".to_string()),
             LauncherState::Installing => "Installing...".to_string(),
             LauncherState::LoadingSave => "Loading...".to_string(),
             LauncherState::QueryingForUpdates => "Checking for updates...".to_string(),
