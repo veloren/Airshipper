@@ -1,6 +1,6 @@
 use rocket::{
     fairing::{Fairing, Info, Kind},
-    Rocket,
+    Cargo,
 };
 
 embed_migrations!();
@@ -22,7 +22,7 @@ impl Fairing for DbInit {
         }
     }
 
-    fn on_launch(&self, _: &Rocket) {
+    fn on_launch(&self, _: &Cargo) {
         use crate::diesel::Connection;
         let con = diesel::SqliteConnection::establish(crate::config::DATABASE_FILE)
             .expect("Could not establish connection to the database to initialise the table!");
