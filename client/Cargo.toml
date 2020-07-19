@@ -11,12 +11,6 @@ license = "GPL-3.0"
 homepage = "https://www.veloren.net"
 repository = "https://gitlab.com/veloren/airshipper"
 
-# Windows logo
-[package.metadata.winres]
-OriginalFilename = "Airshipper.exe"
-FileDescription = "Launcher for the the multiplayer voxel RPG written in Rust."
-LegalCopyright = "Copyright © 2020"
-
 [badges]
 maintenance = { status = "actively-developed" }
 
@@ -44,7 +38,7 @@ zip = "0.5.5"
 url = "2.1.1"
 # Other
 image = { version = "0.23.6", default-features = false, features = ["ico"] }
-tokio = { version = "0.2.20", features = ["stream", "process"] }
+tokio = { version = "0.2.20", features = ["stream", "process", "fs"] }
 derive_more = "0.99.3"
 find_folder = "0.3.0"
 lazy_static = "1.4.0"
