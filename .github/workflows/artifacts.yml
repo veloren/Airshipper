@@ -50,7 +50,7 @@ jobs:
 
       # Toolchain Version
       - name: Aquire Toolchain Version
-        id: vars
+        id: tool
         shell: pwsh
         run: echo "::set-output name=rust_toolchain::$(cat rust-toolchain)"
 
@@ -59,7 +59,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ steps.vars.outputs.rust_toolchain }}
+          toolchain: ${{ steps.tool.outputs.rust_toolchain }}
           override: true
 
       # Cargo Wix
@@ -87,7 +87,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v1
         with:
-          name: airshipper-windows-installer
+          name: airshipper-windows
           path: target/wix/airshipper-windows.msi
 
   linux:
@@ -116,7 +116,7 @@ jobs:
 
       # Toolchain Version
       - name: Aquire Toolchain Version
-        id: vars
+        id: tool
         shell: pwsh
         run: echo "::set-output name=rust_toolchain::$(cat rust-toolchain)"
 
@@ -125,7 +125,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ steps.vars.outputs.rust_toolchain }}
+          toolchain: ${{ steps.tool.outputs.rust_toolchain }}
           override: true
 
       # Build
@@ -165,7 +165,7 @@ jobs:
 
       # Toolchain Version
       - name: Aquire Toolchain Version
-        id: vars
+        id: tool
         shell: pwsh
         run: echo "::set-output name=rust_toolchain::$(cat rust-toolchain)"
 
@@ -174,7 +174,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ steps.vars.outputs.rust_toolchain }}
+          toolchain: ${{ steps.tool.outputs.rust_toolchain }}
           override: true
 
       # Build
