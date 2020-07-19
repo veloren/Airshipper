@@ -2,7 +2,6 @@ use crate::{consts, fs, net, CommandBuilder, Result};
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf};
-use tokio::process::Command;
 
 /// Represents a version with channel, name and path.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -111,6 +110,8 @@ impl Profile {
 /// Tries to set executable permissions on linux
 #[cfg(unix)]
 async fn set_permissions(files: Vec<&std::path::PathBuf>) -> Result<()> {
+    use tokio::process::Command;
+
     for file in files {
         Command::new("chmod").arg("+x").arg(file).spawn()?.await?;
     }
