@@ -30,9 +30,8 @@ pub enum ServerError {
 }
 
 #[allow(clippy::needless_lifetimes)]
-#[rocket::async_trait]
-impl<'r> Responder<'r> for ServerError {
-    async fn respond_to(self, req: &'r Request<'_>) -> response::Result<'r> {
+impl<'r, 'o> Responder<'r, 'static> for ServerError {
+    fn respond_to(self, req: &'r Request<'_>) -> response::Result<'static> {
         let mut resp = Response::build();
 
         match self {
@@ -44,12 +43,12 @@ impl<'r> Responder<'r> for ServerError {
             // Internal errors
             error => {
                 resp.status(Status::InternalServerError);
-                resp.sized_body(Cursor::new(format!(
+                let body = format!(
                     "We hit a serious error with your request to '{}'. Please report this to @Songtronix#4790 on \
                      Discord!",
                     req.uri()
-                )))
-                .await;
+                );
+                resp.sized_body(body.len(), Cursor::new(body));
                 tracing::error!("Internal Error with request[{}]: {}", req, error);
             },
         }
