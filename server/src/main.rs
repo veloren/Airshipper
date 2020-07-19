@@ -5,7 +5,7 @@
 mod logger;
 
 fn main() {
-    dotenv::dotenv().ok();
+    dotenv::from_path("server/.env").ok();
     logger::init();
     server::rocket().launch().expect("Server failed!");
 }
