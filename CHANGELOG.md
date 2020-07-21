@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - embed assets for easier distribution [#67](https://github.com/Songtronix/Airshipper/pull/67)
 - use same font as Veloren [#67](https://github.com/Songtronix/Airshipper/pull/67)
 
+## Changed
+
+- place screenshots, logs, game saves in profile [#74](https://github.com/Songtronix/Airshipper/pull/74)
+
 ## Removed
 
 - extra terminal window [#67](https://github.com/Songtronix/Airshipper/pull/67)
