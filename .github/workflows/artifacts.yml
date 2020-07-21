@@ -19,18 +19,6 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v2
 
-      # Airshipper Version
-      # cd client && cargo pkgid | cut -d# -f2 | cut -d: -f2 (Linux)
-      # cargo pkgid | ForEach-Object { $_.split(":")[3] } (Windows)
-      - name: Aquire Version
-        id: vars
-        shell: pwsh
-        run: |
-          cd client 
-          echo "::set-output name=version::$(cargo pkgid | ForEach-Object { $_.split(":")[3] })"
-      - name: Print version
-        run: echo "Airshipper v${{ steps.vars.outputs.version }}"
-
       # Cache
       - name: Cache
         uses: actions/cache@v2
@@ -39,7 +27,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
 
       # Toolchain Version
       - name: Aquire Toolchain Version
@@ -55,9 +43,21 @@ jobs:
           toolchain: ${{ steps.tool.outputs.rust_toolchain }}
           override: true
 
+      # Airshipper Version
+      # cd client && cargo pkgid | cut -d# -f2 | cut -d: -f2 (Linux)
+      # cargo pkgid | ForEach-Object { $_.split(":")[3] } (Windows)
+      - name: Aquire Version
+        id: vars
+        shell: pwsh
+        run: |
+          cd client 
+          echo "::set-output name=version::$(cargo pkgid | ForEach-Object { $_.split(":")[3] })"
+      - name: Print version
+        run: echo "Airshipper v${{ steps.vars.outputs.version }}"
+
       # Cargo Wix
       - name: Install cargo-wix
-        run: cargo install cargo-wix
+        run: cargo install cargo-wix --version 0.3.0
 
       # Enable CRT linkage to avoid VCRUNTIME140_1.dll being missing
       - name: Enable static CRT linkage
@@ -98,7 +98,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
 
       # Toolchain Version
       - name: Aquire Toolchain Version
@@ -140,7 +140,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
 
       # Toolchain Version
       - name: Aquire Toolchain Version
