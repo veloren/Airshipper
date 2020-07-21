@@ -937,59 +937,29 @@ dependencies = [
 [[package]]
 name = "devise"
 version = "0.3.0"
-source = "git+https://github.com/SergioBenitez/Devise.git?rev=17f647e#17f647efede6a92b241a1f5a59441b5a737557e7"
+source = "git+https://github.com/SergioBenitez/Devise.git?rev=952866f#952866f72d3ab3cd594da6338ea1741648f9222c"
 dependencies = [
- "devise_codegen 0.3.0 (git+https://github.com/SergioBenitez/Devise.git?rev=17f647e)",
- "devise_core 0.3.0 (git+https://github.com/SergioBenitez/Devise.git?rev=17f647e)",
-]
-
-[[package]]
-name = "devise"
-version = "0.3.0"
-source = "git+https://github.com/SergioBenitez/Devise.git?rev=57d6eb80#57d6eb80339ab5897eb07d91c8f76a1850a3b006"
-dependencies = [
- "devise_codegen 0.3.0 (git+https://github.com/SergioBenitez/Devise.git?rev=57d6eb80)",
- "devise_core 0.3.0 (git+https://github.com/SergioBenitez/Devise.git?rev=57d6eb80)",
+ "devise_codegen",
+ "devise_core",
 ]
 
 [[package]]
 name = "devise_codegen"
 version = "0.3.0"
-source = "git+https://github.com/SergioBenitez/Devise.git?rev=17f647e#17f647efede6a92b241a1f5a59441b5a737557e7"
+source = "git+https://github.com/SergioBenitez/Devise.git?rev=952866f#952866f72d3ab3cd594da6338ea1741648f9222c"
 dependencies = [
- "devise_core 0.3.0 (git+https://github.com/SergioBenitez/Devise.git?rev=17f647e)",
- "quote 1.0.3",
-]
-
-[[package]]
-name = "devise_codegen"
-version = "0.3.0"
-source = "git+https://github.com/SergioBenitez/Devise.git?rev=57d6eb80#57d6eb80339ab5897eb07d91c8f76a1850a3b006"
-dependencies = [
- "devise_core 0.3.0 (git+https://github.com/SergioBenitez/Devise.git?rev=57d6eb80)",
+ "devise_core",
  "quote 1.0.3",
 ]
 
 [[package]]
 name = "devise_core"
 version = "0.3.0"
-source = "git+https://github.com/SergioBenitez/Devise.git?rev=17f647e#17f647efede6a92b241a1f5a59441b5a737557e7"
+source = "git+https://github.com/SergioBenitez/Devise.git?rev=952866f#952866f72d3ab3cd594da6338ea1741648f9222c"
 dependencies = [
  "bitflags",
  "proc-macro2 1.0.9",
- "proc-macro2-diagnostics 0.1.0 (git+https://github.com/SergioBenitez/proc-macro2-diagnostics?rev=ef95d94)",
- "quote 1.0.3",
- "syn 1.0.17",
-]
-
-[[package]]
-name = "devise_core"
-version = "0.3.0"
-source = "git+https://github.com/SergioBenitez/Devise.git?rev=57d6eb80#57d6eb80339ab5897eb07d91c8f76a1850a3b006"
-dependencies = [
- "bitflags",
- "proc-macro2 1.0.9",
- "proc-macro2-diagnostics 0.1.0 (git+https://github.com/SergioBenitez/proc-macro2-diagnostics?rev=8336005b)",
+ "proc-macro2-diagnostics",
  "quote 1.0.3",
  "syn 1.0.17",
 ]
@@ -2885,23 +2855,13 @@ dependencies = [
 [[package]]
 name = "proc-macro2-diagnostics"
 version = "0.1.0"
-source = "git+https://github.com/SergioBenitez/proc-macro2-diagnostics?rev=8336005b#8336005b05f6ba820bbe171b0504e8b3969e8de1"
+source = "git+https://github.com/SergioBenitez/proc-macro2-diagnostics?rev=e3f7715#e3f7715e057e0e82dedce49ea7e8b734d30d7968"
 dependencies = [
  "proc-macro2 1.0.9",
  "quote 1.0.3",
  "syn 1.0.17",
  "version_check 0.9.1",
-]
-
-[[package]]
-name = "proc-macro2-diagnostics"
-version = "0.1.0"
-source = "git+https://github.com/SergioBenitez/proc-macro2-diagnostics?rev=ef95d94#ef95d94068a269fc83a7479288feae60bfbcd9a6"
-dependencies = [
- "proc-macro2 1.0.9",
- "quote 1.0.3",
- "syn 1.0.17",
- "version_check 0.9.1",
+ "yansi 0.5.0",
 ]
 
 [[package]]
@@ -3261,7 +3221,7 @@ dependencies = [
 [[package]]
 name = "rocket"
 version = "0.5.0-dev"
-source = "git+https://github.com/SergioBenitez/Rocket?rev=0909ba2#0909ba2ef60d0d512481796598a8aba04e7cd55c"
+source = "git+https://github.com/SergioBenitez/Rocket?rev=7f276eb#7f276eb2fcb4d13c935733ba46c982b28f60676a"
 dependencies = [
  "async-trait",
  "atomic",
@@ -3286,9 +3246,9 @@ dependencies = [
 [[package]]
 name = "rocket_codegen"
 version = "0.5.0-dev"
-source = "git+https://github.com/SergioBenitez/Rocket?rev=0909ba2#0909ba2ef60d0d512481796598a8aba04e7cd55c"
+source = "git+https://github.com/SergioBenitez/Rocket?rev=7f276eb#7f276eb2fcb4d13c935733ba46c982b28f60676a"
 dependencies = [
- "devise 0.3.0 (git+https://github.com/SergioBenitez/Devise.git?rev=17f647e)",
+ "devise",
  "glob",
  "indexmap",
  "quote 1.0.3",
@@ -3300,7 +3260,7 @@ dependencies = [
 [[package]]
 name = "rocket_contrib"
 version = "0.5.0-dev"
-source = "git+https://github.com/SergioBenitez/Rocket?rev=0909ba2#0909ba2ef60d0d512481796598a8aba04e7cd55c"
+source = "git+https://github.com/SergioBenitez/Rocket?rev=7f276eb#7f276eb2fcb4d13c935733ba46c982b28f60676a"
 dependencies = [
  "diesel",
  "log",
@@ -3315,9 +3275,9 @@ dependencies = [
 [[package]]
 name = "rocket_contrib_codegen"
 version = "0.5.0-dev"
-source = "git+https://github.com/SergioBenitez/Rocket?rev=0909ba2#0909ba2ef60d0d512481796598a8aba04e7cd55c"
+source = "git+https://github.com/SergioBenitez/Rocket?rev=7f276eb#7f276eb2fcb4d13c935733ba46c982b28f60676a"
 dependencies = [
- "devise 0.3.0 (git+https://github.com/SergioBenitez/Devise.git?rev=57d6eb80)",
+ "devise",
  "quote 1.0.3",
  "version_check 0.9.1",
  "yansi 0.5.0",
@@ -3326,7 +3286,7 @@ dependencies = [
 [[package]]
 name = "rocket_http"
 version = "0.5.0-dev"
-source = "git+https://github.com/SergioBenitez/Rocket?rev=0909ba2#0909ba2ef60d0d512481796598a8aba04e7cd55c"
+source = "git+https://github.com/SergioBenitez/Rocket?rev=7f276eb#7f276eb2fcb4d13c935733ba46c982b28f60676a"
 dependencies = [
  "cookie",
  "http",
