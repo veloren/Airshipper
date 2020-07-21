@@ -67,8 +67,15 @@ impl Profile {
     // TODO: add possibility to start the server too
     pub fn start(profile: Profile) -> CommandBuilder {
         let mut envs = HashMap::new();
-        envs.insert("VOXYGEN_CONFIG", profile.directory.clone().into_os_string());
-        // TODO: make use of all Veloren env vars!
+        let profile_dir = profile.directory.clone().into_os_string();
+        let saves_dir = profile.directory.join("saves").into_os_string();
+        let logs_dir = profile.directory.join("logs").into_os_string();
+        let screenshot_dir = profile.directory.join("screenshots").into_os_string();
+
+        envs.insert("VOXYGEN_CONFIG", &profile_dir);
+        envs.insert("VOXYGEN_LOGS", &logs_dir);
+        envs.insert("VOXYGEN_SCREENSHOT", &screenshot_dir);
+        envs.insert("VELOREN_SAVES_DIR", &saves_dir);
 
         log::debug!("Launching {}", profile.voxygen_path().display());
         log::debug!("CWD: {:?}", profile.directory);

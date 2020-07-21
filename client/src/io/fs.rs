@@ -44,7 +44,7 @@ pub fn get_savedstate_path() -> PathBuf {
 /// Returns path to a profile while creating the folder
 pub fn get_profile_path(profile_name: &str) -> std::path::PathBuf {
     let path = BASE_PATH.join("profiles").join(profile_name);
-    std::fs::create_dir_all(&path).expect("failed to profile directory!");
+    std::fs::create_dir_all(&path).expect("failed to profile directory!"); // TODO
     path
 }
 
