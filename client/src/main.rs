@@ -1,5 +1,3 @@
-#![windows_subsystem = "windows"] // Removes terminal window
-
 mod assets;
 mod cli;
 mod consts;
@@ -11,7 +9,7 @@ mod net;
 mod profiles;
 mod state;
 #[cfg(windows)]
-mod updater;
+mod windows;
 
 use crate::error::ClientError;
 
@@ -21,6 +19,9 @@ pub use net::*;
 pub type Result<T> = std::result::Result<T, ClientError>;
 
 fn main() {
+    #[cfg(windows)]
+    windows::detach_non_inherited_console();
+
     if let Err(e) = cli::process() {
         log::error!("{}", e);
         log::info!("Press enter to exit...");
