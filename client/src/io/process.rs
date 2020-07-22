@@ -16,6 +16,10 @@ use tokio::{
 pub(crate) fn stream_process(cmd: CommandBuilder) -> impl Stream<Item = ProcessUpdate> {
     let mut cmd = cmd.build();
 
+    // Avoid allocating a console
+    #[cfg(windows)]
+    cmd.creation_flags(winapi::um::winbase::DETACHED_PROCESS);
+
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
     let mut child = cmd.kill_on_drop(true).spawn().unwrap();

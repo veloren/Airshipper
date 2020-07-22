@@ -25,23 +25,29 @@ pub fn process() -> Result<()> {
     log::debug!("Cache Path: {}", fs::get_cache_path().display());
     log::debug!("Cmdline args: {:?}", cmd);
 
-    // TODO: Iced does not allow us to create the async runtime ourself :/
-    if cmd.action.is_some() {
-        let mut rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(async {
-            // Check for updates (windows only)
-            #[cfg(windows)]
-            let _ = crate::updater::update().await;
+    // TODO: Iced does not allow us to create the global async runtime ourself :/
+    let mut rt = tokio::runtime::Runtime::new()?;
 
+    // We ignore any errors to avoid disrupting playing the game.
+    #[cfg(windows)]
+    let _ = rt.block_on(crate::windows::update());
+
+    if cmd.action.is_some() {
+        if let Err(e) = rt.block_on(async {
             let mut state = SavedState::load().await.unwrap_or_default();
 
             // handle arguments
-            process_arguments(&mut state, cmd).await.unwrap();
+            process_arguments(&mut state, cmd).await?;
 
             // Save state
-            state.save().await.unwrap();
-        });
+            state.save().await?;
+
+            Ok(())
+        }) {
+            return Err(e);
+        }
     } else {
+        rt.shutdown_timeout(std::time::Duration::from_millis(500));
         gui::run(cmd);
     }
     Ok(())
