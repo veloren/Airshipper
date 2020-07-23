@@ -37,19 +37,19 @@ pub fn get_cache_path() -> PathBuf {
 }
 
 /// Returns path to the file which saves the current state
-pub fn get_savedstate_path() -> PathBuf {
+pub fn savedstate_file() -> PathBuf {
     BASE_PATH.join(consts::SAVED_STATE_FILE)
 }
 
 /// Returns path to a profile while creating the folder
-pub fn get_profile_path(profile_name: &str) -> std::path::PathBuf {
+pub fn profile_path(profile_name: &str) -> std::path::PathBuf {
     let path = BASE_PATH.join("profiles").join(profile_name);
     std::fs::create_dir_all(&path).expect("failed to profile directory!"); // TODO
     path
 }
 
 /// Returns path to the file where the logs will be stored
-pub fn get_log_path() -> PathBuf {
+pub fn log_file() -> PathBuf {
     BASE_PATH.join(consts::LOG_FILE)
 }
 

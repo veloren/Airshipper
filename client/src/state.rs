@@ -27,7 +27,7 @@ impl SavedState {
     pub async fn load() -> Result<Self> {
         let mut contents = String::new();
 
-        match File::open(fs::get_savedstate_path()).await {
+        match File::open(fs::savedstate_file()).await {
             Ok(mut file) => {
                 file.read_to_string(&mut contents).await?;
             },
@@ -48,7 +48,7 @@ impl SavedState {
     pub async fn save(self) -> Result<()> {
         let ron = ron::ser::to_string_pretty(&self, ron::ser::PrettyConfig::default())?;
 
-        let path = fs::get_savedstate_path();
+        let path = fs::savedstate_file();
         if let Some(dir) = path.parent() {
             tokio::fs::create_dir_all(dir).await?;
         }

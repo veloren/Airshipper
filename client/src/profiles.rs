@@ -29,7 +29,7 @@ pub enum Channel {
 impl Profile {
     pub fn new(name: String, channel: Channel) -> Self {
         Self {
-            directory: fs::get_profile_path(&name),
+            directory: fs::profile_path(&name),
             name,
             channel,
             version: None,
