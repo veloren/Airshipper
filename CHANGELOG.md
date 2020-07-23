@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Changed
 
 - place screenshots, logs, game saves in profile [#74](https://github.com/Songtronix/Airshipper/pull/74)
+- do not close Veloren if airshipper gets closed [#77](https://github.com/Songtronix/Airshipper/pull/77)
 
 ## Removed
 
