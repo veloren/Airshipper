@@ -14,7 +14,7 @@ pub fn handle_message(
             let saved_state = saved_state.unwrap_or_default();
             airship.update_from_save(saved_state);
 
-            airship.state = LauncherState::QueryingForUpdates;
+            airship.state = LauncherState::QueryingForUpdates(false);
             return Ok(Command::batch(vec![
                 Command::perform(
                     Changelog::update(airship.saveable_state.changelog.etag.clone()),
@@ -48,7 +48,7 @@ pub fn handle_message(
             },
             ProcessUpdate::Exit(code) => {
                 log::debug!("Veloren exited with {}", code);
-                airship.state = LauncherState::QueryingForUpdates;
+                airship.state = LauncherState::QueryingForUpdates(false);
                 return Ok(Command::perform(
                     Profile::update(airship.saveable_state.active_profile.clone()),
                     Message::GameUpdate,
@@ -58,7 +58,16 @@ pub fn handle_message(
         },
         Message::GameUpdate(update) => match update? {
             Some(version) => {
-                airship.state = LauncherState::UpdateAvailable(version);
+                // Skip asking
+                if let LauncherState::QueryingForUpdates(true) = airship.state {
+                    airship.state = LauncherState::Downloading(
+                        airship.saveable_state.active_profile.url(),
+                        airship.saveable_state.active_profile.download_path(),
+                        version,
+                    )
+                } else {
+                    airship.state = LauncherState::UpdateAvailable(version);
+                }
             },
             None => {
                 airship.state = LauncherState::ReadyToPlay;
@@ -70,18 +79,28 @@ pub fn handle_message(
             airship.saving = false;
             log::trace!("State saved.");
         },
-        Message::Interaction(Interaction::PlayPressed) => {
-            if let LauncherState::UpdateAvailable(version) = &airship.state {
+        Message::Interaction(Interaction::PlayPressed) => match &airship.state {
+            LauncherState::UpdateAvailable(version) => {
                 airship.state = LauncherState::Downloading(
                     airship.saveable_state.active_profile.url(),
                     airship.saveable_state.active_profile.download_path(),
                     version.clone(),
                 )
-            } else if let LauncherState::ReadyToPlay = airship.state {
+            },
+            LauncherState::ReadyToPlay => {
                 airship.state = LauncherState::Playing(Profile::start(
                     airship.saveable_state.active_profile.clone(),
                 ));
-            }
+            },
+            LauncherState::Error(_) => {
+                airship.reset();
+                airship.state = LauncherState::QueryingForUpdates(true);
+                return Ok(Command::perform(
+                    Profile::update(airship.saveable_state.active_profile.clone()),
+                    Message::GameUpdate,
+                ));
+            },
+            _ => {},
         },
         Message::Interaction(Interaction::ReadMore(url)) => {
             if let Err(e) = opener::open(&url) {

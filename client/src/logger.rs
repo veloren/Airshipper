@@ -44,7 +44,7 @@ pub fn log(level: log::LevelFilter) {
                 message
             ))
         })
-        .chain(fern::log_file(&fs::get_log_path()).expect("Failed to setup log file!"));
+        .chain(fern::log_file(&fs::log_file()).expect("Failed to setup log file!"));
 
     let mut stdout_cfg = fern::Dispatch::new().level(level);
     // If more verbose debugging is requested. We will print the lines too.
