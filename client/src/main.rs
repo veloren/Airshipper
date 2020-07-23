@@ -22,6 +22,8 @@ fn main() {
     #[cfg(windows)]
     windows::detach_non_inherited_console();
 
+    error::panic_hook();
+
     if let Err(e) = cli::process() {
         log::error!("{}", e);
         log::info!("Press enter to exit...");
