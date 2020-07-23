@@ -19,8 +19,8 @@ maintenance = { status = "actively-developed" }
 clap = { git = "https://github.com/clap-rs/clap/", rev = "8145717", features = ["derive"] }
 indicatif = "0.14.0"
 # UI
-iced = { git = "https://github.com/hecrj/iced.git", features = ["tokio", "image"], rev = "3f44d331d9c7afe14416130f54abd2b327a686bf" }
-iced_native = { git = "https://github.com/hecrj/iced.git", rev = "3f44d331d9c7afe14416130f54abd2b327a686bf" }
+iced = { git = "https://github.com/hecrj/iced.git", default-features = false, features = ["wgpu", "tokio", "image"], rev = "3f44d331d9c7afe14416130f54abd2b327a686bf" }
+iced_native = { git = "https://github.com/hecrj/iced.git", default-features = false, rev = "3f44d331d9c7afe14416130f54abd2b327a686bf" }
 # Logging
 fern = { version = "0.6.0", features = ["colored"] }
 chrono = "0.4.11"
@@ -42,7 +42,6 @@ tokio = { version = "0.2.20", features = ["stream", "process", "fs"] }
 derive_more = "0.99.3"
 find_folder = "0.3.0"
 lazy_static = "1.4.0"
-backtrace = "0.3.45"
 thiserror = "1.0.19"
 bytesize = "1.0.0"
 opener = "0.4.1"
