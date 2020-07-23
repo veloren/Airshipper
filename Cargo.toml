@@ -1,5 +1,12 @@
+cargo-features = ["strip"]
+
 [workspace]
 members = [
 	"client",
 	"server",
 ]
+
+[profile.release]
+lto = true
+strip = "symbols"
+codegen-units = 1

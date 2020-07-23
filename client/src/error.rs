@@ -1,3 +1,4 @@
+use std::panic;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -28,4 +29,27 @@ impl From<String> for ClientError {
     fn from(err: String) -> Self {
         Self::Custom(err)
     }
+}
+
+/// Set up panic handler to relay panics to logs file.
+pub fn panic_hook() {
+    let default_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |panic_info| {
+        let panic_info_payload = panic_info.payload();
+        let payload_string = panic_info_payload.downcast_ref::<String>();
+        let reason = match payload_string {
+            Some(s) => &s,
+            None => {
+                let payload_str = panic_info_payload.downcast_ref::<&str>();
+                match payload_str {
+                    Some(st) => st,
+                    None => "Payload is not a string",
+                }
+            },
+        };
+
+        log::error!("Airshipper panicked: \n\n{}: {}", reason, panic_info,);
+
+        default_hook(panic_info);
+    }));
 }
