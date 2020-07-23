@@ -22,7 +22,7 @@ pub(crate) fn stream_process(cmd: CommandBuilder) -> impl Stream<Item = ProcessU
 
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
-    let mut child = cmd.kill_on_drop(true).spawn().unwrap();
+    let mut child = cmd.kill_on_drop(false).spawn().unwrap();
 
     let stdout = child.stdout.take().unwrap(); // Safe because we setup stdout & stderr beforehand
     let stderr = child.stderr.take().unwrap();
