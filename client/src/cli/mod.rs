@@ -20,7 +20,7 @@ pub fn process() -> Result<()> {
 
     log::debug!("Running on {}", std::env::consts::OS);
     log::debug!("Base Path: {}", fs::base_path());
-    log::debug!("Log file: {}", fs::get_log_path().display());
+    log::debug!("Log file: {}", fs::log_file().display());
     #[cfg(windows)]
     log::debug!("Cache Path: {}", fs::get_cache_path().display());
     log::debug!("Cmdline args: {:?}", cmd);

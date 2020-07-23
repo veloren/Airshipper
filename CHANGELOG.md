@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bundle ssl for better cross distro compatibility [#67](https://github.com/Songtronix/Airshipper/pull/67)
 - embed assets for easier distribution [#67](https://github.com/Songtronix/Airshipper/pull/67)
 - use same font as Veloren [#67](https://github.com/Songtronix/Airshipper/pull/67)
+- option to retry if download/install failed [#78](https://github.com/Songtronix/Airshipper/pull/78)
 
 ## Changed
 

@@ -23,12 +23,13 @@ pub fn run(cmd: CmdLine) {
 #[derive(Debug)]
 pub enum LauncherState {
     LoadingSave,
-    QueryingForUpdates,
+    // do not ask, used for retry.
+    QueryingForUpdates(bool),
     UpdateAvailable(String),
-    ReadyToPlay,
     /// Url, Download Path, Version
     Downloading(String, PathBuf, String),
     Installing,
+    ReadyToPlay,
     Playing(CommandBuilder),
 
     Error(ClientError),
@@ -71,6 +72,15 @@ impl Airshipper {
     }
     fn update_from_save(&mut self, save: SavedState) {
         self.saveable_state = save;
+    }
+
+    /// Resets everything **except** current LauncherState.
+    ///
+    /// It's recommended after calling it to set the state manually.
+    pub fn reset(&mut self) {
+        self.download_progress = None;
+        self.needs_save = false;
+        self.saving = false;
     }
 }
 
@@ -191,11 +201,11 @@ impl Application for Airshipper {
             LauncherState::Downloading(_, _, _) => "Downloading".to_string(),
             LauncherState::Installing => "Installing".into(),
             LauncherState::LoadingSave => "Loading".into(),
-            LauncherState::QueryingForUpdates => "Loading".into(),
+            LauncherState::QueryingForUpdates(_) => "Loading".into(),
             LauncherState::ReadyToPlay => "Play".into(),
             LauncherState::UpdateAvailable(_) => "Update".into(),
             LauncherState::Playing(_) => "Playing".into(),
-            LauncherState::Error(_) => "ERROR".into(),
+            LauncherState::Error(_) => "Retry".into(),
         };
 
         let download_text = match &self.state {
@@ -206,7 +216,7 @@ impl Application for Airshipper {
                 .unwrap_or_else(|| "Downloading...".to_string()),
             LauncherState::Installing => "Installing...".to_string(),
             LauncherState::LoadingSave => "Loading...".to_string(),
-            LauncherState::QueryingForUpdates => "Checking for updates...".to_string(),
+            LauncherState::QueryingForUpdates(_) => "Checking for updates...".to_string(),
             LauncherState::ReadyToPlay => "Ready to play...".to_string(),
             LauncherState::UpdateAvailable(_) => "Update available!".to_string(),
             LauncherState::Playing(_) => "Much fun playing!".to_string(),
@@ -225,15 +235,15 @@ impl Application for Airshipper {
             play_button_state,
             play_button_text,
             match self.state {
-                LauncherState::ReadyToPlay | LauncherState::UpdateAvailable(_) => {
-                    Interaction::PlayPressed
-                },
+                LauncherState::ReadyToPlay
+                | LauncherState::UpdateAvailable(_)
+                | LauncherState::Error(_) => Interaction::PlayPressed,
                 _ => Interaction::Disabled,
             },
             match self.state {
-                LauncherState::ReadyToPlay | LauncherState::UpdateAvailable(_) => {
-                    style::PrimaryButton::Enabled
-                },
+                LauncherState::ReadyToPlay
+                | LauncherState::UpdateAvailable(_)
+                | LauncherState::Error(_) => style::PrimaryButton::Enabled,
                 _ => style::PrimaryButton::Disabled,
             },
         );
