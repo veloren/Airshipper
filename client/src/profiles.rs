@@ -1,7 +1,7 @@
 use crate::{consts, fs, net, CommandBuilder, Result};
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, ffi::OsString, path::PathBuf};
 
 /// Represents a version with channel, name and path.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -65,17 +65,24 @@ impl Profile {
     }
 
     // TODO: add possibility to start the server too
-    pub fn start(profile: Profile) -> CommandBuilder {
+    pub fn start(profile: Profile, verbosity: i32) -> CommandBuilder {
         let mut envs = HashMap::new();
         let profile_dir = profile.directory.clone().into_os_string();
         let saves_dir = profile.directory.join("saves").into_os_string();
         let logs_dir = profile.directory.join("logs").into_os_string();
         let screenshot_dir = profile.directory.join("screenshots").into_os_string();
+        let verbosity = match verbosity {
+            0 => OsString::from("info"),
+            1 => OsString::from("debug"),
+            _ => OsString::from("trace"),
+        };
+        log::error!("{}", verbosity.to_str().unwrap());
 
         envs.insert("VOXYGEN_CONFIG", &profile_dir);
         envs.insert("VOXYGEN_LOGS", &logs_dir);
         envs.insert("VOXYGEN_SCREENSHOT", &screenshot_dir);
         envs.insert("VELOREN_SAVES_DIR", &saves_dir);
+        envs.insert("RUST_LOG", &verbosity);
 
         log::debug!("Launching {}", profile.voxygen_path().display());
         log::debug!("CWD: {:?}", profile.directory);

@@ -8,8 +8,7 @@ use clap::{crate_authors, crate_version, Clap};
 pub struct CmdLine {
     #[clap(subcommand)]
     pub action: Option<Action>,
-    /// Set the logging verbosity for Veloren (v = INFO, vv = DEBUG, vvv =
-    /// TRACE)
+    /// Set the logging verbosity for Veloren (v = DEBUG, vv = TRACE)
     #[clap(short, long, parse(from_occurrences), global = true)]
     pub verbose: i32,
     /// Set the logging verbosity for Airshipper (d = DEBUG, dd = TRACE)
