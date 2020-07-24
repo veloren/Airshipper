@@ -47,18 +47,20 @@ pub struct Airshipper {
     /// Other unrelated state
     play_button_state: button::State,
     download_progress: Option<net::Progress>,
+    cmd: CmdLine,
 
     needs_save: bool,
     saving: bool,
 }
 
-impl Default for Airshipper {
-    fn default() -> Self {
+impl Airshipper {
+    pub fn new(cmd: CmdLine) -> Self {
         Self {
             state: LauncherState::LoadingSave,
             saveable_state: SavedState::empty(),
             play_button_state: Default::default(),
             download_progress: None,
+            cmd,
 
             needs_save: false,
             saving: false,
@@ -111,9 +113,9 @@ impl Application for Airshipper {
     type Message = Message;
     type Flags = CmdLine;
 
-    fn new(_flags: CmdLine) -> (Self, Command<Message>) {
+    fn new(flags: CmdLine) -> (Self, Command<Message>) {
         (
-            Airshipper::default(),
+            Airshipper::new(flags),
             Command::perform(SavedState::load(), Message::Loaded),
         )
     }

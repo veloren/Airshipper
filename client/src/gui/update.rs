@@ -90,6 +90,7 @@ pub fn handle_message(
             LauncherState::ReadyToPlay => {
                 airship.state = LauncherState::Playing(Profile::start(
                     airship.saveable_state.active_profile.clone(),
+                    airship.cmd.verbose,
                 ));
             },
             LauncherState::Error(_) => {
