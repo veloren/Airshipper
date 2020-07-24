@@ -58,10 +58,10 @@ async fn process_arguments(mut state: &mut SavedState, cmd: CmdLine) -> Result<(
         // CLI
         Some(action) => match action {
             Action::Update => update(&mut state, true).await?,
-            Action::Start => start(&mut state).await?,
+            Action::Start => start(&mut state, cmd.verbose).await?,
             Action::Run => {
                 update(&mut state, false).await?;
-                start(&mut state).await?
+                start(&mut state, cmd.verbose).await?
             },
         },
         // GUI
@@ -122,10 +122,13 @@ async fn download(profile: Profile) -> Result<()> {
     Ok(())
 }
 
-async fn start(state: &mut SavedState) -> Result<()> {
+async fn start(state: &mut SavedState, verbosity: i32) -> Result<()> {
     log::info!("Starting...");
-    let mut stream =
-        crate::io::stream_process(Profile::start(state.active_profile.clone())).boxed();
+    let mut stream = crate::io::stream_process(Profile::start(
+        state.active_profile.clone(),
+        verbosity,
+    ))
+    .boxed();
 
     while let Some(progress) = stream.next().await {
         match progress {
