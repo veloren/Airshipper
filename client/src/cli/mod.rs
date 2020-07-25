@@ -25,12 +25,14 @@ pub fn process() -> Result<()> {
     log::debug!("Cache Path: {}", fs::get_cache_path().display());
     log::debug!("Cmdline args: {:?}", cmd);
 
+    // We only log errors to avoid disrupting playing the game.
+    #[cfg(windows)]
+    if let Err(e) = crate::windows::update() {
+        log::error!("Failed to check for Airshipper updates: {}", e);
+    }
+
     // TODO: Iced does not allow us to create the global async runtime ourself :/
     let mut rt = tokio::runtime::Runtime::new()?;
-
-    // We ignore any errors to avoid disrupting playing the game.
-    #[cfg(windows)]
-    let _ = rt.block_on(crate::windows::update());
 
     if cmd.action.is_some() {
         if let Err(e) = rt.block_on(async {

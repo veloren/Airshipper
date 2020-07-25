@@ -1,11 +1,11 @@
-use crate::{fs, net, windows, Result};
+use crate::{fs, windows, Result};
+use semver::Version;
 use std::{
     ffi::{OsStr, OsString},
+    fs::File,
     os::windows::ffi::OsStrExt,
     ptr,
 };
-use tokio::{fs::File, io::AsyncWriteExt};
-use url::Url;
 use winapi::{
     ctypes::c_int,
     shared::minwindef::DWORD,
@@ -17,69 +17,90 @@ use winapi::{
     },
 };
 
-// TODO: We should remove the installer after successful update!
-// TODO: Directly download from github!
-
 /// Tries to self update incase a newer version got released.
-pub(crate) async fn update() -> Result<()> {
-    // Note: this will ignore network errors silently.
-    if let Some(url) = net::check_win_update().await.ok().flatten() {
-        log::info!(
-            "Found airshipper update! It's highly recommended to update. Install? [Y/n]"
-        );
-        if crate::cli::confirm_action()? {
-            let mut resp = net::query(&url).await?;
-            let path = fs::get_cache_path();
+pub(crate) fn update() -> Result<()> {
+    // Cleanup
+    let _ = std::fs::remove_dir_all(fs::get_cache_path());
 
-            let filename = match Url::parse(&url)?
-                .path_segments()
-                .map(|x| x.last())
-                .flatten()
-            {
-                Some(name) => name.to_string(),
-                None => {
-                    return Err(
-                        format!("Malformed update url for airshipper! {}", url).into()
-                    );
-                },
-            };
+    let releases = self_update::backends::github::ReleaseList::configure()
+        .repo_owner("songtronix")
+        .repo_name("airshipper")
+        .build()?
+        .fetch()?;
 
-            if resp.status().is_success() {
-                log::debug!(
-                    "Download airshipper update to: {}",
-                    path.join(&filename).display()
+    // Get latest Gtihub release
+    if let Some(latest_release) = releases.first() {
+        // Check if Github release is newer
+        if Version::parse(&latest_release.version)?
+            > Version::parse(env!("CARGO_PKG_VERSION"))?
+        {
+            log::debug!("Found new Airshipper release: {}", latest_release.version);
+            // Check Github release provides artifact for current platform
+            let asset = latest_release
+                .asset_for("windows")
+                .or_else(|| latest_release.asset_for(".msi"));
+
+            if let Some(asset) = asset {
+                log::debug!("Found asset: {:?}", asset);
+                log::info!(
+                    "Found airshipper update! It's highly recommended to update. \
+                     Install? [Y/n]"
                 );
-
-                let mut file = File::create(&path.join(&filename)).await?;
-                while let Some(chunk) = resp.chunk().await? {
-                    file.write_all(&chunk).await?;
-                }
-                file.sync_all().await?;
-
-                // Free up access to file.
-                drop(file);
-
-                // Execute msi installer
-                let result = windows::execute_as_admin(
-                    "msiexec",
-                    &format!(
-                        "/passive /i {} /L*V {} AUTOSTART=1",
-                        path.join(&filename).display(),
-                        path.join("airshipper-install.log").display()
-                    ),
-                );
-
-                if result <= 32 {
-                    log::error!(
-                        "Failed to update airshipper! {}",
-                        std::io::Error::last_os_error()
+                if crate::cli::confirm_action()? {
+                    log::debug!(
+                        "Downloading '{}' to '{}'",
+                        &asset.download_url,
+                        fs::get_cache_path().join(&asset.name).display()
                     );
+                    let msi_file_path = fs::get_cache_path().join(&asset.name);
+                    std::fs::create_dir_all(fs::get_cache_path())?;
+
+                    let msi_file = File::create(&msi_file_path)?;
+
+                    self_update::Download::from_url(&asset.download_url)
+                        .show_progress(true)
+                        .download_to(&msi_file)?;
+
+                    // Extract installer incase it's zipped
+                    if asset.name.ends_with(".zip") {
+                        log::debug!("Extracting asset...");
+                        self_update::Extract::from_source(&msi_file_path)
+                            .archive(self_update::ArchiveKind::Zip)
+                            .extract_file(
+                                &fs::get_cache_path(),
+                                asset.name.strip_suffix(".zip").unwrap(),
+                            )?;
+                    }
+
+                    drop(msi_file);
+
+                    log::debug!("Starting installer...");
+                    // Execute msi installer
+                    let result = windows::execute_as_admin(
+                        "msiexec",
+                        &format!(
+                            "/passive /i {} /L*V {} AUTOSTART=1",
+                            msi_file_path.display(),
+                            fs::get_cache_path()
+                                .join("airshipper-install.log")
+                                .display()
+                        ),
+                    );
+
+                    if result <= 32 {
+                        log::error!(
+                            "Failed to update airshipper! {}",
+                            std::io::Error::last_os_error()
+                        );
+                    }
+                    std::process::exit(0);
                 }
-                std::process::exit(0);
+            } else {
+                log::debug!("Release does not contain required target asset.");
             }
+        } else {
+            log::debug!("Airshipper is up-to-date.");
         }
-    } else {
-        log::debug!("Airshipper is up-to-date!");
     }
     Ok(())
 }

@@ -33,7 +33,7 @@ pub fn base_path() -> impl std::fmt::Display {
 
 #[cfg(windows)]
 pub fn get_cache_path() -> PathBuf {
-    dirs::cache_dir().unwrap()
+    dirs::cache_dir().unwrap().join(env!("CARGO_PKG_NAME"))
 }
 
 /// Returns path to the file which saves the current state
@@ -42,7 +42,7 @@ pub fn savedstate_file() -> PathBuf {
 }
 
 /// Returns path to a profile while creating the folder
-pub fn profile_path(profile_name: &str) -> std::path::PathBuf {
+pub fn profile_path(profile_name: &str) -> PathBuf {
     let path = BASE_PATH.join("profiles").join(profile_name);
     std::fs::create_dir_all(&path).expect("failed to profile directory!"); // TODO
     path
