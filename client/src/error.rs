@@ -21,6 +21,13 @@ pub enum ClientError {
     #[error("Error parsing url: {0}")]
     UrlParseError(#[from] url::ParseError),
 
+    #[cfg(windows)]
+    #[error("Failed to update myself: {0}")]
+    UpdateError(#[from] self_update::errors::Error),
+    #[cfg(windows)]
+    #[error("Failed to parse version: {0}")]
+    VersionError(#[from] semver::SemVerError),
+
     #[error("{0}")]
     Custom(String),
 }
