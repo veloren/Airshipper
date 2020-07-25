@@ -5,6 +5,11 @@ authors = ["Songtronix <contact@songtronix.com>"]
 edition = "2018"
 publish = false
 
+[features]
+# Windows cannot bundle ssl by default and as such this feature exists
+# to bundle ssl in CI
+bundled = ["openssl-sys"]
+
 [dependencies]
 tokio = "0.2.13"
 # logging
@@ -34,4 +39,4 @@ dotenv = "0.15.0"
 md5 = "0.7.0"
 # bundle all the things!
 libsqlite3-sys = { version = "*", features = ["bundled"] }
-openssl-sys = { version = "*", features = ["vendored"] }
+openssl-sys = { version = "*", features = ["vendored"], optional = true }
