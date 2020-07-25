@@ -51,6 +51,8 @@ openssl-sys = { version = "*", features = ["vendored"] }
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.8", features = ["shellapi", "winuser"] }
+# TODO: Wait for upstream to fix and publish https://github.com/jaemk/self_update/issues/55
+self_update = { git = "https://github.com/Songtronix/self_update.git", rev = "024b40d", features = ["archive-zip"] }
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1.11"

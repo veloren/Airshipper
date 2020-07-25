@@ -21,8 +21,6 @@ pub const LOG_FILE: &str = "airshipper.log";
 // Networking
 
 pub const DOWNLOAD_SERVER: &str = "https://download.veloren.net";
-#[cfg(windows)]
-pub const UPDATE_SERVER: &str = "https://www.songtronix.com";
 
 pub const CHANGELOG_URL: &str =
     "https://gitlab.com/veloren/veloren/raw/master/CHANGELOG.md";
