@@ -3441,8 +3441,9 @@ dependencies = [
 
 [[package]]
 name = "self_update"
-version = "0.18.0"
-source = "git+https://github.com/Songtronix/self_update.git?rev=024b40d#024b40d8eb44189a96fc77f9021c2c50d00c1dab"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ad4f32cc38aac660a9a872b5553677d59f984139f3316f642989d8232be3e5c"
 dependencies = [
  "hyper-old-types",
  "indicatif 0.13.0",
@@ -4206,7 +4207,7 @@ version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3bfd5b7557925ce778ff9b9ef90e3ade34c524b5ff10e239c69a42d546d2af56"
 dependencies = [
- "rand 0.6.5",
+ "rand 0.7.3",
 ]
 
 [[package]]

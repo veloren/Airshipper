@@ -58,6 +58,10 @@ pub(crate) fn update() -> Result<()> {
                     let msi_file = File::create(&msi_file_path)?;
 
                     self_update::Download::from_url(&asset.download_url)
+                        .set_header(
+                            reqwest::header::ACCEPT,
+                            "application/octet-stream".parse().unwrap(),
+                        )
                         .show_progress(true)
                         .download_to(&msi_file)?;
 
