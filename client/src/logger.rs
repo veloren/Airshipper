@@ -1,8 +1,9 @@
 use crate::fs;
 use fern::colors::{Color, ColoredLevelConfig};
+use log::LevelFilter;
 
 /// Setup logging.
-pub fn log(level: log::LevelFilter) {
+pub fn log(level: LevelFilter) {
     let colors = ColoredLevelConfig::new()
         .error(Color::Red)
         .warn(Color::Yellow)
@@ -11,26 +12,26 @@ pub fn log(level: log::LevelFilter) {
         .trace(Color::BrightBlack);
 
     let base = fern::Dispatch::new()
-        .level_for("html5ever", log::LevelFilter::Error)
-        .level_for("winit", log::LevelFilter::Error)
-        .level_for("wgpu_native", log::LevelFilter::Info)
-        .level_for("strip_markdown", log::LevelFilter::Warn)
-        .level_for("tokio_reactor", log::LevelFilter::Warn)
-        .level_for("hyper", log::LevelFilter::Warn)
-        .level_for("iced_wgpu::renderer", log::LevelFilter::Info)
-        .level_for("iced_winit", log::LevelFilter::Info)
-        .level_for("wgpu_native", log::LevelFilter::Warn)
-        .level_for("gfx_backend_vulkan", log::LevelFilter::Info)
-        .level_for("gfx_backend_dx12", log::LevelFilter::Info)
-        .level_for("isahc", log::LevelFilter::Info)
-        .level_for("iced_wgpu::image::atlas", log::LevelFilter::Warn)
-        .level_for("wgpu_core", log::LevelFilter::Warn)
-        .level_for("iced_wgpu::backend", log::LevelFilter::Warn)
-        .level_for("reqwest", log::LevelFilter::Info);
+        .level_for("html5ever", LevelFilter::Error)
+        .level_for("winit", LevelFilter::Error)
+        .level_for("wgpu_native", LevelFilter::Info)
+        .level_for("strip_markdown", LevelFilter::Warn)
+        .level_for("tokio_reactor", LevelFilter::Warn)
+        .level_for("hyper", LevelFilter::Warn)
+        .level_for("iced_wgpu::renderer", LevelFilter::Info)
+        .level_for("iced_winit", LevelFilter::Info)
+        .level_for("wgpu_native", LevelFilter::Warn)
+        .level_for("gfx_backend_vulkan", LevelFilter::Warn)
+        .level_for("gfx_backend_dx12", LevelFilter::Info)
+        .level_for("isahc", LevelFilter::Info)
+        .level_for("iced_wgpu::image::atlas", LevelFilter::Warn)
+        .level_for("wgpu_core", LevelFilter::Warn)
+        .level_for("iced_wgpu::backend", LevelFilter::Warn)
+        .level_for("reqwest", LevelFilter::Info);
 
     let file_cfg = fern::Dispatch::new()
-        .level(log::LevelFilter::Info)
-        .level_for("airshipper", log::LevelFilter::Debug)
+        .level(LevelFilter::Info)
+        .level_for("airshipper", LevelFilter::Debug)
         .format(|out, message, record| {
             out.finish(format_args!(
                 "{}[{}:{}][{}] {}",
@@ -46,9 +47,11 @@ pub fn log(level: log::LevelFilter) {
         })
         .chain(fern::log_file(&fs::log_file()).expect("Failed to setup log file!"));
 
-    let mut stdout_cfg = fern::Dispatch::new().level(level);
+    let mut stdout_cfg = fern::Dispatch::new()
+        .level(level)
+        .level_for("wgpu_core::device", LevelFilter::Error);
     // If more verbose debugging is requested. We will print the lines too.
-    if level == log::LevelFilter::Debug || level == log::LevelFilter::Trace {
+    if level == LevelFilter::Debug || level == LevelFilter::Trace {
         stdout_cfg = stdout_cfg.format(move |out, message, record| {
             out.finish(format_args!(
                 "[{}:{}][{}] {}",
