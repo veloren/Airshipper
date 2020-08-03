@@ -1,4 +1,4 @@
-use crate::{consts, gui::Message, net, Result};
+use crate::{consts, gui::views::default::DefaultViewMessage, net, Result};
 use iced::{scrollable, Element};
 use serde::{Deserialize, Serialize};
 
@@ -41,7 +41,7 @@ impl Changelog {
         Ok(None)
     }
 
-    pub fn view(&mut self) -> Element<Message> {
+    pub fn view(&mut self) -> Element<DefaultViewMessage> {
         use iced::{Length, Scrollable, Text};
 
         Scrollable::new(&mut self.changelog_scrollable_state)

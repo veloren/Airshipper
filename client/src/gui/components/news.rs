@@ -1,4 +1,8 @@
-use crate::{consts, gui::Message, net, Result};
+use crate::{
+    consts,
+    gui::views::default::{DefaultViewMessage, Interaction},
+    net, Result,
+};
 use iced::{scrollable, Element};
 use rss::Channel;
 use serde::{Deserialize, Serialize};
@@ -39,7 +43,7 @@ impl News {
         Ok(None)
     }
 
-    pub(crate) fn view(&mut self) -> Element<Message> {
+    pub(crate) fn view(&mut self) -> Element<DefaultViewMessage> {
         use crate::gui::style;
         use iced::{Container, Length, Scrollable};
 
@@ -70,8 +74,8 @@ pub(crate) struct Post {
 }
 
 impl Post {
-    pub(crate) fn view(&mut self) -> Element<Message> {
-        use crate::gui::widgets::{secondary_button, Interaction};
+    pub(crate) fn view(&mut self) -> Element<DefaultViewMessage> {
+        use crate::gui::views::default::secondary_button;
         use iced::{Column, Text};
 
         Column::new()
