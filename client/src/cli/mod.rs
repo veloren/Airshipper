@@ -1,8 +1,9 @@
-use crate::{fs, gui, io, logger, net, profiles::Profile, state::SavedState, Result};
+use crate::{fs, gui, io, logger, net, profiles::Profile, Result};
 use parse::Action;
 mod parse;
 use iced::futures::stream::StreamExt;
 
+use gui::Airshipper;
 pub use parse::CmdLine;
 
 /// Process command line arguments and optionally starts GUI
@@ -36,13 +37,13 @@ pub fn process() -> Result<()> {
 
     if cmd.action.is_some() {
         if let Err(e) = rt.block_on(async {
-            let mut state = SavedState::load().await.unwrap_or_default();
+            let mut state = Airshipper::load(cmd.clone()).await;
 
             // handle arguments
-            process_arguments(&mut state, cmd).await?;
+            process_arguments(&mut state.active_profile, cmd).await?;
 
             // Save state
-            state.save().await?;
+            state.save_mut().await?;
 
             Ok(())
         }) {
@@ -55,15 +56,15 @@ pub fn process() -> Result<()> {
     Ok(())
 }
 
-async fn process_arguments(mut state: &mut SavedState, cmd: CmdLine) -> Result<()> {
+async fn process_arguments(mut profile: &mut Profile, cmd: CmdLine) -> Result<()> {
     match cmd.action {
         // CLI
         Some(action) => match action {
-            Action::Update => update(&mut state, true).await?,
-            Action::Start => start(&mut state, cmd.verbose).await?,
+            Action::Update => update(&mut profile, true).await?,
+            Action::Start => start(&mut profile, cmd.verbose).await?,
             Action::Run => {
-                update(&mut state, false).await?;
-                start(&mut state, cmd.verbose).await?
+                update(&mut profile, false).await?;
+                start(&mut profile, cmd.verbose).await?
             },
         },
         // GUI
@@ -72,23 +73,21 @@ async fn process_arguments(mut state: &mut SavedState, cmd: CmdLine) -> Result<(
     Ok(())
 }
 
-async fn update(state: &mut SavedState, do_not_ask: bool) -> Result<()> {
-    if let Some(version) = Profile::update(state.active_profile.clone()).await? {
+async fn update(profile: &mut Profile, do_not_ask: bool) -> Result<()> {
+    if let Some(version) = Profile::update(profile.clone()).await? {
         if do_not_ask {
             log::info!("Updating...");
-            download(state.active_profile.clone()).await?;
+            download(profile.clone()).await?;
             log::info!("Extracting...");
-            state.active_profile =
-                Profile::install(state.active_profile.clone(), version).await?;
+            *profile = Profile::install(profile.clone(), version).await?;
             log::info!("Done!");
         } else {
             log::info!("Update found, do you want to update? [Y/n]");
             if confirm_action()? {
                 log::info!("Updating...");
-                download(state.active_profile.clone()).await?;
+                download(profile.clone()).await?;
                 log::info!("Extracting...");
-                state.active_profile =
-                    Profile::install(state.active_profile.clone(), version).await?;
+                *profile = Profile::install(profile.clone(), version).await?;
                 log::info!("Done!");
             }
         }
@@ -124,13 +123,10 @@ async fn download(profile: Profile) -> Result<()> {
     Ok(())
 }
 
-async fn start(state: &mut SavedState, verbosity: i32) -> Result<()> {
+async fn start(profile: &mut Profile, verbosity: i32) -> Result<()> {
     log::info!("Starting...");
-    let mut stream = crate::io::stream_process(Profile::start(
-        state.active_profile.clone(),
-        verbosity,
-    ))
-    .boxed();
+    let mut stream =
+        crate::io::stream_process(Profile::start(profile.clone(), verbosity)).boxed();
 
     while let Some(progress) = stream.next().await {
         match progress {

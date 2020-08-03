@@ -3,6 +3,8 @@ use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, ffi::OsString, path::PathBuf};
 
+// TODO: Support multiple profiles and manage them here.
+
 /// Represents a version with channel, name and path.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
@@ -76,7 +78,6 @@ impl Profile {
             1 => OsString::from("debug"),
             _ => OsString::from("trace"),
         };
-        log::error!("{}", verbosity.to_str().unwrap());
 
         envs.insert("VOXYGEN_CONFIG", &profile_dir);
         envs.insert("VOXYGEN_LOGS", &logs_dir);
