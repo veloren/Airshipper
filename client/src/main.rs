@@ -7,7 +7,6 @@ mod io;
 mod logger;
 mod net;
 mod profiles;
-mod state;
 #[cfg(windows)]
 mod windows;
 

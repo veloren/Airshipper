@@ -3,7 +3,7 @@
 use clap::{crate_authors, crate_version, Clap};
 
 /// Provides automatic updates for the voxel RPG Veloren. ( https://veloren.net )
-#[derive(Clap, Debug)]
+#[derive(Clap, Debug, Default, Clone)]
 #[clap(name = "Airshipper", version = crate_version!(), author = crate_authors!())]
 pub struct CmdLine {
     #[clap(subcommand)]
@@ -16,7 +16,7 @@ pub struct CmdLine {
     pub debug: i32,
 }
 
-#[derive(Clap, Debug)]
+#[derive(Clap, Debug, Clone)]
 pub enum Action {
     /// Starts the game without updating
     Start,
