@@ -1,4 +1,4 @@
-use super::Action;
+use super::{Action, View};
 use crate::{
     cli::CmdLine,
     gui::{
@@ -11,7 +11,7 @@ use crate::{
 };
 use iced::{
     button, image::Handle, Align, Button, Column, Command, Container, Element,
-    HorizontalAlignment, Image, Length, ProgressBar, Row, Text, VerticalAlignment,
+    HorizontalAlignment, Image, Length, ProgressBar, Row, Space, Text, VerticalAlignment,
 };
 use std::path::PathBuf;
 
@@ -25,6 +25,8 @@ pub struct DefaultView {
 
     #[serde(skip)]
     play_button_state: button::State,
+    #[serde(skip)]
+    view_profiles_state: button::State,
     #[serde(skip)]
     download_progress: Option<net::Progress>,
 }
@@ -70,6 +72,7 @@ pub enum DefaultViewMessage {
 pub enum Interaction {
     PlayPressed,
     ReadMore(String),
+    ViewProfiles,
 
     Disabled,
 }
@@ -93,6 +96,7 @@ impl DefaultView {
             news,
             state,
             play_button_state,
+            view_profiles_state,
             download_progress,
             ..
         } = self;
@@ -108,7 +112,13 @@ impl DefaultView {
             .align_items(Align::Center)
             .spacing(10)
             .padding(15)
-            .push(logo);
+            .push(logo)
+            .push(Space::with_width(Length::Fill))
+            .push(secondary_icon_button(
+                view_profiles_state,
+                crate::assets::GEAR_ICON.to_vec(),
+                Interaction::ViewProfiles,
+            ));
 
         // Contains title, changelog
         let left = Column::new()
@@ -338,6 +348,12 @@ impl DefaultView {
                         log::error!("failed to open {} : {}", url, e); // TODO
                     }
                 },
+                Interaction::ViewProfiles => {
+                    return Command::perform(
+                        async { Action::SwitchView(View::Profiles) },
+                        DefaultViewMessage::Action,
+                    );
+                },
                 Interaction::Disabled => {},
             },
         }
@@ -381,6 +397,22 @@ pub fn secondary_button(
             .size(16)
             .horizontal_alignment(HorizontalAlignment::Center)
             .vertical_alignment(VerticalAlignment::Center),
+    )
+    .on_press(interaction)
+    .style(style::SecondaryButton)
+    .into();
+
+    btn.map(DefaultViewMessage::Interaction)
+}
+
+pub fn secondary_icon_button(
+    state: &mut button::State,
+    icon: Vec<u8>,
+    interaction: Interaction,
+) -> Element<DefaultViewMessage> {
+    let btn: Element<Interaction> = Button::new(
+        state,
+        Image::new(Handle::from_memory(icon)).width(Length::Units(18)),
     )
     .on_press(interaction)
     .style(style::SecondaryButton)

@@ -9,6 +9,7 @@ use ron::ser::PrettyConfig;
 use tokio::fs::File;
 use views::{
     default::{DefaultView, DefaultViewMessage},
+    profiles::{ProfilesView, ProfilesViewMessage},
     Action, View,
 };
 
@@ -23,6 +24,7 @@ pub struct Airshipper {
     view: View,
 
     default_view: DefaultView,
+    profiles_view: ProfilesView,
     pub active_profile: Profile,
 
     #[serde(skip)]
@@ -34,6 +36,7 @@ impl Airshipper {
         Self {
             view: View::default(),
             default_view: DefaultView::default(),
+            profiles_view: ProfilesView::default(),
             active_profile: Profile::default(),
             cmd: cmd.clone(),
         }
@@ -102,6 +105,7 @@ pub enum Message {
 
     // Views
     DefaultViewMessage(DefaultViewMessage),
+    ProfilesViewMessage(ProfilesViewMessage),
 }
 
 impl Application for Airshipper {
@@ -126,6 +130,7 @@ impl Application for Airshipper {
                 .default_view
                 .subscription()
                 .map(Message::DefaultViewMessage),
+            View::Profiles => iced::Subscription::none(),
         }
     }
 
@@ -170,6 +175,12 @@ impl Application for Airshipper {
                     .update(msg, &self.cmd, &self.active_profile)
                     .map(Message::DefaultViewMessage);
             },
+            Message::ProfilesViewMessage(msg) => {
+                return self
+                    .profiles_view
+                    .update(msg)
+                    .map(Message::ProfilesViewMessage);
+            },
         }
 
         Command::none()
@@ -177,11 +188,15 @@ impl Application for Airshipper {
 
     fn view(&mut self) -> Element<Message> {
         let Self {
-            view, default_view, ..
+            view,
+            default_view,
+            profiles_view,
+            ..
         } = self;
 
         match view {
             View::Default => default_view.view().map(Message::DefaultViewMessage),
+            View::Profiles => profiles_view.view().map(Message::ProfilesViewMessage),
         }
     }
 }

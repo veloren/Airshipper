@@ -1,10 +1,12 @@
 use crate::profiles::Profile;
 
 pub mod default;
+pub mod profiles;
 
 #[derive(Debug, Clone)]
 pub enum View {
     Default,
+    Profiles,
 }
 
 impl Default for View {
