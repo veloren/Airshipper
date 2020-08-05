@@ -6,13 +6,8 @@ use rocket::{
 embed_migrations!();
 
 /// Will initialise the database if necessary.
+#[derive(Debug, Default)]
 pub struct DbInit;
-
-impl Default for DbInit {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 impl Fairing for DbInit {
     fn info(&self) -> Info {
