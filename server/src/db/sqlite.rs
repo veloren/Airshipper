@@ -22,7 +22,11 @@ pub struct DbArtifact {
 }
 
 impl DbConnection {
-    pub fn get_latest_version<T: ToString>(&self, searched_platform: T, searched_channel: T) -> Result<Option<String>> {
+    pub fn get_latest_version<T: ToString, Y: ToString>(
+        &self,
+        searched_platform: T,
+        searched_channel: Y,
+    ) -> Result<Option<String>> {
         use schema::artifacts::dsl::*;
         Ok(artifacts
             .select(hash)
@@ -33,7 +37,11 @@ impl DbConnection {
             .optional()?)
     }
 
-    pub fn get_latest_uri<T: ToString>(&self, searched_platform: T, searched_channel: T) -> Result<Option<String>> {
+    pub fn get_latest_uri<T: ToString, Y: ToString>(
+        &self,
+        searched_platform: T,
+        searched_channel: Y,
+    ) -> Result<Option<String>> {
         use schema::artifacts::dsl::*;
         Ok(artifacts
             .select(download_uri)

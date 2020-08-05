@@ -1,4 +1,3 @@
-#![feature(proc_macro_hygiene)]
 #![allow(clippy::unit_arg)]
 use rocket::*;
 #[macro_use] extern crate diesel;
@@ -9,6 +8,7 @@ mod db;
 mod error;
 mod fairings;
 mod guards;
+mod metrics;
 mod models;
 mod prune;
 mod routes;
@@ -16,6 +16,7 @@ mod webhook;
 
 use crate::error::ServerError;
 use config::ServerConfig;
+use metrics::Metrics;
 
 pub type Result<T> = std::result::Result<T, ServerError>;
 pub use db::{DbConnection, S3Connection};
@@ -31,6 +32,7 @@ pub fn rocket() -> rocket::Rocket {
         .rocket()
         .attach(DbConnection::fairing())
         .attach(fairings::db::DbInit)
+        .manage(Metrics::new().expect("Failed to create prometheus statistics!"))
         .mount("/", routes![
             routes::gitlab::post_pipeline_update,
             routes::user::index,
@@ -40,6 +42,7 @@ pub fn rocket() -> rocket::Rocket {
             routes::api::channel_version,
             routes::api::download,
             routes::api::channel_download,
+            routes::metrics::metrics,
         ])
         .register(catchers![routes::catchers::not_found])
 }
