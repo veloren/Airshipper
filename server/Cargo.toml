@@ -17,15 +17,15 @@ tracing = { version = "0.1.13", features = ["log"] }
 tracing-futures = "0.2.3"
 tracing-subscriber = "0.2.3"
 # Webserver
-rocket = { git = "https://github.com/SergioBenitez/Rocket", rev = "7f276eb" }
-rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket", rev = "7f276eb", features = ["json", "diesel_sqlite_pool"] }
+rocket = { git = "https://github.com/SergioBenitez/Rocket", rev = "45b4436" }
+rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket", rev = "45b4436", features = ["json", "diesel_sqlite_pool"] }
 # Networking
 reqwest = "0.10.4"
 # Serialising/Deserialising
 serde = { version = "1.0.105", features = ["derive"] }
 serde_json = "1.0.50"
 # Database
-diesel = { version = "1.4.4", features = ["sqlite", "chrono"] }
+diesel = { version = "1.4.5", features = ["sqlite", "chrono"] }
 diesel_migrations = "1.4.0"
 rust-s3 = "0.20.0"
 aws-region = "0.20.0"
