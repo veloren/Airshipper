@@ -6,3 +6,5 @@ pub mod user;
 pub mod api;
 // Catch all case
 pub mod catchers;
+// Exposes prometheus statistics
+pub mod metrics;
