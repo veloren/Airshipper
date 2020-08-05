@@ -95,6 +95,8 @@ impl Artifact {
             Some("windows".into())
         } else if name.contains("linux") {
             Some("linux".into())
+        } else if name.contains("macos") {
+            Some("macos".into())
         } else {
             None
         }
