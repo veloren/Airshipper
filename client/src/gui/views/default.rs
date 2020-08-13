@@ -131,7 +131,7 @@ impl DefaultView {
         // Contains logo, changelog and news
         let middle = Container::new(Row::new().padding(2).push(left).push(news.view()))
             .height(Length::FillPortion(6))
-            .style(style::Middle);
+            .style(style::Container::Darker);
 
         let download_progress = match state {
             State::Downloading(_, _, _) => {
@@ -171,6 +171,7 @@ impl DefaultView {
         let download_speed = Text::new(&download_text).size(16);
         let download_progressbar =
             ProgressBar::new(0.0..=100.0, download_progress).style(style::Progress);
+
         let download = Column::new()
             .width(Length::FillPortion(4))
             .spacing(5)
@@ -202,11 +203,10 @@ impl DefaultView {
                 .push(download)
                 .push(play),
         )
-        .style(style::Bottom);
+        .style(style::Container::Darker);
 
         // Contains everything
         let content = Column::new()
-            .padding(2)
             .width(Length::Fill)
             .height(Length::Fill)
             .push(middle)
@@ -215,7 +215,7 @@ impl DefaultView {
         Container::new(content)
             .width(Length::Fill)
             .height(Length::Fill)
-            .style(style::Content)
+            .style(style::Container::Middle)
             .into()
     }
 
@@ -223,7 +223,7 @@ impl DefaultView {
         &mut self,
         msg: DefaultViewMessage,
         cmd: &CmdLine,
-        active_profile: &Profile,
+        current_profile: &Profile,
     ) -> Command<DefaultViewMessage> {
         match msg {
             // Messages
@@ -240,7 +240,7 @@ impl DefaultView {
                         DefaultViewMessage::NewsUpdate,
                     ),
                     Command::perform(
-                        Profile::update(active_profile.clone()),
+                        Profile::update(current_profile.clone()),
                         DefaultViewMessage::GameUpdate,
                     ),
                 ]);
@@ -270,8 +270,8 @@ impl DefaultView {
                     // Skip asking
                     if let State::QueryingForUpdates(true) = self.state {
                         self.state = State::Downloading(
-                            active_profile.url(),
-                            active_profile.download_path(),
+                            current_profile.url(),
+                            current_profile.download_path(),
                             version,
                         );
                     } else {
@@ -291,7 +291,7 @@ impl DefaultView {
                     log::debug!("Veloren exited with {}", code);
                     self.state = State::QueryingForUpdates(false);
                     return Command::perform(
-                        Profile::update(active_profile.clone()),
+                        Profile::update(current_profile.clone()),
                         DefaultViewMessage::GameUpdate,
                     );
                 },
@@ -309,7 +309,7 @@ impl DefaultView {
                     };
                     self.state = State::Installing;
                     return Command::perform(
-                        Profile::install(active_profile.clone(), version),
+                        Profile::install(current_profile.clone(), version),
                         DefaultViewMessage::InstallDone,
                     );
                 },
@@ -330,14 +330,14 @@ impl DefaultView {
                 Interaction::PlayPressed => match &self.state {
                     State::UpdateAvailable(version) => {
                         self.state = State::Downloading(
-                            active_profile.url(),
-                            active_profile.download_path(),
+                            current_profile.url(),
+                            current_profile.download_path(),
                             version.clone(),
                         )
                     },
                     State::ReadyToPlay => {
                         self.state = State::Playing(Profile::start(
-                            active_profile.clone(),
+                            current_profile.clone(),
                             cmd.verbose,
                         ));
                     },

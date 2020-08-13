@@ -58,7 +58,7 @@ impl News {
         Container::new(news)
             .width(Length::FillPortion(2))
             .height(Length::Fill)
-            .style(style::News)
+            .style(style::Container::Lighter)
             .into()
     }
 }

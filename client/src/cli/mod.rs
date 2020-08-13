@@ -40,7 +40,7 @@ pub fn process() -> Result<()> {
             let mut state = Airshipper::load(cmd.clone()).await;
 
             // handle arguments
-            process_arguments(&mut state.active_profile, cmd).await?;
+            process_arguments(state.profiles.current_mut(), cmd).await?;
 
             // Save state
             state.save_mut().await?;

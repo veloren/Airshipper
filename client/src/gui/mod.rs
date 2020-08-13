@@ -3,7 +3,7 @@ mod style;
 mod subscriptions;
 mod views;
 
-use crate::{cli::CmdLine, fs, profiles::Profile, Result};
+use crate::{cli::CmdLine, fs, profiles::Profiles, Result};
 use iced::{Application, Command, Element, Settings, Subscription};
 use ron::ser::PrettyConfig;
 use tokio::fs::File;
@@ -25,7 +25,7 @@ pub struct Airshipper {
 
     default_view: DefaultView,
     profiles_view: ProfilesView,
-    pub active_profile: Profile,
+    pub profiles: Profiles,
 
     #[serde(skip)]
     cmd: CmdLine,
@@ -37,7 +37,7 @@ impl Airshipper {
             view: View::default(),
             default_view: DefaultView::default(),
             profiles_view: ProfilesView::default(),
-            active_profile: Profile::default(),
+            profiles: Profiles::default(),
             cmd: cmd.clone(),
         }
     }
@@ -140,7 +140,11 @@ impl Application for Airshipper {
                 *self = state;
                 return self
                     .default_view
-                    .update(DefaultViewMessage::Query, &self.cmd, &self.active_profile)
+                    .update(
+                        DefaultViewMessage::Query,
+                        &self.cmd,
+                        &self.profiles.current(),
+                    )
                     .map(Message::DefaultViewMessage);
             },
             Message::Saved(_) => {},
@@ -161,7 +165,14 @@ impl Application for Airshipper {
                         },
                         Action::SwitchView(view) => self.view = view.clone(),
                         Action::UpdateProfile(profile) => {
-                            self.active_profile = profile.clone();
+                            self.profiles.set_current(profile.clone());
+                            return Command::perform(
+                                Self::save(self.clone()),
+                                Message::Saved,
+                            );
+                        },
+                        Action::UpdateProfiles(profiles) => {
+                            self.profiles = profiles.clone();
                             return Command::perform(
                                 Self::save(self.clone()),
                                 Message::Saved,
@@ -172,13 +183,39 @@ impl Application for Airshipper {
 
                 return self
                     .default_view
-                    .update(msg, &self.cmd, &self.active_profile)
+                    .update(msg, &self.cmd, &self.profiles.current())
                     .map(Message::DefaultViewMessage);
             },
             Message::ProfilesViewMessage(msg) => {
+                if let ProfilesViewMessage::Action(action) = &msg {
+                    match action {
+                        Action::Save => {
+                            return Command::perform(
+                                Self::save(self.clone()),
+                                Message::Saved,
+                            );
+                        },
+                        Action::SwitchView(view) => self.view = view.clone(),
+                        Action::UpdateProfile(profile) => {
+                            self.profiles.set_current(profile.clone());
+                            return Command::perform(
+                                Self::save(self.clone()),
+                                Message::Saved,
+                            );
+                        },
+                        Action::UpdateProfiles(profiles) => {
+                            self.profiles = profiles.clone();
+                            return Command::perform(
+                                Self::save(self.clone()),
+                                Message::Saved,
+                            );
+                        },
+                    }
+                }
+
                 return self
                     .profiles_view
-                    .update(msg)
+                    .update(msg, &mut self.profiles)
                     .map(Message::ProfilesViewMessage);
             },
         }
@@ -189,6 +226,7 @@ impl Application for Airshipper {
     fn view(&mut self) -> Element<Message> {
         let Self {
             view,
+            profiles,
             default_view,
             profiles_view,
             ..
@@ -196,7 +234,9 @@ impl Application for Airshipper {
 
         match view {
             View::Default => default_view.view().map(Message::DefaultViewMessage),
-            View::Profiles => profiles_view.view().map(Message::ProfilesViewMessage),
+            View::Profiles => profiles_view
+                .view(&profiles)
+                .map(Message::ProfilesViewMessage),
         }
     }
 }

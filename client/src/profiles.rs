@@ -1,12 +1,49 @@
 use crate::{consts, fs, net, CommandBuilder, Result};
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, ffi::OsString, path::PathBuf};
+use std::{
+    collections::{HashMap, HashSet},
+    ffi::OsString,
+    fmt::Display,
+    path::PathBuf,
+};
 
-// TODO: Support multiple profiles and manage them here.
+/// A list of profiles
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct Profiles {
+    inner: HashSet<Profile>,
+    current: Profile,
+}
+
+impl Profiles {
+    /// Adds a new profile with given details
+    pub fn add<T: ToString>(&mut self, name: T, channel: Channel) {
+        self.inner.insert(Profile::new(name.to_string(), channel));
+    }
+    /// Removes a profile
+    pub fn remove<T: ToString>(&mut self, name: T) {
+        self.inner.retain(|s| s.name == name.to_string());
+    }
+    /// Returns currently active profile
+    pub fn current(&self) -> &Profile {
+        &self.current
+    }
+    /// Returns currently active profile
+    pub fn current_mut(&mut self) -> &mut Profile {
+        &mut self.current
+    }
+    /// Sets currently active profile
+    pub fn set_current(&mut self, profile: Profile) {
+        self.current = profile;
+    }
+
+    pub fn all(&self) -> Vec<Profile> {
+        self.inner.iter().cloned().collect()
+    }
+}
 
 /// Represents a version with channel, name and path.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Profile {
     pub name: String,
     pub channel: Channel,
@@ -15,17 +52,33 @@ pub struct Profile {
     pub version: Option<String>,
 }
 
+impl Display for Profile {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
 impl Default for Profile {
     fn default() -> Self {
         Profile::new("default".to_owned(), Channel::Nightly)
     }
 }
 
-#[derive(Debug, Display, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Display, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Channel {
     Nightly,
-    /* TODO: Release,
-     * TODO: Source, */
+    Release,
+    Source,
+}
+
+impl Default for Channel {
+    fn default() -> Self {
+        Self::Nightly
+    }
+}
+
+impl Channel {
+    pub const ALL: [Channel; 3] = [Channel::Nightly, Channel::Release, Channel::Source];
 }
 
 impl Profile {

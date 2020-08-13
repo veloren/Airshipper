@@ -1,4 +1,4 @@
-use crate::profiles::Profile;
+use crate::profiles::{Profile, Profiles};
 
 pub mod default;
 pub mod profiles;
@@ -11,7 +11,7 @@ pub enum View {
 
 impl Default for View {
     fn default() -> Self {
-        Self::Default
+        Self::Profiles // TODO
     }
 }
 
@@ -22,4 +22,5 @@ pub enum Action {
     Save,
 
     UpdateProfile(Profile),
+    UpdateProfiles(Profiles),
 }

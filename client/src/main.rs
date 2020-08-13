@@ -1,3 +1,5 @@
+#![feature(drain_filter)] // TODO
+
 mod assets;
 mod cli;
 mod consts;
