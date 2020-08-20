@@ -2,8 +2,21 @@ use crate::fs;
 use fern::colors::{Color, ColoredLevelConfig};
 use log::LevelFilter;
 
+const MAX_LOG_LINES: usize = 10_000;
+
 /// Setup logging.
 pub fn log(level: LevelFilter) {
+    // Clean up log file if possible
+    if fs::log_file().exists() {
+        if let Ok(count) =
+            std::fs::read_to_string(fs::log_file()).map(|x| x.lines().count())
+        {
+            if count > MAX_LOG_LINES {
+                let _ = std::fs::remove_file(fs::log_file());
+            }
+        }
+    }
+
     let colors = ColoredLevelConfig::new()
         .error(Color::Red)
         .warn(Color::Yellow)
