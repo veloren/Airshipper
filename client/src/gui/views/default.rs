@@ -274,8 +274,7 @@ impl DefaultView {
             },
             DefaultViewMessage::ProcessUpdate(update) => match update {
                 ProcessUpdate::Line(msg) => {
-                    // TODO: Do not log this to file
-                    log::info!("[Veloren] {}", msg);
+                    log::info!(target: "output::Veloren","[Veloren] {}", msg);
                 },
                 ProcessUpdate::Exit(code) => {
                     log::debug!("Veloren exited with {}", code);
