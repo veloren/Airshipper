@@ -32,6 +32,7 @@ pub fn log(level: LevelFilter) {
     let file_cfg = fern::Dispatch::new()
         .level(LevelFilter::Info)
         .level_for("airshipper", LevelFilter::Debug)
+        .level_for("output::Veloren", LevelFilter::Off)
         .format(|out, message, record| {
             out.finish(format_args!(
                 "{}[{}:{}][{}] {}",
