@@ -39,6 +39,10 @@ pub enum State {
     Installing,
     ReadyToPlay,
     Playing(CommandBuilder),
+
+    Retry,
+    /// bool indicates whether Veloren can be started offline
+    Offline(bool),
 }
 
 impl Default for State {
@@ -142,8 +146,13 @@ impl DefaultView {
             State::Installing => "Installing".into(),
             State::QueryingForUpdates(_) => "Loading".into(),
             State::ReadyToPlay => "Play".into(),
+            State::Offline(available) => match available {
+                true => "Play".into(),
+                false => "Retry".into(),
+            },
             State::UpdateAvailable(_) => "Update".into(),
             State::Playing(_) => "Playing".into(),
+            State::Retry => "Retry".into(),
         };
 
         let download_text = match state {
@@ -155,8 +164,13 @@ impl DefaultView {
             State::Installing => "Installing...".to_string(),
             State::QueryingForUpdates(_) => "Checking for updates...".to_string(),
             State::ReadyToPlay => "Ready to play...".to_string(),
+            State::Offline(available) => match available {
+                true => "Ready to play offline...".into(),
+                false => "Error: Check your internet and retry.".into(),
+            },
             State::UpdateAvailable(_) => "Update available!".to_string(),
             State::Playing(_) => "Much fun playing!".to_string(),
+            State::Retry => "Error occured. Give it a retry.".to_string(),
         };
         let download_speed = Text::new(&download_text).size(16);
         let download_progressbar =
@@ -171,15 +185,17 @@ impl DefaultView {
             play_button_state,
             play_button_text,
             match state {
-                State::ReadyToPlay | State::UpdateAvailable(_) => {
-                    Interaction::PlayPressed
-                },
+                State::ReadyToPlay
+                | State::UpdateAvailable(_)
+                | State::Offline(_)
+                | State::Retry => Interaction::PlayPressed,
                 _ => Interaction::Disabled,
             },
             match state {
-                State::ReadyToPlay | State::UpdateAvailable(_) => {
-                    style::PrimaryButton::Enabled
-                },
+                State::ReadyToPlay
+                | State::UpdateAvailable(_)
+                | State::Offline(_)
+                | State::Retry => style::PrimaryButton::Enabled,
                 _ => style::PrimaryButton::Disabled,
             },
         );
@@ -237,26 +253,34 @@ impl DefaultView {
             },
 
             // Updates
-            DefaultViewMessage::ChangelogUpdate(update) => {
-                if let Some(update) = update.ok().flatten() {
-                    self.changelog = update;
+            DefaultViewMessage::ChangelogUpdate(update) => match update {
+                Ok(Some(changelog)) => {
+                    self.changelog = changelog;
                     return Command::perform(
                         async { Action::Save },
                         DefaultViewMessage::Action,
                     );
-                }
+                },
+                Ok(None) => {},
+                Err(e) => {
+                    log::trace!("Failed to update changelog: {}", e);
+                },
             },
-            DefaultViewMessage::NewsUpdate(update) => {
-                if let Some(update) = update.ok().flatten() {
-                    self.news = update;
+            DefaultViewMessage::NewsUpdate(update) => match update {
+                Ok(Some(news)) => {
+                    self.news = news;
                     return Command::perform(
                         async { Action::Save },
                         DefaultViewMessage::Action,
                     );
-                }
+                },
+                Ok(None) => {},
+                Err(e) => {
+                    log::trace!("Failed to update news: {}", e);
+                },
             },
-            DefaultViewMessage::GameUpdate(update) => match update.ok().flatten() {
-                Some(version) => {
+            DefaultViewMessage::GameUpdate(update) => match update {
+                Ok(Some(version)) => {
                     // Skip asking
                     if let State::QueryingForUpdates(true) = self.state {
                         self.state = State::Downloading(
@@ -268,8 +292,16 @@ impl DefaultView {
                         self.state = State::UpdateAvailable(version);
                     }
                 },
-                None => {
+                Ok(None) => {
                     self.state = State::ReadyToPlay;
+                },
+                Err(_) => {
+                    // Go into offline mode incase game can't be updated.
+                    if active_profile.installed() {
+                        self.state = State::Offline(true);
+                    } else {
+                        self.state = State::Offline(false);
+                    }
                 },
             },
             DefaultViewMessage::ProcessUpdate(update) => match update {
@@ -284,10 +316,25 @@ impl DefaultView {
                         DefaultViewMessage::GameUpdate,
                     );
                 },
-                ProcessUpdate::Error(_err) => {}, // TODO
+                ProcessUpdate::Error(err) => {
+                    log::error!(
+                        "Failed to receive an update from Veloren process! {}",
+                        err
+                    );
+                    self.state = State::Retry;
+                },
             },
             DefaultViewMessage::DownloadProgress(progress) => match progress {
-                net::Progress::Errored(_err) => {}, // TODO
+                net::Progress::Errored(err) => {
+                    log::error!("Download failed with: {}", err);
+                    self.state = State::Retry;
+                    let mut profile = active_profile.clone();
+                    profile.version = None;
+                    return Command::perform(
+                        async { Action::UpdateProfile(profile) },
+                        DefaultViewMessage::Action,
+                    );
+                },
                 net::Progress::Finished => {
                     let version = match &self.state {
                         State::Downloading(_, _, version) => version.to_string(),
@@ -304,14 +351,24 @@ impl DefaultView {
                 },
                 p => self.download_progress = Some(p),
             },
-            DefaultViewMessage::InstallDone(profile) => {
-                if let Ok(profile) = profile {
+            DefaultViewMessage::InstallDone(profile) => match profile {
+                Ok(profile) => {
                     self.state = State::ReadyToPlay;
                     return Command::perform(
                         async { Action::UpdateProfile(profile) },
                         DefaultViewMessage::Action,
                     );
-                }
+                },
+                Err(e) => {
+                    log::error!("Installation failed with: {}", e);
+                    self.state = State::Retry;
+                    let mut profile = active_profile.clone();
+                    profile.version = None;
+                    return Command::perform(
+                        async { Action::UpdateProfile(profile) },
+                        DefaultViewMessage::Action,
+                    );
+                },
             },
 
             // User Interaction
@@ -330,11 +387,61 @@ impl DefaultView {
                             cmd.verbose,
                         ));
                     },
-                    _ => {},
+                    State::Retry => {
+                        // TODO: Switching state should trigger these commands
+                        self.state = State::QueryingForUpdates(true);
+                        return Command::batch(vec![
+                            Command::perform(
+                                Changelog::update(self.changelog.etag.clone()),
+                                DefaultViewMessage::ChangelogUpdate,
+                            ),
+                            Command::perform(
+                                News::update(self.news.etag.clone()),
+                                DefaultViewMessage::NewsUpdate,
+                            ),
+                            Command::perform(
+                                Profile::update(active_profile.clone()),
+                                DefaultViewMessage::GameUpdate,
+                            ),
+                        ]);
+                    },
+                    State::Offline(available) => match available {
+                        // Play offline
+                        true => {
+                            self.state = State::Playing(Profile::start(
+                                active_profile.clone(),
+                                cmd.verbose,
+                            ));
+                        },
+                        // Retry
+                        false => {
+                            // TODO: Switching state should trigger these commands
+                            self.state = State::QueryingForUpdates(true);
+                            return Command::batch(vec![
+                                Command::perform(
+                                    Changelog::update(self.changelog.etag.clone()),
+                                    DefaultViewMessage::ChangelogUpdate,
+                                ),
+                                Command::perform(
+                                    News::update(self.news.etag.clone()),
+                                    DefaultViewMessage::NewsUpdate,
+                                ),
+                                Command::perform(
+                                    Profile::update(active_profile.clone()),
+                                    DefaultViewMessage::GameUpdate,
+                                ),
+                            ]);
+                        },
+                    },
+
+                    State::Installing
+                    | State::Downloading(_, _, _)
+                    | State::Playing(_)
+                    | State::QueryingForUpdates(_) => {},
                 },
                 Interaction::ReadMore(url) => {
                     if let Err(e) = opener::open(&url) {
-                        log::error!("failed to open {} : {}", url, e); // TODO
+                        log::error!("failed to open {} : {}", url, e);
                     }
                 },
                 Interaction::Disabled => {},

@@ -102,7 +102,7 @@ impl Profile {
     pub async fn update(profile: Profile) -> Result<Option<String>> {
         let remote = net::query(&profile.version_url()).await?.text().await?;
 
-        if remote != profile.version.unwrap_or_default() {
+        if remote != profile.version.clone().unwrap_or_default() || !profile.installed() {
             Ok(Some(remote))
         } else {
             Ok(None)
