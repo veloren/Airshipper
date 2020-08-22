@@ -73,6 +73,8 @@ impl Profile {
         let saves_dir = profile.directory.join("saves").into_os_string();
         let logs_dir = profile.directory.join("logs").into_os_string();
         let screenshot_dir = profile.directory.join("screenshots").into_os_string();
+        let assets_dir = profile.directory.join("assets").into_os_string();
+
         let verbosity = match verbosity {
             0 => OsString::from("info"),
             1 => OsString::from("debug"),
@@ -83,6 +85,7 @@ impl Profile {
         envs.insert("VOXYGEN_LOGS", &logs_dir);
         envs.insert("VOXYGEN_SCREENSHOT", &screenshot_dir);
         envs.insert("VELOREN_SAVES_DIR", &saves_dir);
+        envs.insert("VELOREN_ASSETS", &assets_dir);
         envs.insert("RUST_LOG", &verbosity);
 
         log::debug!("Launching {}", profile.voxygen_path().display());
@@ -119,6 +122,11 @@ impl Profile {
         profile.version = Some(version);
 
         Ok(profile)
+    }
+
+    /// Returns whether the profile is ready to be started
+    pub fn installed(&self) -> bool {
+        self.voxygen_path().exists() && self.version.is_some()
     }
 }
 
