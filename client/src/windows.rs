@@ -28,7 +28,7 @@ pub(crate) fn update() -> Result<()> {
         .build()?
         .fetch()?;
 
-    // Get latest Gtihub release
+    // Get latest Github release
     if let Some(latest_release) = releases.first() {
         // Check if Github release is newer
         if Version::parse(&latest_release.version)?

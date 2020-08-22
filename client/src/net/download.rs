@@ -13,7 +13,7 @@ pub enum Progress {
 impl std::fmt::Display for Progress {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self {
-            Self::Started => write!(f, "Download begun..."),
+            Self::Started => write!(f, "Download started..."),
             Self::Advanced(msg, percentage) => write!(f, "{} [{}%]", msg, percentage),
             Self::Finished => write!(f, "Download done!"),
             Self::Errored(err) => write!(f, "{}", err),
