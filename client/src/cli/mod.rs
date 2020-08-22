@@ -124,6 +124,11 @@ async fn download(profile: Profile) -> Result<()> {
 }
 
 async fn start(profile: &mut Profile, verbosity: i32) -> Result<()> {
+    if !profile.installed() {
+        log::info!("Profile is not installed. Install it via `airshipper update`");
+        return Ok(());
+    }
+
     log::info!("Starting...");
     let mut stream =
         crate::io::stream_process(Profile::start(profile.clone(), verbosity)).boxed();
