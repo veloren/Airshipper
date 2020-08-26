@@ -66,6 +66,9 @@ pub enum DefaultViewMessage {
     DownloadProgress(net::Progress),
     InstallDone(Result<Profile>),
 
+    #[cfg(windows)]
+    LauncherUpdate(Result<Option<self_update::update::Release>>),
+
     // User Interactions
     Interaction(Interaction),
 }
@@ -249,6 +252,11 @@ impl DefaultView {
                         Profile::update(active_profile.clone()),
                         DefaultViewMessage::GameUpdate,
                     ),
+                    #[cfg(windows)]
+                    Command::perform(
+                        async { tokio::task::block_in_place(crate::windows::query) },
+                        DefaultViewMessage::LauncherUpdate,
+                    ),
                 ]);
             },
 
@@ -369,6 +377,16 @@ impl DefaultView {
                         DefaultViewMessage::Action,
                     );
                 },
+            },
+
+            #[cfg(windows)]
+            DefaultViewMessage::LauncherUpdate(update) => {
+                if let Ok(Some(release)) = update {
+                    return Command::perform(
+                        async { Action::LauncherUpdate(release) },
+                        DefaultViewMessage::Action,
+                    );
+                }
             },
 
             // User Interaction
