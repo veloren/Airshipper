@@ -18,12 +18,15 @@ pub struct CmdLine {
 
 #[derive(Clap, Debug, Clone)]
 pub enum Action {
-    /// Starts the game without updating
+    /// Starts the game without updating.
     Start,
-    /// Only updates the game
+    /// Only updates the game.
     Update,
     /// Update and start the game.
     Run,
+    /// Update the Launcher if possible.
+    #[cfg(windows)]
+    Upgrade,
 }
 
 impl CmdLine {

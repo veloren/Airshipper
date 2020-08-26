@@ -26,16 +26,19 @@ pub fn process() -> Result<()> {
     log::debug!("Cache Path: {}", fs::get_cache_path().display());
     log::debug!("Cmdline args: {:?}", cmd);
 
-    // We only log errors to avoid disrupting playing the game.
-    #[cfg(windows)]
-    if let Err(e) = crate::windows::update() {
-        log::error!("Failed to check for Airshipper updates: {}", e);
-    }
-
     // TODO: Iced does not allow us to create the global async runtime ourself :/
     let mut rt = tokio::runtime::Runtime::new()?;
 
     if cmd.action.is_some() {
+        // let the user know incase airshipper can be updated.
+        #[cfg(windows)]
+        if let Ok(Some(release)) = crate::windows::query() {
+            log::info!(
+                "New Airshipper release found: {}. Run `airshipper upgrade` to update.",
+                release.version
+            );
+        }
+
         if let Err(e) = rt.block_on(async {
             let mut state = Airshipper::load(cmd.clone()).await;
 
@@ -65,6 +68,10 @@ async fn process_arguments(mut profile: &mut Profile, cmd: CmdLine) -> Result<()
             Action::Run => {
                 update(&mut profile, false).await?;
                 start(&mut profile, cmd.verbose).await?
+            },
+            #[cfg(windows)]
+            Action::Upgrade => {
+                tokio::task::block_in_place(upgrade)?;
             },
         },
         // GUI
@@ -139,6 +146,18 @@ async fn start(profile: &mut Profile, verbosity: i32) -> Result<()> {
             io::ProcessUpdate::Exit(exit) => log::info!("Veloren exited with {}", exit),
             io::ProcessUpdate::Error(e) => return Err(e.into()),
         }
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+fn upgrade() -> Result<()> {
+    match crate::windows::query()? {
+        Some(release) => {
+            log::info!("Found new Airshipper release: {}", release.version);
+            crate::windows::update(&release)?;
+        },
+        None => log::info!("Airshipper is up-to-date."),
     }
     Ok(())
 }
