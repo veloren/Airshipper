@@ -7,6 +7,8 @@ use crate::{cli::CmdLine, fs, profiles::Profile, Result};
 use iced::{Application, Command, Element, Settings, Subscription};
 use ron::ser::PrettyConfig;
 use tokio::fs::File;
+#[cfg(windows)]
+use views::update::{UpdateView, UpdateViewMessage};
 use views::{
     default::{DefaultView, DefaultViewMessage},
     Action, View,
@@ -23,7 +25,15 @@ pub struct Airshipper {
     view: View,
 
     default_view: DefaultView,
+    #[cfg(windows)]
+    #[serde(skip)]
+    update_view: UpdateView,
     pub active_profile: Profile,
+
+    // Airshipper update
+    #[cfg(windows)]
+    #[serde(skip)]
+    update: Option<self_update::update::Release>,
 
     #[serde(skip)]
     cmd: CmdLine,
@@ -34,7 +44,11 @@ impl Airshipper {
         Self {
             view: View::default(),
             default_view: DefaultView::default(),
+            #[cfg(windows)]
+            update_view: UpdateView::default(),
             active_profile: Profile::default(),
+            #[cfg(windows)]
+            update: None,
             cmd: cmd.clone(),
         }
     }
@@ -102,6 +116,8 @@ pub enum Message {
 
     // Views
     DefaultViewMessage(DefaultViewMessage),
+    #[cfg(windows)]
+    UpdateViewMessage(UpdateViewMessage),
 }
 
 impl Application for Airshipper {
@@ -126,6 +142,8 @@ impl Application for Airshipper {
                 .default_view
                 .subscription()
                 .map(Message::DefaultViewMessage),
+            #[cfg(windows)]
+            View::Update => iced::Subscription::none(),
         }
     }
 
@@ -161,6 +179,13 @@ impl Application for Airshipper {
                                 Message::Saved,
                             );
                         },
+                        #[cfg(windows)] // for now
+                        Action::SwitchView(view) => self.view = *view,
+                        #[cfg(windows)]
+                        Action::LauncherUpdate(release) => {
+                            self.update = Some(release.clone());
+                            self.view = View::Update
+                        },
                     }
                 }
 
@@ -168,6 +193,33 @@ impl Application for Airshipper {
                     .default_view
                     .update(msg, &self.cmd, &self.active_profile)
                     .map(Message::DefaultViewMessage);
+            },
+            #[cfg(windows)]
+            Message::UpdateViewMessage(msg) => {
+                if let UpdateViewMessage::Action(action) = &msg {
+                    match action {
+                        Action::Save => {
+                            return Command::perform(
+                                Self::save(self.clone()),
+                                Message::Saved,
+                            );
+                        },
+                        Action::UpdateProfile(profile) => {
+                            self.active_profile = profile.clone();
+                            return Command::perform(
+                                Self::save(self.clone()),
+                                Message::Saved,
+                            );
+                        },
+                        Action::SwitchView(view) => self.view = *view,
+                        Action::LauncherUpdate(_) => {},
+                    }
+                }
+
+                return self
+                    .update_view
+                    .update(msg, &self.update)
+                    .map(Message::UpdateViewMessage);
             },
         }
 
@@ -181,6 +233,8 @@ impl Application for Airshipper {
 
         match view {
             View::Default => default_view.view().map(Message::DefaultViewMessage),
+            #[cfg(windows)]
+            View::Update => self.update_view.view().map(Message::UpdateViewMessage),
         }
     }
 }

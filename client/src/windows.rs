@@ -1,4 +1,5 @@
 use crate::{fs, windows, Result};
+use self_update::update::Release;
 use semver::Version;
 use std::{
     ffi::{OsStr, OsString},
@@ -17,11 +18,7 @@ use winapi::{
     },
 };
 
-/// Tries to self update incase a newer version got released.
-pub(crate) fn update() -> Result<()> {
-    // Cleanup
-    let _ = std::fs::remove_dir_all(fs::get_cache_path());
-
+pub fn query() -> Result<Option<Release>> {
     let releases = self_update::backends::github::ReleaseList::configure()
         .repo_owner("songtronix")
         .repo_name("airshipper")
@@ -33,79 +30,85 @@ pub(crate) fn update() -> Result<()> {
         // Check if Github release is newer
         if Version::parse(&latest_release.version)?
             > Version::parse(env!("CARGO_PKG_VERSION"))?
-        {
-            log::debug!("Found new Airshipper release: {}", latest_release.version);
-            // Check Github release provides artifact for current platform
-            let asset = latest_release
+            && latest_release
                 .asset_for("windows")
-                .or_else(|| latest_release.asset_for(".msi"));
-
-            if let Some(asset) = asset {
-                log::debug!("Found asset: {:?}", asset);
-                log::info!(
-                    "Found airshipper update! It's highly recommended to update. \
-                     Install? [Y/n]"
-                );
-                if crate::cli::confirm_action()? {
-                    log::debug!(
-                        "Downloading '{}' to '{}'",
-                        &asset.download_url,
-                        fs::get_cache_path().join(&asset.name).display()
-                    );
-                    let msi_file_path = fs::get_cache_path().join(&asset.name);
-                    std::fs::create_dir_all(fs::get_cache_path())?;
-
-                    let msi_file = File::create(&msi_file_path)?;
-
-                    self_update::Download::from_url(&asset.download_url)
-                        .set_header(
-                            reqwest::header::ACCEPT,
-                            "application/octet-stream".parse().unwrap(),
-                        )
-                        .show_progress(true)
-                        .download_to(&msi_file)?;
-
-                    // Extract installer incase it's zipped
-                    if asset.name.ends_with(".zip") {
-                        log::debug!("Extracting asset...");
-                        self_update::Extract::from_source(&msi_file_path)
-                            .archive(self_update::ArchiveKind::Zip)
-                            .extract_file(
-                                &fs::get_cache_path(),
-                                asset.name.strip_suffix(".zip").unwrap(),
-                            )?;
-                    }
-
-                    drop(msi_file);
-
-                    log::debug!("Starting installer...");
-                    // Execute msi installer
-                    let result = windows::execute_as_admin(
-                        "msiexec",
-                        &format!(
-                            "/passive /i {} /L*V {} AUTOSTART=1",
-                            msi_file_path.display(),
-                            fs::get_cache_path()
-                                .join("airshipper-install.log")
-                                .display()
-                        ),
-                    );
-
-                    if result <= 32 {
-                        log::error!(
-                            "Failed to update airshipper! {}",
-                            std::io::Error::last_os_error()
-                        );
-                    }
-                    std::process::exit(0);
-                }
-            } else {
-                log::debug!("Release does not contain required target asset.");
-            }
+                .or_else(|| latest_release.asset_for(".msi"))
+                .is_some()
+        {
+            log::debug!("Found new Airshipper release: {}", &latest_release.version);
+            return Ok(Some(latest_release.clone()));
         } else {
             log::debug!("Airshipper is up-to-date.");
         }
     }
+    Ok(None)
+}
+
+/// Tries to self update with provided release
+pub(crate) fn update(latest_release: &Release) -> Result<()> {
+    // Cleanup
+    let _ = std::fs::remove_dir_all(fs::get_cache_path());
+
+    let asset = latest_release
+        .asset_for("windows")
+        .or_else(|| latest_release.asset_for(".msi"));
+
+    // Check Github release provides artifact for current platform
+    if let Some(asset) = asset {
+        log::debug!("Found asset: {:?}", asset);
+        log::debug!(
+            "Downloading '{}' to '{}'",
+            &asset.download_url,
+            fs::get_cache_path().join(&asset.name).display()
+        );
+        let msi_file_path = fs::get_cache_path().join(&asset.name);
+        std::fs::create_dir_all(fs::get_cache_path())?;
+
+        let msi_file = File::create(&msi_file_path)?;
+
+        self_update::Download::from_url(&asset.download_url)
+            .set_header(
+                reqwest::header::ACCEPT,
+                "application/octet-stream".parse().unwrap(),
+            )
+            .show_progress(false)
+            .download_to(&msi_file)?;
+
+        // Extract installer incase it's zipped
+        if asset.name.ends_with(".zip") {
+            log::debug!("Extracting asset...");
+            self_update::Extract::from_source(&msi_file_path)
+                .archive(self_update::ArchiveKind::Zip)
+                .extract_file(
+                    &fs::get_cache_path(),
+                    asset.name.strip_suffix(".zip").unwrap(),
+                )?;
+        }
+
+        drop(msi_file);
+
+        log::debug!("Starting installer...");
+        // Execute msi installer
+        let result = windows::execute_as_admin(
+            "msiexec",
+            &format!(
+                "/passive /i {} /L*V {} AUTOSTART=1",
+                msi_file_path.display(),
+                fs::get_cache_path()
+                    .join("airshipper-install.log")
+                    .display()
+            ),
+        );
+
+        if result <= 32 {
+            log::error!(
+                "Failed to update airshipper! {}",
+                std::io::Error::last_os_error()
+            );
+        }
+        std::process::exit(0);
+    }
+
     Ok(())
 }
 
