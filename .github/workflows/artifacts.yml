@@ -68,7 +68,7 @@ jobs:
 
       # Build
       - name: Build
-        run: cargo build --bin airshipper --release --locked --all-features
+        run: cargo build --bin airshipper --release --all-features
 
       # Create Installer
       - name: MSI Installer
@@ -120,7 +120,7 @@ jobs:
 
       # Build
       - name: Build
-        run: cargo build --bin airshipper --release --locked --all-features
+        run: cargo build --bin airshipper --release --all-features
 
       # Upload artifact
       - name: Upload artifact
@@ -162,7 +162,7 @@ jobs:
 
       # Build
       - name: Build
-        run: cargo build --bin airshipper --release --locked --all-features
+        run: cargo build --bin airshipper --release --all-features
 
       # Upload artifact
       - name: Upload artifact
