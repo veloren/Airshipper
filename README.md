@@ -4,7 +4,7 @@
 
 A cross-platform Veloren launcher.
 
-![Airshipper](https://www.songtronix.com/airshipper.gif)
+![Airshipper](https://www.songtronix.com/airshipper-0.4.0.gif)
 
 ## Features
 
