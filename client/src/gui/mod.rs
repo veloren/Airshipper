@@ -64,7 +64,7 @@ impl Airshipper {
                         state
                     },
                     Err(e) => {
-                        log::info!(
+                        log::debug!(
                             "Reading state failed. Falling back to default: {}",
                             e
                         );
