@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2020-08-29
+
 ## Added
 
 - bundle ssl for better cross distro compatibility [#67](https://github.com/Songtronix/Airshipper/pull/67)
@@ -69,9 +71,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added GUI
 
-[unreleased]: https://github.com/Songtronix/Airshipper/compare/v0.3.0...master
+[unreleased]: https://github.com/Songtronix/Airshipper/compare/v0.4.0...master
 [0.2.1]: https://github.com/Songtronix/Airshipper/releases/tag/v0.2.1
 [0.2.0]: https://github.com/Songtronix/Airshipper/releases/tag/v0.2.0
 [0.3.0]: https://github.com/Songtronix/Airshipper/releases/tag/v0.3.0
 [0.3.1]: https://github.com/Songtronix/Airshipper/releases/tag/v0.3.1
 [0.3.2]: https://github.com/Songtronix/Airshipper/releases/tag/v0.3.2
+[0.4.0]: https://github.com/Songtronix/Airshipper/releases/tag/v0.4.0
