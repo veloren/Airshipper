@@ -1,7 +1,8 @@
-use crate::{consts, fs, net, CommandBuilder, Result};
+use crate::{consts, fs, net, Result};
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, ffi::OsString, path::PathBuf};
+use tokio::process::Command;
 
 // TODO: Support multiple profiles and manage them here.
 
@@ -67,7 +68,7 @@ impl Profile {
     }
 
     // TODO: add possibility to start the server too
-    pub fn start(profile: Profile, verbosity: i32) -> CommandBuilder {
+    pub fn start(profile: &Profile, verbosity: i32) -> Command {
         let mut envs = HashMap::new();
         let profile_dir = profile.directory.clone().into_os_string();
         let saves_dir = profile.directory.join("saves").into_os_string();
@@ -92,7 +93,7 @@ impl Profile {
         log::debug!("CWD: {:?}", profile.directory);
         log::debug!("ENV: {:?}", envs);
 
-        let mut cmd = CommandBuilder::new(profile.voxygen_path());
+        let mut cmd = Command::new(profile.voxygen_path());
         cmd.current_dir(&profile.directory);
         cmd.envs(envs);
 
@@ -133,8 +134,6 @@ impl Profile {
 /// Tries to set executable permissions on linux
 #[cfg(unix)]
 async fn set_permissions(files: Vec<&std::path::PathBuf>) -> Result<()> {
-    use tokio::process::Command;
-
     for file in files {
         Command::new("chmod").arg("+x").arg(file).spawn()?.await?;
     }

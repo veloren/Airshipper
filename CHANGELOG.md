@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Changed
+
+- Encountering an error spawning the Voxygen process no longer crashes Airshipper [#94](https://github.com/Songtronix/Airshipper/pull/94)
+
 ## [0.4.0] - 2020-08-29
 
 ## Added
