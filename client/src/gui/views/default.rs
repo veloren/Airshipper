@@ -7,7 +7,7 @@ use crate::{
     },
     io, net,
     profiles::Profile,
-    CommandBuilder, ProcessUpdate, Result,
+    ProcessUpdate, Result,
 };
 use iced::{
     button, image::Handle, Align, Button, Column, Command, Container, Element,
@@ -38,7 +38,8 @@ pub enum State {
     Downloading(String, PathBuf, String),
     Installing,
     ReadyToPlay,
-    Playing(CommandBuilder),
+    /// Profile, verbosity
+    Playing(Profile, i32),
 
     Retry,
     /// bool indicates whether Veloren can be started offline
@@ -88,8 +89,10 @@ impl DefaultView {
                 subscriptions::download::file(&url, &location)
                     .map(DefaultViewMessage::DownloadProgress)
             },
-            State::Playing(cmd) => subscriptions::process::stream(&cmd)
-                .map(DefaultViewMessage::ProcessUpdate),
+            &State::Playing(ref profile, verbose) => {
+                subscriptions::process::stream(Profile::start(profile, verbose))
+                    .map(DefaultViewMessage::ProcessUpdate)
+            },
             _ => iced::Subscription::none(),
         }
     }
@@ -154,7 +157,7 @@ impl DefaultView {
                 false => "Retry".into(),
             },
             State::UpdateAvailable(_) => "Update".into(),
-            State::Playing(_) => "Playing".into(),
+            State::Playing(..) => "Playing".into(),
             State::Retry => "Retry".into(),
         };
 
@@ -172,7 +175,7 @@ impl DefaultView {
                 false => "Error: Check your internet and retry.".into(),
             },
             State::UpdateAvailable(_) => "Update available!".to_string(),
-            State::Playing(_) => "Much fun playing!".to_string(),
+            State::Playing(..) => "Much fun playing!".to_string(),
             State::Retry => "Error occured. Give it a retry.".to_string(),
         };
         let download_speed = Text::new(&download_text).size(16);
@@ -400,10 +403,7 @@ impl DefaultView {
                         )
                     },
                     State::ReadyToPlay => {
-                        self.state = State::Playing(Profile::start(
-                            active_profile.clone(),
-                            cmd.verbose,
-                        ));
+                        self.state = State::Playing(active_profile.clone(), cmd.verbose);
                     },
                     State::Retry => {
                         // TODO: Switching state should trigger these commands
@@ -426,10 +426,8 @@ impl DefaultView {
                     State::Offline(available) => match available {
                         // Play offline
                         true => {
-                            self.state = State::Playing(Profile::start(
-                                active_profile.clone(),
-                                cmd.verbose,
-                            ));
+                            self.state =
+                                State::Playing(active_profile.clone(), cmd.verbose);
                         },
                         // Retry
                         false => {
@@ -454,7 +452,7 @@ impl DefaultView {
 
                     State::Installing
                     | State::Downloading(_, _, _)
-                    | State::Playing(_)
+                    | State::Playing(..)
                     | State::QueryingForUpdates(_) => {},
                 },
                 Interaction::ReadMore(url) => {

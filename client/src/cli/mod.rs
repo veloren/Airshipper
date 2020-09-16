@@ -138,7 +138,7 @@ async fn start(profile: &mut Profile, verbosity: i32) -> Result<()> {
 
     log::info!("Starting...");
     let mut stream =
-        crate::io::stream_process(Profile::start(profile.clone(), verbosity)).boxed();
+        crate::io::stream_process(&mut Profile::start(profile, verbosity))?.boxed();
 
     while let Some(progress) = stream.next().await {
         match progress {
