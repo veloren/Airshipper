@@ -39,8 +39,10 @@ pub fn log(level: LevelFilter) {
         .level_for("isahc", LevelFilter::Info)
         .level_for("iced_wgpu::image::atlas", LevelFilter::Warn)
         .level_for("wgpu_core", LevelFilter::Warn)
+        .level_for("wgpu", LevelFilter::Warn)
         .level_for("iced_wgpu::backend", LevelFilter::Warn)
-        .level_for("reqwest", LevelFilter::Info);
+        .level_for("reqwest", LevelFilter::Info)
+        .level_for("tracing", LevelFilter::Off);
 
     let file_cfg = fern::Dispatch::new()
         .level(LevelFilter::Info)

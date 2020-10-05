@@ -70,6 +70,8 @@ pub fn unzip(profile: &Profile) -> Result<()> {
 
     for i in 1..archive.len() {
         let mut file = archive.by_index(i)?;
+        // TODO: Verify that `sanitized_name()` works correctly in this case.
+        #[allow(deprecated)]
         let path = profile.directory.join(file.sanitized_name());
 
         if file.is_dir() {

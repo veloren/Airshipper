@@ -54,7 +54,7 @@ pub fn process() -> Result<()> {
         }
     } else {
         rt.shutdown_timeout(std::time::Duration::from_millis(500));
-        gui::run(cmd);
+        gui::run(cmd)?;
     }
     Ok(())
 }
@@ -75,7 +75,7 @@ async fn process_arguments(mut profile: &mut Profile, cmd: CmdLine) -> Result<()
             },
         },
         // GUI
-        None => gui::run(cmd),
+        None => gui::run(cmd)?,
     }
     Ok(())
 }
