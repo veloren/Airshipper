@@ -1,34 +1,32 @@
 use std::panic;
-use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(thiserror::Error, derive_more::Display, Debug)]
 pub enum ClientError {
-    #[error("IoError: {0}")]
-    IoError(#[from] std::io::Error),
-    #[error("A network error occured: {0}")]
-    NetworkError(#[from] reqwest::Error),
-    // hopefully rare errors
-    #[error("FATAL: Failed to save state: {0}")]
-    SerializeError(#[from] ron::ser::Error),
-    #[error("FATAL: Failed to load state: {0}")]
-    DeserializeError(#[from] ron::de::Error),
-    #[error("Failed to parse News: {0}")]
-    RssError(#[from] rss::Error),
-    #[error("Failed to open browser: {0}")]
-    OpenerError(#[from] opener::OpenError),
-    #[error("Error with archive: {0}")]
-    ArchiveError(#[from] zip::result::ZipError),
-    #[error("Error parsing url: {0}")]
-    UrlParseError(#[from] url::ParseError),
+    #[display("Error while performing filesystem operations.")]
+    IoError,
+    #[display("Error while performing network operations.")]
+    NetworkError,
+    #[display("FATAL: Failed to start GUI!")]
+    IcedError,
+    #[display("FATAL: Failed to save/load airshipper configuration!")]
+    RonError,
+    #[display("Failed to parse Veloren News.")]
+    RssError,
+    #[display("Failed to open webbrowser.")]
+    OpenerError,
+    #[display("Error with downloaded veloren archive.")]
+    ArchiveError,
+    #[display("Error parsing url.")]
+    UrlParseError,
 
     #[cfg(windows)]
-    #[error("Failed to update myself: {0}")]
-    UpdateError(#[from] self_update::errors::Error),
+    #[display("FATAL: Failed to update airshipper!")]
+    UpdateError,
     #[cfg(windows)]
-    #[error("Failed to parse version: {0}")]
-    VersionError(#[from] semver::SemVerError),
+    #[display("Failed to parse version.")]
+    VersionError,
 
-    #[error("{0}")]
+    #[display("{0}")]
     Custom(String),
 }
 
@@ -37,6 +35,30 @@ impl From<String> for ClientError {
         Self::Custom(err)
     }
 }
+
+macro_rules! impl_from {
+    ($trait:ty, $variant:expr) => {
+        impl From<$trait> for ClientError {
+            fn from(err: $trait) -> Self {
+                log::error!("{} => {}", $variant, err);
+                $variant
+            }
+        }
+    };
+}
+
+impl_from!(std::io::Error, ClientError::IoError);
+impl_from!(reqwest::Error, ClientError::NetworkError);
+impl_from!(ron::Error, ClientError::RonError);
+impl_from!(rss::Error, ClientError::RssError);
+impl_from!(opener::OpenError, ClientError::OpenerError);
+impl_from!(zip::result::ZipError, ClientError::ArchiveError);
+impl_from!(url::ParseError, ClientError::UrlParseError);
+impl_from!(iced::Error, ClientError::IcedError);
+#[cfg(windows)]
+impl_from!(self_update::errors::Error, ClientError::UpdateError);
+#[cfg(windows)]
+impl_from!(semver::SemVerError, ClientError::VersionError);
 
 /// Set up panic handler to relay panics to logs file.
 pub fn panic_hook() {
