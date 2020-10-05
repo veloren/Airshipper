@@ -3,11 +3,11 @@ use crate::{
     cli::CmdLine,
     gui::{
         components::{Changelog, News},
-        style, subscriptions,
+        style, subscriptions, Result,
     },
     io, net,
     profiles::Profile,
-    ProcessUpdate, Result,
+    ProcessUpdate,
 };
 use iced::{
     button, image::Handle, Align, Button, Column, Command, Container, Element,

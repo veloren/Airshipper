@@ -15,8 +15,8 @@ use views::{
 };
 
 /// Starts the GUI and won't return
-pub fn run(cmd: CmdLine) {
-    Airshipper::run(settings(cmd))
+pub fn run(cmd: CmdLine) -> Result<()> {
+    Ok(Airshipper::run(settings(cmd))?)
 }
 
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
