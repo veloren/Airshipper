@@ -14,7 +14,7 @@ use views::{
     Action, View,
 };
 
-/// Starts the GUI and won't return
+/// Starts the GUI and won't return unless an error occurs
 pub fn run(cmd: CmdLine) -> Result<()> {
     Ok(Airshipper::run(settings(cmd))?)
 }
@@ -126,6 +126,9 @@ impl Application for Airshipper {
     type Flags = CmdLine;
 
     fn new(flags: CmdLine) -> (Self, Command<Message>) {
+        #[cfg(windows)]
+        crate::windows::detach_non_inherited_console();
+
         (
             Airshipper::new(&flags),
             Command::perform(Self::load(flags.clone()), Message::Loaded),

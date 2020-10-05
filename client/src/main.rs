@@ -18,9 +18,6 @@ pub use net::*;
 pub type Result<T> = std::result::Result<T, ClientError>;
 
 fn main() {
-    #[cfg(windows)]
-    windows::detach_non_inherited_console();
-
     error::panic_hook();
 
     if let Err(e) = cli::process() {
