@@ -8,7 +8,7 @@ pub use parse::CmdLine;
 
 /// Process command line arguments and optionally starts GUI
 pub fn process() -> Result<()> {
-    let cmd = CmdLine::new();
+    let mut cmd = CmdLine::new();
 
     let level = match cmd.debug {
         0 => log::LevelFilter::Info,
@@ -26,56 +26,62 @@ pub fn process() -> Result<()> {
     log::debug!("Cache Path: {}", fs::get_cache_path().display());
     log::debug!("Cmdline args: {:?}", cmd);
 
-    // TODO: Iced does not allow us to create the global async runtime ourself :/
+    // GUI
+    if cmd.action.is_none() {
+        match gui::run(cmd.clone()) {
+            Ok(_) => return Ok(()),
+            Err(_) => {
+                log::error!("Failed to start GUI. Falling back to terminal...");
+                cmd.action = Some(Action::Run);
+            },
+        }
+    }
+
+    // CLI
     let mut rt = tokio::runtime::Runtime::new()?;
 
-    if cmd.action.is_some() {
-        // let the user know incase airshipper can be updated.
-        #[cfg(windows)]
-        if let Ok(Some(release)) = crate::windows::query() {
-            log::info!(
-                "New Airshipper release found: {}. Run `airshipper upgrade` to update.",
-                release.version
-            );
-        }
+    // let the user know incase airshipper can be updated.
+    #[cfg(windows)]
+    if let Ok(Some(release)) = crate::windows::query() {
+        log::info!(
+            "New Airshipper release found: {}. Run `airshipper upgrade` to update.",
+            release.version
+        );
+    }
 
-        if let Err(e) = rt.block_on(async {
-            let mut state = Airshipper::load(cmd.clone()).await;
+    if let Err(e) = rt.block_on(async {
+        let mut state = Airshipper::load(cmd.clone()).await;
 
-            // handle arguments
-            process_arguments(&mut state.active_profile, cmd).await?;
+        // handle arguments
+        process_arguments(&mut state.active_profile, cmd.action.unwrap(), cmd.verbose)
+            .await?;
 
-            // Save state
-            state.save_mut().await?;
+        // Save state
+        state.save_mut().await?;
 
-            Ok(())
-        }) {
-            return Err(e);
-        }
-    } else {
-        rt.shutdown_timeout(std::time::Duration::from_millis(500));
-        gui::run(cmd)?;
+        Ok(())
+    }) {
+        return Err(e);
     }
     Ok(())
 }
 
-async fn process_arguments(mut profile: &mut Profile, cmd: CmdLine) -> Result<()> {
-    match cmd.action {
-        // CLI
-        Some(action) => match action {
-            Action::Update => update(&mut profile, true).await?,
-            Action::Start => start(&mut profile, cmd.verbose).await?,
-            Action::Run => {
-                update(&mut profile, false).await?;
-                start(&mut profile, cmd.verbose).await?
-            },
-            #[cfg(windows)]
-            Action::Upgrade => {
-                tokio::task::block_in_place(upgrade)?;
-            },
+async fn process_arguments(
+    mut profile: &mut Profile,
+    action: Action,
+    verbose: i32,
+) -> Result<()> {
+    match action {
+        Action::Update => update(&mut profile, true).await?,
+        Action::Start => start(&mut profile, verbose).await?,
+        Action::Run => {
+            update(&mut profile, false).await?;
+            start(&mut profile, verbose).await?
         },
-        // GUI
-        None => gui::run(cmd)?,
+        #[cfg(windows)]
+        Action::Upgrade => {
+            tokio::task::block_in_place(upgrade)?;
+        },
     }
     Ok(())
 }
