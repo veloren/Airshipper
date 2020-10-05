@@ -21,42 +21,42 @@ bundled = ["openssl-sys"]
 
 [dependencies]
 # Cli
-clap = { git = "https://github.com/clap-rs/clap/", rev = "8145717", features = ["derive"] }
-indicatif = "0.14.0"
+clap = { git = "https://github.com/clap-rs/clap/", rev = "9163374", features = ["derive"] } 
+indicatif = "0.15.0"
 # UI
-iced = { git = "https://github.com/hecrj/iced.git", default-features = false, features = ["wgpu", "tokio", "image"], rev = "3f44d331d9c7afe14416130f54abd2b327a686bf" }
-iced_native = { git = "https://github.com/hecrj/iced.git", default-features = false, rev = "3f44d331d9c7afe14416130f54abd2b327a686bf" }
+iced = { git = "https://github.com/hecrj/iced.git", default-features = false, features = ["wgpu", "tokio", "image"], rev = "c393e45" }
+iced_native = { git = "https://github.com/hecrj/iced.git", default-features = false, rev = "c393e45" }
 # Logging
 fern = { version = "0.6.0", features = ["colored"] }
-chrono = "0.4.11"
-log = "0.4.8"
+chrono = "0.4.19"
+log = "0.4.11"
 # Networking
-reqwest = "0.10.4"
+reqwest = "0.10.8"
 # Parsing
-strip_markdown = "0.1.0"
-html2text = "0.1.11"
-serde = "1.0.105"
-semver = "0.9.0"
+strip_markdown = "0.2.0"
+html2text = "0.2.1"
+serde = "1.0.116"
+semver = "0.11.0"
 rss = "1.9.0"
-ron = "0.5.1"
-zip = "0.5.5"
+ron = "0.6.2"
+zip = "0.5.8"
 url = "2.1.1"
 # Other
-image = { version = "0.23.6", default-features = false, features = ["ico"] }
-tokio = { version = "0.2.20", features = ["stream", "process", "fs"] }
-derive_more = "0.99.3"
+image = { version = "0.23.10", default-features = false, features = ["ico"] }
+tokio = { version = "0.2.22", features = ["stream", "process", "fs"] }
+derive_more = "0.99.11"
 find_folder = "0.3.0"
 lazy_static = "1.4.0"
-thiserror = "1.0.19"
-bytesize = "1.0.0"
+thiserror = "1.0.20"
+bytesize = "1.0.1"
 opener = "0.4.1"
-dirs = "2.0.2"
+dirs = { package = "dirs-next", version = "1.0.1" }
 # bundle all the things!
 openssl-sys = { version = "*", features = ["vendored"], optional = true }
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3.8", features = ["shellapi", "winuser"] }
-self_update = { version = "0.19.0", features = ["archive-zip"] }
+winapi = { version = "0.3.9", features = ["shellapi", "winuser"] }
+self_update = { version = "0.20.0", features = ["archive-zip"] }
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1.11"

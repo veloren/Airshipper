@@ -1,5 +1,4 @@
 use crate::{consts, fs, net, Result};
-use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, ffi::OsString, path::PathBuf};
 use tokio::process::Command;
@@ -22,7 +21,7 @@ impl Default for Profile {
     }
 }
 
-#[derive(Debug, Display, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, derive_more::Display, Clone, Copy, Serialize, Deserialize)]
 pub enum Channel {
     Nightly,
     /* TODO: Release,
