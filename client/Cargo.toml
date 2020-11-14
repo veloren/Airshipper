@@ -24,8 +24,8 @@ bundled = ["openssl-sys"]
 clap = { git = "https://github.com/clap-rs/clap/", rev = "9163374", features = ["derive"] } 
 indicatif = "0.15.0"
 # UI
-iced = { git = "https://github.com/hecrj/iced.git", default-features = false, features = ["wgpu", "tokio", "image"], rev = "c393e45" }
-iced_native = { git = "https://github.com/hecrj/iced.git", default-features = false, rev = "c393e45" }
+iced = { git = "https://github.com/hecrj/iced.git", default-features = false, features = ["wgpu", "tokio", "image"], rev = "62295f5" }
+iced_native = { git = "https://github.com/hecrj/iced.git", default-features = false, rev = "62295f5" }
 # Logging
 fern = { version = "0.6.0", features = ["colored"] }
 chrono = "0.4.19"
@@ -42,7 +42,7 @@ ron = "0.6.2"
 zip = "0.5.8"
 url = "2.1.1"
 # Other
-image = { version = "0.23.10", default-features = false, features = ["ico"] }
+image = { version = "0.23.11", default-features = false, features = ["ico"] }
 tokio = { version = "0.2.22", features = ["stream", "process", "fs"] }
 derive_more = "0.99.11"
 find_folder = "0.3.0"
