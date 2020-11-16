@@ -262,7 +262,7 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
         flags: cmd,
         default_font: Some(crate::assets::FONT),
         default_text_size: 20,
-        // Enforce the usage of dedicated gpu if available
-        antialiasing: true,
+        // https://github.com/hecrj/iced/issues/537
+        antialiasing: false,
     }
 }
