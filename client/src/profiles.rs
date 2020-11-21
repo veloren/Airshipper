@@ -70,7 +70,7 @@ impl Profile {
     // TODO: add possibility to start the server too
     pub fn start(profile: &Profile, verbosity: i32) -> Command {
         let mut envs = HashMap::new();
-        let saves_dir = profile.directory.join("saves").into_os_string();
+        let userdata_dir = profile.directory.join("userdata").into_os_string();
         let screenshot_dir = profile.directory.join("screenshots").into_os_string();
         let assets_dir = profile.directory.join("assets").into_os_string();
 
@@ -81,7 +81,7 @@ impl Profile {
         };
 
         envs.insert("VOXYGEN_SCREENSHOT", &screenshot_dir);
-        envs.insert("VELOREN_SAVES_DIR", &saves_dir);
+        envs.insert("VELOREN_USERDATA", &userdata_dir);
         envs.insert("VELOREN_ASSETS", &assets_dir);
         envs.insert("RUST_LOG", &verbosity);
 
