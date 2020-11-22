@@ -43,13 +43,20 @@ impl DbConnection {
         searched_channel: Y,
     ) -> Result<Option<String>> {
         use schema::artifacts::dsl::*;
-        Ok(artifacts
-            .select(download_uri)
+
+        let mut filename: Option<String> = artifacts
+            .select(file_name)
             .order(date.desc())
             .filter(platform.eq(searched_platform.to_string().to_lowercase()))
             .filter(channel.eq(searched_channel.to_string().to_lowercase()))
             .first(&self.0)
-            .optional()?)
+            .optional()?;
+
+        if let Some(name) = filename {
+            filename = Some(Artifact::get_download_url(&name));
+        }
+
+        Ok(filename)
     }
 
     pub fn insert_artifact(&mut self, new_artifact: &Artifact) -> Result<()> {
