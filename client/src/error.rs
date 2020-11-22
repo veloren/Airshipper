@@ -67,14 +67,12 @@ pub fn panic_hook() {
         let panic_info_payload = panic_info.payload();
         let payload_string = panic_info_payload.downcast_ref::<String>();
         let reason = match payload_string {
-            Some(s) => &s,
+            Some(s) => s.to_string(),
             None => {
                 let payload_str = panic_info_payload.downcast_ref::<&str>();
-                match payload_str {
-                    Some(st) => st,
-                    None => "Payload is not a string",
-                }
-            },
+                payload_str.unwrap_or(&"Payload is not a string")
+            }
+            .to_string(),
         };
 
         log::error!("Airshipper panicked: \n\n{}: {}", reason, panic_info,);

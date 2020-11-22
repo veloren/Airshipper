@@ -13,29 +13,29 @@ bundled = ["openssl-sys"]
 [dependencies]
 tokio = "0.2.13"
 # logging
-tracing = { version = "0.1.13", features = ["log"] }
-tracing-futures = "0.2.3"
-tracing-subscriber = "0.2.3"
+tracing = { version = "0.1.21", features = ["log"] }
+tracing-futures = "0.2.4"
+tracing-subscriber = "0.2.15"
 # Webserver
 rocket = { git = "https://github.com/SergioBenitez/Rocket", rev = "45b4436" }
 rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket", rev = "45b4436", features = ["json", "diesel_sqlite_pool"] }
 # Networking
-reqwest = "0.10.4"
+reqwest = "0.10.9"
 # Serialising/Deserialising
 serde = { version = "1.0.105", features = ["derive"] }
-serde_json = "1.0.50"
+serde_json = "1.0.59"
 # Database
 diesel = { version = "1.4.5", features = ["sqlite", "chrono"] }
 diesel_migrations = "1.4.0"
-rust-s3 = "0.20.0"
-aws-region = "0.20.0"
-aws-creds = "0.20.0"
+rust-s3 = "0.26.3"
+aws-region = "0.22.1"
+aws-creds = "0.24.1"
 # Error handling
-thiserror = "1.0.13"
+thiserror = "1.0.22"
 # other
-chrono = { version = "0.4.11", features = ["serde"] }
+chrono = { version = "0.4.19", features = ["serde"] }
 lazy_static = "1.4.0"
-prometheus = "0.9.0"
+prometheus = "0.10.0"
 dotenv = "0.15.0"
 md5 = "0.7.0"
 # bundle all the things!
