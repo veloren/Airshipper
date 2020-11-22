@@ -79,6 +79,19 @@ impl Artifact {
         )
     }
 
+    pub fn get_download_url(filename: &str) -> String {
+        match CONFIG.spaces_cdn {
+            true => format!(
+                "https://{}.{}.cdn.{}/nightly/{}",
+                CONFIG.bucket_name, CONFIG.bucket_region, CONFIG.bucket_endpoint, filename
+            ),
+            false => format!(
+                "https://{}.{}.{}/nightly/{}",
+                CONFIG.bucket_name, CONFIG.bucket_region, CONFIG.bucket_endpoint, filename
+            ),
+        }
+    }
+
     /// Returns the file extension
     /// NOTE: without dot (e.g. zip)
     pub fn extension(&self) -> String {

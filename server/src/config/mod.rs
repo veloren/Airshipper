@@ -26,11 +26,14 @@ pub struct ServerConfig {
     /// What binary build[s] should be downloaded
     /// NOTE: These names have to include the OS!
     pub target_executable: Vec<String>,
+
+    /// Whether to use DigitalOcean Spaces CDN.
+    pub spaces_cdn: bool,
 }
 
 impl ServerConfig {
     pub fn load() -> Self {
-        Self {
+        let cfg = Self {
             bucket_name: Self::expect_env_key("AIRSHIPPER_BUCKET_NAME"),
             bucket_endpoint: Self::expect_env_key("AIRSHIPPER_BUCKET_ENDPOINT"),
             bucket_region: Self::expect_env_key("AIRSHIPPER_BUCKET_REGION"),
@@ -43,9 +46,18 @@ impl ServerConfig {
                 .split(',')
                 .map(|x| x.to_string())
                 .collect(),
+            spaces_cdn: Self::expect_env_key("AIRSHIPPER_SPACES_CDN").parse().unwrap_or(true),
             // Optional
             target_branch: Self::get_env_key_or("AIRSHIPPER_TARGET_BRANCH", "master"),
+        };
+
+        if cfg.spaces_cdn {
+            tracing::info!("DigitalOcean Spaces CDN is enabled.");
+        } else {
+            tracing::info!("DigitalOcean Spaces CDN is DISABLED.");
         }
+
+        cfg
     }
 
     pub fn rocket(&self) -> Rocket {
