@@ -90,7 +90,7 @@ impl DefaultView {
                     .map(DefaultViewMessage::DownloadProgress)
             },
             &State::Playing(ref profile, verbose) => {
-                subscriptions::process::stream(Profile::start(profile, verbose))
+                subscriptions::process::stream(profile.clone(), verbose)
                     .map(DefaultViewMessage::ProcessUpdate)
             },
             _ => iced::Subscription::none(),
