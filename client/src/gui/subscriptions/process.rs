@@ -1,13 +1,15 @@
-use crate::io::{self, ProcessUpdate};
+use crate::{
+    io::{self, ProcessUpdate},
+    profiles::Profile,
+};
 use iced::{futures, Subscription};
 use iced_native::subscription::Recipe;
-use tokio::process::Command;
 
-pub fn stream(cmd: Command) -> iced::Subscription<io::ProcessUpdate> {
-    Subscription::from_recipe(Process(cmd))
+pub fn stream(profile: Profile, verbosity: i32) -> iced::Subscription<io::ProcessUpdate> {
+    Subscription::from_recipe(Process(profile, verbosity))
 }
 
-struct Process(Command);
+struct Process(Profile, i32);
 
 impl<H, I> Recipe<H, I> for Process
 where
@@ -24,11 +26,13 @@ where
     }
 
     fn stream(
-        mut self: Box<Self>,
+        self: Box<Self>,
         _input: futures::stream::BoxStream<'static, I>,
     ) -> futures::stream::BoxStream<'static, Self::Output> {
         use iced::futures::stream::StreamExt;
-        match io::stream_process(&mut self.0) {
+
+        let mut cmd = Profile::start(&self.0, self.1);
+        match io::stream_process(&mut cmd) {
             Ok(stream) => stream.boxed(),
             Err(err) => {
                 futures::stream::once(async { ProcessUpdate::Error(err) }).boxed()
