@@ -32,13 +32,19 @@ impl Changelog {
 
     /// Returns new Changelog incase remote one is newer
     pub async fn update(version: String) -> Result<Option<Self>> {
-        let remote_version = net::query_etag(consts::CHANGELOG_URL).await?;
-        if version != remote_version {
-            return Ok(Some(Self::fetch().await?));
-        } else {
-            log::debug!("Changelog up-to-date.");
+        match net::query_etag(consts::CHANGELOG_URL).await? {
+            Some(remote_version) => {
+                if version != remote_version {
+                    return Ok(Some(Self::fetch().await?));
+                } else {
+                    log::debug!("Changelog up-to-date.");
+                    Ok(None)
+                }
+            },
+            // We query the changelog incase there's no etag to be found
+            // to make sure the player stays informed.
+            None => Ok(Some(Self::fetch().await?)),
         }
-        Ok(None)
     }
 
     pub fn view(&mut self) -> Element<DefaultViewMessage> {
