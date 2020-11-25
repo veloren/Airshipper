@@ -16,11 +16,15 @@ lazy_static::lazy_static! {
 
 /// Queries url for the etag header
 /// Note: Will default to `MISSING_ETAG` incase header isn't found
-pub(crate) async fn query_etag<U: IntoUrl>(url: U) -> Result<String> {
-    Ok(WEB_CLIENT.head(url).send().await?.headers()
+pub(crate) async fn query_etag<U: IntoUrl>(url: U) -> Result<Option<String>> {
+    Ok(WEB_CLIENT
+        .head(url)
+        .send()
+        .await?
+        .headers()
         .get("etag")
-        .map(|x| x.to_str().unwrap().to_string()) // Etag will always be a valid UTF-8 due to it being ASCII
-        .unwrap_or_else(|| "MISSING_ETAG".into()))
+        .map(|s| s.to_str().map(String::from).ok())
+        .flatten())
 }
 
 /// Extracts Etag value from response
