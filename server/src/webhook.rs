@@ -1,5 +1,4 @@
-use crate::{error::ServerError, models::Artifact, Result};
-use reqwest::StatusCode;
+use crate::{models::Artifact, Result};
 
 pub fn process(artifacts: Vec<Artifact>, mut db: crate::DbConnection) {
     tokio::spawn(async move {
@@ -43,33 +42,25 @@ async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()
     } else {
         tracing::debug!("Computed hash: {}, remote_hash: {}", hash, remote_hash);
         tracing::info!("Uploading...");
-        let code = crate::S3Connection::new().await?.upload(&artifact).await?;
+        let uploaded_hash = match crate::S3Connection::new().upload(&artifact).await? {
+            Some(hash) => hash,
+            None => get_remote_hash(&reqwest::get(&artifact.download_uri).await?),
+        };
 
-        if is_success(code) {
-            tracing::debug!("Validating remote hash...");
-            let uploaded_hash = get_remote_hash(&reqwest::get(&artifact.download_uri).await?);
-            if uploaded_hash != hash {
-                tracing::error!("Uploaded file is corrupted! Deleting...");
-                crate::S3Connection::new().await?.delete(&artifact).await?;
-            } else {
-                // Update database with new information
-                tracing::info!("Remote hash valid. Update database...");
-                db.insert_artifact(&artifact)?;
-            }
+        tracing::debug!(?uploaded_hash, ?hash, "Validating remote hash...");
+        if uploaded_hash != hash {
+            tracing::error!("Uploaded file is corrupted! Deleting...");
+            crate::S3Connection::new().delete(&artifact).await?;
         } else {
-            return Err(ServerError::InvalidResponseCode(
-                StatusCode::from_u16(code).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
-                artifact,
-            ));
+            // Update database with new information
+            tracing::info!("Remote hash valid. Update database...");
+            db.insert_artifact(&artifact)?;
         }
+
         // Delete obselete artifact
         tokio::fs::remove_file(&artifact.file_name).await?;
     }
     Ok(())
-}
-
-fn is_success(code: u16) -> bool {
-    code < 399 && code > 199
 }
 
 fn get_remote_hash(resp: &reqwest::Response) -> String {
