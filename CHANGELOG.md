@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Encountering an error spawning the Voxygen process no longer crashes Airshipper [#94](https://github.com/Songtronix/Airshipper/pull/94)
 - Fallback to terminal incase the GUI fails [#97](https://github.com/Songtronix/Airshipper/pull/97)
 
+## Fixed
+
+- AMD Integrated Graphics not displaying text [#97](https://github.com/Songtronix/Airshipper/pull/97)
+- News not updating [#97](https://github.com/Songtronix/Airshipper/pull/97)
+- Download stopping at 24% due to an error [#97](https://github.com/Songtronix/Airshipper/pull/97)
+- potential fix when Veloren does not get started by airshipper [#97](https://github.com/Songtronix/Airshipper/pull/97)
+
 ## [0.4.0] - 2020-08-29
 
 ## Added
