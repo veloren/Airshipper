@@ -9,7 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Changed
 
-- Encountering an error spawning the Voxygen process no longer crashes Airshipper [#94](https://github.com/Songtronix/Airshipper/pull/94)
+## Fixed
+
+## [0.4.1] - 2020-11-27
+
+## Changed
+
+- Encountering an error while starting Veloren no longer crashes Airshipper [#94](https://github.com/Songtronix/Airshipper/pull/94)
 - Fallback to terminal incase the GUI fails [#97](https://github.com/Songtronix/Airshipper/pull/97)
 
 ## Fixed
@@ -17,7 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - AMD Integrated Graphics not displaying text [#97](https://github.com/Songtronix/Airshipper/pull/97)
 - News not updating [#97](https://github.com/Songtronix/Airshipper/pull/97)
 - Download stopping at 24% due to an error [#97](https://github.com/Songtronix/Airshipper/pull/97)
-- potential fix when Veloren does not get started by airshipper [#97](https://github.com/Songtronix/Airshipper/pull/97)
 
 ## [0.4.0] - 2020-08-29
 
@@ -83,10 +88,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added GUI
 
-[unreleased]: https://github.com/Songtronix/Airshipper/compare/v0.4.0...master
+[unreleased]: https://github.com/Songtronix/Airshipper/compare/v0.4.1...master
 [0.2.1]: https://github.com/Songtronix/Airshipper/releases/tag/v0.2.1
 [0.2.0]: https://github.com/Songtronix/Airshipper/releases/tag/v0.2.0
 [0.3.0]: https://github.com/Songtronix/Airshipper/releases/tag/v0.3.0
 [0.3.1]: https://github.com/Songtronix/Airshipper/releases/tag/v0.3.1
 [0.3.2]: https://github.com/Songtronix/Airshipper/releases/tag/v0.3.2
 [0.4.0]: https://github.com/Songtronix/Airshipper/releases/tag/v0.4.0
+[0.4.1]: https://github.com/Songtronix/Airshipper/releases/tag/v0.4.1
