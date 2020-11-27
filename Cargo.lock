@@ -93,7 +93,7 @@ dependencies = [
 
 [[package]]
 name = "airshipper"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "bytesize",
  "chrono",
@@ -3764,7 +3764,7 @@ dependencies = [
 
 [[package]]
 name = "server"
-version = "0.2.1"
+version = "0.4.1"
 dependencies = [
  "bytes 0.5.6",
  "chrono",
