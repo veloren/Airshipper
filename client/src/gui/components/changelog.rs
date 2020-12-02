@@ -1,7 +1,6 @@
-use crate::{consts, gui::views::default::DefaultViewMessage, net, Result};
+use crate::{assets::FONT_SIZE_2, consts, gui::views::default::DefaultViewMessage, net, Result};
 use iced::{scrollable, Element};
 use serde::{Deserialize, Serialize};
-
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Changelog {
     pub text: String,
@@ -54,7 +53,7 @@ impl Changelog {
             .height(Length::Fill)
             .padding(15)
             .spacing(20)
-            .push(Text::new(self.text.clone()).size(18))
+            .push(Text::new(self.text.clone()).size(FONT_SIZE_2))
             .into()
     }
 }

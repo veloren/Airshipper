@@ -1,5 +1,6 @@
 use super::Action;
 use crate::{
+    assets::{FONT_SIZE_2, FONT_SIZE_3},
     cli::CmdLine,
     gui::{
         components::{Changelog, News},
@@ -178,7 +179,7 @@ impl DefaultView {
             State::Playing(..) => "Much fun playing!".to_string(),
             State::Retry => "Error occured. Give it a retry.".to_string(),
         };
-        let download_speed = Text::new(&download_text).size(16);
+        let download_speed = Text::new(&download_text).size(FONT_SIZE_2);
         let download_progressbar =
             ProgressBar::new(0.0..=100.0, download_progress).style(style::Progress);
         let download = Column::new()
@@ -477,7 +478,7 @@ pub fn primary_button(
     let btn: Element<Interaction> = Button::new(
         state,
         Text::new(label)
-            .size(30)
+            .size(FONT_SIZE_3)
             .height(Length::Fill)
             .horizontal_alignment(HorizontalAlignment::Center)
             .vertical_alignment(VerticalAlignment::Center),
@@ -500,7 +501,7 @@ pub fn secondary_button(
     let btn: Element<Interaction> = Button::new(
         state,
         Text::new(label)
-            .size(16)
+            .size(FONT_SIZE_2)
             .horizontal_alignment(HorizontalAlignment::Center)
             .vertical_alignment(VerticalAlignment::Center),
     )

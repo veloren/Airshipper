@@ -61,7 +61,7 @@ impl UpdateView {
                         Button::new(
                             skip_button_state,
                             Text::new("Skip")
-                                .size(30)
+                                .size(FONT_SIZE_3)
                                 .height(Length::Fill)
                                 .horizontal_alignment(HorizontalAlignment::Center)
                                 .vertical_alignment(VerticalAlignment::Center),
@@ -74,7 +74,7 @@ impl UpdateView {
                         Button::new(
                             update_button_state,
                             Text::new("Update")
-                                .size(30)
+                                .size(FONT_SIZE_3)
                                 .height(Length::Fill)
                                 .width(Length::Units(90))
                                 .horizontal_alignment(HorizontalAlignment::Center)
