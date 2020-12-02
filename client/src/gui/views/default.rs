@@ -1,5 +1,6 @@
 use super::Action;
 use crate::{
+    assets::{HAXRCORP_4089_FONT, HAXRCORP_4089_FONT_SIZE_3},
     cli::CmdLine,
     gui::{
         components::{Changelog, News},
@@ -477,7 +478,8 @@ pub fn primary_button(
     let btn: Element<Interaction> = Button::new(
         state,
         Text::new(label)
-            .size(30)
+            .font(HAXRCORP_4089_FONT)
+            .size(HAXRCORP_4089_FONT_SIZE_3)
             .height(Length::Fill)
             .horizontal_alignment(HorizontalAlignment::Center)
             .vertical_alignment(VerticalAlignment::Center),
