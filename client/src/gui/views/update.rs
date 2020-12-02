@@ -1,7 +1,10 @@
 //! Display an update dialog (windows only) to ask whether to update airshipper
 
 use super::{Action, View};
-use crate::gui::style;
+use crate::{
+    assets::{HAXRCORP_4089_FONT, HAXRCORP_4089_FONT_SIZE_3},
+    gui::style,
+};
 use iced::{
     button, Align, Button, Column, Command, Container, Element, HorizontalAlignment,
     Length, Row, Text, VerticalAlignment,
@@ -61,7 +64,8 @@ impl UpdateView {
                         Button::new(
                             skip_button_state,
                             Text::new("Skip")
-                                .size(30)
+                                .font(HAXRCORP_4089_FONT)
+                                .size(HAXRCORP_4089_FONT_SIZE_3)
                                 .height(Length::Fill)
                                 .horizontal_alignment(HorizontalAlignment::Center)
                                 .vertical_alignment(VerticalAlignment::Center),
@@ -74,7 +78,8 @@ impl UpdateView {
                         Button::new(
                             update_button_state,
                             Text::new("Update")
-                                .size(30)
+                                .font(HAXRCORP_4089_FONT)
+                                .size(HAXRCORP_4089_FONT_SIZE_3)
                                 .height(Length::Fill)
                                 .width(Length::Units(90))
                                 .horizontal_alignment(HorizontalAlignment::Center)
