@@ -260,7 +260,7 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
             ..Default::default()
         },
         flags: cmd,
-        default_font: Some(crate::assets::FONT),
+        default_font: Some(crate::assets::OPEN_SANS_BYTES),
         default_text_size: 20,
         // https://github.com/hecrj/iced/issues/537
         antialiasing: false,

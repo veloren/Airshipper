@@ -1,7 +1,6 @@
 use crate::{consts, gui::views::default::DefaultViewMessage, net, Result};
 use iced::{scrollable, Element};
 use serde::{Deserialize, Serialize};
-
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Changelog {
     pub text: String,
