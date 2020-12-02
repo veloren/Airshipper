@@ -1,4 +1,5 @@
 use crate::{
+    assets::{HAXRCORP_4089_FONT, HAXRCORP_4089_FONT_SIZE_2},
     consts,
     gui::views::default::{DefaultViewMessage, Interaction},
     net, Result,
@@ -85,8 +86,12 @@ impl Post {
         use iced::{Column, Text};
 
         Column::new()
-            .push(Text::new(&self.title).size(20))
-            .push(Text::new(&self.description).size(16))
+            .push(
+                Text::new(&self.title)
+                    .font(HAXRCORP_4089_FONT)
+                    .size(HAXRCORP_4089_FONT_SIZE_2),
+            )
+            .push(Text::new(&self.description).size(18))
             .push(secondary_button(
                 &mut self.btn_state,
                 "Read More",
