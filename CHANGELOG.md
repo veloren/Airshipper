@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Fixed
 
 - Improved font rendering [#104](https://github.com/Songtronix/Airshipper/pull/104)
+- Fix os error 50 (Veloren can't be started) [#106](https://github.com/Songtronix/Airshipper/pull/106)
 
 ## [0.4.1] - 2020-11-27
 
