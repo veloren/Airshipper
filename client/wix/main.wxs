@@ -54,6 +54,7 @@
           <!-- Create shortcut to start Airshipper from taskbar search -->
           <Component Id='ApplicationShortcut' Guid='{E2CD5A52-9B7C-410F-8C85-0D834C435A43}' Win64='$(var.Win64)'>
             <Shortcut Id='ApplicationStartMenuShortcut' Name='Airshipper' Description='Airshipper' Target='[!airshipper.exe]' WorkingDirectory='APPLICATIONFOLDER' />
+            <Shortcut Id='ApplicationStartMenuCompatibilityShortcut' Name='Airshipper (compatibility mode)' Description="Will update and start Veloren on all kinds of hardware even if Airshipper itself wouldn't be supported." Target="[!airshipper.exe]" Arguments="run" WorkingDirectory="APPLICATIONFOLDER" />
             <RemoveFolder Id='CleanUpShortCut' Directory='ApplicationProgramsFolder' On='uninstall'/>
             <RegistryValue Root='HKCU' Key='Software\Airshipper' Name='installed' Type='integer' Value='1' KeyPath='yes'/>
             <!-- make upgrading easier by remembering where it was installed -->
@@ -82,6 +83,12 @@
               <RemoveFolder Id="CleanUpDesktopShortcut" On="uninstall"/>
               <RegistryValue Root="HKCU" Key="Software\Airshipper" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes"/>
           </Component>
+          <!-- Create compatibility shortcut to start Airshipper from the desktop -->
+          <Component Id="ApplicationShortcutCompatibilityDesktop" Guid="7b3e27ba-0fd5-4dfb-9be3-9614ec25fd9a">
+              <Shortcut Id="ApplicationDesktopCompatibilityShortcut" Name="Airshipper (compatibility mode)" Description="Will update and start Veloren on all kinds of hardware even if Airshipper itself wouldn't be supported." Target="[!airshipper.exe]" Arguments="run" WorkingDirectory='APPLICATIONFOLDER'/>
+              <RemoveFolder Id="CleanUpDesktopCompatibilityShortcut" On="uninstall"/>
+              <RegistryValue Root="HKCU" Key="Software\Airshipper" Name="DesktopCompatibilityShortcut" Type="integer" Value="1" KeyPath="yes"/>
+          </Component>
       </Directory>
     </Directory>
     
@@ -97,6 +104,7 @@
       <!-- If choosen create a desktop shortcut -->
       <Feature Id='DesktopShortcut' Title='Add a Desktop shortcut' Description='Creates a shortcut on your desktop for easier access.' Level='1' Absent='allow'>
         <ComponentRef Id='ApplicationShortcutDesktop'/>
+        <ComponentRef Id='ApplicationShortcutCompatibilityDesktop'/>
       </Feature>
     </Feature>
 
