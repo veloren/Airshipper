@@ -5,14 +5,13 @@ name: Check
 on:
   # https://github.blog/changelog/2020-07-06-github-actions-manual-triggers-with-workflow_dispatch/
   workflow_dispatch:
-  push:
-    branches-ignore:
-      - "master"
-      - "staging"
-    tags-ignore:
-      - v*
-  pull_request_target:
-    types: [opened, reopened]
+  pull_request:
+      branches-ignore:
+        - "master"
+        - "staging"
+      tags-ignore:
+        - "v*"
+    types: [opened, synchronize, ready_for_review, reopened]
 
 jobs:
   test:
