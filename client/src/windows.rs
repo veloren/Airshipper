@@ -14,7 +14,7 @@ use winapi::{
         processthreadsapi::GetCurrentProcessId,
         shellapi::ShellExecuteW,
         wincon::GetConsoleWindow,
-        winuser::{GetWindowThreadProcessId, SW_SHOW},
+        winuser::{GetWindowThreadProcessId, ShowWindow, SW_HIDE, SW_SHOW},
     },
 };
 
@@ -137,15 +137,15 @@ where
     }
 }
 
-/// Detaches the console incase the process hasn't been started from one.
-///
-/// Will exit incase of an error.
-pub fn detach_non_inherited_console() {
+/// Hides the console incase the process hasn't been started from one.
+pub fn hide_non_inherited_console() {
     if !started_from_console() {
-        let code = unsafe { winapi::um::wincon::FreeConsole() };
-        if code == 0 {
-            eprintln!("Unable to detach the console!");
-            std::process::exit(1);
+        let window = unsafe { GetConsoleWindow() };
+        // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow
+        if window != ptr::null_mut() {
+            unsafe {
+                ShowWindow(window, SW_HIDE);
+            }
         }
     }
 }
