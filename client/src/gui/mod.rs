@@ -127,7 +127,7 @@ impl Application for Airshipper {
 
     fn new(flags: CmdLine) -> (Self, Command<Message>) {
         #[cfg(windows)]
-        crate::windows::detach_non_inherited_console();
+        crate::windows::hide_non_inherited_console();
 
         (
             Airshipper::new(&flags),
