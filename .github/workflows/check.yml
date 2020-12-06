@@ -6,11 +6,8 @@ on:
   # https://github.blog/changelog/2020-07-06-github-actions-manual-triggers-with-workflow_dispatch/
   workflow_dispatch:
   pull_request:
-      branches-ignore:
-        - "master"
-        - "staging"
-      tags-ignore:
-        - "v*"
+    branches-ignore:
+      - "master"
     types: [opened, synchronize, ready_for_review, reopened]
 
 jobs:
