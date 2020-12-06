@@ -1,5 +1,9 @@
-use crate::{consts, gui::views::default::DefaultViewMessage, net, Result};
-use iced::{scrollable, Element};
+use crate::{
+    consts,
+    gui::views::default::{secondary_button, DefaultViewMessage, Interaction},
+    net, Result,
+};
+use iced::{button, scrollable, Element};
 use serde::{Deserialize, Serialize};
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Changelog {
@@ -8,6 +12,8 @@ pub struct Changelog {
 
     #[serde(skip)]
     changelog_scrollable_state: scrollable::State,
+    #[serde(skip)]
+    read_more_btn: button::State,
 }
 
 impl Changelog {
@@ -22,7 +28,8 @@ impl Changelog {
                 .lines()
                 .skip_while(|x| !x.contains(&"## [Unreleased]"))
                 .skip(2)
-                .take_while(|x| !x.contains(&"## [0.1.0]"))
+                .take(100)
+                .chain(vec!["", "[...]"])
                 .map(|x| format!("{}\n", x))
                 .collect(),
             ..Default::default()
@@ -54,6 +61,11 @@ impl Changelog {
             .padding(15)
             .spacing(20)
             .push(Text::new(self.text.clone()).size(18))
+            .push(secondary_button(
+                &mut self.read_more_btn,
+                "View Full Changelog",
+                Interaction::ReadMore(consts::CHANGELOG_URL_LINK.to_owned()),
+            ))
             .into()
     }
 }

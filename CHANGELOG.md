@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Changed
 
+- Trim changelog and link to it [#106](https://github.com/Songtronix/Airshipper/pull/106)
+
 ## Fixed
 
 - Improved font rendering [#104](https://github.com/Songtronix/Airshipper/pull/104)
