@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Changed
 
 - Trim changelog and link to it [#106](https://github.com/Songtronix/Airshipper/pull/106)
+- add compatibility shortcut to access cli only mode easier [#106](https://github.com/Songtronix/Airshipper/pull/106)
 
 ## Fixed
 
