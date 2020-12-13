@@ -116,6 +116,13 @@ jobs:
           toolchain: ${{ steps.tool.outputs.rust_toolchain }}
           override: true
 
+      # Avoid missing glibc
+      - name: Enable static CRT linkage
+        run: |
+          mkdir .cargo
+          echo '[target.x86_64-pc-windows-msvc]' >> .cargo/config
+          echo 'rustflags = ["-Ctarget-feature=+crt-static"]' >> .cargo/config
+
       # Build
       - name: Build
         run: cargo build --bin airshipper --release --all-features
