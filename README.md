@@ -26,4 +26,4 @@ cd Airshipper
 cargo run --release
 ```
 
-Make sure to have [rustup](https://rustup.rs/) installed to compile rust code.
+Make sure to have [rustup](https://rustup.rs/) installed to compile rust code and [git lfs](https://book.veloren.net/contributors/development-tools.html#git-lfs) for assets.
