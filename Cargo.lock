@@ -5161,3 +5161,8 @@ dependencies = [
  "thiserror",
  "time 0.1.43",
 ]
+
+[[patch.unused]]
+name = "iced_wgpu"
+version = "0.2.2"
+source = "git+https://github.com/Imberflur/iced.git#cf514910c2c0db8633377d2719b244e388774cee"

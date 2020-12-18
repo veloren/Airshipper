@@ -10,3 +10,7 @@ members = [
 lto = true
 strip = "symbols"
 codegen-units = 1
+
+[patch.crates-io]
+iced_wgpu = { git = "https://github.com/Imberflur/iced.git" }
+
