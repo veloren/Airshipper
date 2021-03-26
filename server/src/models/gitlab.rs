@@ -128,12 +128,13 @@ pub struct Build {
     pub artifacts_file: ArtifactsFile,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Default, Debug, Clone, Deserialize)]
+#[serde(default)]
 pub struct Runner {
     pub id: u64,
     pub description: String,
     pub active: bool,
-    pub is_shared: bool,
+    pub is_shared: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
