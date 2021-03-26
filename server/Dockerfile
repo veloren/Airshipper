@@ -1,32 +1,42 @@
-# Based on https://alexbrand.dev/post/how-to-package-rust-applications-into-minimal-docker-containers/
-# and https://benjamincongdon.me/blog/2019/12/04/Fast-Rust-Docker-Builds-with-cargo-vendor/
+# Credit goes to https://www.lpalmieri.com/posts/2020-11-01-zero-to-production-5-how-to-deploy-a-rust-application/#3-8-optimising-our-docker-image
 
-FROM archlinux/base AS build
+# Check for modified dependencies
+FROM lukemathwalker/cargo-chef as planner
+WORKDIR app
+COPY . .
+# Compute a lock-like file for our project
+RUN cargo chef prepare  --recipe-path recipe.json
 
-# Install deps
-RUN pacman -Sy base-devel musl rustup libffi --noconfirm
+# Cache dependencies
+FROM lukemathwalker/cargo-chef as cacher
+WORKDIR app
+COPY --from=planner /app/recipe.json recipe.json
+# Build our project dependencies, not our application! 
+RUN cargo chef cook --release --recipe-path recipe.json
 
-# Download the target for static linking.
-RUN rustup set profile minimal
-RUN rustup default nightly
-RUN rustup target add x86_64-unknown-linux-musl --toolchain nightly
+# Build Server
+FROM rust:slim-buster AS builder
+WORKDIR app
+# Copy over the cached dependencies
+COPY --from=cacher /app/target target
+COPY --from=cacher /usr/local/cargo /usr/local/cargo
+COPY . .
+# Build our application, leveraging the cached deps!
+RUN cargo build --release --all-features
 
-# Create a dummy project and vendor the app's dependencies.
-RUN USER=root cargo new airshipper
-WORKDIR airshipper
-COPY Cargo.toml Cargo.lock ./
+# Airshipper Server Runtime Environment.
+FROM debian:buster-slim as runtime
 
-RUN mkdir .cargo
-RUN cargo vendor > .cargo/config
+RUN apt-get update
+RUN export DEBIAN_FRONTEND=noninteractive
+RUN apt-get install -y --no-install-recommends --assume-yes \
+        ca-certificates \
+        build-essential \
+        curl
 
-# Copy the source and build the application.
-COPY src ./src
-COPY migrations ./migrations
-RUN cargo build --release --locked --all-features --target x86_64-unknown-linux-musl
+COPY --from=builder /app/target/release/server .
 
-# Copy the statically-linked binary into a scratch container.
-FROM alpine
+ENV RUST_BACKTRACE=1
 WORKDIR /opt/app
-COPY --from=build airshipper/target/x86_64-unknown-linux-musl/release/server .
 EXPOSE 8000
-CMD ["./server"]
+CMD [ "./server" ]
