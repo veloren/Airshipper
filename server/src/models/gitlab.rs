@@ -33,7 +33,7 @@ impl PipelineUpdate {
                 continue;
             }
 
-            if let Some(artifact) = Artifact::try_from(&self, build) {
+            if let Some(artifact) = Artifact::try_from(&self, build, &self.object_attributes) {
                 artifacts.push(artifact);
             }
         }
