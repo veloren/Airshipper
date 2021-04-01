@@ -43,6 +43,12 @@ impl PipelineUpdate {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct Variable {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct ObjectAttributes {
     pub id: u64,
     #[serde(rename = "ref")]
@@ -55,7 +61,7 @@ pub struct ObjectAttributes {
     pub created_at: Option<String>,
     pub finished_at: Option<String>,
     pub duration: Option<u64>,
-    pub variables: Vec<String>,
+    pub variables: Vec<Variable>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
