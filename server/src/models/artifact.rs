@@ -48,7 +48,7 @@ impl Artifact {
             .expect("Failed to parse date!");
             let build_id = build.id as i32;
             let platform = Self::get_platform(&build.name)?;
-            let channel = if attributes.variables.iter().any(|e| e == "nightly") {
+            let channel = if attributes.variables.iter().any(|e| e.key == "nightly") {
                 "nightly"
             } else {
                 "master"
