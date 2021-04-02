@@ -1,6 +1,6 @@
 use crate::{
     db::{schema::artifacts, DbArtifact},
-    models::{Build, ObjectAttributes, PipelineUpdate},
+    models::{Build, PipelineUpdate},
     CONFIG,
 };
 use chrono::NaiveDateTime;
@@ -38,7 +38,7 @@ impl From<&DbArtifact> for Artifact {
 }
 
 impl Artifact {
-    pub fn try_from(pipe: &PipelineUpdate, build: &Build, attributes: &ObjectAttributes) -> Option<Self> {
+    pub fn try_from(pipe: &PipelineUpdate, build: &Build) -> Option<Self> {
         // Check if it contains artifact
         if crate::CONFIG.target_executable.contains(&build.name) && build.artifacts_file.filename.is_some() {
             let date = NaiveDateTime::parse_from_str(
@@ -48,12 +48,7 @@ impl Artifact {
             .expect("Failed to parse date!");
             let build_id = build.id as i32;
             let platform = Self::get_platform(&build.name)?;
-            let channel = if attributes.variables.iter().any(|e| e.key == "nightly") {
-                "nightly"
-            } else {
-                "master"
-            }
-            .to_owned();
+            let channel = Self::get_channel();
             let file_name = format!("{}-{}-{}.zip", channel, platform, date.format("%Y-%m-%d-%H_%M"));
             let download_uri = format!(
                 "https://{}.{}.cdn.{}/nightly/{}",
@@ -118,5 +113,9 @@ impl Artifact {
         } else {
             None
         }
+    }
+
+    fn get_channel() -> String {
+        "nightly".into()
     }
 }
