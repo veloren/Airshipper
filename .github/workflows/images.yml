@@ -1,0 +1,72 @@
+# This workflow creates the airshipper server image
+name: Server Image
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'staging'
+      # TODO !
+      - 'songtronix/build-server-image'
+    tags:
+      - 'v*'
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Docker meta
+        id: meta
+        uses: crazy-max/ghaction-docker-meta@v2
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            songtronix/airshipper
+            ghcr.io/songtronix/airshipper
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+          flavor: |
+            prefix=ghcr.io/
+          labels: |
+            ghcr.io/songtronix/airshipper:staging
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Login to GHCR
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.CR_PAT }}
+
+      - uses: docker/build-push-action@v2
+        id: docker_build
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          context: server/
+          file: server/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
