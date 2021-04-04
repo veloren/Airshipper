@@ -14,15 +14,23 @@ COPY --from=planner /app/recipe.json recipe.json
 # Build our project dependencies, not our application! 
 RUN cargo chef cook --release --recipe-path recipe.json
 
-# Build Server
+# Build Image
 FROM rust:slim-buster AS builder
+
+RUN apt-get update
+RUN export DEBIAN_FRONTEND=noninteractive
+RUN apt-get install -y --no-install-recommends --assume-yes \
+        ca-certificates \
+        build-essential \
+        libssl-dev
+
 WORKDIR app
 # Copy over the cached dependencies
 COPY --from=cacher /app/target target
 COPY --from=cacher /usr/local/cargo /usr/local/cargo
 COPY . .
 # Build our application, leveraging the cached deps!
-RUN cargo build --release --all-features
+RUN cargo build --bin server --release --all-features
 
 # Airshipper Server Runtime Environment.
 FROM debian:buster-slim as runtime
@@ -32,7 +40,7 @@ RUN export DEBIAN_FRONTEND=noninteractive
 RUN apt-get install -y --no-install-recommends --assume-yes \
         ca-certificates \
         build-essential \
-        curl
+        libssl-dev
 
 COPY --from=builder /app/target/release/server .
 
