@@ -92,7 +92,7 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
         let result = windows::execute_as_admin(
             "msiexec",
             &format!(
-                "/passive /i {} /L*V {} AUTOSTART=1",
+                "/passive /i \"{}\" /L*V \"{}\" AUTOSTART=1",
                 msi_file_path.display(),
                 fs::get_cache_path()
                     .join("airshipper-install.log")
