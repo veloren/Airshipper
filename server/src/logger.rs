@@ -7,5 +7,6 @@ pub fn init() {
         .with_env_filter(env_filter)
         .with_filter_reloading()
         .finish();
-    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed!");
+    tracing::subscriber::set_global_default(subscriber)
+        .expect("setting default subscriber failed!");
 }
