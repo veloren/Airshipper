@@ -41,6 +41,16 @@ pub(crate) fn download(url: String, location: PathBuf) -> impl Stream<Item = Pro
 
                 match response {
                     Ok(response) => {
+                        if !response.status().is_success() {
+                            return Some((
+                                Progress::Errored(format!(
+                                    "Server returned invalid status: {:?}",
+                                    response.status()
+                                )),
+                                State::Finished,
+                            ));
+                        }
+
                         if let Some(total) = response.content_length() {
                             match File::create(location).await {
                                 Ok(file) => {
