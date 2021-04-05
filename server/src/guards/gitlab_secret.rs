@@ -21,7 +21,9 @@ impl<'a, 'r> FromRequest<'a, 'r> for GitlabSecret {
         let keys: Vec<_> = request.headers().get("X-Gitlab-Token").collect();
         match keys.len() {
             0 => Outcome::Failure((Status::Unauthorized, SecretError::MissingSecret)),
-            1 if keys[0] == crate::CONFIG.gitlab_secret => Outcome::Success(GitlabSecret {}),
+            1 if keys[0] == crate::CONFIG.gitlab_secret => {
+                Outcome::Success(GitlabSecret {})
+            },
             1 => Outcome::Failure((Status::Unauthorized, SecretError::InvalidSecret)),
             _ => Outcome::Failure((Status::BadRequest, SecretError::MultipleSecrets)),
         }

@@ -19,7 +19,12 @@ impl Default for S3Connection {
                 CONFIG.bucket_name, CONFIG.bucket_region, CONFIG.bucket_endpoint
             ),
         };
-        let creds = AwsCredentials::new(&CONFIG.bucket_access_key, &CONFIG.bucket_secret_key, None, None);
+        let creds = AwsCredentials::new(
+            &CONFIG.bucket_access_key,
+            &CONFIG.bucket_secret_key,
+            None,
+            None,
+        );
         let client = Client::new_with(
             HttpClient::new().expect("Failed to create HTTPClient for S3!"),
             StaticProvider::from(creds),
@@ -66,7 +71,8 @@ impl S3Connection {
 
         let meta = ::std::fs::metadata(&local_filename).unwrap();
         let file = tokio::fs::File::open(&local_filename).await.unwrap();
-        let byte_stream = codec::FramedRead::new(file, codec::BytesCodec::new()).map_ok(BytesMut::freeze);
+        let byte_stream = codec::FramedRead::new(file, codec::BytesCodec::new())
+            .map_ok(BytesMut::freeze);
 
         let req = PutObjectRequest {
             bucket: bucket.to_owned(),
@@ -80,7 +86,9 @@ impl S3Connection {
         let result = self.0.put_object(req).await?;
 
         // Filter out non-hex characters from hash
-        Ok(result.e_tag.map(|s| s.chars().filter(|c| c.is_digit(16)).collect()))
+        Ok(result
+            .e_tag
+            .map(|s| s.chars().filter(|c| c.is_digit(16)).collect()))
     }
 
     /// Deletes files from s3 compatible storage.

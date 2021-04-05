@@ -40,19 +40,33 @@ impl From<&DbArtifact> for Artifact {
 impl Artifact {
     pub fn try_from(pipe: &PipelineUpdate, build: &Build) -> Option<Self> {
         // Check if it contains artifact
-        if crate::CONFIG.target_executable.contains(&build.name) && build.artifacts_file.filename.is_some() {
+        if crate::CONFIG.target_executable.contains(&build.name)
+            && build.artifacts_file.filename.is_some()
+        {
             let date = NaiveDateTime::parse_from_str(
-                &pipe.commit.timestamp.format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+                &pipe
+                    .commit
+                    .timestamp
+                    .format("%Y-%m-%dT%H:%M:%SZ")
+                    .to_string(),
                 "%Y-%m-%dT%H:%M:%SZ",
             )
             .expect("Failed to parse date!");
             let build_id = build.id as i32;
             let platform = Self::get_platform(&build.name)?;
             let channel = Self::get_channel();
-            let file_name = format!("{}-{}-{}.zip", channel, platform, date.format("%Y-%m-%d-%H_%M"));
+            let file_name = format!(
+                "{}-{}-{}.zip",
+                channel,
+                platform,
+                date.format("%Y-%m-%d-%H_%M")
+            );
             let download_uri = format!(
                 "https://{}.{}.cdn.{}/nightly/{}",
-                CONFIG.bucket_name, CONFIG.bucket_region, CONFIG.bucket_endpoint, file_name
+                CONFIG.bucket_name,
+                CONFIG.bucket_region,
+                CONFIG.bucket_endpoint,
+                file_name
             );
 
             Some(Self {
@@ -83,11 +97,17 @@ impl Artifact {
         match CONFIG.spaces_cdn {
             true => format!(
                 "https://{}.{}.cdn.{}/nightly/{}",
-                CONFIG.bucket_name, CONFIG.bucket_region, CONFIG.bucket_endpoint, filename
+                CONFIG.bucket_name,
+                CONFIG.bucket_region,
+                CONFIG.bucket_endpoint,
+                filename
             ),
             false => format!(
                 "https://{}.{}.{}/nightly/{}",
-                CONFIG.bucket_name, CONFIG.bucket_region, CONFIG.bucket_endpoint, filename
+                CONFIG.bucket_name,
+                CONFIG.bucket_region,
+                CONFIG.bucket_endpoint,
+                filename
             ),
         }
     }
