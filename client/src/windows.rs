@@ -142,7 +142,7 @@ pub fn hide_non_inherited_console() {
     if !started_from_console() {
         let window = unsafe { GetConsoleWindow() };
         // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow
-        if window != ptr::null_mut() {
+        if !window.is_null() {
             unsafe {
                 ShowWindow(window, SW_HIDE);
             }
