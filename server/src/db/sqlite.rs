@@ -79,17 +79,39 @@ impl DbConnection {
         }
     }
 
+    /// Prunes all artifacts but two per os
     pub fn prune_artifacts(&self) -> Result<Vec<Artifact>> {
         use schema::artifacts::dsl::*;
         let artis = artifacts
             .order(date.desc())
             .limit(1000)
-            .offset(6)
+            .offset(3)
             .load::<DbArtifact>(&self.0)?;
+
+        let win_artis = artis
+            .iter()
+            .filter(|x| x.platform == "windows")
+            .skip(1) // Do not prune all artifacts from one platform!
+            .collect::<Vec<_>>();
+        let lin_artis = artis
+            .iter()
+            .filter(|x| x.platform == "linux")
+            .skip(1) // Do not prune all artifacts from one platform!
+            .collect::<Vec<_>>();
+        let mac_artis = artis
+            .iter()
+            .filter(|x| x.platform == "macos")
+            .skip(1) // Do not prune all artifacts from one platform!
+            .collect::<Vec<_>>();
+
+        let mut artis = vec![];
+        artis.extend(win_artis);
+        artis.extend(lin_artis);
+        artis.extend(mac_artis);
 
         let ids: Vec<i32> = artis.iter().map(|x| x.id).collect();
         diesel::delete(artifacts.filter(id.eq_any(ids))).execute(&self.0)?;
-        Ok(artis.iter().map(|x| x.into()).collect())
+        Ok(artis.iter().map(|x| (*x).into()).collect())
     }
 
     pub fn does_not_exist(&self, cmp: &[Artifact]) -> Result<bool> {
