@@ -260,7 +260,7 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
                 Icon::from_rgba(icon.to_rgba8().into_raw(), icon.width(), icon.height())
                     .unwrap(),
             ),
-            min_size: Some((1050, 620)),
+            min_size: Some((400, 250)),
             ..Default::default()
         },
         flags: cmd,
