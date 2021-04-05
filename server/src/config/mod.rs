@@ -23,8 +23,9 @@ pub struct ServerConfig {
     pub artifact_stage: String,
     /// What branch should be downloaded
     pub target_branch: String,
-    /// If set only pipeline events with this variable will be processed. Otherwise every event will be considered.
-    /// NOTE: if both `target_branch` and `target_variable` is present, both filters will be applied
+    /// If set only pipeline events with this variable will be processed. Otherwise every
+    /// event will be considered. NOTE: if both `target_branch` and `target_variable`
+    /// is present, both filters will be applied
     pub target_variable: Option<String>,
     /// What binary build[s] should be downloaded
     /// NOTE: These names have to include the OS!
@@ -49,7 +50,9 @@ impl ServerConfig {
                 .split(',')
                 .map(|x| x.to_string())
                 .collect(),
-            spaces_cdn: Self::expect_env_key("AIRSHIPPER_SPACES_CDN").parse().unwrap_or(true),
+            spaces_cdn: Self::expect_env_key("AIRSHIPPER_SPACES_CDN")
+                .parse()
+                .unwrap_or(true),
             // Optional
             target_branch: Self::get_env_key_or("AIRSHIPPER_TARGET_BRANCH", "master"),
             target_variable: std::env::var("AIRSHIPPER_TARGET_VARIABLE").ok(),
@@ -72,14 +75,17 @@ impl ServerConfig {
         database_config.insert("url", Value::from(DATABASE_FILE));
         databases.insert("sqlite", Value::from(database_config));
 
-        let config =
-            Config::build(rocket::config::Environment::active().unwrap_or(rocket::config::Environment::Production))
-                .extra("databases", databases);
+        let config = Config::build(
+            rocket::config::Environment::active()
+                .unwrap_or(rocket::config::Environment::Production),
+        )
+        .extra("databases", databases);
         rocket::custom(config.finalize().expect("Invalid Config!"))
     }
 
     fn expect_env_key(name: &str) -> String {
-        std::env::var(name).unwrap_or_else(|_| panic!("required '{}' env key is not set!", name))
+        std::env::var(name)
+            .unwrap_or_else(|_| panic!("required '{}' env key is not set!", name))
     }
 
     fn get_env_key_or(name: &str, unwrap_or: &str) -> String {
