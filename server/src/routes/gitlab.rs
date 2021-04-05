@@ -28,6 +28,8 @@ pub async fn post_pipeline_update<'r>(
                 Ok(Response::build().status(Status::Ok).finalize())
             }
         },
-        None => Ok(Response::build().status(Status::UnprocessableEntity).finalize()),
+        None => Ok(Response::build()
+            .status(Status::UnprocessableEntity)
+            .finalize()),
     }
 }

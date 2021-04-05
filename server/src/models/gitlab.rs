@@ -46,7 +46,11 @@ impl PipelineUpdate {
             }
         }
 
-        if artifacts.is_empty() { None } else { Some(artifacts) }
+        if artifacts.is_empty() {
+            None
+        } else {
+            Some(artifacts)
+        }
     }
 }
 

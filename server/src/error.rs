@@ -40,8 +40,8 @@ impl<'r, 'o> Responder<'r, 'static> for ServerError {
             error => {
                 resp.status(Status::InternalServerError);
                 let body = format!(
-                    "We hit a serious error with your request to '{}'. Please report this to @Songtronix#4790 on \
-                     Discord!",
+                    "We hit a serious error with your request to '{}'. Please report \
+                     this to @Songtronix#4790 on Discord!",
                     req.uri()
                 );
                 resp.sized_body(body.len(), Cursor::new(body));
