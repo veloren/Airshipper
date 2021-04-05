@@ -42,7 +42,9 @@ pub fn log(level: LevelFilter) {
         .level_for("wgpu", LevelFilter::Warn)
         .level_for("iced_wgpu::backend", LevelFilter::Warn)
         .level_for("reqwest", LevelFilter::Info)
-        .level_for("tracing", LevelFilter::Off);
+        .level_for("tracing", LevelFilter::Warn)
+        .level_for("gpu_alloc", LevelFilter::Warn)
+        .level_for("naga", LevelFilter::Info);
 
     let file_cfg = fern::Dispatch::new()
         .level(LevelFilter::Info)
@@ -65,7 +67,9 @@ pub fn log(level: LevelFilter) {
 
     let mut stdout_cfg = fern::Dispatch::new()
         .level(level)
-        .level_for("wgpu_core::device", LevelFilter::Error);
+        .level_for("wgpu_core::device", LevelFilter::Error)
+        .level_for("gpu_alloc", LevelFilter::Warn)
+        .level_for("naga", LevelFilter::Error);
     // If more verbose debugging is requested. We will print the lines too.
     if level == LevelFilter::Debug || level == LevelFilter::Trace {
         stdout_cfg = stdout_cfg.format(move |out, message, record| {

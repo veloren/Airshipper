@@ -10,7 +10,7 @@ impl button::StyleSheet for PrimaryButton {
             Self::Enabled => button::Style {
                 background: Some(Background::Color(Color::from_rgb(0.05, 0.44, 0.62))),
                 border_color: Color::from_rgb(0.29, 0.19, 0.03),
-                border_width: 4,
+                border_width: 4.0,
                 shadow_offset: Vector::new(1.0, 1.0),
                 text_color: Color::from_rgb8(0xEE, 0xEE, 0xEE),
                 ..button::Style::default()
@@ -18,7 +18,7 @@ impl button::StyleSheet for PrimaryButton {
             Self::Disabled => button::Style {
                 background: Some(Background::Color(Color::from_rgb(0.35, 0.43, 0.46))),
                 border_color: Color::from_rgb(0.29, 0.19, 0.03),
-                border_width: 4,
+                border_width: 4.0,
                 shadow_offset: Vector::new(1.0, 1.0),
                 text_color: Color::from_rgb8(0xEE, 0xEE, 0xEE),
                 ..button::Style::default()
@@ -80,7 +80,7 @@ impl container::StyleSheet for Middle {
         container::Style {
             background: Some(Background::Color(Color::from_rgb(0.10, 0.21, 0.25))),
             text_color: Some(Color::WHITE),
-            border_width: 2,
+            border_width: 2.0,
             border_color: Color::from_rgb(0.14, 0.29, 0.35),
             ..container::Style::default()
         }
@@ -93,7 +93,7 @@ impl container::StyleSheet for Bottom {
         container::Style {
             background: Some(Background::Color(Color::from_rgb(0.10, 0.21, 0.25))),
             text_color: Some(Color::WHITE),
-            border_width: 2,
+            border_width: 2.0,
             border_color: Color::from_rgb(0.14, 0.29, 0.35),
             ..container::Style::default()
         }
@@ -106,7 +106,7 @@ impl progress_bar::StyleSheet for Progress {
         progress_bar::Style {
             background: Background::Color(Color::from_rgb(0.35, 0.43, 0.46)),
             bar: Background::Color(Color::from_rgb(0.35, 0.82, 0.76)),
-            border_radius: 5,
+            border_radius: 5.0,
         }
     }
 }
