@@ -150,7 +150,11 @@ impl Application for Airshipper {
         }
     }
 
-    fn update(&mut self, message: Message) -> Command<Message> {
+    fn update(
+        &mut self,
+        message: Message,
+        _clipboard: &mut iced::Clipboard,
+    ) -> Command<Message> {
         match message {
             Message::Loaded(state) => {
                 *self = state;
@@ -253,7 +257,7 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
             resizable: true,
             decorations: true,
             icon: Some(
-                Icon::from_rgba(icon.to_rgba().into_raw(), icon.width(), icon.height())
+                Icon::from_rgba(icon.to_rgba8().into_raw(), icon.width(), icon.height())
                     .unwrap(),
             ),
             min_size: Some((1050, 620)),
@@ -264,5 +268,6 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
         default_text_size: 20,
         // https://github.com/hecrj/iced/issues/537
         antialiasing: false,
+        exit_on_close_request: true,
     }
 }
