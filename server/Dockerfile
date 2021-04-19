@@ -42,9 +42,9 @@ RUN apt-get install -y --no-install-recommends --assume-yes \
         build-essential \
         libssl-dev
 
+WORKDIR /opt/app
+
 COPY --from=builder /app/target/release/server .
 
-ENV RUST_BACKTRACE=1
-WORKDIR /opt/app
 EXPOSE 8000
 CMD [ "./server" ]
