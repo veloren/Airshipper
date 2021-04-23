@@ -5,6 +5,11 @@ authors = ["Songtronix <contact@songtronix.com>"]
 edition = "2018"
 publish = false
 
+[package.metadata.nix]
+build = true
+app = true
+library = true
+
 [features]
 # Windows cannot bundle ssl by default and as such this feature exists
 # to bundle ssl in CI
