@@ -26,14 +26,18 @@ impl PipelineUpdate {
             return None;
         }
 
-        if let Some(target_variable) = &CONFIG.target_variable {
-            if !self
+        if let Some(target_stage_absent) = &CONFIG.target_stage_absent {
+            if self
                 .object_attributes
-                .variables
+                .stages
                 .iter()
-                .any(|e| &e.key == target_variable)
+                .any(|e| e == target_stage_absent)
             {
-                tracing::debug!("Variable '{}' was not found", target_variable);
+                tracing::debug!(
+                    "Stage '{}' was found in the list of stages: '{:?}'",
+                    target_stage_absent,
+                    self.object_attributes.stages
+                );
                 return None;
             }
         }

@@ -23,10 +23,10 @@ pub struct ServerConfig {
     pub artifact_stage: String,
     /// What branch should be downloaded
     pub target_branch: String,
-    /// If set only pipeline events with this variable will be processed. Otherwise every
-    /// event will be considered. NOTE: if both `target_branch` and `target_variable`
-    /// is present, both filters will be applied
-    pub target_variable: Option<String>,
+    /// If set pipeline events with this stage will not be processed. Otherwise every
+    /// event will be considered. NOTE: if both `target_branch` and
+    /// `target_stage_absent` is present, both filters will be applied
+    pub target_stage_absent: Option<String>,
     /// What binary build[s] should be downloaded
     /// NOTE: These names have to include the OS!
     pub target_executable: Vec<String>,
@@ -55,7 +55,7 @@ impl ServerConfig {
                 .unwrap_or(true),
             // Optional
             target_branch: Self::get_env_key_or("AIRSHIPPER_TARGET_BRANCH", "master"),
-            target_variable: std::env::var("AIRSHIPPER_TARGET_VARIABLE").ok(),
+            target_stage_absent: std::env::var("AIRSHIPPER_TARGET_STAGE_ABSENT").ok(),
         };
 
         if cfg.spaces_cdn {
