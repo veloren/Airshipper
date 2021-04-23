@@ -11,6 +11,40 @@ license = "GPL-3.0"
 homepage = "https://www.veloren.net"
 repository = "https://gitlab.com/veloren/airshipper"
 
+[package.metadata.nix]
+build = true
+app = true
+runtimeLibs = [
+    "vulkan-loader",
+    "wayland",
+    "wayland-protocols",
+    "libxkbcommon",
+    "xorg.libX11",
+    "xorg.libXrandr",
+    "xorg.libXi",
+]
+buildInputs = [
+    "zlib",
+    "harfbuzz",
+    "protobuf",
+    "gtk3",
+    "atk",
+    "cairo",
+    "pango",
+    "gdk_pixbuf",
+    "glib",
+    "expat",
+    "freetype",
+    "fontconfig",
+    "x11",
+    "xorg.libxcb",
+]
+nativeBuildInputs = ["cmake", "python3", "binutils"]
+
+[package.metadata.nix.desktopFile]
+name = "Airshipper"
+icon = "./client/assets/logo.ico"
+
 [badges]
 maintenance = { status = "actively-developed" }
 
