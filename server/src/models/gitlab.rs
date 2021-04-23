@@ -38,6 +38,17 @@ impl PipelineUpdate {
             }
         }
 
+        if let Some(target_pipeline_source) = &CONFIG.target_pipeline_source {
+            if self.object_attributes.source != *target_pipeline_source {
+                tracing::debug!(
+                    "Pipeline Source '{}' does not match target pipeline source '{}'",
+                    self.object_attributes.source,
+                    target_pipeline_source
+                );
+                return None;
+            }
+        }
+
         for build in &self.builds {
             // Skip non-artifact builds.
             if build.stage != crate::CONFIG.artifact_stage {
@@ -72,6 +83,7 @@ pub struct ObjectAttributes {
     pub tag: bool,
     pub sha: String,
     pub before_sha: String,
+    pub source: String,
     pub status: String,
     pub stages: Vec<String>,
     pub created_at: Option<String>,

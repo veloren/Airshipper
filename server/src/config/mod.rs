@@ -24,9 +24,12 @@ pub struct ServerConfig {
     /// What branch should be downloaded
     pub target_branch: String,
     /// If set only pipeline events with this variable will be processed. Otherwise every
-    /// event will be considered. NOTE: if both `target_branch` and `target_variable`
-    /// is present, both filters will be applied
+    /// event will be considered. NOTE: if more than one `target_branch`,
+    /// `target_variable` or `target_pipeline_source` are present, all filters will
+    /// be applied
     pub target_variable: Option<String>,
+    /// If set only pipeline events with this source will be processed.
+    pub target_pipeline_source: Option<String>,
     /// What binary build[s] should be downloaded
     /// NOTE: These names have to include the OS!
     pub target_executable: Vec<String>,
@@ -56,6 +59,8 @@ impl ServerConfig {
             // Optional
             target_branch: Self::get_env_key_or("AIRSHIPPER_TARGET_BRANCH", "master"),
             target_variable: std::env::var("AIRSHIPPER_TARGET_VARIABLE").ok(),
+            target_pipeline_source: std::env::var("AIRSHIPPER_TARGET_PIPELINE_SOURCE")
+                .ok(),
         };
 
         if cfg.spaces_cdn {
