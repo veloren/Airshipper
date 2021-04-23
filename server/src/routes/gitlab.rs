@@ -22,10 +22,6 @@ pub async fn post_pipeline_update<'r>(
                 }
 
                 tracing::debug!("Found {} artifacts.", artifacts.len());
-                tracing::trace!(
-                    "Found {} variables.",
-                    update.object_attributes.variables.len()
-                );
                 webhook::process(artifacts, db);
                 Ok(Response::build().status(Status::Accepted).finalize())
             } else {
