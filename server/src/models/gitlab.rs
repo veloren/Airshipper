@@ -26,18 +26,6 @@ impl PipelineUpdate {
             return None;
         }
 
-        if let Some(target_variable) = &CONFIG.target_variable {
-            if !self
-                .object_attributes
-                .variables
-                .iter()
-                .any(|e| &e.key == target_variable)
-            {
-                tracing::debug!("Variable '{}' was not found", target_variable);
-                return None;
-            }
-        }
-
         for build in &self.builds {
             // Skip non-artifact builds.
             if build.stage != crate::CONFIG.artifact_stage {
