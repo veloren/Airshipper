@@ -10,3 +10,8 @@ members = [
 lto = true
 strip = "symbols"
 codegen-units = 1
+
+[workspace.metadata.nix]
+systems = ["x86_64-linux"]
+buildInputs = ["openssl"]
+nativeBuildInputs = ["pkg-config"]

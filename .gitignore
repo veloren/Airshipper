@@ -1,4 +1,14 @@
+# Rust
 target/
+**/*.rs.bk
+
+# Nix
+/result*
+
+# Direnv
+/.direnv
+/.envrc
+
 airshipper.ron
 airshipper.db
 .env
