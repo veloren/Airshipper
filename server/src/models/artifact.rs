@@ -1,12 +1,10 @@
 use crate::{
-    db::{schema::artifacts, DbArtifact, FsStorage},
+    db::{DbArtifact, FsStorage},
     models::{Build, PipelineUpdate},
 };
 use chrono::NaiveDateTime;
-use diesel::Queryable;
 
-#[derive(Debug, Queryable, Insertable)]
-#[table_name = "artifacts"]
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct Artifact {
     pub build_id: i32,
     pub date: NaiveDateTime,
@@ -23,7 +21,7 @@ pub struct Artifact {
 impl From<&DbArtifact> for Artifact {
     fn from(db: &DbArtifact) -> Self {
         Self {
-            build_id: db.build_id,
+            build_id: db.build_id as i32,
             date: db.date,
             hash: db.hash.clone(),
             author: db.author.clone(),

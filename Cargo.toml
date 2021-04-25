@@ -6,7 +6,6 @@ members = [
 
 [profile.release]
 lto = true
-strip = "symbols"
 codegen-units = 1
 
 [workspace.metadata.nix]

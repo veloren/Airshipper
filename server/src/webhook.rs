@@ -1,4 +1,5 @@
 use crate::{models::Artifact, FsStorage, Result};
+use rocket::tokio;
 
 pub fn process(artifacts: Vec<Artifact>, mut db: crate::DbConnection) {
     tokio::spawn(async move {
@@ -15,7 +16,7 @@ pub fn process(artifacts: Vec<Artifact>, mut db: crate::DbConnection) {
 
 #[tracing::instrument(skip(db))]
 async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()> {
-    use tokio::{fs::File, prelude::*};
+    use tokio::{fs::File, io::AsyncWriteExt};
 
     tracing::info!("Downloading...");
 
@@ -47,7 +48,7 @@ async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()
 
         // Update database with new information
         tracing::info!("hash valid. Update database...");
-        db.insert_artifact(&artifact)?;
+        db.insert_artifact(&artifact).await?;
 
         // Delete obselete artifact
         tokio::fs::remove_file(&artifact.file_name).await?;

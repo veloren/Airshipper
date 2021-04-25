@@ -12,17 +12,17 @@ pub async fn post_pipeline_update<'r>(
     _secret: GitlabSecret,
     _event: GitlabEvent,
     payload: Option<Json<PipelineUpdate>>,
-    db: crate::DbConnection,
+    db: State<'_, crate::DbConnection>,
 ) -> Result<Response<'r>> {
     match payload {
         Some(update) => {
             if let Some(artifacts) = update.artifacts() {
-                if !db.does_not_exist(&artifacts)? {
+                if !db.does_not_exist(&artifacts).await? {
                     tracing::warn!("Received duplicate artifacts!");
                 }
 
                 tracing::debug!("Found {} artifacts.", artifacts.len());
-                webhook::process(artifacts, db);
+                webhook::process(artifacts, (*db).clone());
                 Ok(Response::build().status(Status::Accepted).finalize())
             } else {
                 Ok(Response::build().status(Status::Ok).finalize())

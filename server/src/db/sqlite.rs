@@ -1,15 +1,13 @@
-use super::schema;
 use crate::{models::Artifact, Result};
-use diesel::prelude::*;
-use rocket_contrib::database;
+use sqlx::SqlitePool;
 
-#[database("sqlite")]
-pub struct DbConnection(diesel::SqliteConnection);
+#[derive(Debug, Clone)]
+pub struct DbConnection(SqlitePool);
 
-#[derive(Debug, Queryable)]
+#[derive(Debug, sqlx::FromRow)]
 pub struct DbArtifact {
-    pub id: i32,
-    pub build_id: i32,
+    pub id: i64,
+    pub build_id: i64,
     pub date: chrono::NaiveDateTime,
     pub hash: String,
     pub author: String,
@@ -22,52 +20,80 @@ pub struct DbArtifact {
 }
 
 impl DbConnection {
-    pub fn get_latest_version<T: ToString, Y: ToString>(
-        &self,
-        searched_platform: T,
-        searched_channel: Y,
-    ) -> Result<Option<String>> {
-        use schema::artifacts::dsl::*;
-        Ok(artifacts
-            .select(hash)
-            .order(date.desc())
-            .filter(platform.eq(searched_platform.to_string().to_lowercase()))
-            .filter(channel.eq(searched_channel.to_string().to_lowercase()))
-            .first(&self.0)
-            .optional()?)
+    pub fn new(pool: SqlitePool) -> Self {
+        Self(pool)
     }
 
-    pub fn get_latest_uri<T: ToString, Y: ToString>(
+    pub async fn get_latest_version<T: ToString, Y: ToString>(
         &self,
         searched_platform: T,
         searched_channel: Y,
     ) -> Result<Option<String>> {
-        use schema::artifacts::dsl::*;
+        let searched_platform = searched_platform.to_string().to_lowercase();
+        let searched_channel = searched_channel.to_string().to_lowercase();
 
-        let uri: Option<String> = artifacts
-            .select(download_uri)
-            .order(date.desc())
-            .filter(platform.eq(searched_platform.to_string().to_lowercase()))
-            .filter(channel.eq(searched_channel.to_string().to_lowercase()))
-            .first(&self.0)
-            .optional()?;
+        Ok(sqlx::query!(
+            "SELECT hash FROM artifacts WHERE platform = $1 AND channel = $2 ORDER BY \
+             date DESC;",
+            searched_platform,
+            searched_channel
+        )
+        .map(|s| s.hash)
+        .fetch_one(&self.0)
+        .await
+        .ok())
+    }
+
+    pub async fn get_latest_uri<T: ToString, Y: ToString>(
+        &self,
+        searched_platform: T,
+        searched_channel: Y,
+    ) -> Result<Option<String>> {
+        let searched_platform = searched_platform.to_string().to_lowercase();
+        let searched_channel = searched_channel.to_string().to_lowercase();
+
+        let uri: Option<String> = sqlx::query!(
+            "SELECT download_uri FROM artifacts WHERE platform = $1 AND channel = $2 \
+             ORDER BY date DESC;",
+            searched_platform,
+            searched_channel
+        )
+        .map(|s| s.download_uri)
+        .fetch_one(&self.0)
+        .await
+        .ok();
 
         Ok(uri)
     }
 
-    pub fn insert_artifact(&mut self, new_artifact: &Artifact) -> Result<()> {
-        use schema::artifacts;
+    pub async fn insert_artifact(&mut self, new_artifact: &Artifact) -> Result<()> {
         // TODO: Check whether UNIQUE constraint gets violated and throw a warning but
         // proceed!
-        diesel::insert_or_ignore_into(artifacts::table)
-            .values(new_artifact)
-            .execute(&self.0)?;
+        let _ = sqlx::query!(
+            "INSERT INTO artifacts (build_id, date, hash, author, merged_by, platform, \
+             channel, file_name, download_uri) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, \
+             $9);",
+            new_artifact.build_id,
+            new_artifact.date,
+            new_artifact.hash,
+            new_artifact.author,
+            new_artifact.merged_by,
+            new_artifact.platform,
+            new_artifact.channel,
+            new_artifact.file_name,
+            new_artifact.download_uri,
+        )
+        .execute(&self.0)
+        .await;
         Ok(())
     }
 
-    pub fn has_pruneable_artifacts(&self) -> Result<bool> {
-        use schema::artifacts::dsl::*;
-        let count: Option<i64> = artifacts.count().get_result(&self.0).optional()?;
+    pub async fn has_pruneable_artifacts(&self) -> Result<bool> {
+        let count = sqlx::query!("SELECT COUNT(*) as count FROM artifacts;")
+            .fetch_optional(&self.0)
+            .await?
+            .map(|s| s.count as i64);
+
         match count {
             Some(candidates) => {
                 if candidates > 10 {
@@ -81,48 +107,63 @@ impl DbConnection {
     }
 
     /// Prunes all artifacts but two per os
-    pub fn prune_artifacts(&self) -> Result<Vec<Artifact>> {
-        use schema::artifacts::dsl::*;
-        let artis = artifacts
-            .order(date.desc())
-            .limit(1000)
-            .offset(3)
-            .load::<DbArtifact>(&self.0)?;
-
-        let win_artis = artis
-            .iter()
-            .filter(|x| x.platform == "windows")
-            .skip(1) // Do not prune all artifacts from one platform!
-            .collect::<Vec<_>>();
-        let lin_artis = artis
-            .iter()
-            .filter(|x| x.platform == "linux")
-            .skip(1) // Do not prune all artifacts from one platform!
-            .collect::<Vec<_>>();
-        let mac_artis = artis
-            .iter()
-            .filter(|x| x.platform == "macos")
-            .skip(1) // Do not prune all artifacts from one platform!
-            .collect::<Vec<_>>();
+    pub async fn prune_artifacts(&self) -> Result<Vec<Artifact>> {
+        // TODO: Query all platforms (SELECT DISTINCT) to not hardcode amount of OSes.
+        let win_artis = sqlx::query_as!(
+            DbArtifact,
+            "SELECT * FROM artifacts WHERE platform = 'windows' ORDER BY date DESC \
+             LIMIT 1,1000;"
+        )
+        .fetch_all(&self.0)
+        .await?;
+        let lin_artis = sqlx::query_as!(
+            DbArtifact,
+            "SELECT * FROM artifacts WHERE platform = 'linux' ORDER BY date DESC LIMIT \
+             1,1000;"
+        )
+        .fetch_all(&self.0)
+        .await?;
+        let mac_artis = sqlx::query_as!(
+            DbArtifact,
+            "SELECT * FROM artifacts WHERE platform = 'macos' ORDER BY date DESC LIMIT \
+             1,1000;"
+        )
+        .fetch_all(&self.0)
+        .await?;
 
         let mut artis = vec![];
         artis.extend(win_artis);
         artis.extend(lin_artis);
         artis.extend(mac_artis);
 
-        let ids: Vec<i32> = artis.iter().map(|x| x.id).collect();
-        diesel::delete(artifacts.filter(id.eq_any(ids))).execute(&self.0)?;
-        Ok(artis.iter().map(|x| (*x).into()).collect())
+        let ids = artis
+            .iter()
+            .map(|x| x.id.to_string())
+            .collect::<Vec<String>>()
+            .join(",");
+
+        sqlx::query!("DELETE FROM artifacts WHERE id IN ($1)", ids)
+            .execute(&self.0)
+            .await?;
+
+        Ok(artis.iter().map(|x| x.into()).collect())
     }
 
-    pub fn does_not_exist(&self, cmp: &[Artifact]) -> Result<bool> {
-        use schema::artifacts::dsl::*;
-        let uris: Vec<&String> = cmp.iter().map(|x| &x.download_uri).collect();
-        let count: Option<i64> = artifacts
-            .filter(download_uri.eq_any(uris))
-            .count()
-            .get_result(&self.0)
-            .optional()?;
+    pub async fn does_not_exist(&self, cmp: &[Artifact]) -> Result<bool> {
+        let uris = cmp
+            .iter()
+            .map(|x| x.download_uri.clone())
+            .collect::<Vec<String>>()
+            .join(",");
+
+        let count: Option<i64> = sqlx::query!(
+            "SELECT COUNT(*) as count FROM artifacts WHERE download_uri IN ($1);",
+            uris,
+        )
+        .fetch_optional(&self.0)
+        .await?
+        .map(|s| s.count as i64);
+
         match count {
             Some(0) => Ok(true),
             Some(_) => Ok(false),

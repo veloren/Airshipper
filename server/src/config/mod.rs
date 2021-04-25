@@ -1,5 +1,3 @@
-use rocket::{config::*, Rocket};
-
 /// The project ID of veloren on gitlab.
 pub const PROJECT_ID: u64 = 10_174_980;
 /// The Hook Type which gets parsed for artifacts.
@@ -39,22 +37,6 @@ impl ServerConfig {
         };
 
         cfg
-    }
-
-    pub fn rocket(&self) -> Rocket {
-        use std::collections::HashMap;
-        // Set database url
-        let mut database_config = HashMap::new();
-        let mut databases = HashMap::new();
-        database_config.insert("url", Value::from(self.db_path.as_ref()));
-        databases.insert("sqlite", Value::from(database_config));
-
-        let config = Config::build(
-            rocket::config::Environment::active()
-                .unwrap_or(rocket::config::Environment::Production),
-        )
-        .extra("databases", databases);
-        rocket::custom(config.finalize().expect("Invalid Config!"))
     }
 
     fn expect_env_key(name: &str) -> String {

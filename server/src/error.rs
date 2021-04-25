@@ -15,8 +15,8 @@ pub enum ServerError {
     // Internal errors
     #[error("Internal Error: {0}")]
     ReqwestError(#[from] reqwest::Error),
-    #[error("Diesel error: {0}")]
-    DieselError(#[from] diesel::result::Error),
+    #[error("Sqlx error: {0}")]
+    SqlxError(#[from] sqlx::Error),
     #[error("Internal Error: {0}")]
     IoError(#[from] std::io::Error),
     #[error("Internal Metrics Error: {0}")]

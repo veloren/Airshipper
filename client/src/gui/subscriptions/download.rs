@@ -1,9 +1,9 @@
 use crate::net;
 use iced::{futures, Subscription};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-pub fn file(url: &str, location: &PathBuf) -> iced::Subscription<net::Progress> {
-    Subscription::from_recipe(Download(url.to_string(), location.clone()))
+pub fn file(url: &str, location: &Path) -> iced::Subscription<net::Progress> {
+    Subscription::from_recipe(Download(url.to_string(), location.to_path_buf()))
 }
 
 pub struct Download(String, PathBuf);

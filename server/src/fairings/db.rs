@@ -1,28 +1,44 @@
 use rocket::{
     fairing::{Fairing, Info, Kind},
-    Cargo,
+    tokio::{self, fs::File},
+    Build, Rocket,
 };
 
-embed_migrations!();
+use crate::{db::DbConnection, CONFIG};
 
 /// Will initialise the database if necessary.
 #[derive(Debug, Default)]
 pub struct DbInit;
 
+#[rocket::async_trait]
 impl Fairing for DbInit {
     fn info(&self) -> Info {
         Info {
-            name: "DbInit - Run migrations",
-            kind: Kind::Launch,
+            name: "DbInit - migrations & pool",
+            kind: Kind::Ignite,
         }
     }
 
-    fn on_launch(&self, _: &Cargo) {
-        use crate::diesel::Connection;
-        let con = diesel::SqliteConnection::establish(&crate::CONFIG.db_path).expect(
-            "Could not establish connection to the database to initialise the table!",
-        );
+    async fn on_ignite(&self, rocket: Rocket<Build>) -> rocket::fairing::Result {
+        // Create Db
+        if tokio::fs::metadata(&CONFIG.db_path).await.is_err() {
+            File::create(&CONFIG.db_path)
+                .await
+                .expect("Failed to create db!");
+        }
+
         // Run migrations
-        embedded_migrations::run(&con).expect("Failed to run migrations!");
+        let pool = sqlx::SqlitePool::connect(&CONFIG.db_path)
+            .await
+            .expect("Failed to connect sqlite db.");
+        sqlx::migrate!("./migrations")
+            .run(&pool)
+            .await
+            .expect("Failed to run migrations!");
+
+        // Add pool to managed state
+        let rocket = rocket.manage(DbConnection::new(pool));
+
+        Ok(rocket)
     }
 }
