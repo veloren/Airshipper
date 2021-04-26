@@ -1,4 +1,4 @@
-use crate::{models::Artifact, Result};
+use crate::{models::Artifact, FsStorage, Result};
 
 pub fn process(artifacts: Vec<Artifact>, mut db: crate::DbConnection) {
     tokio::spawn(async move {
@@ -41,21 +41,13 @@ async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()
         tokio::fs::remove_file(&artifact.file_name).await?;
     } else {
         tracing::debug!("Computed hash: {}, remote_hash: {}", hash, remote_hash);
-        tracing::info!("Uploading...");
-        let uploaded_hash = match crate::S3Connection::new().upload(&artifact).await? {
-            Some(hash) => hash,
-            None => get_remote_hash(&reqwest::get(&artifact.download_uri).await?),
-        };
+        tracing::info!("Storing...");
 
-        tracing::debug!(?uploaded_hash, ?hash, "Validating remote hash...");
-        if uploaded_hash != hash {
-            tracing::error!("Uploaded file is corrupted! Deleting...");
-            crate::S3Connection::new().delete(&artifact).await?;
-        } else {
-            // Update database with new information
-            tracing::info!("Remote hash valid. Update database...");
-            db.insert_artifact(&artifact)?;
-        }
+        FsStorage::store(&artifact).await?;
+
+        // Update database with new information
+        tracing::info!("hash valid. Update database...");
+        db.insert_artifact(&artifact)?;
 
         // Delete obselete artifact
         tokio::fs::remove_file(&artifact.file_name).await?;

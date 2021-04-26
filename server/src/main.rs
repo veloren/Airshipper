@@ -5,8 +5,8 @@
 mod logger;
 
 #[rocket::launch]
-fn rocket() -> rocket::Rocket {
+async fn rocket() -> rocket::Rocket {
     dotenv::from_path("server/.env").ok();
     logger::init();
-    server::rocket()
+    server::rocket().await.unwrap()
 }
