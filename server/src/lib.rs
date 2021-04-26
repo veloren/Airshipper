@@ -1,5 +1,10 @@
 #![allow(clippy::unit_arg)]
+
+use std::path::PathBuf;
+
+use db::ROOT_FOLDER;
 use rocket::*;
+use rocket_contrib::serve::StaticFiles;
 #[macro_use]
 extern crate diesel;
 #[macro_use]
@@ -21,16 +26,21 @@ use config::ServerConfig;
 use metrics::Metrics;
 
 pub type Result<T> = std::result::Result<T, ServerError>;
-pub use db::{DbConnection, S3Connection};
+pub use db::{DbConnection, FsStorage};
 
 lazy_static::lazy_static! {
     /// Contains all configuration needed.
     pub static ref CONFIG: ServerConfig = ServerConfig::load();
 }
 
-pub fn rocket() -> rocket::Rocket {
+pub async fn rocket() -> Result<rocket::Rocket> {
+    let root_folder = PathBuf::from(ROOT_FOLDER);
+    if !root_folder.exists() {
+        tokio::fs::create_dir_all(root_folder).await.unwrap();
+    }
+
     // Base of the config and attach everything else
-    CONFIG
+    Ok(CONFIG
         .rocket()
         .attach(DbConnection::fairing())
         .attach(fairings::db::DbInit)
@@ -46,5 +56,6 @@ pub fn rocket() -> rocket::Rocket {
             routes::api::channel_download,
             routes::metrics::metrics,
         ])
-        .register(catchers![routes::catchers::not_found])
+        .mount("/nightly", StaticFiles::from(db::fs::ROOT_FOLDER))
+        .register(catchers![routes::catchers::not_found]))
 }
