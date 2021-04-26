@@ -1,7 +1,6 @@
 use crate::{
-    db::{schema::artifacts, DbArtifact},
+    db::{schema::artifacts, DbArtifact, FsStorage},
     models::{Build, PipelineUpdate},
-    CONFIG,
 };
 use chrono::NaiveDateTime;
 use diesel::Queryable;
@@ -61,13 +60,7 @@ impl Artifact {
                 platform,
                 date.format("%Y-%m-%d-%H_%M")
             );
-            let download_uri = format!(
-                "https://{}.{}.cdn.{}/nightly/{}",
-                CONFIG.bucket_name,
-                CONFIG.bucket_region,
-                CONFIG.bucket_endpoint,
-                file_name
-            );
+            let download_uri = format!("/{}", FsStorage::get_download_url(&file_name));
 
             Some(Self {
                 build_id,
@@ -91,25 +84,6 @@ impl Artifact {
             crate::config::PROJECT_ID,
             self.build_id
         )
-    }
-
-    pub fn get_download_url(filename: &str) -> String {
-        match CONFIG.spaces_cdn {
-            true => format!(
-                "https://{}.{}.cdn.{}/nightly/{}",
-                CONFIG.bucket_name,
-                CONFIG.bucket_region,
-                CONFIG.bucket_endpoint,
-                filename
-            ),
-            false => format!(
-                "https://{}.{}.{}/nightly/{}",
-                CONFIG.bucket_name,
-                CONFIG.bucket_region,
-                CONFIG.bucket_endpoint,
-                filename
-            ),
-        }
     }
 
     /// Returns the file extension

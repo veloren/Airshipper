@@ -13,3 +13,4 @@ airshipper.ron
 airshipper.db
 .env
 *.log
+nightly/
