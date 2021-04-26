@@ -4,3 +4,4 @@ airshipper.ron
 .env
 *.log
 data/
+nightly/

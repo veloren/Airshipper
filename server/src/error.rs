@@ -3,7 +3,6 @@ use rocket::{
     request::Request,
     response::{self, Responder, Response},
 };
-use rusoto_s3::{DeleteObjectError, PutObjectError};
 use std::io::Cursor;
 use thiserror::Error;
 
@@ -14,10 +13,6 @@ pub enum ServerError {
     Status(Status),
 
     // Internal errors
-    #[error("S3 upload error: {0}")]
-    S3UploadError(#[from] rusoto_core::RusotoError<PutObjectError>),
-    #[error("S3 delete error: {0}")]
-    S3DeleteError(#[from] rusoto_core::RusotoError<DeleteObjectError>),
     #[error("Internal Error: {0}")]
     ReqwestError(#[from] reqwest::Error),
     #[error("Diesel error: {0}")]
