@@ -11,6 +11,54 @@ on:
     types: [opened, synchronize, ready_for_review, reopened, push, pull_request]
 
 jobs:
+  nix-test:
+    runs-on: ubuntu-latest
+    name: Nix Test
+    steps:
+    # Checkout
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    # Github Actions is counted torwards lfs bandwidth quota (1 GB/month on free account)
+    # Therefore we must cache them to be as efficient as possible.
+    # Source: https://github.com/actions/checkout/issues/165
+
+    # Store a list of all lfs files
+    - name: Create LFS file list
+      run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
+
+    # Restore lfs files if cache valid
+    - name: Restore LFS cache
+      uses: actions/cache@v2
+      id: lfs-cache
+      with:
+        path: .git/lfs
+        key: ${{ runner.os }}-lfs-${{ hashFiles('.lfs-assets-id') }}-v1
+
+    # Pull lfs files incase cache is invalid
+    - name: Git LFS Pull
+      run: git lfs pull
+
+    # Install Nix
+    - name: Install nix
+      uses: cachix/install-nix-action@v13
+      with:
+        install_url: https://github.com/numtide/nix-unstable-installer/releases/download/nix-2.4pre20210415_76980a1/install
+        extra_nix_config: |
+          experimental-features = nix-command flakes
+        nix_path: nixpkgs=channel:nixos-unstable
+
+    # Setup Cachix cache
+    - name: Setup cachix
+      uses: cachix/cachix-action@v10
+      with:
+        name: airshipper
+        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+    # Check and test
+    - name: Tests
+      run: nix develop -c check
+
   test:
     strategy:
       matrix:
