@@ -1,6 +1,6 @@
 use crate::{
     db::{DbArtifact, FsStorage},
-    models::{Build, PipelineUpdate},
+    models::v1::{Build, PipelineUpdate},
 };
 use chrono::NaiveDateTime;
 

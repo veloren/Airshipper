@@ -1,4 +1,4 @@
-use crate::{models::Artifact, FsStorage, Result};
+use crate::{models::v1::Artifact, FsStorage, Result};
 use rocket::tokio;
 
 pub fn process(artifacts: Vec<Artifact>, mut db: crate::DbConnection) {

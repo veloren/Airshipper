@@ -49,17 +49,18 @@ async fn rocket() -> _ {
     rocket::build()
         .attach(fairings::DbInit)
         .manage(Metrics::new().expect("Failed to create prometheus statistics!"))
+        // Deprecated
         .mount("/", routes![
-            routes::gitlab::post_pipeline_update,
-            routes::user::index,
-            routes::user::robots,
-            routes::user::favicon,
-            routes::api::version,
-            routes::api::channel_version,
-            routes::api::download,
-            routes::api::channel_download,
-            routes::metrics::metrics,
+            routes::v1::gitlab::post_pipeline_update,
+            routes::v1::user::index,
+            routes::v1::user::robots,
+            routes::v1::user::favicon,
+            routes::v1::api::version,
+            routes::v1::api::channel_version,
+            routes::v1::api::download,
+            routes::v1::api::channel_download,
+            routes::v1::metrics::metrics,
         ])
         .mount("/nightly", StaticFiles::from(db::fs::ROOT_FOLDER))
-        .register("/", catchers![routes::catchers::not_found])
+        .register("/", catchers![routes::v1::catchers::not_found])
 }

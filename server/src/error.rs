@@ -22,7 +22,7 @@ pub enum ServerError {
     #[error("Internal Metrics Error: {0}")]
     PrometheusError(#[from] prometheus::Error),
     #[error("Code '{0}' received with artifact {1:?}")]
-    InvalidResponseCode(reqwest::StatusCode, crate::models::Artifact),
+    InvalidResponseCode(reqwest::StatusCode, crate::models::v1::Artifact),
 }
 
 #[allow(clippy::needless_lifetimes)]

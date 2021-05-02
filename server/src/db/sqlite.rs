@@ -1,4 +1,4 @@
-use crate::{models::Artifact, Result};
+use crate::{models::v1::Artifact, Result};
 use sqlx::SqlitePool;
 
 #[derive(Debug, Clone)]
@@ -23,6 +23,10 @@ impl DbConnection {
     pub fn new(pool: SqlitePool) -> Self {
         Self(pool)
     }
+
+    // v2
+
+    // v1
 
     pub async fn get_latest_version<T: ToString, Y: ToString>(
         &self,

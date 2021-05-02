@@ -1,4 +1,4 @@
-use crate::{models::Artifact, Result};
+use crate::{models::v1::Artifact, Result};
 use std::path::PathBuf;
 
 #[derive(Default, Clone, Copy)]

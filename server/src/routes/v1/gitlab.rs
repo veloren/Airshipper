@@ -1,6 +1,6 @@
 use crate::{
     guards::{GitlabEvent, GitlabSecret},
-    models::PipelineUpdate,
+    models::v1::PipelineUpdate,
     webhook, Result,
 };
 use rocket::{http::Status, *};
