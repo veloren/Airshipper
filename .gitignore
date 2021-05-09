@@ -10,7 +10,7 @@ target/
 /.envrc
 
 airshipper.ron
-airshipper.db
+*.db
 .env
 *.log
-nightly/
+data/

@@ -5,7 +5,7 @@ pub const PROJECT_ID: u64 = 10_174_980;
 /// The Hook Type which gets parsed for artifacts.
 pub const HOOK_TYPE: &str = "Pipeline Hook";
 
-pub const DATABASE_FILE: &str = "airshipper.db";
+const DATABASE_FILE: &str = "airshipper.db";
 
 /// Configuration and defaults for the entire server.
 #[derive(Clone, Debug)]
@@ -19,6 +19,9 @@ pub struct ServerConfig {
     /// What binary build[s] should be downloaded
     /// NOTE: These names have to include the OS!
     pub target_executable: Vec<String>,
+
+    /// Path to the database
+    pub db_path: String,
 }
 
 impl ServerConfig {
@@ -32,6 +35,7 @@ impl ServerConfig {
                 .collect(),
             // Optional
             target_branch: Self::get_env_key_or("AIRSHIPPER_TARGET_BRANCH", "master"),
+            db_path: Self::get_env_key_or("AIRSHIPPER_DB_PATH", DATABASE_FILE),
         };
 
         cfg
@@ -42,7 +46,7 @@ impl ServerConfig {
         // Set database url
         let mut database_config = HashMap::new();
         let mut databases = HashMap::new();
-        database_config.insert("url", Value::from(DATABASE_FILE));
+        database_config.insert("url", Value::from(self.db_path.as_ref()));
         databases.insert("sqlite", Value::from(database_config));
 
         let config = Config::build(
