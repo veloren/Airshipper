@@ -6,14 +6,15 @@ services:
     restart: always
     image: docker.pkg.github.com/songtronix/airshipper/airshipper:master
     volumes:
-      - "./airshipper.db:/opt/app/airshipper.db"
-      - "./nightly:/opt/app/nightly"
+      - "./data:/opt/app/data"
+      - "./data/nightly:/opt/app/nightly"
     environment:
       - AIRSHIPPER_GITLAB_SECRET=<secret>
       - AIRSHIPPER_ARTIFACT_STAGE=build
       - AIRSHIPPER_TARGET_BRANCH=master
       - AIRSHIPPER_TARGET_EXECUTABLES=linux,windows,macos
-      - RUST_LOG=Debug
+      - AIRSHIPPER_DB_PATH=data/airshipper.db
+      - RUST_LOG=info,server=debug
       - ROCKET_ENV=production
     ports:
       - "8000:8000"
