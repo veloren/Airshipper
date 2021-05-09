@@ -1,5 +1,6 @@
 target/
 airshipper.ron
-airshipper.db
+*.db
 .env
 *.log
+data/

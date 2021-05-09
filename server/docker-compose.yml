@@ -6,18 +6,21 @@ services:
     restart: always
     image: docker.pkg.github.com/songtronix/airshipper/airshipper:latest
     volumes:
-      - "./airshipper.db:/opt/app/airshipper.db"
+      - "./data:/opt/app/data"
+      - "./data/nightly:/opt/app/nightly"
     environment:
       - AIRSHIPPER_GITLAB_SECRET=<secret>
       - AIRSHIPPER_ARTIFACT_STAGE=build-post
       - AIRSHIPPER_TARGET_BRANCH=master
       - AIRSHIPPER_TARGET_EXECUTABLES=linux,windows,macos
+      - AIRSHIPPER_DB_PATH=data/airshipper.db
       - AIRSHIPPER_BUCKET_NAME=<bucket_name>
       - AIRSHIPPER_BUCKET_ENDPOINT=<digitaloceanspaces.com>
       - AIRSHIPPER_BUCKET_REGION=<region>
       - AIRSHIPPER_BUCKET_ACCESS_KEY=<access_key>
       - AIRSHIPPER_BUCKET_SECRET_KEY=<secret_key>
       - RUST_LOG=Debug
+      - RUST_LOG=info,server=debug
       - ROCKET_ENV=production
     ports:
       - "8000:8000"
