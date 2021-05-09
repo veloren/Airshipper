@@ -5,7 +5,7 @@ pub const PROJECT_ID: u64 = 10_174_980;
 /// The Hook Type which gets parsed for artifacts.
 pub const HOOK_TYPE: &str = "Pipeline Hook";
 
-pub const DATABASE_FILE: &str = "airshipper.db";
+const DATABASE_FILE: &str = "airshipper.db";
 
 /// Configuration and defaults for the entire server.
 #[derive(Clone, Debug)]
@@ -29,6 +29,8 @@ pub struct ServerConfig {
 
     /// Whether to use DigitalOcean Spaces CDN.
     pub spaces_cdn: bool,
+    /// Path to the database
+    pub db_path: String,
 }
 
 impl ServerConfig {
@@ -46,9 +48,12 @@ impl ServerConfig {
                 .split(',')
                 .map(|x| x.to_string())
                 .collect(),
-            spaces_cdn: Self::expect_env_key("AIRSHIPPER_SPACES_CDN").parse().unwrap_or(true),
+            spaces_cdn: Self::expect_env_key("AIRSHIPPER_SPACES_CDN")
+                .parse()
+                .unwrap_or(true),
             // Optional
             target_branch: Self::get_env_key_or("AIRSHIPPER_TARGET_BRANCH", "master"),
+            db_path: Self::get_env_key_or("AIRSHIPPER_DB_PATH", DATABASE_FILE),
         };
 
         if cfg.spaces_cdn {
@@ -65,17 +70,20 @@ impl ServerConfig {
         // Set database url
         let mut database_config = HashMap::new();
         let mut databases = HashMap::new();
-        database_config.insert("url", Value::from(DATABASE_FILE));
+        database_config.insert("url", Value::from(self.db_path.as_ref()));
         databases.insert("sqlite", Value::from(database_config));
 
-        let config =
-            Config::build(rocket::config::Environment::active().unwrap_or(rocket::config::Environment::Production))
-                .extra("databases", databases);
+        let config = Config::build(
+            rocket::config::Environment::active()
+                .unwrap_or(rocket::config::Environment::Production),
+        )
+        .extra("databases", databases);
         rocket::custom(config.finalize().expect("Invalid Config!"))
     }
 
     fn expect_env_key(name: &str) -> String {
-        std::env::var(name).unwrap_or_else(|_| panic!("required '{}' env key is not set!", name))
+        std::env::var(name)
+            .unwrap_or_else(|_| panic!("required '{}' env key is not set!", name))
     }
 
     fn get_env_key_or(name: &str, unwrap_or: &str) -> String {
