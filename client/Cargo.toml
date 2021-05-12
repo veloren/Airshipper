@@ -23,23 +23,6 @@ runtimeLibs = [
     "xorg.libXrandr",
     "xorg.libXi",
 ]
-buildInputs = [
-    "zlib",
-    "harfbuzz",
-    "protobuf",
-    "gtk3",
-    "atk",
-    "cairo",
-    "pango",
-    "gdk_pixbuf",
-    "glib",
-    "expat",
-    "freetype",
-    "fontconfig",
-    "x11",
-    "xorg.libxcb",
-]
-nativeBuildInputs = ["cmake", "python3", "binutils"]
 
 [package.metadata.nix.desktopFile]
 name = "Airshipper"
