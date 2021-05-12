@@ -6,6 +6,8 @@ mod gui;
 mod io;
 mod logger;
 mod net;
+#[cfg(unix)]
+mod nix;
 mod profiles;
 #[cfg(windows)]
 mod windows;
