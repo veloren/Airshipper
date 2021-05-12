@@ -1,4 +1,6 @@
-use crate::{consts, fs, net, nix, Result};
+#[cfg(unix)]
+use crate::nix;
+use crate::{consts, fs, net, Result};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, ffi::OsString, path::PathBuf};
 use tokio::process::Command;
