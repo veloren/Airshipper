@@ -1,6 +1,10 @@
 use crate::{consts, fs, net, Result};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, ffi::OsString, path::PathBuf};
+use std::{
+    collections::HashMap,
+    ffi::OsString,
+    path::{Path, PathBuf},
+};
 use tokio::process::Command;
 
 // TODO: Support multiple profiles and manage them here.
@@ -109,11 +113,25 @@ impl Profile {
         tokio::task::block_in_place(|| fs::unzip(&profile))?;
 
         #[cfg(unix)]
-        set_permissions(vec![
-            &profile.directory.join(consts::VOXYGEN_FILE),
-            &profile.directory.join(consts::SERVER_CLI_FILE),
-        ])
-        .await?;
+        {
+            let voxygen_file = profile.directory.join(consts::VOXYGEN_FILE);
+            let server_cli_file = profile.directory.join(consts::SERVER_CLI_FILE);
+
+            let os_release = Path::new("/etc/os-release");
+            if os_release.exists()
+                && tokio::fs::read_to_string(os_release)
+                    .await?
+                    .contains("ID=nixos")
+            {
+                // Patch executable files if we are on NixOS
+                tokio::task::block_in_place(|| {
+                    fs::patch_elf(&voxygen_file, &server_cli_file)
+                })?;
+            } else {
+                set_permissions(vec![&voxygen_file, &server_cli_file]).await?;
+            }
+        }
+
         // After successful install, update the profile.
         profile.version = Some(version);
 
