@@ -14,3 +14,4 @@ airshipper.ron
 .env
 *.log
 data/
+/.vscode
