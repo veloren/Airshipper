@@ -27,3 +27,9 @@ cargo run --release
 ```
 
 Make sure to have [rustup](https://rustup.rs/) installed to compile rust code and [git lfs](https://book.veloren.net/contributors/development-tools.html#git-lfs) for assets.
+
+#### For NixOS users
+
+You can install Airshipper with:
+- Flakes enabled Nix: `nix profile install github:Songtronix/Airshipper`
+- Flakes disabled Nix: `nix-env -i -f "https://github.com/Songtronix/Airshipper/tarball/master"`
