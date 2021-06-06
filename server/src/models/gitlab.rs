@@ -26,6 +26,14 @@ impl PipelineUpdate {
             return None;
         }
 
+        if self.object_attributes.status != "success" {
+            tracing::debug!(
+                "Skipping update as it isn't successful ('{}')",
+                self.object_attributes.status
+            );
+            return None;
+        }
+
         for build in &self.builds {
             // Skip non-artifact builds.
             if build.stage != crate::CONFIG.artifact_stage {
