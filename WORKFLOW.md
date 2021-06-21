@@ -10,3 +10,10 @@
 1. new release branch is created r*.*.*
 2. Cherry Pick fixes from `master` or PR into the release branch.
 3. create new release.
+
+
+# Updating Appstream Metadata
+
+In `client/assets/net.veloren.airshipper.metainfo`:
+1. Add new release, with `version` and `date`, and optionally add a `description` for the release.
+2. Update screenshots sources.
