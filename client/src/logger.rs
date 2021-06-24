@@ -63,6 +63,14 @@ pub fn log(level: LevelFilter) {
         })
         .chain(fern::log_file(&fs::log_file()).expect("Failed to setup log file!"));
 
+    #[allow(unused_mut)]
+    let mut color = colored::control::SHOULD_COLORIZE.should_colorize();
+
+    #[cfg(windows)]
+    {
+        color &= crate::windows::color_support();
+    }
+
     let mut stdout_cfg = fern::Dispatch::new()
         .level(level)
         .level_for("wgpu_core::device", LevelFilter::Error);
@@ -76,7 +84,11 @@ pub fn log(level: LevelFilter) {
                     .line()
                     .map(|x| x.to_string())
                     .unwrap_or_else(|| "X".to_string()),
-                colors.color(record.level()),
+                if color {
+                    colors.color(record.level()).to_string()
+                } else {
+                    record.level().to_string()
+                },
                 message
             ))
         });
@@ -84,7 +96,11 @@ pub fn log(level: LevelFilter) {
         stdout_cfg = stdout_cfg.format(move |out, message, record| {
             out.finish(format_args!(
                 "[{}] {}",
-                colors.color(record.level()),
+                if color {
+                    colors.color(record.level()).to_string()
+                } else {
+                    record.level().to_string()
+                },
                 message
             ))
         });
