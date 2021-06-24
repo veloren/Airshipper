@@ -31,7 +31,7 @@ fern = { version = "0.6.0", features = ["colored"] }
 chrono = "0.4.19"
 log = "0.4.11"
 # Networking
-reqwest = "0.10.8"
+reqwest = { version = "0.10.8", default-features = false, features = ["rustls-tls"] }
 # Parsing
 strip_markdown = "0.2.0"
 html2text = "0.2.1"
