@@ -28,6 +28,7 @@ iced = { git = "https://github.com/hecrj/iced.git", default-features = false, fe
 iced_native = { git = "https://github.com/hecrj/iced.git", default-features = false, rev = "62295f5" }
 # Logging
 fern = { version = "0.6.0", features = ["colored"] }
+colored = "1.5"
 chrono = "0.4.19"
 log = "0.4.11"
 # Networking
