@@ -57,22 +57,22 @@ pub fn log_file() -> PathBuf {
 ///
 /// Note: it's synchronous!
 pub fn unzip(profile: &Profile) -> Result<()> {
-    log::info!("Unzipping to {:?}", profile.directory);
+    log::info!("Unzipping to {:?}", profile.directory());
     let mut zip_file =
-        std::fs::File::open(&profile.directory.join(consts::DOWNLOAD_FILE))?;
+        std::fs::File::open(&profile.directory().join(consts::DOWNLOAD_FILE))?;
 
     let mut archive = zip::ZipArchive::new(&mut zip_file)?;
 
     // Delete all assets to ensure that no obsolete assets will remain.
-    if profile.directory.join("assets").exists() {
-        std::fs::remove_dir_all(profile.directory.join("assets"))?;
+    if profile.directory().join("assets").exists() {
+        std::fs::remove_dir_all(profile.directory().join("assets"))?;
     }
 
     for i in 1..archive.len() {
         let mut file = archive.by_index(i)?;
         // TODO: Verify that `sanitized_name()` works correctly in this case.
         #[allow(deprecated)]
-        let path = profile.directory.join(file.sanitized_name());
+        let path = profile.directory().join(file.sanitized_name());
 
         if file.is_dir() {
             std::fs::create_dir_all(path)?;
@@ -89,7 +89,7 @@ pub fn unzip(profile: &Profile) -> Result<()> {
 
     // Delete downloaded zip
     log::trace!("Extracted files, deleting zip archive.");
-    std::fs::remove_file(profile.directory.join(consts::DOWNLOAD_FILE))?;
+    std::fs::remove_file(profile.directory().join(consts::DOWNLOAD_FILE))?;
 
     Ok(())
 }
