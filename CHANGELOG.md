@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Added
+- add troubleshooting guide 
+- create server image tagged with branch or tag automatically
+
+## Changed
+- serve veloren locally (removes s3 support) #147 
+
+## Fixed
+- Gitlab Pipeline Event model
+- CI not running on forks
+- quote paths in msiexec call
+- validate response status before download
+- only use one rustfmt.toml
+- leave one artifact per os on prune
+- reduced minimum window size
+- check status of webhook response
 
 ## [0.4.2] - 2020-12-16
 
