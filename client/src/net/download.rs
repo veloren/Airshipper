@@ -37,7 +37,7 @@ pub(crate) fn download(url: String, location: PathBuf) -> impl Stream<Item = Pro
     futures::stream::unfold(State::Ready(url, location), |state| async move {
         match state {
             State::Ready(url, location) => {
-                let response = reqwest::get(&url).await;
+                let response = crate::net::client::WEB_CLIENT.get(&url).send().await;
 
                 match response {
                     Ok(response) => {
