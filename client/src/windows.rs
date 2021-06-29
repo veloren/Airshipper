@@ -23,6 +23,7 @@ use winapi::{
 };
 
 pub fn query() -> Result<Option<Release>> {
+    // TODO: Has to be adjusted.
     let releases = self_update::backends::github::ReleaseList::configure()
         .repo_owner("songtronix")
         .repo_name("airshipper")
