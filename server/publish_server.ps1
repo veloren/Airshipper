@@ -3,4 +3,4 @@
 $default = "master"
 if (!($tag = Read-Host "Docker Image Tag [$default]")) { $tag = $default }
 
-docker push docker.pkg.github.com/songtronix/airshipper/airshipper:$tag
+docker push docker.pkg.github.com/veloren/airshipper/airshipper:$tag
