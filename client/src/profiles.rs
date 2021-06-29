@@ -12,8 +12,12 @@ use tokio::process::Command;
 pub struct Profile {
     pub name: String,
     pub channel: Channel,
-
-    pub directory: PathBuf,
+    // Persisting the storage path led to problems with the snap package because
+    // the directory the snap is allowed to write to changes with each new snap version.
+    // Since there is currently no use in persisting this path anyway, we ignore it.
+    // It is not removed either to guarantee backwards-compatibility by making sure
+    // configuration files containing this field can still be successfully parsed
+    directory: PathBuf,
     pub version: Option<String>,
 }
 
@@ -39,10 +43,15 @@ impl Profile {
             version: None,
         }
     }
+
+    pub fn directory(&self) -> PathBuf {
+        fs::profile_path(&self.name)
+    }
+
     /// Returns path to voxygen binary.
     /// e.g. <base>/profiles/default/veloren-voxygen.exe
     fn voxygen_path(&self) -> PathBuf {
-        self.directory.join(consts::VOXYGEN_FILE)
+        self.directory().join(consts::VOXYGEN_FILE)
     }
 
     /// Returns the download url for this profile
@@ -56,7 +65,7 @@ impl Profile {
     }
 
     pub fn download_path(&self) -> PathBuf {
-        self.directory.join(consts::DOWNLOAD_FILE)
+        self.directory().join(consts::DOWNLOAD_FILE)
     }
 
     fn version_url(&self) -> String {
@@ -71,9 +80,9 @@ impl Profile {
     // TODO: add possibility to start the server too
     pub fn start(profile: &Profile, verbosity: i32) -> Command {
         let mut envs = HashMap::new();
-        let userdata_dir = profile.directory.join("userdata").into_os_string();
-        let screenshot_dir = profile.directory.join("screenshots").into_os_string();
-        let assets_dir = profile.directory.join("assets").into_os_string();
+        let userdata_dir = profile.directory().join("userdata").into_os_string();
+        let screenshot_dir = profile.directory().join("screenshots").into_os_string();
+        let assets_dir = profile.directory().join("assets").into_os_string();
 
         let verbosity = match verbosity {
             0 => OsString::from("info"),
@@ -87,11 +96,11 @@ impl Profile {
         envs.insert("RUST_LOG", &verbosity);
 
         log::debug!("Launching {}", profile.voxygen_path().display());
-        log::debug!("CWD: {:?}", profile.directory);
+        log::debug!("CWD: {:?}", profile.directory());
         log::debug!("ENV: {:?}", envs);
 
         let mut cmd = Command::new(profile.voxygen_path());
-        cmd.current_dir(&profile.directory);
+        cmd.current_dir(&profile.directory());
         cmd.envs(envs);
 
         cmd
@@ -124,7 +133,6 @@ impl Profile {
                 set_permissions(vec![&voxygen_file, &server_cli_file]).await?;
             }
         }
-
         // After successful install, update the profile.
         profile.version = Some(version);
 

@@ -9,8 +9,10 @@ lazy_static::lazy_static! {
     pub static ref WEB_CLIENT: reqwest::Client = {
         reqwest::Client::builder()
             .user_agent(USER_AGENT)
-            .timeout(std::time::Duration::from_secs(10))
-            .build().expect("FATAL: Failed to build reqwest client!")
+            .use_rustls_tls()
+            .connect_timeout(std::time::Duration::from_secs(10))
+            .build()
+            .expect("FATAL: Failed to build reqwest client!")
     };
 }
 

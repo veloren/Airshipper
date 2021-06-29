@@ -4,10 +4,9 @@ name: Server Image
 on:
   push:
     branches:
-      - 'master'
-      - 'staging'
+      - "master"
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   docker:
@@ -23,7 +22,7 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            ghcr.io/songtronix/airshipper
+            ghcr.io/veloren/airshipper
           # generate Docker tags based on the following events/attributes
           tags: |
             type=semver,pattern={{version}},priority=100

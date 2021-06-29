@@ -19,7 +19,6 @@ pub struct ServerConfig {
     /// What binary build[s] should be downloaded
     /// NOTE: These names have to include the OS!
     pub target_executable: Vec<String>,
-
     /// Path to the database
     pub db_path: String,
 }

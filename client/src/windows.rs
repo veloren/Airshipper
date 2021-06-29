@@ -11,14 +11,19 @@ use winapi::{
     ctypes::c_int,
     shared::minwindef::DWORD,
     um::{
+        consoleapi::GetConsoleMode,
+        handleapi::INVALID_HANDLE_VALUE,
+        processenv::GetStdHandle,
         processthreadsapi::GetCurrentProcessId,
         shellapi::ShellExecuteW,
-        wincon::GetConsoleWindow,
+        winbase::STD_OUTPUT_HANDLE,
+        wincon::{GetConsoleWindow, ENABLE_VIRTUAL_TERMINAL_PROCESSING},
         winuser::{GetWindowThreadProcessId, ShowWindow, SW_HIDE, SW_SHOW},
     },
 };
 
 pub fn query() -> Result<Option<Release>> {
+    // TODO: Has to be adjusted.
     let releases = self_update::backends::github::ReleaseList::configure()
         .repo_owner("songtronix")
         .repo_name("airshipper")
@@ -161,4 +166,30 @@ fn started_from_console() -> bool {
 
         process_id != parent_id
     }
+}
+
+/// Determines whether the console supports [ANSI escape code](https://en.wikipedia.org/wiki/ANSI_escape_code)
+pub fn color_support() -> bool {
+    let mut color = false;
+
+    // Safety:
+    // GetStdHandle is checked for errors and for null handles.
+    // GetConsoleMode the handle passed must have the GENERIC_READ access right
+    // this always the case for handles returned by
+    // GetStdHandle(STD_OUTPUT_HANDLE) unless the program has changed the access
+    // rights, we don't so it's safe. The second argument lpMode must be a valid
+    // pointer for the duration of the call guaranteed by the rust borrow
+    // checker since mode lives until the end of the block.
+    unsafe {
+        let handle = GetStdHandle(STD_OUTPUT_HANDLE);
+        if handle != INVALID_HANDLE_VALUE && !handle.is_null() {
+            let mut mode: DWORD = 0;
+            GetConsoleMode(handle, &mut mode);
+
+            color = mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING
+                == ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        }
+    }
+
+    color
 }
