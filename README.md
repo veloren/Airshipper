@@ -1,10 +1,10 @@
 # Airshipper
 
-[![GitHub release)](https://img.shields.io/github/v/release/songtronix/airshipper?include_prereleases)](https://github.com/Songtronix/Airshipper/releases) [![License](https://img.shields.io/github/license/songtronix/airshipper?color=blue)](https://github.com/Songtronix/Airshipper/blob/master/LICENSE) [![Discord](https://img.shields.io/discord/449602562165833758?label=discord)](https://discord.gg/rvbW3Z4) [![AUR version](https://img.shields.io/aur/version/airshipper?label=AUR)](https://aur.archlinux.org/packages/airshipper/) [![Custom badge](https://img.shields.io/endpoint?color=orange&label=Support%20me&url=https%3A%2F%2Fmoshef9.wixsite.com%2Fpatreon-badge%2F_functions%2Fbadge%2F%3Fusername%3Dsongtronix)](https://www.patreon.com/songtronix)
+[![GitHub release)](https://img.shields.io/github/v/release/veloren/airshipper?include_prereleases)](https://github.com/veloren/Airshipper/releases) [![License](https://img.shields.io/github/license/veloren/airshipper?color=blue)](https://github.com/veloren/Airshipper/blob/master/LICENSE) [![Discord](https://img.shields.io/discord/449602562165833758?label=discord)](https://discord.gg/rvbW3Z4) [![AUR version](https://img.shields.io/aur/version/airshipper?label=AUR)](https://aur.archlinux.org/packages/airshipper/)
 
 A cross-platform Veloren launcher.
 
-![Airshipper](https://www.songtronix.com/airshipper-0.4.0.gif)
+![Airshipper](https://camo.githubusercontent.com/71dfc8bb095129c57a7d2c29ff7d50bba4c91e67fef84c2e6ef93be7efb1e02a/68747470733a2f2f7777772e736f6e6774726f6e69782e636f6d2f616972736869707065722d302e342e302e676966)
 
 ## Features
 
@@ -14,14 +14,12 @@ A cross-platform Veloren launcher.
 
 ## Download
 
-For all download options visit my website: [www.songtronix.com](https://www.songtronix.com)
-
 **NOTE:** Airshipper cannot be considered stable yet.
 
 #### Compile from source
 
 ```bash
-git clone https://github.com/Songtronix/Airshipper.git
+git clone https://github.com/veloren/Airshipper.git
 cd Airshipper
 cargo run --release
 ```
