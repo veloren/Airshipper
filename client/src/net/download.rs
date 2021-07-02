@@ -1,6 +1,7 @@
+use futures_util::stream::{Stream};
 use iced::futures;
 use std::path::PathBuf;
-use tokio::{fs::File, io::AsyncWriteExt, stream::Stream};
+use tokio::{fs::File, io::AsyncWriteExt};
 
 #[derive(Debug, Clone)]
 pub enum Progress {

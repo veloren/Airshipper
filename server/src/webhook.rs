@@ -15,7 +15,7 @@ pub fn process(artifacts: Vec<Artifact>, mut db: crate::DbConnection) {
 
 #[tracing::instrument(skip(db))]
 async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()> {
-    use tokio::{fs::File, prelude::*};
+    use tokio::{fs::File, io::AsyncWriteExt};
 
     tracing::info!("Downloading...");
 
