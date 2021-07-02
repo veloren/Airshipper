@@ -1,11 +1,9 @@
+use futures_util::stream::{Stream, StreamExt};
 use iced::futures;
 use std::process::{ExitStatus, Stdio};
-use tokio::{
-    io::BufReader,
-    prelude::*,
-    process::Command,
-    stream::{Stream, StreamExt},
-};
+use tokio::{io::BufReader, process::Command};
+use tokio::io::AsyncBufReadExt;
+use tokio_stream::wrappers::LinesStream;
 
 /// Returns a stream of stdout/stderr lines of the Process
 pub(crate) fn stream_process(
@@ -22,11 +20,13 @@ pub(crate) fn stream_process(
     let stdout = child.stdout.take().unwrap(); // Safe because we setup stdout & stderr beforehand
     let stderr = child.stderr.take().unwrap();
 
+    let stdout = LinesStream::new(BufReader::new(stdout).lines());
+    let stderr = LinesStream::new(BufReader::new(stderr).lines());
     // Merge stdout and stderr together
-    let reader = BufReader::new(stdout)
-        .lines()
-        .merge(BufReader::new(stderr).lines());
-    let exit_status = tokio::spawn(async { child.await });
+    //TODO: FIXME: this chains both futures, but the original code merged them
+    // maybe use:? let reader = futures_util::future::select(stdout, stderr);
+    let reader = stdout.chain(stderr);
+    let exit_status = tokio::spawn(async move { child.wait().await });
 
     Ok(reader
         .map(|x| match x {

@@ -40,42 +40,44 @@ bundled = ["openssl-sys"]
 # Cli
 # TODO: Switch to full 3.0.0 release once released
 clap = { version = "3.0.0-beta.2", features = ["derive"] } 
-indicatif = "0.15.0"
+indicatif = "0.16"
 # UI
 iced = { version = "0.3.0", default-features = false, features = ["wgpu", "tokio_old", "image"] }
 iced_native = "0.4.0"
 # Logging
 fern = { version = "0.6.0", features = ["colored"] }
-colored = "1.5"
+colored = "2.0"
 chrono = "0.4.19"
 log = "0.4.11"
 # Networking
-reqwest = { version = "0.10.8", default-features = false, features = ["rustls-tls"] }
+reqwest = { version = "0.11.4", default-features = false, features = ["rustls-tls"] }
 # Parsing
 strip_markdown = "0.2.0"
 html2text = "0.2.1"
 serde = "1.0.116"
-semver = "0.11.0"
-rss = "1.9.0"
+semver = "1"
+rss = "1.10"
 ron = "0.6.2"
 zip = "0.5.8"
-url = "2.1.1"
+url = "2.2.2"
 # Other
 image = { version = "0.23.14", default-features = false, features = ["ico"] }
-tokio = { version = "0.2.22", features = ["stream", "process", "fs"] }
+tokio = { version = "1.7.1", features = ["macros", "io-util", "process", "fs", "rt-multi-thread"] }
+tokio-stream = { version = "0.1.6", features = ["io-util"] }
+futures-util = "0.3.15"
 derive_more = "0.99.11"
 find_folder = "0.3.0"
 lazy_static = "1.4.0"
 thiserror = "1.0.20"
 bytesize = "1.0.1"
-opener = "0.4.1"
-dirs = { package = "dirs-next", version = "1.0.1" }
+opener = "0.5"
+dirs = { package = "dirs-next", version = "2.0.0" }
 # bundle all the things!
 openssl-sys = { version = "*", features = ["vendored"], optional = true }
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", features = ["shellapi", "winuser"] }
-self_update = { version = "0.20.0", features = ["archive-zip"] }
+self_update = { version = "0.27.0", features = ["archive-zip"] }
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1.11"

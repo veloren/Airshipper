@@ -6,13 +6,13 @@ mod views;
 use crate::{cli::CmdLine, fs, profiles::Profile, Result};
 use iced::{Application, Command, Element, Settings, Subscription};
 use ron::ser::PrettyConfig;
-use tokio::fs::File;
 #[cfg(windows)]
 use views::update::{UpdateView, UpdateViewMessage};
 use views::{
     default::{DefaultView, DefaultViewMessage},
     Action, View,
 };
+use tokio::{fs::File, io::AsyncWriteExt};
 
 /// Starts the GUI and won't return unless an error occurs
 pub fn run(cmd: CmdLine) -> Result<()> {
@@ -79,8 +79,6 @@ impl Airshipper {
     }
 
     pub async fn save(airshipper: Self) -> Result<()> {
-        use tokio::prelude::*;
-
         let data = tokio::task::block_in_place(|| {
             ron::ser::to_string_pretty(&airshipper, PrettyConfig::default())
         })?;
@@ -92,8 +90,6 @@ impl Airshipper {
     }
 
     pub async fn save_mut(&mut self) -> Result<()> {
-        use tokio::prelude::*;
-
         let data = tokio::task::block_in_place(|| {
             ron::ser::to_string_pretty(&self, PrettyConfig::default())
         })?;
