@@ -9,6 +9,9 @@ target/
 /.direnv
 /.envrc
 
+# IDE
+.idea
+
 airshipper.ron
 *.db
 .env
