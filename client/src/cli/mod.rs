@@ -38,7 +38,7 @@ pub fn process() -> Result<()> {
     }
 
     // CLI
-    let mut rt = tokio::runtime::Runtime::new()?;
+    let rt = tokio::runtime::Runtime::new()?;
 
     // let the user know incase airshipper can be updated.
     #[cfg(windows)]
@@ -129,7 +129,7 @@ async fn download(profile: Profile) -> Result<()> {
             net::Progress::Finished => return Ok(()),
             net::Progress::Advanced(msg, percentage) => {
                 progress_bar.set_position(percentage);
-                progress_bar.set_message(&msg);
+                progress_bar.set_message(msg.to_owned());
             },
         }
     }
