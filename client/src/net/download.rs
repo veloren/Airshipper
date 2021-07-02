@@ -23,6 +23,7 @@ impl std::fmt::Display for Progress {
 }
 
 #[derive(Debug)]
+#[allow(clippy::large_enum_variant)]
 enum State {
     Ready(String, PathBuf),
     Downloading {
