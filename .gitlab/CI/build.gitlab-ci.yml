@@ -1,0 +1,141 @@
+unittests:
+  extends: .recompile-branch
+  stage: build
+  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/quality:${CACHE_IMAGE_TAG}
+  variables:
+    GIT_DEPTH: 9999999999999
+  script:
+    - ln -s /dockercache/target target
+    - rm -r target/debug/incremental/veloren_* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
+    - rm -r target/debug/incremental* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
+    - cargo test --all-features
+  retry:
+    max: 2
+
+# Coverage is needed on master for the README.md badge to work
+# tmp remove simd as it doesnt work with tarpaulin: https://github.com/rust-lang/rust/issues/77529
+coverage:
+  extends: .publish
+  stage: build
+  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/tarpaulin:${CACHE_IMAGE_TAG}
+  script:
+    - ln -s /dockercache/target target
+    - rm -r target/debug/incremental/veloren_* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
+    - find ./* -name "Cargo.toml" -exec sed -i 's/, "simd"]/]/g' {} \;
+    - find ./* -name "Cargo.toml" -exec sed -i 's/"simd"]/]/g' {} \;
+    - sed -i 's/vek /#vek /g' ./Cargo.toml;
+    - cargo tarpaulin -v -- --test-threads=2
+  retry:
+    max: 2
+
+#linux, windows, macos builds here as template
+.tlinux:
+  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/release-linux:${CACHE_IMAGE_TAG}
+  script:
+    - ln -s /dockercache/target target
+    - rm -r target/release/incremental/veloren_* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
+    - cargo build --release -p airshipper --all-features
+    - cargo build --release -p airshipper-server
+    - cp -r target/release/airshipper $CI_PROJECT_DIR
+    - cp -r target/release/airshipper-server $CI_PROJECT_DIR
+  artifacts:
+    paths:
+      - airshipper
+      - airshipper-server
+      - assets/
+      - LICENSE
+    expire_in: 1 week
+
+.twindows:
+  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/release-windows:${CACHE_IMAGE_TAG}
+  script:
+    - update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
+    - update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
+    - ln -s /dockercache/target target
+    - rm -r target/release/incremental/veloren_* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
+    - cargo build --target=x86_64-pc-windows-gnu --release -p airshipper --all-features
+    - cargo build --target=x86_64-pc-windows-gnu --release -p airshipper-server
+    - cp -r target/x86_64-pc-windows-gnu/release/airshipper.exe $CI_PROJECT_DIR
+    - cp -r target/x86_64-pc-windows-gnu/release/airshipper-server.exe $CI_PROJECT_DIR
+    - cp /usr/lib/gcc/x86_64-w64-mingw32/7.3-posix/libgcc_s_seh-1.dll $CI_PROJECT_DIR
+    - cp /usr/lib/gcc/x86_64-w64-mingw32/7.3-posix/libstdc++-6.dll $CI_PROJECT_DIR
+    - cp /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $CI_PROJECT_DIR
+  artifacts:
+    paths:
+      - airshipper.exe
+      - airshipper-server.exe
+      - assets/
+      - LICENSE
+      - libgcc_s_seh-1.dll
+      - libstdc++-6.dll
+      - libwinpthread-1.dll
+    expire_in: 1 week
+
+.tmacos:
+  tags: ["veloren-macos"]
+  before_script:
+    - source $HOME/.cargo/env
+    - cargo --version
+    - export DISABLE_GIT_LFS_CHECK=true
+    - export RUSTFLAGS="-D warnings"
+  script:
+    - export MACOSX_DEPLOYMENT_TARGET="10.13"
+    - cargo build --release -p airshipper --all-features
+    - cargo build --release -p airshipper-server-cli
+    - cp -r target/release/airshipper $CI_PROJECT_DIR
+    - cp -r target/release/airshipper-server $CI_PROJECT_DIR
+  artifacts:
+    paths:
+      - airshipper
+      - airshipper-server
+      - assets/
+      - LICENSE
+    expire_in: 1 week
+
+# e.g. post merge and scheduled builds
+.tmacos-master-cache:
+    cache:
+      key: "macos-master-cache"
+      paths:
+        - target/
+
+# e.g. optional builds from MRs
+.tmacos-mr-cache:
+    cache:
+      key: "macos-mr-cache"
+      paths:
+        - target/
+
+# build on release or master
+linux:
+  extends:
+    - .tlinux
+    - .release
+
+windows:
+  extends:
+    - .twindows
+    - .release
+
+macos:
+  extends:
+    - .tmacos
+    - .release
+    - .tmacos-master-cache
+
+# if NOT release or master, allow optional builds
+opt-linux:
+  extends:
+    - .tlinux
+    - .optional-release
+
+opt-windows:
+  extends:
+    - .twindows
+    - .optional-release
+
+opt-macos:
+  extends:
+    - .tmacos
+    - .optional-release
+    - .tmacos-mr-cache
