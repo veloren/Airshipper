@@ -1,8 +1,10 @@
 use futures_util::stream::{Stream, StreamExt};
 use iced::futures;
 use std::process::{ExitStatus, Stdio};
-use tokio::{io::BufReader, process::Command};
-use tokio::io::AsyncBufReadExt;
+use tokio::{
+    io::{AsyncBufReadExt, BufReader},
+    process::Command,
+};
 use tokio_stream::wrappers::LinesStream;
 
 /// Returns a stream of stdout/stderr lines of the Process

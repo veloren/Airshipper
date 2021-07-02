@@ -1,4 +1,4 @@
-use futures_util::stream::{Stream};
+use futures_util::stream::Stream;
 use iced::futures;
 use std::path::PathBuf;
 use tokio::{fs::File, io::AsyncWriteExt};
