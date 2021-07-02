@@ -152,7 +152,12 @@ impl Profile {
 #[cfg(unix)]
 async fn set_permissions(files: Vec<&std::path::PathBuf>) -> Result<()> {
     for file in files {
-        Command::new("chmod").arg("+x").arg(file).spawn()?.wait().await?;
+        Command::new("chmod")
+            .arg("+x")
+            .arg(file)
+            .spawn()?
+            .wait()
+            .await?;
     }
     Ok(())
 }
