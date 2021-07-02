@@ -35,14 +35,13 @@ unittests:
     - ln -s /dockercache/target target
     - rm -r target/release/incremental/veloren_* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
     - cargo build --release -p airshipper --all-features
-    - cargo build --release -p airshipper-server
+    - cargo build --release -p airshipper-server --all-features
     - cp -r target/release/airshipper $CI_PROJECT_DIR
     - cp -r target/release/airshipper-server $CI_PROJECT_DIR
   artifacts:
     paths:
       - airshipper
       - airshipper-server
-      - assets/
       - LICENSE
     expire_in: 1 week
 
@@ -54,7 +53,7 @@ unittests:
     - ln -s /dockercache/target target
     - rm -r target/release/incremental/veloren_* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
     - cargo build --target=x86_64-pc-windows-gnu --release -p airshipper --all-features
-    - cargo build --target=x86_64-pc-windows-gnu --release -p airshipper-server
+    - cargo build --target=x86_64-pc-windows-gnu --release -p airshipper-server --all-features
     - cp -r target/x86_64-pc-windows-gnu/release/airshipper.exe $CI_PROJECT_DIR
     - cp -r target/x86_64-pc-windows-gnu/release/airshipper-server.exe $CI_PROJECT_DIR
     - cp /usr/lib/gcc/x86_64-w64-mingw32/7.3-posix/libgcc_s_seh-1.dll $CI_PROJECT_DIR
@@ -64,7 +63,6 @@ unittests:
     paths:
       - airshipper.exe
       - airshipper-server.exe
-      - assets/
       - LICENSE
       - libgcc_s_seh-1.dll
       - libstdc++-6.dll
@@ -81,14 +79,13 @@ unittests:
   script:
     - export MACOSX_DEPLOYMENT_TARGET="10.13"
     - cargo build --release -p airshipper --all-features
-    - cargo build --release -p airshipper-server-cli
+    - cargo build --release -p airshipper-server --all-features
     - cp -r target/release/airshipper $CI_PROJECT_DIR
     - cp -r target/release/airshipper-server $CI_PROJECT_DIR
   artifacts:
     paths:
       - airshipper
       - airshipper-server
-      - assets/
       - LICENSE
     expire_in: 1 week
 
