@@ -6,7 +6,7 @@ mod views;
 use crate::{cli::CmdLine, fs, profiles::Profile, Result};
 use iced::{Application, Command, Element, Settings, Subscription};
 use ron::ser::PrettyConfig;
-use tokio::fs::File;
+use tokio::{fs::File, io::AsyncWriteExt};
 #[cfg(windows)]
 use views::update::{UpdateView, UpdateViewMessage};
 use views::{
@@ -79,8 +79,6 @@ impl Airshipper {
     }
 
     pub async fn save(airshipper: Self) -> Result<()> {
-        use tokio::prelude::*;
-
         let data = tokio::task::block_in_place(|| {
             ron::ser::to_string_pretty(&airshipper, PrettyConfig::default())
         })?;
@@ -92,8 +90,6 @@ impl Airshipper {
     }
 
     pub async fn save_mut(&mut self) -> Result<()> {
-        use tokio::prelude::*;
-
         let data = tokio::task::block_in_place(|| {
             ron::ser::to_string_pretty(&self, PrettyConfig::default())
         })?;
