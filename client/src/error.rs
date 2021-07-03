@@ -58,7 +58,7 @@ impl_from!(iced::Error, ClientError::IcedError);
 #[cfg(windows)]
 impl_from!(self_update::errors::Error, ClientError::UpdateError);
 #[cfg(windows)]
-impl_from!(semver::SemVerError, ClientError::VersionError);
+impl_from!(semver::Error, ClientError::VersionError);
 
 /// Set up panic handler to relay panics to logs file.
 pub fn panic_hook() {
