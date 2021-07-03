@@ -2,7 +2,7 @@
 //! the GUI/CLI can act upon.
 use clap::{crate_authors, crate_version, Clap};
 
-/// Provides automatic updates for the voxel RPG Veloren. ( https://veloren.net )
+/// Provides automatic updates for the voxel RPG Veloren. ( <https://veloren.net> )
 #[derive(Clap, Debug, Default, Clone)]
 #[clap(name = "Airshipper", version = crate_version!(), author = crate_authors!())]
 pub struct CmdLine {

@@ -16,7 +16,7 @@ pub struct ServerConfig {
     pub artifact_stage: String,
     /// What branch should be downloaded
     pub target_branch: String,
-    /// What binary build[s] should be downloaded
+    /// What binary builds should be downloaded
     /// NOTE: These names have to include the OS!
     pub target_executable: Vec<String>,
 
