@@ -55,7 +55,8 @@ unittests:
     - rm -r target/release/incremental/veloren_* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
     - cargo build --target=x86_64-pc-windows-gnu --release -p airshipper --all-features
     - cargo build --target=x86_64-pc-windows-gnu --release -p airshipper-server --all-features
-    - cargo wix client/Cargo.toml -o ./target/wix/ --nocapture --no-build
+    # skip windows installer for now on gitlab
+    #- cargo wix client/Cargo.toml -o ./target/wix/ --nocapture --no-build
     - cp -r target/wix/airshipper-*-x86_64.msi $CI_PROJECT_DIR/airshipper-windows.msi
     - cp -r target/x86_64-pc-windows-gnu/release/airshipper.exe $CI_PROJECT_DIR
     - cp -r target/x86_64-pc-windows-gnu/release/airshipper-server.exe $CI_PROJECT_DIR
