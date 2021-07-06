@@ -65,7 +65,7 @@ unittests:
     - cp /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $CI_PROJECT_DIR
   artifacts:
     paths:
-      - airshipper-windows.msi
+      #- airshipper-windows.msi
       - airshipper.exe
       - airshipper-server.exe
       - LICENSE
