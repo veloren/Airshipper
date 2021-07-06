@@ -1,32 +1,36 @@
 use crate::{consts, ClientError, Result};
 use std::path::Path;
 
-const PATCH_DRV: &str = "
+const PATCH_DRV: &str = r#"
 { parentDir, velorenExe, serverExe, pkgs ? import <nixpkgs> {} }:
-let runtimeLibs = with pkgs; ([ libGL libxkbcommon libudev alsaLib ] ++ (with xorg; [ \
-                         libxcb libX11 libXcursor libXrandr libXi ])); in
+let
+  runtimeLibs =
+    with pkgs;
+    ([ libGL libxkbcommon libudev alsaLib vulkan-loader vulkan-extension-layer ]
+            ++ (with xorg; [ libxcb libX11 libXcursor libXrandr libXi ]));
+in
 pkgs.stdenv.mkDerivation {
-    name = \"veloren-patch\";
+    name = "veloren-patch";
     src = builtins.path {
       path = parentDir;
       filter = path: type: path == velorenExe || path == serverExe;
     };
-    phases = [ \"installPhase\" \"fixupPhase\" ];
+    phases = [ "installPhase" "fixupPhase" ];
     nativeBuildInputs = [ pkgs.makeWrapper ];
-    installPhase = \"mkdir $out && cp $src/* $out\";
+    installPhase = "mkdir $out && cp $src/* $out";
     fixupPhase = ''
         chmod 755 $out/*
 
-        patchelf --set-interpreter \"$(cat $NIX_CC/nix-support/dynamic-linker)\" \
+        patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" \
                          $out/veloren-voxygen
-        patchelf --set-interpreter \"$(cat $NIX_CC/nix-support/dynamic-linker)\" \
+        patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" \
                          $out/veloren-server-cli
 
         wrapProgram $out/veloren-voxygen --set LD_LIBRARY_PATH \
-                         \"${pkgs.lib.makeLibraryPath runtimeLibs}\"
+                         "${pkgs.lib.makeLibraryPath runtimeLibs}"
     '';
 }
-";
+"#;
 
 const OS_RELEASE: &str = "/etc/os-release";
 
