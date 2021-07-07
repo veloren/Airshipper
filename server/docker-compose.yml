@@ -4,16 +4,14 @@ services:
   airshipper:
     container_name: Airshipper
     restart: always
-    image: docker.pkg.github.com/veloren/airshipper/airshipper:master
+    image: registry.gitlab.com/veloren/airshipper/server:master
     volumes:
       - "./data:/opt/app/data"
-      - "./data/nightly:/opt/app/nightly"
     environment:
       - AIRSHIPPER_GITLAB_SECRET=<secret>
       - AIRSHIPPER_ARTIFACT_STAGE=build
       - AIRSHIPPER_TARGET_BRANCH=master
       - AIRSHIPPER_TARGET_EXECUTABLES=linux,windows,macos
-      - AIRSHIPPER_DB_PATH=data/airshipper.db
       - RUST_LOG=info,server=debug
       - ROCKET_ENV=production
     ports:

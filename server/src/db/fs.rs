@@ -1,10 +1,9 @@
 use crate::{models::Artifact, Result};
-use std::path::PathBuf;
 
 #[derive(Default, Clone, Copy)]
 pub struct FsStorage;
 
-pub const ROOT_FOLDER: &str = "nightly";
+pub const PROFILE_FOLDER: &str = "nightly";
 
 impl FsStorage {
     /// store artifact
@@ -26,7 +25,8 @@ impl FsStorage {
     async fn store_file(
         local_filename: impl ToString + std::fmt::Debug,
     ) -> Result<String> {
-        let root_folder = PathBuf::from(ROOT_FOLDER);
+        let mut root_folder = crate::CONFIG.get_local_storage_path();
+        root_folder.push(PROFILE_FOLDER);
         let local_filename = local_filename.to_string();
 
         tokio::fs::copy(&local_filename, root_folder.join(&local_filename)).await?;
@@ -35,7 +35,8 @@ impl FsStorage {
 
     #[tracing::instrument]
     async fn delete_file(filename: impl ToString + std::fmt::Debug) -> Result<()> {
-        let root_folder = PathBuf::from(ROOT_FOLDER);
+        let mut root_folder = crate::CONFIG.get_local_storage_path();
+        root_folder.push(PROFILE_FOLDER);
         let filename = filename.to_string();
 
         if let Err(e) = tokio::fs::remove_file(root_folder.join(&filename)).await {
@@ -50,7 +51,8 @@ impl FsStorage {
     }
 
     pub fn get_download_url(filename: &str) -> String {
-        let root_folder = PathBuf::from(ROOT_FOLDER);
+        let mut root_folder = crate::CONFIG.get_local_storage_path();
+        root_folder.push(PROFILE_FOLDER);
         root_folder
             .join(&filename)
             .display()
