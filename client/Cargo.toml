@@ -22,6 +22,7 @@ runtimeLibs = [
     "xorg.libX11",
     "xorg.libXrandr",
     "xorg.libXi",
+    "xorg.libXcursor",
 ]
 
 [package.metadata.nix.desktopFile]
