@@ -1,18 +1,17 @@
-# Airshipper Server Runtime Environment.
-FROM debian:buster-slim as runtime
+FROM debian:stable-slim
 
-RUN apt-get update
-RUN export DEBIAN_FRONTEND=noninteractive
-RUN apt-get install -y --no-install-recommends --assume-yes \
+RUN apt-get update \
+    && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get install -y --no-install-recommends --assume-yes \
         ca-certificates \
-        build-essential \
-        libssl-dev
+        librust-backtrace+libbacktrace-dev \
+        libssl-dev \
+    && rm -rf /var/lib/apt/lists/*;
 
-WORKDIR /opt/app
+WORKDIR /opt
 
-COPY --from=builder /app/target/release/server .
-COPY ./airshipper-server /opt/app/airshipper-server
+COPY ./airshipper-server /opt/airshipper-server
 
 ENV RUST_BACKTRACE=full
 EXPOSE 8000
-CMD [ "./airshipper-server" ]
+CMD [ "/opt/airshipper-server" ]
