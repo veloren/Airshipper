@@ -1,8 +1,5 @@
 #![allow(clippy::unit_arg)]
 
-use std::path::PathBuf;
-
-use db::ROOT_FOLDER;
 use rocket::*;
 use rocket_contrib::serve::StaticFiles;
 #[macro_use]
@@ -22,7 +19,7 @@ mod routes;
 mod webhook;
 
 use crate::error::ServerError;
-use config::ServerConfig;
+use config::{ServerConfig, LOCAL_STORAGE_PATH};
 use metrics::Metrics;
 
 pub type Result<T> = std::result::Result<T, ServerError>;
@@ -34,9 +31,11 @@ lazy_static::lazy_static! {
 }
 
 pub async fn rocket() -> Result<rocket::Rocket> {
-    let root_folder = PathBuf::from(ROOT_FOLDER);
-    if !root_folder.exists() {
-        tokio::fs::create_dir_all(root_folder).await.unwrap();
+    let local_storage_folder = CONFIG.get_local_storage_path();
+    if !local_storage_folder.exists() {
+        tokio::fs::create_dir_all(local_storage_folder.clone())
+            .await
+            .unwrap();
     }
 
     // Base of the config and attach everything else
@@ -56,6 +55,9 @@ pub async fn rocket() -> Result<rocket::Rocket> {
             routes::api::channel_download,
             routes::metrics::metrics,
         ])
-        .mount("/nightly", StaticFiles::from(db::fs::ROOT_FOLDER))
+        .mount(
+            &format!("/{}", LOCAL_STORAGE_PATH),
+            StaticFiles::from(local_storage_folder),
+        )
         .register(catchers![routes::catchers::not_found]))
 }

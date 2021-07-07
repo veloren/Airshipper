@@ -19,7 +19,14 @@ impl Fairing for DbInit {
 
     fn on_launch(&self, _: &Cargo) {
         use crate::diesel::Connection;
-        let con = diesel::SqliteConnection::establish(&crate::CONFIG.db_path).expect(
+        let con = diesel::SqliteConnection::establish(
+            crate::CONFIG
+                .get_db_file_path()
+                .as_path()
+                .to_str()
+                .expect("non-UTF8 path"),
+        )
+        .expect(
             "Could not establish connection to the database to initialise the table!",
         );
         // Run migrations
