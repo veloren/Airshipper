@@ -1,7 +1,6 @@
 #![allow(clippy::unit_arg)]
 
-use rocket::*;
-use rocket_contrib::serve::StaticFiles;
+use rocket::{fs::FileServer, *};
 #[macro_use]
 extern crate diesel;
 #[macro_use]
@@ -30,7 +29,7 @@ lazy_static::lazy_static! {
     pub static ref CONFIG: ServerConfig = ServerConfig::load();
 }
 
-pub async fn rocket() -> Result<rocket::Rocket> {
+pub async fn rocket() -> Result<rocket::Rocket<rocket::Build>> {
     let local_storage_folder = CONFIG.get_local_storage_path();
     if !local_storage_folder.exists() {
         tokio::fs::create_dir_all(local_storage_folder.clone())
@@ -57,7 +56,7 @@ pub async fn rocket() -> Result<rocket::Rocket> {
         ])
         .mount(
             &format!("/{}", LOCAL_STORAGE_PATH),
-            StaticFiles::from(local_storage_folder),
+            FileServer::from(local_storage_folder),
         )
-        .register(catchers![routes::catchers::not_found]))
+        .register("/", catchers![routes::catchers::not_found]))
 }

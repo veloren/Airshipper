@@ -1,4 +1,4 @@
-use rocket::{config::*, Rocket};
+use rocket::{serde::json::Value, Rocket};
 
 /// The project ID of veloren on gitlab.
 pub const PROJECT_ID: u64 = 10_174_980;
@@ -55,24 +55,23 @@ impl ServerConfig {
         path
     }
 
-    pub fn rocket(&self) -> Rocket {
-        use std::collections::HashMap;
+    pub fn rocket(&self) -> Rocket<rocket::Build> {
+        use rocket::figment::{util::map, Figment};
         // Set database url
-        let mut database_config = HashMap::new();
-        let mut databases = HashMap::new();
         let dbpath = self.get_db_file_path();
-        database_config.insert(
-            "url",
-            Value::from(dbpath.to_str().expect("non UTF8-path provided")),
-        );
-        databases.insert("sqlite", Value::from(database_config));
+        let options =
+            map!["url" => Value::from(dbpath.to_str().expect("non UTF8-path provided"))];
+        let config = Figment::from(rocket::Config::debug_default())
+            .merge(("databases", map!["sqlite" => &options]));
 
-        let config = Config::build(
-            rocket::config::Environment::active()
-                .unwrap_or(rocket::config::Environment::Production),
-        )
-        .extra("databases", databases);
-        rocket::custom(config.finalize().expect("Invalid Config!"))
+        let rocket = rocket::custom(config);
+        rocket
+        /*
+                   .attach(SqliteDb::fairing())
+           .ignite()
+           .await
+           .unwrap();
+        */
     }
 
     fn expect_env_key(name: &str) -> String {
