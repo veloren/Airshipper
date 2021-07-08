@@ -5,9 +5,7 @@ use rocket::{http::Status, response::Redirect, *};
 // NOTE: We want to change this behaviour once stable releases are more used than nightly
 #[get("/version/<platform>")]
 pub async fn version(db: crate::DbConnection, platform: String) -> Result<String> {
-    let query =
-        tokio::task::block_in_place(|| db.get_latest_version(platform, "nightly"))?;
-    match query {
+    match db.get_latest_version(platform, "nightly").await? {
         Some(ver) => Ok(ver),
         None => Err(Status::NotFound.into()),
     }
@@ -19,8 +17,7 @@ pub async fn channel_version(
     platform: String,
     channel: String,
 ) -> Result<String> {
-    let query = tokio::task::block_in_place(|| db.get_latest_version(platform, channel))?;
-    match query {
+    match db.get_latest_version(platform, channel).await? {
         Some(ver) => Ok(ver),
         None => Err(Status::NotFound.into()),
     }
@@ -31,11 +28,10 @@ pub async fn channel_version(
 #[get("/latest/<platform>")]
 pub async fn download(
     db: crate::DbConnection,
-    metrics: State<'_, Metrics>,
+    metrics: &State<Metrics>,
     platform: String,
 ) -> Result<Redirect> {
-    let query = tokio::task::block_in_place(|| db.get_latest_uri(&platform, "nightly"))?;
-    match query {
+    match db.get_latest_uri(&platform, "nightly").await? {
         Some(uri) => {
             metrics.increment(&platform);
             Ok(Redirect::to(uri))
@@ -47,12 +43,11 @@ pub async fn download(
 #[get("/latest/<platform>/<channel>")]
 pub async fn channel_download(
     db: crate::DbConnection,
-    metrics: State<'_, Metrics>,
+    metrics: &State<Metrics>,
     platform: String,
     channel: String,
 ) -> Result<Redirect> {
-    let query = tokio::task::block_in_place(|| db.get_latest_uri(&platform, channel))?;
-    match query {
+    match db.get_latest_uri(&platform, channel).await? {
         Some(uri) => {
             metrics.increment(&platform);
             Ok(Redirect::to(uri))
