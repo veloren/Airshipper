@@ -61,17 +61,15 @@ impl ServerConfig {
         let dbpath = self.get_db_file_path();
         let options =
             map!["url" => Value::from(dbpath.to_str().expect("non UTF8-path provided"))];
-        let config = Figment::from(rocket::Config::debug_default())
-            .merge(("databases", map!["sqlite" => &options]));
+        let mut config = rocket::Config::release_default();
+        config.log_level = rocket::log::LogLevel::Debug;
+        config.address = std::net::Ipv4Addr::new(0, 0, 0, 0).into();
 
-        let rocket = rocket::custom(config);
+        let provider =
+            Figment::from(config).merge(("databases", map!["sqlite" => &options]));
+
+        let rocket = rocket::custom(provider);
         rocket
-        /*
-                   .attach(SqliteDb::fairing())
-           .ignite()
-           .await
-           .unwrap();
-        */
     }
 
     fn expect_env_key(name: &str) -> String {

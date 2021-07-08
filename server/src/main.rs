@@ -14,12 +14,12 @@ mod db;
 mod error;
 mod fairings;
 mod guards;
+mod logger;
 mod metrics;
 mod models;
 mod prune;
 mod routes;
 mod webhook;
-mod logger;
 
 use crate::error::ServerError;
 use config::{ServerConfig, LOCAL_STORAGE_PATH};
@@ -57,6 +57,7 @@ async fn build() -> Result<rocket::Rocket<rocket::Build>> {
         .mount("/", routes![
             routes::gitlab::post_pipeline_update,
             routes::user::index,
+            routes::user::ping,
             routes::user::robots,
             routes::user::favicon,
             routes::api::version,
