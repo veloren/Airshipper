@@ -5,7 +5,7 @@ use crate::{
 use chrono::NaiveDateTime;
 use diesel::Queryable;
 
-#[derive(Debug, Queryable, Insertable)]
+#[derive(Debug, Queryable, Insertable, Clone)]
 #[table_name = "artifacts"]
 pub struct Artifact {
     pub build_id: i32,
