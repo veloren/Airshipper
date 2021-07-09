@@ -68,8 +68,7 @@ impl ServerConfig {
         let provider =
             Figment::from(config).merge(("databases", map!["sqlite" => &options]));
 
-        let rocket = rocket::custom(provider);
-        rocket
+        rocket::custom(provider)
     }
 
     fn expect_env_key(name: &str) -> String {

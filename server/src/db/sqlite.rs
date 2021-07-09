@@ -41,7 +41,7 @@ impl DbConnection {
                     .optional()
             })
             .await
-            .map_err(|e| ServerError::DieselError(e))
+            .map_err(ServerError::DieselError)
     }
 
     pub async fn get_latest_uri<T: ToString, Y: ToString>(
@@ -64,7 +64,7 @@ impl DbConnection {
                     .optional()
             })
             .await
-            .map_err(|e| ServerError::DieselError(e))
+            .map_err(ServerError::DieselError)
     }
 
     pub async fn insert_artifact(&mut self, new_artifact: &Artifact) -> Result<()> {
@@ -79,7 +79,7 @@ impl DbConnection {
                     .execute(conn)
             })
             .await
-            .map_err(|e| ServerError::DieselError(e))?;
+            .map_err(ServerError::DieselError)?;
         Ok(())
     }
 
@@ -89,7 +89,7 @@ impl DbConnection {
             .0
             .run(move |conn| artifacts.count().get_result(conn).optional())
             .await
-            .map_err(|e| ServerError::DieselError(e))?;
+            .map_err(ServerError::DieselError)?;
 
         match count {
             Some(candidates) => {
@@ -116,7 +116,7 @@ impl DbConnection {
                     .load::<DbArtifact>(conn)
             })
             .await
-            .map_err(|e| ServerError::DieselError(e))?;
+            .map_err(ServerError::DieselError)?;
 
         let win_artis = artis
             .iter()
@@ -145,7 +145,7 @@ impl DbConnection {
                 diesel::delete(artifacts.filter(id.eq_any(ids))).execute(conn)
             })
             .await
-            .map_err(|e| ServerError::DieselError(e))?;
+            .map_err(ServerError::DieselError)?;
         Ok(artis.iter().map(|x| (*x).into()).collect())
     }
 
@@ -162,7 +162,7 @@ impl DbConnection {
                     .optional()
             })
             .await
-            .map_err(|e| ServerError::DieselError(e))?;
+            .map_err(ServerError::DieselError)?;
 
         match count {
             Some(0) => Ok(true),

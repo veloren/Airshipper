@@ -48,12 +48,16 @@ async fn build() -> Result<rocket::Rocket<rocket::Build>> {
             .unwrap();
     }
 
+    let metrics = Metrics::new().expect("Failed to create prometheus statistics!");
+    let metrics = std::sync::Arc::new(metrics);
+
     // Base of the config and attach everything else
     Ok(CONFIG
         .rocket()
         .attach(DbConnection::fairing())
         .attach(fairings::db::DbInit)
-        .manage(Metrics::new().expect("Failed to create prometheus statistics!"))
+        .attach(metrics.clone())
+        .manage(metrics)
         .mount("/", routes![
             routes::gitlab::post_pipeline_update,
             routes::user::index,

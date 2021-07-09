@@ -1,5 +1,5 @@
 use crate::Result;
-use prometheus::{Encoder, IntCounter, Registry, TextEncoder};
+use prometheus::{Encoder, IntCounter, IntCounterVec, Opts, Registry, TextEncoder};
 
 /// Prometheus Metrics
 pub struct Metrics {
@@ -8,6 +8,9 @@ pub struct Metrics {
     downloads_windows: IntCounter,
     downloads_linux: IntCounter,
     downloads_macos: IntCounter,
+    pub uploads: IntCounter,
+
+    http_routes_in: IntCounterVec,
 }
 
 impl Metrics {
@@ -26,10 +29,23 @@ impl Metrics {
             "macos_downloads",
             "shows the number of requests which want to download Veloren for MacOS",
         )?;
+        let uploads = IntCounter::new(
+            "uploads_total",
+            "shows the number of requests which lead to an upload of new artifacts",
+        )?;
+        let http_routes_in = IntCounterVec::new(
+            Opts::new(
+                "http_routes_in_total",
+                "shows the number of requests per each route",
+            ),
+            &["http"],
+        )?;
 
         registry.register(Box::new(downloads_windows.clone()))?;
         registry.register(Box::new(downloads_linux.clone()))?;
         registry.register(Box::new(downloads_macos.clone()))?;
+        registry.register(Box::new(uploads.clone()))?;
+        registry.register(Box::new(http_routes_in.clone()))?;
 
         Ok(Self {
             registry,
@@ -37,6 +53,9 @@ impl Metrics {
             downloads_windows,
             downloads_linux,
             downloads_macos,
+            uploads,
+
+            http_routes_in,
         })
     }
 
@@ -60,5 +79,27 @@ impl Metrics {
         encoder.encode(&metric_families, &mut buffer)?;
 
         Ok(String::from_utf8(buffer).unwrap())
+    }
+}
+
+use rocket::{
+    fairing::{Fairing, Info, Kind},
+    request::Request,
+    response::Response,
+};
+#[crate::async_trait]
+impl Fairing for Metrics {
+    fn info(&self) -> Info {
+        Info {
+            name: "Prometheus metric collection",
+            kind: Kind::Response,
+        }
+    }
+
+    async fn on_response<'r>(&self, request: &'r Request<'_>, _: &mut Response<'r>) {
+        if let Some(route) = request.route() {
+            let endpoint = route.uri.as_str();
+            self.http_routes_in.with_label_values(&[&endpoint]).inc();
+        }
     }
 }
