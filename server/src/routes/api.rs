@@ -1,5 +1,6 @@
 use crate::{metrics::Metrics, Result};
 use rocket::{http::Status, response::Redirect, *};
+use std::sync::Arc;
 
 // If no channel specified we default to nightly.
 // NOTE: We want to change this behaviour once stable releases are more used than nightly
@@ -28,7 +29,7 @@ pub async fn channel_version(
 #[get("/latest/<platform>")]
 pub async fn download(
     db: crate::DbConnection,
-    metrics: &State<Metrics>,
+    metrics: &State<Arc<Metrics>>,
     platform: String,
 ) -> Result<Redirect> {
     match db.get_latest_uri(&platform, "nightly").await? {
@@ -43,7 +44,7 @@ pub async fn download(
 #[get("/latest/<platform>/<channel>")]
 pub async fn channel_download(
     db: crate::DbConnection,
-    metrics: &State<Metrics>,
+    metrics: &State<Arc<Metrics>>,
     platform: String,
     channel: String,
 ) -> Result<Redirect> {
