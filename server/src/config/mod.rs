@@ -1,10 +1,12 @@
-use rocket::{config::*, Rocket};
+use rocket::{serde::json::Value, Rocket};
 
 /// The project ID of veloren on gitlab.
 pub const PROJECT_ID: u64 = 10_174_980;
 /// The Hook Type which gets parsed for artifacts.
 pub const HOOK_TYPE: &str = "Pipeline Hook";
 
+const DEFAULT_DATA_PATH: &str = "data";
+pub const LOCAL_STORAGE_PATH: &str = "local";
 const DATABASE_FILE: &str = "airshipper.db";
 
 /// Configuration and defaults for the entire server.
@@ -20,8 +22,8 @@ pub struct ServerConfig {
     /// NOTE: These names have to include the OS!
     pub target_executable: Vec<String>,
 
-    /// Path to the database
-    pub db_path: String,
+    /// Path to the data directory
+    pub data_path: String,
 }
 
 impl ServerConfig {
@@ -35,26 +37,38 @@ impl ServerConfig {
                 .collect(),
             // Optional
             target_branch: Self::get_env_key_or("AIRSHIPPER_TARGET_BRANCH", "master"),
-            db_path: Self::get_env_key_or("AIRSHIPPER_DB_PATH", DATABASE_FILE),
+            data_path: Self::get_env_key_or("AIRSHIPPER_DATA_PATH", DEFAULT_DATA_PATH),
         };
 
         cfg
     }
 
-    pub fn rocket(&self) -> Rocket {
-        use std::collections::HashMap;
-        // Set database url
-        let mut database_config = HashMap::new();
-        let mut databases = HashMap::new();
-        database_config.insert("url", Value::from(self.db_path.as_ref()));
-        databases.insert("sqlite", Value::from(database_config));
+    pub fn get_db_file_path(&self) -> std::path::PathBuf {
+        let mut path = std::path::PathBuf::from(self.data_path.clone());
+        path.push(DATABASE_FILE);
+        path
+    }
 
-        let config = Config::build(
-            rocket::config::Environment::active()
-                .unwrap_or(rocket::config::Environment::Production),
-        )
-        .extra("databases", databases);
-        rocket::custom(config.finalize().expect("Invalid Config!"))
+    pub fn get_local_storage_path(&self) -> std::path::PathBuf {
+        let mut path = std::path::PathBuf::from(self.data_path.clone());
+        path.push(LOCAL_STORAGE_PATH);
+        path
+    }
+
+    pub fn rocket(&self) -> Rocket<rocket::Build> {
+        use rocket::figment::{util::map, Figment};
+        // Set database url
+        let dbpath = self.get_db_file_path();
+        let options =
+            map!["url" => Value::from(dbpath.to_str().expect("non UTF8-path provided"))];
+        let mut config = rocket::Config::release_default();
+        config.log_level = rocket::log::LogLevel::Debug;
+        config.address = std::net::Ipv4Addr::new(0, 0, 0, 0).into();
+
+        let provider =
+            Figment::from(config).merge(("databases", map!["sqlite" => &options]));
+
+        rocket::custom(provider)
     }
 
     fn expect_env_key(name: &str) -> String {

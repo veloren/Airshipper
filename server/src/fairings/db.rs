@@ -1,6 +1,6 @@
 use rocket::{
     fairing::{Fairing, Info, Kind},
-    Cargo,
+    Rocket,
 };
 
 embed_migrations!();
@@ -9,20 +9,29 @@ embed_migrations!();
 #[derive(Debug, Default)]
 pub struct DbInit;
 
+#[crate::async_trait]
 impl Fairing for DbInit {
     fn info(&self) -> Info {
         Info {
             name: "DbInit - Run migrations",
-            kind: Kind::Launch,
+            kind: Kind::Liftoff,
         }
     }
 
-    fn on_launch(&self, _: &Cargo) {
+    async fn on_ignite(&self, rocket: Rocket<rocket::Build>) -> rocket::fairing::Result {
         use crate::diesel::Connection;
-        let con = diesel::SqliteConnection::establish(&crate::CONFIG.db_path).expect(
+        let con = diesel::SqliteConnection::establish(
+            crate::CONFIG
+                .get_db_file_path()
+                .as_path()
+                .to_str()
+                .expect("non-UTF8 path"),
+        )
+        .expect(
             "Could not establish connection to the database to initialise the table!",
         );
         // Run migrations
         embedded_migrations::run(&con).expect("Failed to run migrations!");
+        Ok(rocket)
     }
 }

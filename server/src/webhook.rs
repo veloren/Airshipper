@@ -47,7 +47,7 @@ async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()
 
         // Update database with new information
         tracing::info!("hash valid. Update database...");
-        db.insert_artifact(&artifact)?;
+        db.insert_artifact(&artifact).await?;
 
         // Delete obselete artifact
         tokio::fs::remove_file(&artifact.file_name).await?;
