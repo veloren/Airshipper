@@ -9,7 +9,7 @@ on:
   push:
     branches:
       - master
-      - r*.*.*
+      - r*.*
 
 jobs:
   windows:
