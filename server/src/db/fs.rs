@@ -1,4 +1,5 @@
 use crate::{models::Artifact, Result};
+use std::path::PathBuf;
 
 #[derive(Default, Clone, Copy)]
 pub struct FsStorage;
@@ -27,6 +28,7 @@ impl FsStorage {
     ) -> Result<String> {
         let mut root_folder = crate::CONFIG.get_local_storage_path();
         root_folder.push(PROFILE_FOLDER);
+        tokio::fs::create_dir_all(root_folder.clone()).await?;
         let local_filename = local_filename.to_string();
 
         tokio::fs::copy(&local_filename, root_folder.join(&local_filename)).await?;
@@ -50,8 +52,9 @@ impl FsStorage {
         Ok(())
     }
 
+    /// returns the public URL that is bound to the rocket Static Serving
     pub fn get_download_url(filename: &str) -> String {
-        let mut root_folder = crate::CONFIG.get_local_storage_path();
+        let mut root_folder = PathBuf::from(crate::config::LOCAL_STORAGE_PATH);
         root_folder.push(PROFILE_FOLDER);
         root_folder
             .join(&filename)

@@ -15,15 +15,11 @@ pub fn process(artifacts: Vec<Artifact>, mut db: crate::DbConnection) {
 
 #[tracing::instrument(skip(db))]
 async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()> {
-    use std::path::Path;
     use tokio::{fs::File, io::AsyncWriteExt};
 
     tracing::info!("Downloading...");
 
     let mut resp = reqwest::get(&artifact.get_url()).await?;
-    if let Some(parent) = Path::new(&artifact.file_name).parent() {
-        tokio::fs::create_dir_all(parent).await?;
-    }
     let mut file = File::create(&artifact.file_name).await?;
     let mut content = vec![];
     while let Some(chunk) = resp.chunk().await? {
