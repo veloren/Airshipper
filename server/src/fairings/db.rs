@@ -18,7 +18,7 @@ impl Fairing for DbInit {
         }
     }
 
-    async fn on_ignite(&self, rocket: Rocket<rocket::Build>) -> rocket::fairing::Result {
+    async fn on_liftoff(&self, _: &Rocket<rocket::Orbit>) {
         use crate::diesel::Connection;
         let con = diesel::SqliteConnection::establish(
             crate::CONFIG
@@ -31,7 +31,7 @@ impl Fairing for DbInit {
             "Could not establish connection to the database to initialise the table!",
         );
         // Run migrations
+        tracing::debug!("running migrations");
         embedded_migrations::run(&con).expect("Failed to run migrations!");
-        Ok(rocket)
     }
 }
