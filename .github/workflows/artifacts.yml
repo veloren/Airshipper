@@ -109,6 +109,10 @@ jobs:
   linux:
     runs-on: [ubuntu-latest]
     steps:
+      # install libraries
+      - name: Install libraries
+        run: apt-get -y install libxkbcommon-dev
+
       # Checkout
       - name: Checkout sources
         uses: actions/checkout@v2
