@@ -111,7 +111,7 @@ jobs:
     steps:
       # install libraries
       - name: Install libraries
-        run: apt-get -y install libxkbcommon-dev
+        run: sudo apt-get -y install libxkbcommon-dev
 
       # Checkout
       - name: Checkout sources
