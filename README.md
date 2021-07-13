@@ -29,5 +29,5 @@ Make sure to have [rustup](https://rustup.rs/) installed to compile rust code an
 #### For NixOS users
 
 You can install Airshipper with:
-- Flakes enabled Nix: `nix profile install github:Songtronix/Airshipper`
-- Flakes disabled Nix: `nix-env -i -f "https://github.com/Songtronix/Airshipper/tarball/master"`
+- Flakes enabled Nix: `nix profile install github:veloren/Airshipper`
+- Flakes disabled Nix: `nix-env -i -f "https://github.com/veloren/Airshipper/tarball/master"`
