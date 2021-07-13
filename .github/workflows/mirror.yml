@@ -1,0 +1,29 @@
+name: Mirror Gitlab repo
+
+# Every half hour
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+
+jobs:
+  mirror-gitlab-repo:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Clone Gitlab repo
+        run: git lfs install;
+          git clone https://gitlab.com/veloren/airshipper.git;
+
+      - name: Uninstall LFS
+        run: cd airshipper;
+          git lfs uninstall;
+          git lfs migrate export --include="*" --everything;
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: master
+          force: true
+          tags: true
+          directory: airshipper
