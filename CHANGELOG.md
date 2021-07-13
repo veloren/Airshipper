@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## Added
+
+## Changed
+
+## Fixed
+
+## [0.5.0] - 2021-07-13
+
+## Added
 - add troubleshooting guide 
 - create server image tagged with branch or tag automatically
 
@@ -114,12 +122,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added GUI
 
-[unreleased]: https://github.com/Songtronix/Airshipper/compare/v0.4.2...master
-[0.2.1]: https://github.com/Songtronix/Airshipper/releases/tag/v0.2.1
-[0.2.0]: https://github.com/Songtronix/Airshipper/releases/tag/v0.2.0
-[0.3.0]: https://github.com/Songtronix/Airshipper/releases/tag/v0.3.0
-[0.3.1]: https://github.com/Songtronix/Airshipper/releases/tag/v0.3.1
-[0.3.2]: https://github.com/Songtronix/Airshipper/releases/tag/v0.3.2
-[0.4.0]: https://github.com/Songtronix/Airshipper/releases/tag/v0.4.0
-[0.4.1]: https://github.com/Songtronix/Airshipper/releases/tag/v0.4.1
-[0.4.2]: https://github.com/Songtronix/Airshipper/releases/tag/v0.4.2
+[unreleased]: https://github.com/veloren/Airshipper/compare/v0.4.2...master
+[0.2.1]: https://github.com/veloren/Airshipper/releases/tag/v0.2.1
+[0.2.0]: https://github.com/veloren/Airshipper/releases/tag/v0.2.0
+[0.3.0]: https://github.com/veloren/Airshipper/releases/tag/v0.3.0
+[0.3.1]: https://github.com/veloren/Airshipper/releases/tag/v0.3.1
+[0.3.2]: https://github.com/veloren/Airshipper/releases/tag/v0.3.2
+[0.4.0]: https://github.com/veloren/Airshipper/releases/tag/v0.4.0
+[0.4.1]: https://github.com/veloren/Airshipper/releases/tag/v0.4.1
+[0.4.2]: https://github.com/veloren/Airshipper/releases/tag/v0.4.2
+[0.5.0]: https://github.com/veloren/Airshipper/releases/tag/v0.5.0
