@@ -24,6 +24,7 @@ runtimeLibs = [
     "xorg.libXi",
     "xorg.libXcursor",
 ]
+buildInputs = ["libxkbcommon"]
 
 [package.metadata.nix.desktopFile]
 name = "Airshipper"

@@ -6,7 +6,7 @@ const PATCH_DRV: &str = r#"
 let
   runtimeLibs =
     with pkgs;
-    ([ libGL libxkbcommon libudev alsaLib vulkan-loader vulkan-extension-layer ]
+    ([ libGL libxkbcommon libudev alsaLib vulkan-loader vulkan-extension-layer stdenv.cc.cc.lib ]
             ++ (with xorg; [ libxcb libX11 libXcursor libXrandr libXi ]));
 in
 pkgs.stdenv.mkDerivation {
