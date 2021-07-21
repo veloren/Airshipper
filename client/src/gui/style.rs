@@ -1,4 +1,4 @@
-use iced::{button, container, progress_bar, Background, Color, Vector};
+use iced::{button, container, pick_list, progress_bar, Background, Color, Vector};
 
 pub enum PrimaryButton {
     Enabled,
@@ -60,6 +60,34 @@ impl button::StyleSheet for SecondaryButton {
             text_color: Color::WHITE,
             ..self.active()
         }
+    }
+}
+
+pub struct ServerPickList;
+impl pick_list::StyleSheet for ServerPickList {
+    fn menu(&self) -> pick_list::Menu {
+        pick_list::Menu {
+            text_color: Color::WHITE,
+            background: Background::Color(Color::from_rgb(0.10, 0.21, 0.25)),
+            selected_background: Background::Color(Color::from_rgb(0.35, 0.82, 0.76)),
+            selected_text_color: Color::WHITE,
+            ..pick_list::Menu::default()
+        }
+    }
+
+    fn active(&self) -> pick_list::Style {
+        pick_list::Style {
+            text_color: Color::WHITE,
+            background: Background::Color(Color::from_rgb(0.10, 0.21, 0.25)),
+            icon_size: 0.5,
+            ..pick_list::Style::default()
+        }
+    }
+
+    fn hovered(&self) -> pick_list::Style {
+        let active = self.active();
+
+        pick_list::Style { ..active }
     }
 }
 

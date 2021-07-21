@@ -99,7 +99,7 @@ impl Fairing for Metrics {
     async fn on_response<'r>(&self, request: &'r Request<'_>, _: &mut Response<'r>) {
         if let Some(route) = request.route() {
             let endpoint = route.uri.as_str();
-            self.http_routes_in.with_label_values(&[&endpoint]).inc();
+            self.http_routes_in.with_label_values(&[endpoint]).inc();
         }
     }
 }
