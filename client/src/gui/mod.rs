@@ -83,7 +83,7 @@ impl Airshipper {
             ron::ser::to_string_pretty(&airshipper, PrettyConfig::default())
         })?;
         let mut file = File::create(fs::savedstate_file()).await?;
-        file.write_all(&data.as_bytes()).await?;
+        file.write_all(data.as_bytes()).await?;
         file.sync_all().await?;
 
         Ok(())
@@ -94,13 +94,14 @@ impl Airshipper {
             ron::ser::to_string_pretty(&self, PrettyConfig::default())
         })?;
         let mut file = File::create(fs::savedstate_file()).await?;
-        file.write_all(&data.as_bytes()).await?;
+        file.write_all(data.as_bytes()).await?;
         file.sync_all().await?;
 
         Ok(())
     }
 }
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug)]
 pub enum Message {
     Loaded(Airshipper),
