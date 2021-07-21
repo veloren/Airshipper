@@ -235,7 +235,9 @@ impl Application for Airshipper {
         } = self;
 
         match view {
-            View::Default => default_view.view().map(Message::DefaultViewMessage),
+            View::Default => default_view
+                .view(&self.active_profile)
+                .map(Message::DefaultViewMessage),
             #[cfg(windows)]
             View::Update => self.update_view.view().map(Message::UpdateViewMessage),
         }
