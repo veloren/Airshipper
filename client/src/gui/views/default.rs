@@ -91,7 +91,7 @@ impl DefaultView {
     pub fn subscription(&self) -> iced::Subscription<DefaultViewMessage> {
         match &self.state {
             State::Downloading(url, location, _) => {
-                subscriptions::download::file(&url, &location)
+                subscriptions::download::file(url, location)
                     .map(DefaultViewMessage::DownloadProgress)
             },
             &State::Playing(ref profile, verbose) => {

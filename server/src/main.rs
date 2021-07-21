@@ -40,6 +40,7 @@ async fn rocket() -> _ {
     build().await.unwrap()
 }
 
+#[allow(clippy::nonstandard_macro_braces)]
 async fn build() -> Result<rocket::Rocket<rocket::Build>> {
     let local_storage_folder = CONFIG.get_local_storage_path();
     if !local_storage_folder.exists() {

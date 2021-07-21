@@ -1,3 +1,4 @@
+#![allow(clippy::nonstandard_macro_braces)]
 use std::panic;
 
 #[derive(thiserror::Error, derive_more::Display, Debug)]
