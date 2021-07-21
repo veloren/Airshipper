@@ -6,13 +6,14 @@ use crate::{
         components::{Changelog, News},
         style, subscriptions, Result,
     },
-    io, net,
+    io, net, profiles,
     profiles::Profile,
     ProcessUpdate,
 };
 use iced::{
-    button, image::Handle, Align, Button, Column, Command, Container, Element,
-    HorizontalAlignment, Image, Length, ProgressBar, Row, Text, VerticalAlignment,
+    button, image::Handle, pick_list, Align, Button, Column, Command, Container, Element,
+    HorizontalAlignment, Image, Length, PickList, ProgressBar, Row, Text,
+    VerticalAlignment,
 };
 use std::path::PathBuf;
 
@@ -26,6 +27,8 @@ pub struct DefaultView {
 
     #[serde(skip)]
     play_button_state: button::State,
+    #[serde(skip)]
+    server_picker_state: pick_list::State<profiles::Server>,
     #[serde(skip)]
     download_progress: Option<net::Progress>,
 }
@@ -78,6 +81,7 @@ pub enum DefaultViewMessage {
 #[derive(Debug, Clone)]
 pub enum Interaction {
     PlayPressed,
+    ServerChanged(profiles::Server),
     ReadMore(String),
 
     Disabled,
@@ -87,7 +91,7 @@ impl DefaultView {
     pub fn subscription(&self) -> iced::Subscription<DefaultViewMessage> {
         match &self.state {
             State::Downloading(url, location, _) => {
-                subscriptions::download::file(&url, &location)
+                subscriptions::download::file(url, location)
                     .map(DefaultViewMessage::DownloadProgress)
             },
             &State::Playing(ref profile, verbose) => {
@@ -98,7 +102,7 @@ impl DefaultView {
         }
     }
 
-    pub fn view(&mut self) -> Element<DefaultViewMessage> {
+    pub fn view(&mut self, active_profile: &Profile) -> Element<DefaultViewMessage> {
         let Self {
             changelog,
             news,
@@ -183,7 +187,7 @@ impl DefaultView {
         let download_progressbar =
             ProgressBar::new(0.0..=100.0, download_progress).style(style::Progress);
         let download = Column::new()
-            .width(Length::FillPortion(4))
+            .width(Length::FillPortion(8))
             .spacing(5)
             .push(download_speed)
             .push(download_progressbar);
@@ -207,12 +211,16 @@ impl DefaultView {
             },
         );
 
+        let server_picker =
+            server_pick_list(&mut self.server_picker_state, Some(active_profile.server));
+
         let bottom = Container::new(
             Row::new()
                 .align_items(Align::End)
                 .spacing(20)
                 .padding(10)
                 .push(download)
+                .push(server_picker)
                 .push(play),
         )
         .style(style::Bottom);
@@ -461,6 +469,28 @@ impl DefaultView {
                         log::error!("failed to open {} : {}", url, e);
                     }
                 },
+                Interaction::ServerChanged(new_server) => {
+                    log::debug!("new server selected {}", new_server);
+                    self.state = State::QueryingForUpdates(false);
+                    let mut profile = active_profile.clone();
+                    profile.server = new_server;
+                    let profile2 = profile.clone();
+                    return Command::batch(vec![
+                        Command::perform(
+                            async { Action::UpdateProfile(profile2) },
+                            DefaultViewMessage::Action,
+                        ),
+                        Command::perform(
+                            Profile::update(profile),
+                            DefaultViewMessage::GameUpdate,
+                        ),
+                    ]);
+                    /*
+                    return Command::perform(
+                        Profile::update(profile),
+                        DefaultViewMessage::GameUpdate,
+                    );*/
+                },
                 Interaction::Disabled => {},
             },
         }
@@ -485,7 +515,7 @@ pub fn primary_button(
             .vertical_alignment(VerticalAlignment::Center),
     )
     .on_press(interaction)
-    .width(Length::FillPortion(1))
+    .width(Length::FillPortion(3))
     .height(Length::Units(60))
     .style(style)
     .padding(2)
@@ -509,6 +539,24 @@ pub fn secondary_button(
     .on_press(interaction)
     .style(style::SecondaryButton)
     .into();
+
+    btn.map(DefaultViewMessage::Interaction)
+}
+
+pub fn server_pick_list(
+    state: &mut pick_list::State<profiles::Server>,
+    selected: Option<profiles::Server>,
+) -> Element<DefaultViewMessage> {
+    //let values = profiles::SERVERS.into_iter().map(|e|
+    // e.to_owned()).collect::<Vec<_>>();
+    let values = profiles::SERVERS;
+    let selected = Some(selected.unwrap_or(values[0]));
+    let btn: Element<Interaction> =
+        PickList::new(state, values, selected, Interaction::ServerChanged)
+            .width(Length::FillPortion(1))
+            .style(style::ServerPickList)
+            .padding(2)
+            .into();
 
     btn.map(DefaultViewMessage::Interaction)
 }
