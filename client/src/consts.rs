@@ -20,8 +20,6 @@ pub const LOG_FILE: &str = "airshipper.log";
 
 // Networking
 
-pub const DOWNLOAD_SERVER: &str = "https://download.veloren.net";
-
 // For querying
 pub const CHANGELOG_URL: &str =
     "https://gitlab.com/veloren/veloren/raw/master/CHANGELOG.md";

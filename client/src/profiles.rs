@@ -11,6 +11,7 @@ use tokio::process::Command;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
     pub name: String,
+    pub server: Server,
     pub channel: Channel,
     // FIXME: This field is currently ignored.
     // Persisting the storage path led to problems with the snap package because
@@ -25,7 +26,28 @@ pub struct Profile {
 
 impl Default for Profile {
     fn default() -> Self {
-        Profile::new("default".to_owned(), Channel::Nightly)
+        Profile::new("default".to_owned(), Server::Prod, Channel::Nightly)
+    }
+}
+
+#[derive(
+    Debug, derive_more::Display, Clone, Copy, Serialize, Deserialize, PartialEq, Eq,
+)]
+pub enum Server {
+    Prod,
+    Staging,
+    Test,
+}
+
+pub static SERVERS: &[Server] = &[Server::Prod, Server::Staging, Server::Test];
+
+impl Server {
+    pub fn url(&self) -> &str {
+        match self {
+            Server::Prod => "https://download.veloren.net",
+            Server::Staging => "https://download.staging.veloren.net",
+            Server::Test => "https://download.test.veloren.net",
+        }
     }
 }
 
@@ -37,10 +59,11 @@ pub enum Channel {
 }
 
 impl Profile {
-    pub fn new(name: String, channel: Channel) -> Self {
+    pub fn new(name: String, server: Server, channel: Channel) -> Self {
         Self {
             _directory: fs::profile_path(&name),
             name,
+            server,
             channel,
             version: None,
         }
@@ -60,7 +83,7 @@ impl Profile {
     pub fn url(&self) -> String {
         format!(
             "{}/latest/{}/{}",
-            consts::DOWNLOAD_SERVER,
+            self.server.url(),
             std::env::consts::OS,
             self.channel
         )
@@ -73,7 +96,7 @@ impl Profile {
     fn version_url(&self) -> String {
         format!(
             "{}/version/{}/{}",
-            consts::DOWNLOAD_SERVER,
+            self.server.url(),
             std::env::consts::OS,
             self.channel
         )
