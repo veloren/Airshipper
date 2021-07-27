@@ -12,14 +12,11 @@
   };
 
   outputs = inputs:
-    let
-      outputz = inputs.nixCargoIntegration.lib.makeOutputs {
-        root = ./.;
+    inputs.nixCargoIntegration.lib.makeOutputs {
+      root = ./.;
+      defaultOutputs = {
+        app = "airshipper";
+        package = "airshipper";
       };
-    in
-    outputz // {
-      # Make airshipper client the default package and app
-      defaultPackage = builtins.mapAttrs (_: v: v.airshipper) outputz.packages;
-      defaultApp = builtins.mapAttrs (_: v: v.airshipper) outputz.apps;
     };
 }
