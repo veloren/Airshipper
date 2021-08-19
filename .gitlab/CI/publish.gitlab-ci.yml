@@ -4,14 +4,14 @@
   stage: publish
   rules:
     - if: $CI_PIPELINE_SOURCE != "schedule" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: always
+      when: on_success
     - when: never
 
 .publish-nightly:
   stage: publish
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: always
+      when: on_success
     - when: never
 
 docker:
@@ -19,17 +19,22 @@ docker:
   image:
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
+  tags: ["veloren/*", "publish", "trusted"]
   dependencies:
     - linux
   before_script:
     - ls "$CI_PROJECT_DIR/server/"
   script:
+    # Help kaniko identify that it is running in a container.
+    # avoids this issue: https://github.com/GoogleContainerTools/kaniko/issues/1542
+    - export container=docker
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}" > /kaniko/.docker/config.json
     - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/server/Dockerfile --destination "${CI_REGISTRY_IMAGE}/server:${CI_COMMIT_REF_NAME}"
 
 pages:
   extends: .publish
   image: registry.gitlab.com/veloren/veloren-docker-ci/cache/quality:${CACHE_IMAGE_TAG}
+  tags: ["veloren/*", "publish"]
   artifacts:
     paths:
       - public
