@@ -35,7 +35,8 @@ where
         match io::stream_process(&mut cmd) {
             Ok(stream) => stream.boxed(),
             Err(err) => {
-                futures::stream::once(async { ProcessUpdate::Error(err) }).boxed()
+                let msg = err.to_string();
+                futures::stream::once(async { ProcessUpdate::Error(msg) }).boxed()
             },
         }
     }
