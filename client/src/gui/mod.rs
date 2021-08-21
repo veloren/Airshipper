@@ -102,7 +102,7 @@ impl Airshipper {
 }
 
 #[allow(clippy::enum_variant_names)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Message {
     Loaded(Airshipper),
     Saved(Result<()>),
@@ -268,5 +268,7 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
         // https://github.com/hecrj/iced/issues/537
         antialiasing: false,
         exit_on_close_request: true,
+        id: Some("airshipper".to_string()),
+        text_multithreading: false,
     }
 }

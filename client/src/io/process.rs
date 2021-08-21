@@ -33,22 +33,22 @@ pub(crate) fn stream_process(
     Ok(reader
         .map(|x| match x {
             Ok(x) => ProcessUpdate::Line(x),
-            Err(e) => ProcessUpdate::Error(e),
+            Err(e) => ProcessUpdate::Error(e.to_string()),
         })
         .chain(futures::stream::once(async {
             match exit_status.await {
                 Ok(x) => match x {
                     Ok(x) => ProcessUpdate::Exit(x),
-                    Err(e) => ProcessUpdate::Error(e),
+                    Err(e) => ProcessUpdate::Error(e.to_string()),
                 },
-                Err(e) => ProcessUpdate::Error(e.into()),
+                Err(e) => ProcessUpdate::Error(e.to_string()),
             }
         })))
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum ProcessUpdate {
     Line(String),
     Exit(ExitStatus),
-    Error(std::io::Error),
+    Error(String),
 }

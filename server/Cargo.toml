@@ -23,8 +23,8 @@ tracing = { version = "0.1.21", features = ["log"] }
 tracing-futures = "0.2.4"
 tracing-subscriber = "0.2.15"
 # Webserver
-rocket = { git = "https://github.com/SergioBenitez/Rocket", rev = "2433b42100e8dbd484e1558edd8b62b2f59e5915", features = ["json"] }
-rocket_sync_db_pools = { git = "https://github.com/SergioBenitez/Rocket", rev = "2433b42100e8dbd484e1558edd8b62b2f59e5915", features = ["diesel_sqlite_pool"] }
+rocket = { git = "https://github.com/SergioBenitez/Rocket", rev = "693f4f9ee50057fc735e6e7037e6dee5b485ba10", features = ["json"] }
+rocket_sync_db_pools = { git = "https://github.com/SergioBenitez/Rocket", rev = "693f4f9ee50057fc735e6e7037e6dee5b485ba10", features = ["diesel_sqlite_pool"] }
 # Networking
 reqwest = "0.11.4"
 # Serialising/Deserialising

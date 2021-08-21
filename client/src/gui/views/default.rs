@@ -56,7 +56,7 @@ impl Default for State {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum DefaultViewMessage {
     // Messages
     Action(Action),
