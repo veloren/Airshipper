@@ -1,7 +1,7 @@
 #![allow(clippy::nonstandard_macro_braces)]
 use std::panic;
 
-#[derive(thiserror::Error, derive_more::Display, Debug)]
+#[derive(Clone, thiserror::Error, derive_more::Display, Debug)]
 pub enum ClientError {
     #[display(fmt = "Error while performing filesystem operations.")]
     IoError,
