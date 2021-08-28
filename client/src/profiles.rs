@@ -69,18 +69,19 @@ pub static SERVERS: &[Server] = &[Server::Production, Server::Staging, Server::T
 
 #[derive(Debug, derive_more::Display, Clone, Copy, PartialEq, Eq)]
 pub enum LogLevel {
-    Info,
+    Default,
     Debug,
     Trace,
 }
 
 impl Default for LogLevel {
     fn default() -> Self {
-        LogLevel::Info
+        LogLevel::Default
     }
 }
 
-pub static LOG_LEVELS: &[LogLevel] = &[LogLevel::Info, LogLevel::Debug, LogLevel::Trace];
+pub static LOG_LEVELS: &[LogLevel] =
+    &[LogLevel::Default, LogLevel::Debug, LogLevel::Trace];
 
 impl Server {
     pub fn url(&self) -> &str {
@@ -121,6 +122,12 @@ impl Profile {
         self.directory().join(consts::VOXYGEN_FILE)
     }
 
+    /// Returns path to the voxygen logs directory
+    /// e.g. <base>/profiles/default/logs
+    pub fn voxygen_logs_path(&self) -> PathBuf {
+        self.directory().join(consts::LOGS_DIR)
+    }
+
     /// Returns the download url for this profile
     pub fn url(&self) -> String {
         format!(
@@ -151,16 +158,18 @@ impl Profile {
         let screenshot_dir = profile.directory().join("screenshots").into_os_string();
         let assets_dir = profile.directory().join("assets").into_os_string();
 
-        let log_level = match log_level {
-            LogLevel::Info => OsString::from("info"),
-            LogLevel::Debug => OsString::from("debug"),
-            LogLevel::Trace => OsString::from("trace"),
-        };
+        if log_level != LogLevel::Default {
+            let log_level = match log_level {
+                LogLevel::Default => OsString::from("info"),
+                LogLevel::Debug => OsString::from("debug"),
+                LogLevel::Trace => OsString::from("trace"),
+            };
+            envs.insert("RUST_LOG", log_level);
+        }
 
         envs.insert("VOXYGEN_SCREENSHOT", screenshot_dir);
         envs.insert("VELOREN_USERDATA", userdata_dir);
         envs.insert("VELOREN_ASSETS", assets_dir);
-        envs.insert("RUST_LOG", log_level);
 
         if profile.wgpu_backend != WgpuBackend::Auto {
             let wgpu_backend = match profile.wgpu_backend {
