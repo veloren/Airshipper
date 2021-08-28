@@ -73,7 +73,7 @@ async fn process_arguments(
     verbose: i32,
 ) -> Result<()> {
     let log_level = match verbose {
-        0 => LogLevel::Info,
+        0 => LogLevel::Default,
         1 => LogLevel::Debug,
         _ => LogLevel::Trace,
     };

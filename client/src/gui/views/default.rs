@@ -30,6 +30,8 @@ pub struct DefaultView {
     #[serde(skip)]
     settings_button_state: button::State,
     #[serde(skip)]
+    open_logs_button_state: button::State,
+    #[serde(skip)]
     server_picker_state: pick_list::State<profiles::Server>,
     #[serde(skip)]
     wgpu_backend_picker_state: pick_list::State<profiles::WgpuBackend>,
@@ -95,6 +97,7 @@ pub enum Interaction {
     WgpuBackendChanged(profiles::WgpuBackend),
     ReadMore(String),
     SettingsPressed,
+    OpenLogsPressed,
     Disabled,
 }
 
@@ -145,46 +148,53 @@ impl DefaultView {
             .push(icons)
             .push(changelog.view());
 
-        let server_picker = widget_with_label_and_tooltip(
-            "Server:",
-            "The download server used for game files",
-            pick_list(
-                &mut self.server_picker_state,
-                Some(active_profile.server),
-                profiles::SERVERS,
-                Interaction::ServerChanged,
-            ),
-        );
-
-        let wgpu_backend_picker = widget_with_label_and_tooltip(
-            "Graphics Mode:",
-            "The rendering backend that the game will use. \nLeave on Auto unless you \
-             are experiencing issues",
-            pick_list(
-                &mut self.wgpu_backend_picker_state,
-                Some(active_profile.wgpu_backend),
-                profiles::WGPU_BACKENDS,
-                Interaction::WgpuBackendChanged,
-            ),
-        );
-
-        let log_level_picker = widget_with_label_and_tooltip(
-            "Log Level:",
-            "Changes the amount of information that the game outputs to its log file",
-            pick_list(
-                &mut self.log_level_picker_state,
-                Some(self.log_level),
-                profiles::LOG_LEVELS,
-                Interaction::LogLevelChanged,
-            ),
-        );
-
+        // Contains the news pane and optionally the settings pane at the bottom
         let mut right = Column::new()
             .width(Length::FillPortion(2))
             .height(Length::Fill)
             .push(news.view());
 
         if self.show_settings {
+            let server_picker = widget_with_label_and_tooltip(
+                "Server:",
+                "The download server used for game files",
+                pick_list(
+                    &mut self.server_picker_state,
+                    Some(active_profile.server),
+                    profiles::SERVERS,
+                    Interaction::ServerChanged,
+                ),
+            );
+
+            let wgpu_backend_picker = widget_with_label_and_tooltip(
+                "Graphics Mode:",
+                "The rendering backend that the game will use. \nLeave on Auto unless \
+                 you are experiencing issues",
+                pick_list(
+                    &mut self.wgpu_backend_picker_state,
+                    Some(active_profile.wgpu_backend),
+                    profiles::WGPU_BACKENDS,
+                    Interaction::WgpuBackendChanged,
+                ),
+            );
+
+            let log_level_picker = widget_with_label_and_tooltip(
+                "Log Level:",
+                "Changes the amount of information that the game outputs to its log file",
+                pick_list(
+                    &mut self.log_level_picker_state,
+                    Some(self.log_level),
+                    profiles::LOG_LEVELS,
+                    Interaction::LogLevelChanged,
+                ),
+            );
+
+            let open_logs_button = secondary_button(
+                &mut self.open_logs_button_state,
+                "Open Logs",
+                Interaction::OpenLogsPressed,
+            );
+
             let settings = Container::new(
                 Row::new()
                     .padding(2)
@@ -201,7 +211,8 @@ impl DefaultView {
                             .padding(5)
                             .spacing(10)
                             .align_items(Align::End)
-                            .push(log_level_picker),
+                            .push(log_level_picker)
+                            .push(open_logs_button),
                     ),
             )
             .width(Length::Fill)
@@ -580,6 +591,11 @@ impl DefaultView {
                 Interaction::LogLevelChanged(log_level) => {
                     self.log_level = log_level;
                 },
+                Interaction::OpenLogsPressed => {
+                    if let Err(e) = opener::open(active_profile.voxygen_logs_path()) {
+                        log::error!("Failed to open logs dir: {:?}", e);
+                    }
+                },
                 Interaction::Disabled => {},
             },
         }
@@ -661,7 +677,7 @@ pub fn pick_list<'a, T: Clone + std::cmp::Eq + std::fmt::Display>(
     values: &'a [T],
     interaction: impl Fn(T) -> Interaction + 'static,
 ) -> Element<'a, DefaultViewMessage> {
-    let selected = Some(selected.unwrap_or(values[0].clone()));
+    let selected = Some(selected.unwrap_or_else(|| values[0].clone()));
     let pick_list: Element<Interaction> =
         PickList::new(state, values, selected, interaction)
             .width(Length::Units(100))
