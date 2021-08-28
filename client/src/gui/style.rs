@@ -1,4 +1,6 @@
-use iced::{button, container, pick_list, progress_bar, Background, Color, Vector};
+use iced::{
+    button, button::Style, container, pick_list, progress_bar, Background, Color, Vector,
+};
 
 pub enum PrimaryButton {
     Enabled,
@@ -63,13 +65,31 @@ impl button::StyleSheet for SecondaryButton {
     }
 }
 
+pub struct SettingsButton;
+impl button::StyleSheet for SettingsButton {
+    fn active(&self) -> Style {
+        button::Style {
+            background: Some(Background::Color(Color::TRANSPARENT)),
+            border_radius: 10.0,
+            ..button::Style::default()
+        }
+    }
+
+    fn hovered(&self) -> button::Style {
+        button::Style {
+            background: Some(Background::Color(Color::from_rgba(1.0, 1.0, 1.0, 0.1))),
+            ..self.active()
+        }
+    }
+}
+
 pub struct ServerPickList;
 impl pick_list::StyleSheet for ServerPickList {
     fn menu(&self) -> pick_list::Menu {
         pick_list::Menu {
             text_color: Color::WHITE,
             background: Background::Color(Color::from_rgb(0.10, 0.21, 0.25)),
-            selected_background: Background::Color(Color::from_rgb(0.35, 0.82, 0.76)),
+            selected_background: Background::Color(Color::from_rgb(0.18, 0.65, 0.59)),
             selected_text_color: Color::WHITE,
             ..pick_list::Menu::default()
         }
@@ -145,6 +165,20 @@ impl container::StyleSheet for Content {
         container::Style {
             background: Some(Background::Color(Color::from_rgb(0.10, 0.21, 0.25))),
             text_color: Some(Color::WHITE),
+            ..container::Style::default()
+        }
+    }
+}
+
+pub struct Tooltip;
+
+impl container::StyleSheet for Tooltip {
+    fn style(&self) -> container::Style {
+        container::Style {
+            text_color: Some(Color::from_rgb8(0xEE, 0xEE, 0xEE)),
+            background: Some(Background::Color([0.10, 0.21, 0.25].into())),
+            border_color: [0.7, 0.7, 0.7].into(),
+            border_width: 1.0,
             ..container::Style::default()
         }
     }
