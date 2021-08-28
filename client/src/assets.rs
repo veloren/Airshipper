@@ -1,7 +1,8 @@
 use iced::Font;
 
-pub const VELOREN_LOGO: &[u8] = include_bytes!("../assets/veloren-logo.png");
+pub const VELOREN_LOGO: &[u8] = include_bytes!("../assets/images/veloren-logo.png");
 pub const VELOREN_ICON: &[u8] = include_bytes!("../assets/logo.ico");
+pub const SETTINGS_ICON: &[u8] = include_bytes!("../assets/images/settings.png");
 
 pub const OPEN_SANS_BYTES: &[u8] = include_bytes!("../assets/OpenSans-Regular.ttf");
 

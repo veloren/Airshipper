@@ -44,8 +44,8 @@ bundled = ["openssl-sys"]
 clap = { version = "3.0.0-beta.2", features = ["derive"] } 
 indicatif = "0.16"
 # UI
-iced = { git = "https://github.com/hecrj/iced.git", rev = "8333b8f88ceaa53c361eb6726b2b7dac6cd2c402", default-features = false, features = ["wgpu", "tokio", "image"] }
-iced_native = { git = "https://github.com/hecrj/iced.git", rev = "8333b8f88ceaa53c361eb6726b2b7dac6cd2c402" }
+iced = { git = "https://github.com/hecrj/iced.git", rev = "2d65621a3b680457e689b93c800e74f726ffc175", default-features = false, features = ["wgpu", "tokio", "image"] }
+iced_native = { git = "https://github.com/hecrj/iced.git", rev = "2d65621a3b680457e689b93c800e74f726ffc175" }
 # Logging
 fern = { version = "0.6.0", features = ["colored"] }
 colored = "2.0"

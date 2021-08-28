@@ -3,6 +3,7 @@ use parse::Action;
 mod parse;
 use iced::futures::stream::StreamExt;
 
+use crate::profiles::LogLevel;
 use gui::Airshipper;
 pub use parse::CmdLine;
 
@@ -71,12 +72,18 @@ async fn process_arguments(
     action: Action,
     verbose: i32,
 ) -> Result<()> {
+    let log_level = match verbose {
+        0 => LogLevel::Info,
+        1 => LogLevel::Debug,
+        _ => LogLevel::Trace,
+    };
+
     match action {
         Action::Update => update(&mut profile, true).await?,
-        Action::Start => start(&mut profile, verbose).await?,
+        Action::Start => start(&mut profile, log_level).await?,
         Action::Run => {
             update(&mut profile, false).await?;
-            start(&mut profile, verbose).await?
+            start(&mut profile, log_level).await?
         },
         #[cfg(windows)]
         Action::Upgrade => {
@@ -136,7 +143,7 @@ async fn download(profile: Profile) -> Result<()> {
     Ok(())
 }
 
-async fn start(profile: &mut Profile, verbosity: i32) -> Result<()> {
+async fn start(profile: &mut Profile, log_level: LogLevel) -> Result<()> {
     if !profile.installed() {
         log::info!("Profile is not installed. Install it via `airshipper update`");
         return Ok(());
@@ -144,7 +151,7 @@ async fn start(profile: &mut Profile, verbosity: i32) -> Result<()> {
 
     log::info!("Starting...");
     let mut stream =
-        crate::io::stream_process(&mut Profile::start(profile, verbosity))?.boxed();
+        crate::io::stream_process(&mut Profile::start(profile, log_level))?.boxed();
 
     while let Some(progress) = stream.next().await {
         match progress {
