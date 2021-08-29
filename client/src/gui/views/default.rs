@@ -1,19 +1,19 @@
 use super::Action;
 use crate::{
     assets::{HAXRCORP_4089_FONT, HAXRCORP_4089_FONT_SIZE_3},
-    cli::CmdLine,
+    gui,
     gui::{
         components::{Changelog, News},
         style, subscriptions, Result,
     },
     io, net, profiles,
-    profiles::Profile,
+    profiles::{LogLevel, Profile},
     ProcessUpdate,
 };
 use iced::{
-    button, image::Handle, pick_list, Align, Button, Column, Command, Container, Element,
-    HorizontalAlignment, Image, Length, PickList, ProgressBar, Row, Text,
-    VerticalAlignment,
+    button, image::Handle, pick_list, tooltip::Position, Align, Button, Column, Command,
+    Container, Element, HorizontalAlignment, Image, Length, PickList, ProgressBar, Row,
+    Text, Tooltip, VerticalAlignment,
 };
 use std::path::PathBuf;
 
@@ -28,9 +28,21 @@ pub struct DefaultView {
     #[serde(skip)]
     play_button_state: button::State,
     #[serde(skip)]
+    settings_button_state: button::State,
+    #[serde(skip)]
+    open_logs_button_state: button::State,
+    #[serde(skip)]
     server_picker_state: pick_list::State<profiles::Server>,
     #[serde(skip)]
+    wgpu_backend_picker_state: pick_list::State<profiles::WgpuBackend>,
+    #[serde(skip)]
+    log_level_picker_state: pick_list::State<profiles::LogLevel>,
+    #[serde(skip)]
     download_progress: Option<net::Progress>,
+    #[serde(skip)]
+    show_settings: bool,
+    #[serde(skip)]
+    log_level: LogLevel,
 }
 
 #[derive(Debug, Clone)]
@@ -42,8 +54,7 @@ pub enum State {
     Downloading(String, PathBuf, String),
     Installing,
     ReadyToPlay,
-    /// Profile, verbosity
-    Playing(Profile, i32),
+    Playing(Profile, LogLevel),
 
     Retry,
     /// bool indicates whether Veloren can be started offline
@@ -81,9 +92,12 @@ pub enum DefaultViewMessage {
 #[derive(Debug, Clone)]
 pub enum Interaction {
     PlayPressed,
+    LogLevelChanged(profiles::LogLevel),
     ServerChanged(profiles::Server),
+    WgpuBackendChanged(profiles::WgpuBackend),
     ReadMore(String),
-
+    SettingsPressed,
+    OpenLogsPressed,
     Disabled,
 }
 
@@ -94,8 +108,8 @@ impl DefaultView {
                 subscriptions::download::file(url, location)
                     .map(DefaultViewMessage::DownloadProgress)
             },
-            &State::Playing(ref profile, verbose) => {
-                subscriptions::process::stream(profile.clone(), verbose)
+            &State::Playing(ref profile, log_level) => {
+                subscriptions::process::stream(profile.clone(), log_level)
                     .map(DefaultViewMessage::ProcessUpdate)
             },
             _ => iced::Subscription::none(),
@@ -108,6 +122,7 @@ impl DefaultView {
             news,
             state,
             play_button_state,
+            settings_button_state,
             download_progress,
             ..
         } = self;
@@ -133,8 +148,81 @@ impl DefaultView {
             .push(icons)
             .push(changelog.view());
 
+        // Contains the news pane and optionally the settings pane at the bottom
+        let mut right = Column::new()
+            .width(Length::FillPortion(2))
+            .height(Length::Fill)
+            .push(news.view());
+
+        if self.show_settings {
+            let server_picker = widget_with_label_and_tooltip(
+                "Server:",
+                "The download server used for game files",
+                pick_list(
+                    &mut self.server_picker_state,
+                    Some(active_profile.server),
+                    profiles::SERVERS,
+                    Interaction::ServerChanged,
+                ),
+            );
+
+            let wgpu_backend_picker = widget_with_label_and_tooltip(
+                "Graphics Mode:",
+                "The rendering backend that the game will use. \nLeave on Auto unless \
+                 you are experiencing issues",
+                pick_list(
+                    &mut self.wgpu_backend_picker_state,
+                    Some(active_profile.wgpu_backend),
+                    profiles::WGPU_BACKENDS,
+                    Interaction::WgpuBackendChanged,
+                ),
+            );
+
+            let log_level_picker = widget_with_label_and_tooltip(
+                "Log Level:",
+                "Changes the amount of information that the game outputs to its log file",
+                pick_list(
+                    &mut self.log_level_picker_state,
+                    Some(self.log_level),
+                    profiles::LOG_LEVELS,
+                    Interaction::LogLevelChanged,
+                ),
+            );
+
+            let open_logs_button = secondary_button(
+                &mut self.open_logs_button_state,
+                "Open Logs",
+                Interaction::OpenLogsPressed,
+            );
+
+            let settings = Container::new(
+                Row::new()
+                    .padding(2)
+                    .push(
+                        Column::new()
+                            .padding(5)
+                            .spacing(10)
+                            .align_items(Align::End)
+                            .push(wgpu_backend_picker)
+                            .push(server_picker),
+                    )
+                    .push(
+                        Column::new()
+                            .padding(5)
+                            .spacing(10)
+                            .align_items(Align::End)
+                            .push(log_level_picker)
+                            .push(open_logs_button),
+                    ),
+            )
+            .width(Length::Fill)
+            .style(gui::style::News);
+
+            right = right.push(settings);
+        }
+
         // Contains logo, changelog and news
-        let middle = Container::new(Row::new().padding(2).push(left).push(news.view()))
+        let middle = Container::new(Row::new().padding(2).push(left).push(right))
             .height(Length::FillPortion(6))
             .style(style::Middle);
 
@@ -187,7 +275,7 @@ impl DefaultView {
         let download_progressbar =
             ProgressBar::new(0.0..=100.0, download_progress).style(style::Progress);
         let download = Column::new()
-            .width(Length::FillPortion(8))
+            .width(Length::FillPortion(4))
             .spacing(5)
             .push(download_speed)
             .push(download_progressbar);
@@ -211,16 +299,19 @@ impl DefaultView {
             },
         );
 
-        let server_picker =
-            server_pick_list(&mut self.server_picker_state, Some(active_profile.server));
+        let settings_button = settings_button(
+            settings_button_state,
+            Interaction::SettingsPressed,
+            style::SettingsButton,
+        );
 
         let bottom = Container::new(
             Row::new()
                 .align_items(Align::End)
-                .spacing(20)
+                .spacing(10)
                 .padding(10)
                 .push(download)
-                .push(server_picker)
+                .push(settings_button)
                 .push(play),
         )
         .style(style::Bottom);
@@ -243,7 +334,6 @@ impl DefaultView {
     pub fn update(
         &mut self,
         msg: DefaultViewMessage,
-        cmd: &CmdLine,
         active_profile: &Profile,
     ) -> Command<DefaultViewMessage> {
         match msg {
@@ -412,7 +502,8 @@ impl DefaultView {
                         )
                     },
                     State::ReadyToPlay => {
-                        self.state = State::Playing(active_profile.clone(), cmd.verbose);
+                        self.state =
+                            State::Playing(active_profile.clone(), self.log_level);
                     },
                     State::Retry => {
                         // TODO: Switching state should trigger these commands
@@ -436,7 +527,7 @@ impl DefaultView {
                         // Play offline
                         true => {
                             self.state =
-                                State::Playing(active_profile.clone(), cmd.verbose);
+                                State::Playing(active_profile.clone(), self.log_level);
                         },
                         // Retry
                         false => {
@@ -485,11 +576,25 @@ impl DefaultView {
                             DefaultViewMessage::GameUpdate,
                         ),
                     ]);
-                    /*
+                },
+                Interaction::SettingsPressed => {
+                    self.show_settings = !self.show_settings;
+                },
+                Interaction::WgpuBackendChanged(wgpu_backend) => {
+                    let mut profile = active_profile.clone();
+                    profile.wgpu_backend = wgpu_backend;
                     return Command::perform(
-                        Profile::update(profile),
-                        DefaultViewMessage::GameUpdate,
-                    );*/
+                        async { Action::UpdateProfile(profile) },
+                        DefaultViewMessage::Action,
+                    );
+                },
+                Interaction::LogLevelChanged(log_level) => {
+                    self.log_level = log_level;
+                },
+                Interaction::OpenLogsPressed => {
+                    if let Err(e) = opener::open(active_profile.voxygen_logs_path()) {
+                        log::error!("Failed to open logs dir: {:?}", e);
+                    }
                 },
                 Interaction::Disabled => {},
             },
@@ -515,13 +620,36 @@ pub fn primary_button(
             .vertical_alignment(VerticalAlignment::Center),
     )
     .on_press(interaction)
-    .width(Length::FillPortion(3))
+    .width(Length::FillPortion(1))
     .height(Length::Units(60))
     .style(style)
     .padding(2)
     .into();
 
     btn.map(DefaultViewMessage::Interaction)
+}
+
+pub fn settings_button(
+    state: &mut button::State,
+    interaction: Interaction,
+    style: impl button::StyleSheet + 'static,
+) -> Element<DefaultViewMessage> {
+    let btn: Element<Interaction> = Button::new(
+        state,
+        Image::new(Handle::from_memory(crate::assets::SETTINGS_ICON.to_vec())),
+    )
+    .on_press(interaction)
+    .width(Length::Units(30))
+    .height(Length::Units(30))
+    .style(style)
+    .padding(2)
+    .into();
+
+    let element = btn.map(DefaultViewMessage::Interaction);
+    Tooltip::new(element, "Settings", Position::Top)
+        .style(style::Tooltip)
+        .gap(5)
+        .into()
 }
 
 pub fn secondary_button(
@@ -543,20 +671,42 @@ pub fn secondary_button(
     btn.map(DefaultViewMessage::Interaction)
 }
 
-pub fn server_pick_list(
-    state: &mut pick_list::State<profiles::Server>,
-    selected: Option<profiles::Server>,
-) -> Element<DefaultViewMessage> {
-    //let values = profiles::SERVERS.into_iter().map(|e|
-    // e.to_owned()).collect::<Vec<_>>();
-    let values = profiles::SERVERS;
-    let selected = Some(selected.unwrap_or(values[0]));
-    let btn: Element<Interaction> =
-        PickList::new(state, values, selected, Interaction::ServerChanged)
-            .width(Length::FillPortion(1))
+pub fn pick_list<'a, T: Clone + std::cmp::Eq + std::fmt::Display>(
+    state: &'a mut pick_list::State<T>,
+    selected: Option<T>,
+    values: &'a [T],
+    interaction: impl Fn(T) -> Interaction + 'static,
+) -> Element<'a, DefaultViewMessage> {
+    let selected = Some(selected.unwrap_or_else(|| values[0].clone()));
+    let pick_list: Element<Interaction> =
+        PickList::new(state, values, selected, interaction)
+            .width(Length::Units(100))
             .style(style::ServerPickList)
-            .padding(2)
+            .padding(4)
             .into();
 
-    btn.map(DefaultViewMessage::Interaction)
+    pick_list.map(DefaultViewMessage::Interaction)
+}
+
+pub fn widget_with_label_and_tooltip<'a>(
+    label_text: &'a str,
+    tooltip_text: &'a str,
+    widget: Element<'a, DefaultViewMessage>,
+) -> Element<'a, DefaultViewMessage> {
+    // The tooltip cannot be attached to the actual pick list since they both use
+    // overlays and aren't (yet) compatible with each other (it results in
+    // the picklist not working at all).
+    Row::new()
+        .spacing(10)
+        .push(
+            Tooltip::new(
+                Text::new(label_text).horizontal_alignment(HorizontalAlignment::Right),
+                tooltip_text,
+                Position::Top,
+            )
+            .style(style::Tooltip)
+            .gap(5),
+        )
+        .push(widget)
+        .into()
 }

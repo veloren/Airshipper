@@ -157,7 +157,7 @@ impl Application for Airshipper {
                 *self = state;
                 return self
                     .default_view
-                    .update(DefaultViewMessage::Query, &self.cmd, &self.active_profile)
+                    .update(DefaultViewMessage::Query, &self.active_profile)
                     .map(Message::DefaultViewMessage);
             },
             Message::Saved(_) => {},
@@ -195,7 +195,7 @@ impl Application for Airshipper {
 
                 return self
                     .default_view
-                    .update(msg, &self.cmd, &self.active_profile)
+                    .update(msg, &self.active_profile)
                     .map(Message::DefaultViewMessage);
             },
             #[cfg(windows)]

@@ -10,6 +10,12 @@ pub const VOXYGEN_FILE: &str = "veloren-voxygen.exe";
 #[cfg(unix)]
 pub const VOXYGEN_FILE: &str = "veloren-voxygen";
 
+#[cfg(windows)]
+pub const LOGS_DIR: &str = "userdata\\voxygen\\logs";
+
+#[cfg(unix)]
+pub const LOGS_DIR: &str = "userdata/voxygen/logs";
+
 //#[cfg(windows)]
 //pub const SERVER_CLI_FILE: &str = "veloren-server-cli.exe";
 #[cfg(unix)]
