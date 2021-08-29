@@ -1,15 +1,18 @@
 use crate::{
     io::{self, ProcessUpdate},
-    profiles::Profile,
+    profiles::{LogLevel, Profile},
 };
 use iced::{futures, Subscription};
 use iced_native::subscription::Recipe;
 
-pub fn stream(profile: Profile, verbosity: i32) -> iced::Subscription<io::ProcessUpdate> {
-    Subscription::from_recipe(Process(profile, verbosity))
+pub fn stream(
+    profile: Profile,
+    log_level: LogLevel,
+) -> iced::Subscription<io::ProcessUpdate> {
+    Subscription::from_recipe(Process(profile, log_level))
 }
 
-struct Process(Profile, i32);
+struct Process(Profile, LogLevel);
 
 impl<H, I> Recipe<H, I> for Process
 where

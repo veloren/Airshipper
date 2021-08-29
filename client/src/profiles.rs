@@ -22,29 +22,71 @@ pub struct Profile {
     #[serde(rename = "directory")]
     _directory: PathBuf,
     pub version: Option<String>,
+    pub wgpu_backend: WgpuBackend,
 }
 
 impl Default for Profile {
     fn default() -> Self {
-        Profile::new("default".to_owned(), Server::Prod, Channel::Nightly)
+        Profile::new("default".to_owned(), Server::Production, Channel::Nightly)
     }
 }
 
 #[derive(
     Debug, derive_more::Display, Clone, Copy, Serialize, Deserialize, PartialEq, Eq,
 )]
+pub enum WgpuBackend {
+    Auto,
+    DX11,
+    DX12,
+    Metal,
+    Vulkan,
+}
+
+#[cfg(target_os = "windows")]
+pub static WGPU_BACKENDS: &[WgpuBackend] = &[
+    WgpuBackend::Auto,
+    WgpuBackend::DX11,
+    WgpuBackend::DX12,
+    WgpuBackend::Vulkan,
+];
+
+#[cfg(target_os = "linux")]
+pub static WGPU_BACKENDS: &[WgpuBackend] = &[WgpuBackend::Auto, WgpuBackend::Vulkan];
+
+#[cfg(target_os = "macos")]
+pub static WGPU_BACKENDS: &[WgpuBackend] = &[WgpuBackend::Auto, WgpuBackend::Metal];
+
+#[derive(
+    Debug, derive_more::Display, Clone, Copy, Serialize, Deserialize, PartialEq, Eq,
+)]
 pub enum Server {
-    Prod,
+    Production,
     Staging,
     Test,
 }
 
-pub static SERVERS: &[Server] = &[Server::Prod, Server::Staging, Server::Test];
+pub static SERVERS: &[Server] = &[Server::Production, Server::Staging, Server::Test];
+
+#[derive(Debug, derive_more::Display, Clone, Copy, PartialEq, Eq)]
+pub enum LogLevel {
+    Default,
+    Debug,
+    Trace,
+}
+
+impl Default for LogLevel {
+    fn default() -> Self {
+        LogLevel::Default
+    }
+}
+
+pub static LOG_LEVELS: &[LogLevel] =
+    &[LogLevel::Default, LogLevel::Debug, LogLevel::Trace];
 
 impl Server {
     pub fn url(&self) -> &str {
         match self {
-            Server::Prod => "https://download.veloren.net",
+            Server::Production => "https://download.veloren.net",
             Server::Staging => "https://download.staging.veloren.net",
             Server::Test => "https://download.test.veloren.net",
         }
@@ -66,6 +108,7 @@ impl Profile {
             server,
             channel,
             version: None,
+            wgpu_backend: WgpuBackend::Auto,
         }
     }
 
@@ -77,6 +120,12 @@ impl Profile {
     /// e.g. <base>/profiles/default/veloren-voxygen.exe
     fn voxygen_path(&self) -> PathBuf {
         self.directory().join(consts::VOXYGEN_FILE)
+    }
+
+    /// Returns path to the voxygen logs directory
+    /// e.g. <base>/profiles/default/logs
+    pub fn voxygen_logs_path(&self) -> PathBuf {
+        self.directory().join(consts::LOGS_DIR)
     }
 
     /// Returns the download url for this profile
@@ -103,22 +152,38 @@ impl Profile {
     }
 
     // TODO: add possibility to start the server too
-    pub fn start(profile: &Profile, verbosity: i32) -> Command {
+    pub fn start(profile: &Profile, log_level: LogLevel) -> Command {
         let mut envs = HashMap::new();
         let userdata_dir = profile.directory().join("userdata").into_os_string();
         let screenshot_dir = profile.directory().join("screenshots").into_os_string();
         let assets_dir = profile.directory().join("assets").into_os_string();
 
-        let verbosity = match verbosity {
-            0 => OsString::from("info"),
-            1 => OsString::from("debug"),
-            _ => OsString::from("trace"),
-        };
+        if log_level != LogLevel::Default {
+            let log_level = match log_level {
+                LogLevel::Default => OsString::from("info"),
+                LogLevel::Debug => OsString::from("debug"),
+                LogLevel::Trace => OsString::from("trace"),
+            };
+            envs.insert("RUST_LOG", log_level);
+        }
 
-        envs.insert("VOXYGEN_SCREENSHOT", &screenshot_dir);
-        envs.insert("VELOREN_USERDATA", &userdata_dir);
-        envs.insert("VELOREN_ASSETS", &assets_dir);
-        envs.insert("RUST_LOG", &verbosity);
+        envs.insert("VOXYGEN_SCREENSHOT", screenshot_dir);
+        envs.insert("VELOREN_USERDATA", userdata_dir);
+        envs.insert("VELOREN_ASSETS", assets_dir);
+
+        if profile.wgpu_backend != WgpuBackend::Auto {
+            let wgpu_backend = match profile.wgpu_backend {
+                WgpuBackend::DX11 => "dx11",
+                WgpuBackend::DX12 => "dx12",
+                WgpuBackend::Metal => "metal",
+                WgpuBackend::Vulkan => "vulkan",
+                _ => unreachable!(
+                    "Unsupported WgpuBackend value: {}",
+                    profile.wgpu_backend
+                ),
+            };
+            envs.insert("WGPU_BACKEND", OsString::from(wgpu_backend));
+        }
 
         log::debug!("Launching {}", profile.voxygen_path().display());
         log::debug!("CWD: {:?}", profile.directory());
