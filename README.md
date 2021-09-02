@@ -4,7 +4,7 @@
 
 A cross-platform Veloren launcher.
 
-![Airshipper](https://camo.githubusercontent.com/71dfc8bb095129c57a7d2c29ff7d50bba4c91e67fef84c2e6ef93be7efb1e02a/68747470733a2f2f7777772e736f6e6774726f6e69782e636f6d2f616972736869707065722d302e342e302e676966)
+![Airshipper](https://i.imgur.com/1VkndRZ.gif)
 
 ## Features
 
