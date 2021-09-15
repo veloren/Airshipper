@@ -28,8 +28,8 @@ pub const LOG_FILE: &str = "airshipper.log";
 
 // For querying
 pub const CHANGELOG_URL: &str =
-    "https://gitlab.com/veloren/veloren/raw/master/CHANGELOG.md";
+    "https://gitlab.com/veloren/veloren/raw/nightly/CHANGELOG.md";
 // For user linking
 pub const CHANGELOG_URL_LINK: &str =
-    "https://gitlab.com/veloren/veloren/-/blob/master/CHANGELOG.md";
+    "https://gitlab.com/veloren/veloren/-/blob/nightly/CHANGELOG.md";
 pub const NEWS_URL: &str = "https://veloren.net/rss.xml";
