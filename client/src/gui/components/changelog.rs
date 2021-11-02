@@ -5,6 +5,7 @@ use crate::{
     net, Result,
 };
 use iced::{button, scrollable, Column, Element, Length, Row, Rule, Scrollable, Text};
+use pulldown_cmark::{Event, Options, Parser, Tag};
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
@@ -30,127 +31,132 @@ pub struct Changelog {
 
 impl Changelog {
     async fn fetch() -> Result<Self> {
+        let mut versions: Vec<ChangelogVersion> = Vec::new();
+
         let changelog = net::query(consts::CHANGELOG_URL).await?;
         let etag = net::get_etag(&changelog);
 
-        let mut versions: Vec<ChangelogVersion> = Vec::new();
-        let mut version: Option<&str> = None;
-        let mut date: Option<&str> = None;
-
-        let mut sections: Vec<(String, Vec<String>)> = Vec::new();
-        let mut section_name: Option<&str> = None;
-        let mut section_lines: Vec<String> = Vec::new();
-
-        let save_version =
-            |versions: &mut Vec<ChangelogVersion>,
-             version: Option<&str>,
-             date: Option<&str>,
-             sections: Vec<(String, Vec<String>)>| {
-                if sections.len() > 0 {
-                    match version {
-                        Some(version) => versions.push(ChangelogVersion {
-                            version: version.to_string(),
-                            date: match date {
-                                Some(date) => Some(date.to_string()),
-                                None => None,
-                            },
-                            sections: sections.clone(),
-                        }),
-                        None => (),
-                    }
-                }
-            };
-
-        let save_section = |sections: &mut Vec<(String, Vec<String>)>,
-                            section_name: Option<&str>,
-                            section_lines: Vec<String>| {
-            if section_lines.len() > 0 {
-                match section_name {
-                    Some(section_name) => {
-                        sections.push((section_name.to_string(), section_lines))
-                    },
-                    None => sections.push(("Info".to_string(), section_lines)),
-                };
-            }
-        };
-
         let changelog_text = changelog.text().await?;
-        for line in changelog_text
-            .lines()
-            .skip_while(|x| !x.contains(&"## [Unreleased]"))
-        {
-            // h3 - section heading
-            if line.starts_with("###") {
-                // save previous section
-                save_section(&mut sections, section_name, section_lines);
+        let options = Options::empty();
+        let mut parser = Parser::new_ext(changelog_text.as_str(), options).peekable();
 
-                // initialize new section
-                section_name = Some(line[3..].trim());
-                section_lines = Vec::new();
+        while let Some(event) = parser.next() {
+            match event {
+                // h2 version header
+                // starts a new version
+                Event::Start(Tag::Heading(2)) => {
+                    let mut version: String = String::new();
+                    let mut date: Option<String> = None;
 
-                continue;
-            }
-
-            // h2 - version heading
-            if line.starts_with("##") {
-                // save previous section and version
-                save_section(&mut sections, section_name, section_lines);
-                save_version(&mut versions, version, date, sections);
-
-                // initialize new version
-                let seperator = line.match_indices(" - ").next();
-                match seperator {
-                    Some((index, _seperator)) => {
-                        version = Some(line[2..index].trim());
-                        date = Some(line[index + 3..].trim());
-                    },
-                    None => {
-                        version = Some(line[2..].trim());
-                        date = None;
-                    },
-                }
-                version = match version {
-                    Some(version) => {
-                        let mut start = 0;
-                        let mut end = version.len();
-                        if version.starts_with("[") {
-                            start = 1;
+                    // h2 version header text
+                    while let Some(event) = parser.next() {
+                        match event {
+                            Event::End(Tag::Heading(2)) => break,
+                            Event::Text(text) => {
+                                if text.contains(" - ") {
+                                    date = Some(text[3..].trim().to_string());
+                                } else {
+                                    version = text.trim().to_string();
+                                }
+                            },
+                            _ => (),
                         }
-                        if version.ends_with("]") {
-                            end -= 1;
+                    }
+
+                    let mut sections: Vec<(String, Vec<String>)> = Vec::new();
+                    let mut notes: Vec<String> = Vec::new();
+
+                    // h3 sections
+                    // and paragraphs without sections aka notes
+                    while let Some(event) =
+                        parser.next_if(|e| e != &Event::Start(Tag::Heading(2)))
+                    {
+                        match event {
+                            // h3 section header
+                            // starts a new section
+                            Event::Start(Tag::Heading(3)) => {
+                                let mut section_name: Option<String> = None;
+                                let mut section_lines: Vec<String> = Vec::new();
+
+                                // h3 section header text
+                                while let Some(event) = parser.next() {
+                                    match event {
+                                        Event::End(Tag::Heading(3)) => break,
+                                        Event::Text(text) => {
+                                            section_name = Some(text.trim().to_string());
+                                        },
+                                        _ => (),
+                                    }
+                                }
+
+                                // section list
+                                while let Some(event) = parser.next_if(|e| {
+                                    e != &Event::Start(Tag::Heading(2))
+                                        && e != &Event::Start(Tag::Heading(3))
+                                }) {
+                                    match event {
+                                        Event::Start(Tag::Item) => {
+                                            let mut item_text: String = String::new();
+
+                                            while let Some(event) = parser.next() {
+                                                match event {
+                                                    Event::End(Tag::Item) => break,
+                                                    Event::Text(text) => {
+                                                        item_text.push_str(&text);
+                                                    },
+                                                    Event::Code(text) => {
+                                                        item_text.push_str("\"");
+                                                        item_text.push_str(&text);
+                                                        item_text.push_str("\"");
+                                                    },
+                                                    Event::SoftBreak => {
+                                                        item_text.push_str(" ");
+                                                    },
+                                                    _ => (),
+                                                }
+                                            }
+                                            section_lines.push(item_text);
+                                        },
+                                        _ => (),
+                                    }
+                                }
+
+                                // section done
+                                // save if not empty
+                                if section_name.is_some() && section_lines.len() > 0 {
+                                    sections.push((section_name.unwrap(), section_lines));
+                                }
+                            },
+                            // paragraph without section aka note
+                            Event::Start(Tag::Paragraph) => {
+                                while let Some(event) = parser.next() {
+                                    match event {
+                                        Event::End(Tag::Paragraph) => break,
+                                        Event::Text(text) => {
+                                            notes.push(text.to_string());
+                                        },
+                                        _ => (),
+                                    }
+                                }
+                            },
+                            _ => (),
                         }
-                        if &version[end - 2..end] == ".0" {
-                            end -= 2;
-                        }
-                        Some(&version[start..end])
-                    },
-                    None => None,
-                };
-                sections = Vec::new();
-                section_name = None;
-                section_lines = Vec::new();
+                    }
 
-                continue;
-            }
-
-            // line with text that isn't a link url
-            if !line.trim().is_empty() && !line.trim().starts_with("[") {
-                let mut trimmed_line = line.trim();
-
-                if trimmed_line.starts_with("-") {
-                    trimmed_line = trimmed_line[1..].trim();
-                }
-
-                if trimmed_line.starts_with("_") && trimmed_line.ends_with("_") {
-                    trimmed_line = trimmed_line[1..trimmed_line.len() - 1].trim();
-                }
-
-                section_lines.push(trimmed_line.to_string())
+                    // version done
+                    // save if not empty
+                    if sections.len() > 0 || notes.len() > 0 {
+                        versions.push(ChangelogVersion {
+                            version,
+                            date,
+                            sections,
+                            notes,
+                        })
+                    }
+                },
+                _ => (),
             }
         }
-        // save last section and version
-        save_section(&mut sections, section_name, section_lines);
-        save_version(&mut versions, version, date, sections);
 
         Ok(Changelog {
             etag,
@@ -225,16 +231,17 @@ impl Changelog {
 pub struct ChangelogVersion {
     pub version: String,
     pub date: Option<String>,
+    pub notes: Vec<String>,
     pub sections: Vec<(String, Vec<String>)>,
 }
 
 impl ChangelogVersion {
     pub fn view(&self) -> Element<DefaultViewMessage> {
         let version_string = match &self.date {
-            Some(date) => format!("v{} ({})", &self.version, date),
-            None => match &self.version[..] {
+            Some(date) => format!("v{} ({})", self.version, date),
+            None => match self.version.as_str() {
                 "Unreleased" => "Nightly".to_string(),
-                _ => format!("v{}", &self.version),
+                _ => format!("v{}", self.version),
             },
         };
 
@@ -247,6 +254,10 @@ impl ChangelogVersion {
                 )
                 .push(Rule::horizontal(8)),
         );
+
+        for note in &self.notes {
+            version = version.push(Text::new(note).size(18));
+        }
 
         for (section_name, section_lines) in &self.sections {
             let mut section = Column::new().push(Text::new(section_name).size(22));
