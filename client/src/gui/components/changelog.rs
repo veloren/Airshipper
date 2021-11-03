@@ -41,120 +41,114 @@ impl Changelog {
         let mut parser = Parser::new_ext(changelog_text.as_str(), options).peekable();
 
         while let Some(event) = parser.next() {
-            match event {
-                // h2 version header
-                // starts a new version
-                Event::Start(Tag::Heading(2)) => {
-                    let mut version: String = String::new();
-                    let mut date: Option<String> = None;
+            // h2 version header
+            // starts a new version
+            if let Event::Start(Tag::Heading(2)) = event {
+                let mut version: String = String::new();
+                let mut date: Option<String> = None;
 
-                    // h2 version header text
-                    while let Some(event) = parser.next() {
-                        match event {
-                            Event::End(Tag::Heading(2)) => break,
-                            Event::Text(text) => {
-                                if text.contains(" - ") {
-                                    date = Some(text[3..].trim().to_string());
-                                } else {
-                                    version = text.trim().to_string();
-                                }
-                            },
-                            _ => (),
-                        }
+                // h2 version header text
+                while let Some(event) = parser.next() {
+                    match event {
+                        Event::End(Tag::Heading(2)) => break,
+                        Event::Text(text) => {
+                            if text.contains(" - ") {
+                                date = Some(text[3..].trim().to_string());
+                            } else {
+                                version = text.trim().to_string();
+                            }
+                        },
+                        _ => (),
                     }
+                }
 
-                    let mut sections: Vec<(String, Vec<String>)> = Vec::new();
-                    let mut notes: Vec<String> = Vec::new();
+                let mut sections: Vec<(String, Vec<String>)> = Vec::new();
+                let mut notes: Vec<String> = Vec::new();
 
-                    // h3 sections
-                    // and paragraphs without sections aka notes
-                    while let Some(event) =
-                        parser.next_if(|e| e != &Event::Start(Tag::Heading(2)))
-                    {
-                        match event {
-                            // h3 section header
-                            // starts a new section
-                            Event::Start(Tag::Heading(3)) => {
-                                let mut section_name: Option<String> = None;
-                                let mut section_lines: Vec<String> = Vec::new();
+                // h3 sections
+                // and paragraphs without sections aka notes
+                while let Some(event) =
+                    parser.next_if(|e| e != &Event::Start(Tag::Heading(2)))
+                {
+                    match event {
+                        // h3 section header
+                        // starts a new section
+                        Event::Start(Tag::Heading(3)) => {
+                            let mut section_name: Option<String> = None;
+                            let mut section_lines: Vec<String> = Vec::new();
 
-                                // h3 section header text
-                                while let Some(event) = parser.next() {
-                                    match event {
-                                        Event::End(Tag::Heading(3)) => break,
-                                        Event::Text(text) => {
-                                            section_name = Some(text.trim().to_string());
-                                        },
-                                        _ => (),
+                            // h3 section header text
+                            while let Some(event) = parser.next() {
+                                match event {
+                                    Event::End(Tag::Heading(3)) => break,
+                                    Event::Text(text) => {
+                                        section_name = Some(text.trim().to_string());
+                                    },
+                                    _ => (),
+                                }
+                            }
+
+                            // section list
+                            while let Some(event) = parser.next_if(|e| {
+                                e != &Event::Start(Tag::Heading(2))
+                                    && e != &Event::Start(Tag::Heading(3))
+                            }) {
+                                if let Event::Start(Tag::Item) = event {
+                                    let mut item_text: String = String::new();
+
+                                    while let Some(event) = parser.next() {
+                                        match event {
+                                            Event::End(Tag::Item) => break,
+                                            Event::Text(text) => {
+                                                item_text.push_str(&text);
+                                            },
+                                            Event::Code(text) => {
+                                                item_text.push_str("\"");
+                                                item_text.push_str(&text);
+                                                item_text.push_str("\"");
+                                            },
+                                            Event::SoftBreak => {
+                                                item_text.push_str(" ");
+                                            },
+                                            _ => (),
+                                        }
                                     }
+                                    section_lines.push(item_text);
                                 }
+                            }
 
-                                // section list
-                                while let Some(event) = parser.next_if(|e| {
-                                    e != &Event::Start(Tag::Heading(2))
-                                        && e != &Event::Start(Tag::Heading(3))
-                                }) {
-                                    match event {
-                                        Event::Start(Tag::Item) => {
-                                            let mut item_text: String = String::new();
-
-                                            while let Some(event) = parser.next() {
-                                                match event {
-                                                    Event::End(Tag::Item) => break,
-                                                    Event::Text(text) => {
-                                                        item_text.push_str(&text);
-                                                    },
-                                                    Event::Code(text) => {
-                                                        item_text.push_str("\"");
-                                                        item_text.push_str(&text);
-                                                        item_text.push_str("\"");
-                                                    },
-                                                    Event::SoftBreak => {
-                                                        item_text.push_str(" ");
-                                                    },
-                                                    _ => (),
-                                                }
-                                            }
-                                            section_lines.push(item_text);
-                                        },
-                                        _ => (),
-                                    }
+                            // section done
+                            // save if not empty
+                            if section_name.is_some() && !section_lines.is_empty() {
+                                sections.push((section_name.unwrap(), section_lines));
+                            }
+                        },
+                        // paragraph without section aka note
+                        Event::Start(Tag::Paragraph) => {
+                            while let Some(event) = parser.next() {
+                                match event {
+                                    Event::End(Tag::Paragraph) => break,
+                                    Event::Text(text) => {
+                                        notes.push(text.to_string());
+                                    },
+                                    _ => (),
                                 }
-
-                                // section done
-                                // save if not empty
-                                if section_name.is_some() && !section_lines.is_empty() {
-                                    sections.push((section_name.unwrap(), section_lines));
-                                }
-                            },
-                            // paragraph without section aka note
-                            Event::Start(Tag::Paragraph) => {
-                                while let Some(event) = parser.next() {
-                                    match event {
-                                        Event::End(Tag::Paragraph) => break,
-                                        Event::Text(text) => {
-                                            notes.push(text.to_string());
-                                        },
-                                        _ => (),
-                                    }
-                                }
-                            },
-                            _ => (),
-                        }
+                            }
+                        },
+                        _ => (),
                     }
+                }
 
-                    // version done
-                    // save if not empty
-                    if !sections.is_empty() || !notes.is_empty() {
-                        versions.push(ChangelogVersion {
-                            version,
-                            date,
-                            sections,
-                            notes,
-                        })
-                    }
-                },
-                _ => (),
+                // version done
+                // save if not empty
+                if !sections.is_empty() || !notes.is_empty() {
+                    versions.push(ChangelogVersion {
+                        version,
+                        date,
+                        sections,
+                        notes,
+                    })
+                }
             }
         }
 
