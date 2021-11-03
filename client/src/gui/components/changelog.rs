@@ -30,6 +30,7 @@ pub struct Changelog {
 }
 
 impl Changelog {
+    #[allow(clippy::while_let_on_iterator)]
     async fn fetch() -> Result<Self> {
         let mut versions: Vec<ChangelogVersion> = Vec::new();
 
