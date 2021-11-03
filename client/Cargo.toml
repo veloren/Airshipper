@@ -54,6 +54,7 @@ log = "0.4.11"
 # Networking
 reqwest = { version = "0.11.4", default-features = false, features = ["rustls-tls"] }
 # Parsing
+pulldown-cmark = "0.8.0"
 strip_markdown = "0.2.0"
 html2text = "0.2.1"
 serde = "1.0.116"

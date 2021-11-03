@@ -67,6 +67,7 @@ dependencies = [
  "log",
  "opener",
  "openssl-sys",
+ "pulldown-cmark 0.8.0",
  "reqwest",
  "ron",
  "rss",
@@ -2772,6 +2773,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "pulldown-cmark"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ffade02495f22453cd593159ea2f59827aae7f53fa8323f756799b670881dcf8"
+dependencies = [
+ "bitflags",
+ "getopts",
+ "memchr",
+ "unicase",
+]
+
+[[package]]
 name = "quick-xml"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3671,7 +3684,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32c754386109f9adc8ca62513c51cf81cc2d8502588064103aa8e9f69b4276da"
 dependencies = [
  "log",
- "pulldown-cmark",
+ "pulldown-cmark 0.7.2",
 ]
 
 [[package]]
