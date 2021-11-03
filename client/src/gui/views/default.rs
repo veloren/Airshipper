@@ -96,6 +96,7 @@ pub enum Interaction {
     ServerChanged(profiles::Server),
     WgpuBackendChanged(profiles::WgpuBackend),
     ReadMore(String),
+    SetChangelogDisplayCount(usize),
     SettingsPressed,
     OpenLogsPressed,
     Disabled,
@@ -576,6 +577,15 @@ impl DefaultView {
                             DefaultViewMessage::GameUpdate,
                         ),
                     ]);
+                },
+                Interaction::SetChangelogDisplayCount(count) => {
+                    if count <= 1 {
+                        self.changelog.display_count = 1;
+                    } else if count >= self.changelog.versions.len() {
+                        self.changelog.display_count = self.changelog.versions.len();
+                    } else {
+                        self.changelog.display_count = count;
+                    }
                 },
                 Interaction::SettingsPressed => {
                     self.show_settings = !self.show_settings;
