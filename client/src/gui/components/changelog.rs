@@ -26,7 +26,7 @@ pub struct Changelog {
     #[serde(skip)]
     show_latest_only_btn: button::State,
     #[serde(skip)]
-    pub display_count: i32,
+    pub display_count: usize,
 }
 
 impl Changelog {
@@ -200,17 +200,21 @@ impl Changelog {
                     .push(secondary_button(
                         &mut self.show_more_btn,
                         "Show More",
-                        Interaction::SetChangelogDisplayCount(self.display_count + 1),
+                        Interaction::SetChangelogDisplayCount(
+                            self.display_count.saturating_add(1),
+                        ),
                     ))
                     .push(secondary_button(
                         &mut self.show_less_btn,
                         "Show Less",
-                        Interaction::SetChangelogDisplayCount(self.display_count - 1),
+                        Interaction::SetChangelogDisplayCount(
+                            self.display_count.saturating_sub(1),
+                        ),
                     ))
                     .push(secondary_button(
                         &mut self.show_all_btn,
                         "Show All",
-                        Interaction::SetChangelogDisplayCount(self.versions.len() as i32),
+                        Interaction::SetChangelogDisplayCount(self.versions.len()),
                     ))
                     .push(secondary_button(
                         &mut self.show_latest_only_btn,

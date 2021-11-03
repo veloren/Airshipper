@@ -96,7 +96,7 @@ pub enum Interaction {
     ServerChanged(profiles::Server),
     WgpuBackendChanged(profiles::WgpuBackend),
     ReadMore(String),
-    SetChangelogDisplayCount(i32),
+    SetChangelogDisplayCount(usize),
     SettingsPressed,
     OpenLogsPressed,
     Disabled,
@@ -581,9 +581,8 @@ impl DefaultView {
                 Interaction::SetChangelogDisplayCount(count) => {
                     if count <= 1 {
                         self.changelog.display_count = 1;
-                    } else if count >= self.changelog.versions.len() as i32 {
-                        self.changelog.display_count =
-                            self.changelog.versions.len() as i32;
+                    } else if count >= self.changelog.versions.len() {
+                        self.changelog.display_count = self.changelog.versions.len();
                     } else {
                         self.changelog.display_count = count;
                     }
