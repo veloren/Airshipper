@@ -103,12 +103,12 @@ impl Changelog {
                                                 item_text.push_str(&text);
                                             },
                                             Event::Code(text) => {
-                                                item_text.push_str("\"");
+                                                item_text.push('"');
                                                 item_text.push_str(&text);
-                                                item_text.push_str("\"");
+                                                item_text.push('"');
                                             },
                                             Event::SoftBreak => {
-                                                item_text.push_str(" ");
+                                                item_text.push(' ');
                                             },
                                             _ => (),
                                         }
