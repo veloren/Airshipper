@@ -123,7 +123,7 @@ impl Changelog {
 
                                 // section done
                                 // save if not empty
-                                if section_name.is_some() && section_lines.len() > 0 {
+                                if section_name.is_some() && !section_lines.is_empty() {
                                     sections.push((section_name.unwrap(), section_lines));
                                 }
                             },
@@ -145,7 +145,7 @@ impl Changelog {
 
                     // version done
                     // save if not empty
-                    if sections.len() > 0 || notes.len() > 0 {
+                    if !sections.is_empty() || !notes.is_empty() {
                         versions.push(ChangelogVersion {
                             version,
                             date,
