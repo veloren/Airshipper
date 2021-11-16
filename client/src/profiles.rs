@@ -91,6 +91,14 @@ impl Server {
             Server::Test => "https://download.test.veloren.net",
         }
     }
+
+    pub fn osdir(&self) -> String {
+        if std::env::consts::ARCH == "x86_64" {
+            std::env::consts::OS.to_string()
+        } else {
+            format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH)
+        }
+    }
 }
 
 #[derive(Debug, derive_more::Display, Clone, Copy, Serialize, Deserialize)]
@@ -133,7 +141,7 @@ impl Profile {
         format!(
             "{}/latest/{}/{}",
             self.server.url(),
-            std::env::consts::OS,
+            self.server.osdir(),
             self.channel
         )
     }
@@ -146,7 +154,7 @@ impl Profile {
         format!(
             "{}/version/{}/{}",
             self.server.url(),
-            std::env::consts::OS,
+            self.server.osdir(),
             self.channel
         )
     }
