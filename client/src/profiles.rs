@@ -93,10 +93,9 @@ impl Server {
     }
 
     pub fn osdir(&self) -> String {
-        if std::env::consts::ARCH == "x86_64" {
-            std::env::consts::OS.to_string()
-        } else {
-            format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH)
+        match (std::env::consts::OS, std::env::consts::ARCH) {
+            os_arch @ ("linux", "aarch64") => format!("{}-{}", os_arch.0, os_arch.1),
+            (os, _) => os.to_string(),
         }
     }
 }
