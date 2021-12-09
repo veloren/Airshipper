@@ -7,6 +7,7 @@ pub struct Metrics {
 
     downloads_windows: IntCounter,
     downloads_linux: IntCounter,
+    downloads_linux_aarch64: IntCounter,
     downloads_macos: IntCounter,
     pub uploads: IntCounter,
 
@@ -29,6 +30,11 @@ impl Metrics {
             "macos_downloads",
             "shows the number of requests which want to download Veloren for MacOS",
         )?;
+        let downloads_linux_aarch64 = IntCounter::new(
+            "linux_aarch64_downloads",
+            "shows the number of requests which want to download Veloren for \
+             linux-aarch64",
+        )?;
         let uploads = IntCounter::new(
             "uploads_total",
             "shows the number of requests which lead to an upload of new artifacts",
@@ -43,6 +49,7 @@ impl Metrics {
 
         registry.register(Box::new(downloads_windows.clone()))?;
         registry.register(Box::new(downloads_linux.clone()))?;
+        registry.register(Box::new(downloads_linux_aarch64.clone()))?;
         registry.register(Box::new(downloads_macos.clone()))?;
         registry.register(Box::new(uploads.clone()))?;
         registry.register(Box::new(http_routes_in.clone()))?;
@@ -52,6 +59,7 @@ impl Metrics {
 
             downloads_windows,
             downloads_linux,
+            downloads_linux_aarch64,
             downloads_macos,
             uploads,
 
@@ -66,6 +74,7 @@ impl Metrics {
         match platform.to_lowercase().as_ref() {
             "windows" => self.downloads_windows.inc(),
             "linux" => self.downloads_linux.inc(),
+            "linux-aarch64" => self.downloads_linux_aarch64.inc(),
             "macos" => self.downloads_macos.inc(),
             _ => {},
         }
