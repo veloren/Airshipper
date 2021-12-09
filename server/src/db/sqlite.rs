@@ -133,11 +133,17 @@ impl DbConnection {
             .filter(|x| x.platform == "macos")
             .skip(1) // Do not prune all artifacts from one platform!
             .collect::<Vec<_>>();
+        let aarch64_artis = artis
+            .iter()
+            .filter(|x| x.platform == "linux-aarch64")
+            .skip(1) // Do not prune all artifacts from one platform!
+            .collect::<Vec<_>>();
 
         let mut artis = vec![];
         artis.extend(win_artis);
         artis.extend(lin_artis);
         artis.extend(mac_artis);
+        artis.extend(aarch64_artis);
 
         let ids: Vec<i32> = artis.iter().map(|x| x.id).collect();
         self.0
