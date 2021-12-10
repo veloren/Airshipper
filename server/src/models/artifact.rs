@@ -100,6 +100,8 @@ impl Artifact {
     fn get_platform(name: &str) -> Option<String> {
         if name.contains("windows") {
             Some("windows".into())
+        } else if name.contains("linux-aarch64") {
+            Some("linux-aarch64".into())
         } else if name.contains("linux") {
             Some("linux".into())
         } else if name.contains("macos") {
