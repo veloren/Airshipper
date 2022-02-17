@@ -60,5 +60,5 @@ fn get_remote_hash(resp: &reqwest::Response) -> String {
         .get(reqwest::header::ETAG)
         .map(|x| x.to_str().expect("always valid ascii?"))
         .unwrap_or("REMOTE_ETAG_MISSING")
-        .replace("\"", "")
+        .replace('\"', "")
 }

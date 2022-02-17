@@ -25,8 +25,7 @@ pub(crate) async fn query_etag<U: IntoUrl>(url: U) -> Result<Option<String>> {
         .await?
         .headers()
         .get("etag")
-        .map(|s| s.to_str().map(String::from).ok())
-        .flatten())
+        .and_then(|s| s.to_str().map(String::from).ok()))
 }
 
 /// Extracts Etag value from response
