@@ -31,7 +31,7 @@ unittests:
 
 #linux, windows, macos builds here as template
 .tlinux:
-  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/release-linux:${CACHE_IMAGE_TAG}
+  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/release-linux-x86_64:${CACHE_IMAGE_TAG}
   script:
     - ln -s /dockercache/target target
     - rm -r target/release/incremental/veloren_* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
@@ -47,7 +47,7 @@ unittests:
     expire_in: 1 week
 
 .twindows:
-  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/release-windows:${CACHE_IMAGE_TAG}
+  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/release-windows-x86_64:${CACHE_IMAGE_TAG}
   script:
     - cargo install cargo-wix --version 0.3.0
     - update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
