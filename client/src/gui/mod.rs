@@ -101,10 +101,10 @@ impl Airshipper {
     }
 }
 
-#[allow(clippy::enum_variant_names)]
+#[allow(clippy::enum_variant_names, clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
 pub enum Message {
-    Loaded(Airshipper),
+    Loaded(Airshipper), // Todo: put in Box<>
     Saved(Result<()>),
 
     // Messages

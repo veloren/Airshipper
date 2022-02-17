@@ -68,7 +68,7 @@ pub fn process() -> Result<()> {
 }
 
 async fn process_arguments(
-    mut profile: &mut Profile,
+    profile: &mut Profile,
     action: Action,
     verbose: i32,
 ) -> Result<()> {
@@ -79,11 +79,11 @@ async fn process_arguments(
     };
 
     match action {
-        Action::Update => update(&mut profile, true).await?,
-        Action::Start => start(&mut profile, log_level).await?,
+        Action::Update => update(profile, true).await?,
+        Action::Start => start(profile, log_level).await?,
         Action::Run => {
-            update(&mut profile, false).await?;
-            start(&mut profile, log_level).await?
+            update(profile, false).await?;
+            start(profile, log_level).await?
         },
         #[cfg(windows)]
         Action::Upgrade => {
