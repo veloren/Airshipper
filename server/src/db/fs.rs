@@ -60,6 +60,6 @@ impl FsStorage {
             .join(&filename)
             .display()
             .to_string()
-            .replace("\\", "/")
+            .replace('\\', "/")
     }
 }
