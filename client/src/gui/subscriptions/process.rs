@@ -35,7 +35,7 @@ where
     ) -> futures::stream::BoxStream<'static, Self::Output> {
         use iced::futures::stream::StreamExt;
 
-        let mut cmd = Profile::start(&self.0, self.1, &self.2);
+        let mut cmd = Profile::start(&self.0, self.1);
         match io::stream_process(&mut cmd) {
             Ok(stream) => stream.boxed(),
             Err(err) => {

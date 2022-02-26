@@ -7,7 +7,7 @@ use crate::{
         style, subscriptions, Result,
     },
     io, net, profiles,
-    profiles::{LogLevel, Profile},
+    profiles::Profile,
     ProcessUpdate,
 };
 use iced::{
@@ -21,8 +21,6 @@ use std::path::PathBuf;
 pub struct DefaultView {
     changelog: Changelog,
     news: News,
-    pub env_vars: String,
-
     #[serde(skip)]
     state: State,
 
@@ -43,8 +41,6 @@ pub struct DefaultView {
     #[serde(skip)]
     show_settings: bool,
     #[serde(skip)]
-    log_level: LogLevel,
-    #[serde(skip)]
     env_var_state: text_input::State,
 }
 
@@ -57,7 +53,7 @@ pub enum State {
     Downloading(String, PathBuf, String),
     Installing,
     ReadyToPlay,
-    Playing(Profile, LogLevel),
+    Playing(Profile),
 
     Retry,
     /// bool indicates whether Veloren can be started offline
@@ -113,10 +109,10 @@ impl DefaultView {
                 subscriptions::download::file(url, location)
                     .map(DefaultViewMessage::DownloadProgress)
             },
-            &State::Playing(ref profile, log_level) => subscriptions::process::stream(
+            &State::Playing(ref profile) => subscriptions::process::stream(
                 profile.clone(),
-                log_level,
-                self.env_vars.clone(),
+                profile.log_level,
+                profile.env_vars.clone(),
             )
             .map(DefaultViewMessage::ProcessUpdate),
             _ => iced::Subscription::none(),
@@ -190,7 +186,7 @@ impl DefaultView {
                 "Changes the amount of information that the game outputs to its log file",
                 pick_list(
                     &mut self.log_level_picker_state,
-                    Some(self.log_level),
+                    Some(active_profile.log_level),
                     profiles::LOG_LEVELS,
                     Interaction::LogLevelChanged,
                 ),
@@ -209,7 +205,7 @@ impl DefaultView {
                 TextInput::new(
                     &mut self.env_var_state,
                     "FOO=foo, BAR=bar",
-                    &self.env_vars,
+                    &active_profile.env_vars,
                     |vars| {
                         DefaultViewMessage::Interaction(Interaction::EnvVarsChanged(vars))
                     },
@@ -527,8 +523,7 @@ impl DefaultView {
                         )
                     },
                     State::ReadyToPlay => {
-                        self.state =
-                            State::Playing(active_profile.clone(), self.log_level);
+                        self.state = State::Playing(active_profile.clone());
                     },
                     State::Retry => {
                         // TODO: Switching state should trigger these commands
@@ -551,8 +546,7 @@ impl DefaultView {
                     State::Offline(available) => match available {
                         // Play offline
                         true => {
-                            self.state =
-                                State::Playing(active_profile.clone(), self.log_level);
+                            self.state = State::Playing(active_profile.clone());
                         },
                         // Retry
                         false => {
@@ -623,7 +617,12 @@ impl DefaultView {
                     );
                 },
                 Interaction::LogLevelChanged(log_level) => {
-                    self.log_level = log_level;
+                    let mut profile = active_profile.clone();
+                    profile.log_level = log_level;
+                    return Command::perform(
+                        async { Action::UpdateProfile(profile) },
+                        DefaultViewMessage::Action,
+                    );
                 },
                 Interaction::OpenLogsPressed => {
                     if let Err(e) = opener::open(active_profile.voxygen_logs_path()) {
@@ -631,7 +630,12 @@ impl DefaultView {
                     }
                 },
                 Interaction::EnvVarsChanged(vars) => {
-                    self.env_vars = vars;
+                    let mut profile = active_profile.clone();
+                    profile.env_vars = vars;
+                    return Command::perform(
+                        async { Action::UpdateProfile(profile) },
+                        DefaultViewMessage::Action,
+                    );
                 },
                 Interaction::Disabled => {},
             },
