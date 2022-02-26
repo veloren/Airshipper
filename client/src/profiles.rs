@@ -159,7 +159,7 @@ impl Profile {
     }
 
     // TODO: add possibility to start the server too
-    pub fn start(profile: &Profile, log_level: LogLevel) -> Command {
+    pub fn start(profile: &Profile, log_level: LogLevel, env_vars: &str) -> Command {
         let mut envs = HashMap::new();
         let userdata_dir = profile.directory().join("userdata").into_os_string();
         let screenshot_dir = profile.directory().join("screenshots").into_os_string();
@@ -190,6 +190,14 @@ impl Profile {
                 ),
             };
             envs.insert("WGPU_BACKEND", OsString::from(wgpu_backend));
+        }
+
+        let (env_vars, env_var_errors) = parse_env_vars(env_vars);
+        for err in env_var_errors {
+            log::error!("Environment variable error: {}", err);
+        }
+        for (var, value) in env_vars {
+            envs.insert(var, OsString::from(value));
         }
 
         log::debug!("Launching {}", profile.voxygen_path().display());
@@ -255,4 +263,30 @@ async fn set_permissions(files: Vec<&std::path::PathBuf>) -> Result<()> {
             .await?;
     }
     Ok(())
+}
+
+fn parse_env_vars(env_vars: &str) -> (Vec<(&str, &str)>, Vec<String>) {
+    let mut errors = Vec::new();
+    let vars = env_vars
+        .split(',')
+        .filter_map(|var| {
+            if let Some((key, value)) = var.split_once('=') {
+                let key = key.trim();
+                let value = value.trim();
+                if key.chars().count() == 0 {
+                    errors.push(format!("Invalid variable '{}'", key))
+                }
+                Some((key, value))
+            } else {
+                if var.chars().count() == 0 {
+                    errors.push("Unnecessary ',' in variable list".to_string());
+                } else {
+                    errors.push(format!("Variable '{}' has no corresponding value", var));
+                }
+                None
+            }
+        })
+        .collect();
+
+    (vars, errors)
 }
