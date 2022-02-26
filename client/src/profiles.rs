@@ -165,14 +165,14 @@ impl Profile {
     }
 
     // TODO: add possibility to start the server too
-    pub fn start(profile: &Profile, log_level: LogLevel) -> Command {
+    pub fn start(profile: &Profile) -> Command {
         let mut envs = HashMap::new();
         let userdata_dir = profile.directory().join("userdata").into_os_string();
         let screenshot_dir = profile.directory().join("screenshots").into_os_string();
         let assets_dir = profile.directory().join("assets").into_os_string();
 
-        if log_level != LogLevel::Default {
-            let log_level = match log_level {
+        if profile.log_level != LogLevel::Default {
+            let log_level = match profile.log_level {
                 LogLevel::Default => OsString::from("info"),
                 LogLevel::Debug => OsString::from("debug"),
                 LogLevel::Trace => OsString::from("trace"),
