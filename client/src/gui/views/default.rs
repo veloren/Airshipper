@@ -11,9 +11,9 @@ use crate::{
     ProcessUpdate,
 };
 use iced::{
-    button, image::Handle, pick_list, tooltip::Position, Align, Button, Column, Command,
-    Container, Element, HorizontalAlignment, Image, Length, PickList, ProgressBar, Row,
-    Text, Tooltip, VerticalAlignment,
+    button, image::Handle, pick_list, text_input, tooltip::Position, Align, Button,
+    Column, Command, Container, Element, HorizontalAlignment, Image, Length, PickList,
+    ProgressBar, Row, Text, TextInput, Tooltip, VerticalAlignment,
 };
 use std::path::PathBuf;
 
@@ -21,6 +21,7 @@ use std::path::PathBuf;
 pub struct DefaultView {
     changelog: Changelog,
     news: News,
+    pub env_vars: String,
 
     #[serde(skip)]
     state: State,
@@ -43,6 +44,8 @@ pub struct DefaultView {
     show_settings: bool,
     #[serde(skip)]
     log_level: LogLevel,
+    #[serde(skip)]
+    env_var_state: text_input::State,
 }
 
 #[derive(Debug, Clone)]
@@ -100,6 +103,7 @@ pub enum Interaction {
     SettingsPressed,
     OpenLogsPressed,
     Disabled,
+    EnvVarsChanged(String),
 }
 
 impl DefaultView {
@@ -109,10 +113,12 @@ impl DefaultView {
                 subscriptions::download::file(url, location)
                     .map(DefaultViewMessage::DownloadProgress)
             },
-            &State::Playing(ref profile, log_level) => {
-                subscriptions::process::stream(profile.clone(), log_level)
-                    .map(DefaultViewMessage::ProcessUpdate)
-            },
+            &State::Playing(ref profile, log_level) => subscriptions::process::stream(
+                profile.clone(),
+                log_level,
+                self.env_vars.clone(),
+            )
+            .map(DefaultViewMessage::ProcessUpdate),
             _ => iced::Subscription::none(),
         }
     }
@@ -190,31 +196,49 @@ impl DefaultView {
                 ),
             );
 
-            let open_logs_button = secondary_button(
+            let open_logs_button = secondary_button_with_width(
                 &mut self.open_logs_button_state,
                 "Open Logs",
                 Interaction::OpenLogsPressed,
+                Length::Fill,
+            );
+
+            let env_vars = widget_with_label_and_tooltip(
+                "Env vars:",
+                "Environment variables set when running Voxygen",
+                TextInput::new(
+                    &mut self.env_var_state,
+                    "FOO=foo, BAR=bar",
+                    &self.env_vars,
+                    |vars| {
+                        DefaultViewMessage::Interaction(Interaction::EnvVarsChanged(vars))
+                    },
+                )
+                .width(Length::Fill)
+                .into(),
             );
 
             let settings = Container::new(
-                Row::new()
+                Column::new()
                     .padding(2)
+                    .align_items(Align::End)
                     .push(
-                        Column::new()
+                        Row::new()
                             .padding(5)
                             .spacing(10)
-                            .align_items(Align::End)
+                            .align_items(Align::Center)
                             .push(wgpu_backend_picker)
                             .push(server_picker),
                     )
                     .push(
-                        Column::new()
+                        Row::new()
                             .padding(5)
                             .spacing(10)
-                            .align_items(Align::End)
+                            .align_items(Align::Center)
                             .push(log_level_picker)
                             .push(open_logs_button),
-                    ),
+                    )
+                    .push(Row::new().padding(5).spacing(10).push(env_vars)),
             )
             .width(Length::Fill)
             .style(gui::style::News);
@@ -606,6 +630,9 @@ impl DefaultView {
                         log::error!("Failed to open logs dir: {:?}", e);
                     }
                 },
+                Interaction::EnvVarsChanged(vars) => {
+                    self.env_vars = vars;
+                },
                 Interaction::Disabled => {},
             },
         }
@@ -667,6 +694,15 @@ pub fn secondary_button(
     label: impl Into<String>,
     interaction: Interaction,
 ) -> Element<DefaultViewMessage> {
+    secondary_button_with_width(state, label, interaction, Length::Shrink)
+}
+
+pub fn secondary_button_with_width(
+    state: &mut button::State,
+    label: impl Into<String>,
+    interaction: Interaction,
+    width: Length,
+) -> Element<DefaultViewMessage> {
     let btn: Element<Interaction> = Button::new(
         state,
         Text::new(label)
@@ -675,6 +711,7 @@ pub fn secondary_button(
             .vertical_alignment(VerticalAlignment::Center),
     )
     .on_press(interaction)
+    .width(width)
     .style(style::SecondaryButton)
     .into();
 
