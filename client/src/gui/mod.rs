@@ -24,7 +24,7 @@ pub struct Airshipper {
     #[serde(skip)]
     view: View,
 
-    default_view: DefaultView,
+    pub default_view: DefaultView,
     #[cfg(windows)]
     #[serde(skip)]
     update_view: UpdateView,
