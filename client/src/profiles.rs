@@ -23,6 +23,8 @@ pub struct Profile {
     _directory: PathBuf,
     pub version: Option<String>,
     pub wgpu_backend: WgpuBackend,
+    pub log_level: LogLevel,
+    pub env_vars: String,
 }
 
 impl Default for Profile {
@@ -67,7 +69,9 @@ pub enum Server {
 
 pub static SERVERS: &[Server] = &[Server::Production, Server::Staging, Server::Test];
 
-#[derive(Debug, derive_more::Display, Clone, Copy, PartialEq, Eq)]
+#[derive(
+    Debug, derive_more::Display, Clone, Copy, PartialEq, Eq, Serialize, Deserialize,
+)]
 pub enum LogLevel {
     Default,
     Debug,
@@ -116,6 +120,8 @@ impl Profile {
             channel,
             version: None,
             wgpu_backend: WgpuBackend::Auto,
+            log_level: LogLevel::Default,
+            env_vars: String::new(),
         }
     }
 
@@ -159,7 +165,7 @@ impl Profile {
     }
 
     // TODO: add possibility to start the server too
-    pub fn start(profile: &Profile, log_level: LogLevel, env_vars: &str) -> Command {
+    pub fn start(profile: &Profile, log_level: LogLevel) -> Command {
         let mut envs = HashMap::new();
         let userdata_dir = profile.directory().join("userdata").into_os_string();
         let screenshot_dir = profile.directory().join("screenshots").into_os_string();
@@ -192,7 +198,7 @@ impl Profile {
             envs.insert("WGPU_BACKEND", OsString::from(wgpu_backend));
         }
 
-        let (env_vars, env_var_errors) = parse_env_vars(env_vars);
+        let (env_vars, env_var_errors) = parse_env_vars(&profile.env_vars);
         for err in env_var_errors {
             log::error!("Environment variable error: {}", err);
         }
