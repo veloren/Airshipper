@@ -109,12 +109,10 @@ impl DefaultView {
                 subscriptions::download::file(url, location)
                     .map(DefaultViewMessage::DownloadProgress)
             },
-            &State::Playing(ref profile) => subscriptions::process::stream(
-                profile.clone(),
-                profile.log_level,
-                profile.env_vars.clone(),
-            )
-            .map(DefaultViewMessage::ProcessUpdate),
+            &State::Playing(ref profile) => {
+                subscriptions::process::stream(profile.clone())
+                    .map(DefaultViewMessage::ProcessUpdate)
+            },
             _ => iced::Subscription::none(),
         }
     }
