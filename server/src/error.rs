@@ -23,6 +23,8 @@ pub enum ServerError {
     PrometheusError(#[from] prometheus::Error),
     #[error("Code '{0}' received with artifact {1:?}")]
     InvalidResponseCode(reqwest::StatusCode, crate::models::Artifact),
+    #[error("Octocrab error: {0}")]
+    OctocrabError(#[from] octocrab::Error),
 }
 
 #[allow(clippy::needless_lifetimes)]

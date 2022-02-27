@@ -1,4 +1,6 @@
-use crate::{models::Artifact, FsStorage, Result};
+use crate::{models::Artifact, FsStorage, Result, ServerError::OctocrabError};
+use octocrab::{models::repos::Release, GitHubError, Octocrab};
+use reqwest::Url;
 
 pub fn process(artifacts: Vec<Artifact>, mut db: crate::DbConnection) {
     tokio::spawn(async move {
@@ -45,6 +47,8 @@ async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()
 
         FsStorage::store(&artifact).await?;
 
+        upload_to_github_release(&artifact.file_name).await?;
+
         // Update database with new information
         tracing::info!("hash valid. Update database...");
         db.insert_artifact(&artifact).await?;
@@ -61,4 +65,63 @@ fn get_remote_hash(resp: &reqwest::Response) -> String {
         .map(|x| x.to_str().expect("always valid ascii?"))
         .unwrap_or("REMOTE_ETAG_MISSING")
         .replace('\"', "")
+}
+
+async fn upload_to_github_release(file_name: &str) -> Result<()> {
+    let octocrab = Octocrab::builder()
+        .personal_token(crate::CONFIG.github_token.clone())
+        .build()
+        .map_err(OctocrabError)?;
+    let release = get_github_release(&octocrab).await?;
+
+    //Remove extra %7B in the url path.
+    let path = release.upload_url.path().replace("%7B", "");
+    let host = release.upload_url.host_str().unwrap();
+    let new_url = format!("https://{}{}", &host, &path);
+    let mut new_url = Url::parse(&new_url).unwrap();
+
+    //Taken from https://github.com/XAMPPRocky/octocrab/issues/96#issuecomment-863002976
+    new_url.set_query(Some(format!("{}={}", "name", file_name).as_str()));
+
+    let file_size = std::fs::metadata(file_name).unwrap().len();
+    let file = tokio::fs::File::open(file_name).await.unwrap();
+    let stream =
+        tokio_util::codec::FramedRead::new(file, tokio_util::codec::BytesCodec::new());
+    let body = reqwest::Body::wrap_stream(stream);
+
+    let builder = octocrab
+        .request_builder(new_url.as_str(), reqwest::Method::POST)
+        .header("Content-Type", "application/octet-stream")
+        .header("Content-Length", file_size.to_string());
+
+    builder.body(body).send().await?;
+
+    Ok(())
+}
+
+///Gets the github release set in config if the release exists, otherwise creates and
+/// returns it.
+async fn get_github_release(octocrab: &Octocrab) -> Result<Release> {
+    let repo_get_result = octocrab
+        .repos(crate::config::GITHUB_USER, crate::config::GITHUB_REPOSITORY)
+        .releases()
+        .get_by_tag(crate::config::GITHUB_RELEASE)
+        .await;
+
+    let repo_result = match repo_get_result {
+        Ok(release) => Ok(release),
+        Err(octocrab::Error::GitHub {
+            source: GitHubError { message, .. },
+            ..
+        }) if message == "Not Found" => octocrab
+            .repos(crate::config::GITHUB_USER, crate::config::GITHUB_REPOSITORY)
+            .releases()
+            .create(crate::config::GITHUB_RELEASE)
+            .send()
+            .await
+            .map_err(OctocrabError),
+        err => err.map_err(OctocrabError),
+    };
+
+    repo_result
 }
