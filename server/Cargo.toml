@@ -26,7 +26,9 @@ tracing-subscriber = "0.2.15"
 rocket = { git = "https://github.com/SergioBenitez/Rocket", rev = "693f4f9ee50057fc735e6e7037e6dee5b485ba10", features = ["json"] }
 rocket_sync_db_pools = { git = "https://github.com/SergioBenitez/Rocket", rev = "693f4f9ee50057fc735e6e7037e6dee5b485ba10", features = ["diesel_sqlite_pool"] }
 # Networking
-reqwest = "0.11.4"
+reqwest = { version = "0.11.4", features = ["stream"] }
+# Github
+octocrab = "0.15"
 # Serialising/Deserialising
 serde = { version = "1.0.105", features = ["derive"] }
 serde_json = "1.0.59"
