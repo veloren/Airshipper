@@ -5,13 +5,6 @@ pub const PROJECT_ID: u64 = 10_174_980;
 /// The Hook Type which gets parsed for artifacts.
 pub const HOOK_TYPE: &str = "Pipeline Hook";
 
-/// The user of the github repository.
-pub const GITHUB_USER: &str = "ShouvikGhosh2048";
-/// The github repository name.
-pub const GITHUB_REPOSITORY: &str = "github_releases";
-/// The tag name of the github release.
-pub const GITHUB_RELEASE: &str = "v0.0.30";
-
 const DEFAULT_DATA_PATH: &str = "data";
 pub const LOCAL_STORAGE_PATH: &str = "local";
 const DATABASE_FILE: &str = "airshipper.db";
@@ -21,6 +14,12 @@ const DATABASE_FILE: &str = "airshipper.db";
 pub struct ServerConfig {
     /// Specified secret to verify webhook is from gitlab
     pub gitlab_secret: String,
+    /// The user of the github repository.
+    pub github_user: String,
+    /// The github repository name.
+    pub github_repository: String,
+    /// The tag name of the github release.
+    pub github_release: String,
     /// Github personal access token
     pub github_token: String,
     /// At which stage of the pipeline the artifacts are uploaded.
@@ -40,6 +39,9 @@ impl ServerConfig {
         let cfg = Self {
             gitlab_secret: Self::expect_env_key("AIRSHIPPER_GITLAB_SECRET"),
             github_token: Self::expect_env_key("AIRSHIPPER_GITHUB_TOKEN"),
+            github_user: Self::expect_env_key("AIRSHIPPER_GITHUB_USER"),
+            github_repository: Self::expect_env_key("AIRSHIPPER_GITHUB_REPOSITORY"),
+            github_release: Self::expect_env_key("AIRSHIPPER_GITHUB_RELEASE"),
             artifact_stage: Self::expect_env_key("AIRSHIPPER_ARTIFACT_STAGE"),
             target_executable: Self::expect_env_key("AIRSHIPPER_TARGET_EXECUTABLES")
                 .split(',')
