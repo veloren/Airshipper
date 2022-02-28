@@ -1,6 +1,7 @@
 use crate::{models::Artifact, FsStorage, Result, ServerError::OctocrabError};
 use octocrab::{models::repos::Release, GitHubError, Octocrab};
 use reqwest::Url;
+use serde::Deserialize;
 
 pub fn process(artifacts: Vec<Artifact>, mut db: crate::DbConnection) {
     tokio::spawn(async move {
@@ -47,7 +48,10 @@ async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()
 
         FsStorage::store(&artifact).await?;
 
-        upload_to_github_release(&artifact.file_name).await?;
+        let upload_to_github_result = upload_to_github_release(&artifact.file_name).await;
+        if let Err(e) = upload_to_github_result {
+            tracing::error!(?e, "Couldn't upload to github");
+        }
 
         // Update database with new information
         tracing::info!("hash valid. Update database...");
@@ -67,24 +71,23 @@ fn get_remote_hash(resp: &reqwest::Response) -> String {
         .replace('\"', "")
 }
 
-async fn upload_to_github_release(file_name: &str) -> Result<()> {
+async fn upload_to_github_release(file_name: &str) -> Result<Url> {
     let octocrab = Octocrab::builder()
         .personal_token(crate::CONFIG.github_token.clone())
-        .build()
-        .map_err(OctocrabError)?;
+        .build()?;
     let release = get_github_release(&octocrab).await?;
 
     //Remove extra %7B in the url path.
     let path = release.upload_url.path().replace("%7B", "");
     let host = release.upload_url.host_str().unwrap();
     let new_url = format!("https://{}{}", &host, &path);
-    let mut new_url = Url::parse(&new_url).unwrap();
+    let mut new_url = Url::parse(&new_url)?;
 
     //Taken from https://github.com/XAMPPRocky/octocrab/issues/96#issuecomment-863002976
     new_url.set_query(Some(format!("{}={}", "name", file_name).as_str()));
 
-    let file_size = std::fs::metadata(file_name).unwrap().len();
-    let file = tokio::fs::File::open(file_name).await.unwrap();
+    let file_size = std::fs::metadata(file_name)?.len();
+    let file = tokio::fs::File::open(file_name).await?;
     let stream =
         tokio_util::codec::FramedRead::new(file, tokio_util::codec::BytesCodec::new());
     let body = reqwest::Body::wrap_stream(stream);
@@ -94,9 +97,21 @@ async fn upload_to_github_release(file_name: &str) -> Result<()> {
         .header("Content-Type", "application/octet-stream")
         .header("Content-Length", file_size.to_string());
 
-    builder.body(body).send().await?;
+    #[derive(Deserialize)]
+    struct DownloadUrl {
+        browser_download_url: String,
+    }
 
-    Ok(())
+    let response = builder
+        .body(body)
+        .send()
+        .await?
+        .json::<DownloadUrl>()
+        .await?;
+
+    let download_url = Url::parse(&response.browser_download_url)?;
+
+    Ok(download_url)
 }
 
 ///Gets the github release set in config if the release exists, otherwise creates and

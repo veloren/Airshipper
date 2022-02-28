@@ -25,6 +25,8 @@ pub enum ServerError {
     InvalidResponseCode(reqwest::StatusCode, crate::models::Artifact),
     #[error("Octocrab error: {0}")]
     OctocrabError(#[from] octocrab::Error),
+    #[error("Url parse error: {0}")]
+    UrlParseError(#[from] url::ParseError),
 }
 
 #[allow(clippy::needless_lifetimes)]
