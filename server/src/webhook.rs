@@ -103,9 +103,9 @@ async fn upload_to_github_release(file_name: &str) -> Result<()> {
 /// returns it.
 async fn get_github_release(octocrab: &Octocrab) -> Result<Release> {
     let repo_get_result = octocrab
-        .repos(crate::config::GITHUB_USER, crate::config::GITHUB_REPOSITORY)
+        .repos(&crate::CONFIG.github_user, &crate::CONFIG.github_repository)
         .releases()
-        .get_by_tag(crate::config::GITHUB_RELEASE)
+        .get_by_tag(&crate::CONFIG.github_release)
         .await;
 
     let repo_result = match repo_get_result {
@@ -114,9 +114,9 @@ async fn get_github_release(octocrab: &Octocrab) -> Result<Release> {
             source: GitHubError { message, .. },
             ..
         }) if message == "Not Found" => octocrab
-            .repos(crate::config::GITHUB_USER, crate::config::GITHUB_REPOSITORY)
+            .repos(&crate::CONFIG.github_user, &crate::CONFIG.github_repository)
             .releases()
-            .create(crate::config::GITHUB_RELEASE)
+            .create(&crate::CONFIG.github_release)
             .send()
             .await
             .map_err(OctocrabError),
