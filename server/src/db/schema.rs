@@ -1,7 +1,7 @@
 table! {
     artifacts (id) {
-        id -> Integer,
-        build_id -> Integer,
+        id -> BigInt,
+        build_id -> BigInt,
         date -> Timestamp,
         hash -> Text,
         author -> Text,
