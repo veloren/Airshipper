@@ -77,11 +77,13 @@ async fn upload_to_github_release(file_name: &str) -> Result<Url> {
         .build()?;
     let release = get_github_release(&octocrab).await?;
 
-    //Remove extra %7B in the url path.
-    let path = release.upload_url.path().replace("%7B", "");
-    let host = release.upload_url.host_str().unwrap();
-    let new_url = format!("https://{}{}", &host, &path);
-    let mut new_url = Url::parse(&new_url)?;
+    //Remove extra %7B?name,label} in the url path.
+    //This is required because the github API returns {?name,label}
+    //at the end of the upload url, which needs to be removed before
+    //using the url.
+    let url = release.upload_url.as_str();
+    let stripped_url = url.strip_suffix("%7B?name,label}").unwrap_or(url);
+    let mut new_url = Url::parse(stripped_url)?;
 
     //Taken from https://github.com/XAMPPRocky/octocrab/issues/96#issuecomment-863002976
     new_url.set_query(Some(format!("{}={}", "name", file_name).as_str()));
@@ -118,7 +120,10 @@ async fn upload_to_github_release(file_name: &str) -> Result<Url> {
 /// returns it.
 async fn get_github_release(octocrab: &Octocrab) -> Result<Release> {
     let repo_get_result = octocrab
-        .repos(&crate::CONFIG.github_user, &crate::CONFIG.github_repository)
+        .repos(
+            &crate::CONFIG.github_repository_owner,
+            &crate::CONFIG.github_repository,
+        )
         .releases()
         .get_by_tag(&crate::CONFIG.github_release)
         .await;
@@ -129,7 +134,10 @@ async fn get_github_release(octocrab: &Octocrab) -> Result<Release> {
             source: GitHubError { message, .. },
             ..
         }) if message == "Not Found" => octocrab
-            .repos(&crate::CONFIG.github_user, &crate::CONFIG.github_repository)
+            .repos(
+                &crate::CONFIG.github_repository_owner,
+                &crate::CONFIG.github_repository,
+            )
             .releases()
             .create(&crate::CONFIG.github_release)
             .send()
