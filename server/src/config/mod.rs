@@ -9,19 +9,43 @@ const DEFAULT_DATA_PATH: &str = "data";
 pub const LOCAL_STORAGE_PATH: &str = "local";
 const DATABASE_FILE: &str = "airshipper.db";
 
-/// Configuration and defaults for the entire server.
+/// Configuration for github releases.
 #[derive(Clone, Debug)]
-pub struct ServerConfig {
-    /// Specified secret to verify webhook is from gitlab
-    pub gitlab_secret: String,
+pub struct GithubReleaseConfig {
+    /// Github personal access token
+    pub github_token: String,
     /// The user/group that owns the repository.
     pub github_repository_owner: String,
     /// The github repository name.
     pub github_repository: String,
     /// The tag name of the github release.
     pub github_release: String,
-    /// Github personal access token
-    pub github_token: String,
+}
+
+impl GithubReleaseConfig {
+    fn load() -> Result<GithubReleaseConfig, std::env::VarError> {
+        let github_token = std::env::var("AIRSHIPPER_GITHUB_TOKEN")?;
+        let github_repository_owner =
+            std::env::var("AIRSHIPPER_GITHUB_REPOSITORY_OWNER")?;
+        let github_repository = std::env::var("AIRSHIPPER_GITHUB_REPOSITORY")?;
+        let github_release = std::env::var("AIRSHIPPER_GITHUB_RELEASE")?;
+
+        Ok(GithubReleaseConfig {
+            github_token,
+            github_repository_owner,
+            github_repository,
+            github_release,
+        })
+    }
+}
+
+/// Configuration and defaults for the entire server.
+#[derive(Clone, Debug)]
+pub struct ServerConfig {
+    /// Specified secret to verify webhook is from gitlab
+    pub gitlab_secret: String,
+    /// Github release information
+    pub github_release_config: Option<GithubReleaseConfig>,
     /// At which stage of the pipeline the artifacts are uploaded.
     pub artifact_stage: String,
     /// What branch should be downloaded
@@ -38,12 +62,7 @@ impl ServerConfig {
     pub fn load() -> Self {
         let cfg = Self {
             gitlab_secret: Self::expect_env_key("AIRSHIPPER_GITLAB_SECRET"),
-            github_token: Self::expect_env_key("AIRSHIPPER_GITHUB_TOKEN"),
-            github_repository_owner: Self::expect_env_key(
-                "AIRSHIPPER_GITHUB_REPOSITORY_OWNER",
-            ),
-            github_repository: Self::expect_env_key("AIRSHIPPER_GITHUB_REPOSITORY"),
-            github_release: Self::expect_env_key("AIRSHIPPER_GITHUB_RELEASE"),
+            github_release_config: GithubReleaseConfig::load().ok(),
             artifact_stage: Self::expect_env_key("AIRSHIPPER_ARTIFACT_STAGE"),
             target_executable: Self::expect_env_key("AIRSHIPPER_TARGET_EXECUTABLES")
                 .split(',')
