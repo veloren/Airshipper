@@ -1,4 +1,7 @@
-use crate::{models::Artifact, FsStorage, Result, ServerError::OctocrabError};
+use crate::{
+    config::GithubReleaseConfig, models::Artifact, FsStorage, Result,
+    ServerError::OctocrabError,
+};
 use octocrab::{models::repos::Release, GitHubError, Octocrab};
 use reqwest::Url;
 use serde::Deserialize;
@@ -48,9 +51,13 @@ async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()
 
         FsStorage::store(&artifact).await?;
 
-        let upload_to_github_result = upload_to_github_release(&artifact.file_name).await;
-        if let Err(e) = upload_to_github_result {
-            tracing::error!(?e, "Couldn't upload to github");
+        if let Some(github_release_config) = &crate::CONFIG.github_release_config {
+            let upload_to_github_result =
+                upload_to_github_release(&artifact.file_name, github_release_config)
+                    .await;
+            if let Err(e) = upload_to_github_result {
+                tracing::error!(?e, "Couldn't upload to github");
+            }
         }
 
         // Update database with new information
@@ -71,11 +78,14 @@ fn get_remote_hash(resp: &reqwest::Response) -> String {
         .replace('\"', "")
 }
 
-async fn upload_to_github_release(file_name: &str) -> Result<Url> {
+async fn upload_to_github_release(
+    file_name: &str,
+    github_release_config: &GithubReleaseConfig,
+) -> Result<Url> {
     let octocrab = Octocrab::builder()
-        .personal_token(crate::CONFIG.github_token.clone())
+        .personal_token(github_release_config.github_token.clone())
         .build()?;
-    let release = get_github_release(&octocrab).await?;
+    let release = get_github_release(&octocrab, github_release_config).await?;
 
     //Remove extra %7B?name,label} in the url path.
     //This is required because the github API returns {?name,label}
@@ -118,14 +128,17 @@ async fn upload_to_github_release(file_name: &str) -> Result<Url> {
 
 ///Gets the github release set in config if the release exists, otherwise creates and
 /// returns it.
-async fn get_github_release(octocrab: &Octocrab) -> Result<Release> {
+async fn get_github_release(
+    octocrab: &Octocrab,
+    github_release_config: &GithubReleaseConfig,
+) -> Result<Release> {
     let repo_get_result = octocrab
         .repos(
-            &crate::CONFIG.github_repository_owner,
-            &crate::CONFIG.github_repository,
+            &github_release_config.github_repository_owner,
+            &github_release_config.github_repository,
         )
         .releases()
-        .get_by_tag(&crate::CONFIG.github_release)
+        .get_by_tag(&github_release_config.github_release)
         .await;
 
     let repo_result = match repo_get_result {
@@ -135,11 +148,11 @@ async fn get_github_release(octocrab: &Octocrab) -> Result<Release> {
             ..
         }) if message == "Not Found" => octocrab
             .repos(
-                &crate::CONFIG.github_repository_owner,
-                &crate::CONFIG.github_repository,
+                &github_release_config.github_repository_owner,
+                &github_release_config.github_repository,
             )
             .releases()
-            .create(&crate::CONFIG.github_release)
+            .create(&github_release_config.github_release)
             .send()
             .await
             .map_err(OctocrabError),
