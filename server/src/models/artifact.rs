@@ -8,7 +8,7 @@ use diesel::Queryable;
 #[derive(Debug, Queryable, Insertable, Clone)]
 #[table_name = "artifacts"]
 pub struct Artifact {
-    pub build_id: i32,
+    pub build_id: i64,
     pub date: NaiveDateTime,
     pub hash: String,
     pub author: String,
@@ -51,7 +51,7 @@ impl Artifact {
                 "%Y-%m-%dT%H:%M:%SZ",
             )
             .expect("Failed to parse date!");
-            let build_id = build.id as i32;
+            let build_id = build.id as i64;
             let platform = Self::get_platform(&build.name)?;
             let channel = Self::get_channel();
             let file_name = format!(

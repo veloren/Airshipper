@@ -8,8 +8,8 @@ pub struct DbConnection(diesel::SqliteConnection);
 
 #[derive(Debug, Queryable)]
 pub struct DbArtifact {
-    pub id: i32,
-    pub build_id: i32,
+    pub id: i64,
+    pub build_id: i64,
     pub date: chrono::NaiveDateTime,
     pub hash: String,
     pub author: String,
@@ -145,7 +145,7 @@ impl DbConnection {
         artis.extend(mac_artis);
         artis.extend(aarch64_artis);
 
-        let ids: Vec<i32> = artis.iter().map(|x| x.id).collect();
+        let ids: Vec<_> = artis.iter().map(|x| x.id).collect();
         self.0
             .run(move |conn| {
                 diesel::delete(artifacts.filter(id.eq_any(ids))).execute(conn)
