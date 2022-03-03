@@ -14,8 +14,8 @@ const DATABASE_FILE: &str = "airshipper.db";
 pub struct ServerConfig {
     /// Specified secret to verify webhook is from gitlab
     pub gitlab_secret: String,
-    /// The user of the github repository.
-    pub github_user: String,
+    /// The user/group that owns the repository.
+    pub github_repository_owner: String,
     /// The github repository name.
     pub github_repository: String,
     /// The tag name of the github release.
@@ -39,7 +39,9 @@ impl ServerConfig {
         let cfg = Self {
             gitlab_secret: Self::expect_env_key("AIRSHIPPER_GITLAB_SECRET"),
             github_token: Self::expect_env_key("AIRSHIPPER_GITHUB_TOKEN"),
-            github_user: Self::expect_env_key("AIRSHIPPER_GITHUB_USER"),
+            github_repository_owner: Self::expect_env_key(
+                "AIRSHIPPER_GITHUB_REPOSITORY_OWNER",
+            ),
             github_repository: Self::expect_env_key("AIRSHIPPER_GITHUB_REPOSITORY"),
             github_release: Self::expect_env_key("AIRSHIPPER_GITHUB_RELEASE"),
             artifact_stage: Self::expect_env_key("AIRSHIPPER_ARTIFACT_STAGE"),
