@@ -87,12 +87,14 @@ async fn upload_to_github_release(
         .build()?;
     let release = get_github_release(&octocrab, github_release_config).await?;
 
-    //Remove extra %7B?name,label} in the url path.
+    //Remove extra {?name,label} in the url path.
     //This is required because the github API returns {?name,label}
     //at the end of the upload url, which needs to be removed before
     //using the url.
-    let url = release.upload_url.as_str();
-    let stripped_url = url.strip_suffix("%7B?name,label}").unwrap_or(url);
+    let stripped_url = release
+        .upload_url
+        .strip_suffix("{?name,label}")
+        .unwrap_or(&release.upload_url);
     let mut new_url = Url::parse(stripped_url)?;
 
     //Taken from https://github.com/XAMPPRocky/octocrab/issues/96#issuecomment-863002976
