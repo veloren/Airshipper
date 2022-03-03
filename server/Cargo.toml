@@ -26,7 +26,9 @@ tracing-subscriber = "0.2.15"
 rocket = { git = "https://github.com/SergioBenitez/Rocket", rev = "693f4f9ee50057fc735e6e7037e6dee5b485ba10", features = ["json"] }
 rocket_sync_db_pools = { git = "https://github.com/SergioBenitez/Rocket", rev = "693f4f9ee50057fc735e6e7037e6dee5b485ba10", features = ["diesel_sqlite_pool"] }
 # Networking
-reqwest = "0.11.4"
+reqwest = { version = "0.11.4", features = ["stream"] }
+# Github
+octocrab = { git = "https://github.com/XAMPPRocky/octocrab", rev = "c78edcd87fa5edcd5a6d0d0878b2a8d020802c40" }
 # Serialising/Deserialising
 serde = { version = "1.0.105", features = ["derive"] }
 serde_json = "1.0.59"
@@ -43,6 +45,7 @@ futures = "0.3.8"
 dotenv = "0.15.0"
 bytes = "1"
 md5 = "0.7.0"
+url = "2.2.2"
 # bundle all the things!
 libsqlite3-sys = { version = "*", features = ["bundled"] }
 openssl-sys = { version = "*", features = ["vendored"], optional = true }
