@@ -8,6 +8,8 @@ pub struct Config {
     pub channels: Vec<Channel>,
     /// Path to the data directory
     pub data_path: String,
+    /// Gitlab personal access token, it's needed for Variable Filter
+    pub gitlab_token: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,8 +17,9 @@ pub enum Filter {
     Stage(String),
     TargetBranch(String),
     BuildName(String),
-    //Environment ( String ),
-    //Variable ( String ),
+    //Environment(String),
+    /// Filter on Variables, make sure to provide a gitlab_token, key value pair
+    Variable(String, String),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -74,9 +77,10 @@ impl Default for Config {
                 github_repository: "veloren".to_owned(),
                 github_release: "test".to_owned(),
             }),
-            channel_filters: vec![AndFilter(vec![Filter::TargetBranch(
-                ".*master.*".to_owned(),
-            )])],
+            channel_filters: vec![AndFilter(vec![
+                Filter::TargetBranch(".*master.*".to_owned()),
+                Filter::Variable("channel".to_owned(), "nightly".to_owned()),
+            ])],
             build_map: vec![PlatformMapper {
                 filter: AndFilter(vec![Filter::BuildName(".*linux-x86_64.*".to_owned())]),
                 platform: Platform {
@@ -88,6 +92,7 @@ impl Default for Config {
         Self {
             channels: vec![channel],
             data_path: DEFAULT_DATA_PATH.to_owned(),
+            gitlab_token: None,
         }
     }
 }

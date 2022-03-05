@@ -20,6 +20,7 @@ pub const CONFIG_PATH: &str = "config/config.ron";
 pub struct Config {
     pub channels: HashMap<String, Channel>,
     pub data_path: String,
+    pub gitlab_token: Option<String>,
 }
 
 #[derive(Clone)]
@@ -27,8 +28,8 @@ pub enum Filter {
     Stage { regex: Regex },
     TargetBranch { regex: Regex },
     BuildName { regex: Regex },
-    //Environment { regex: String },
-    //Variable { regex: String },
+    //Environment { regex: Regex },
+    Variable { key: Regex, value: Regex },
 }
 
 #[derive(Clone, Debug)]
@@ -55,8 +56,8 @@ impl std::fmt::Debug for Filter {
             Filter::Stage { regex } => write!(f, "ArtifactStage({})", regex),
             Filter::TargetBranch { regex } => write!(f, "TargetBranch({})", regex),
             Filter::BuildName { regex } => write!(f, "BuildName({})", regex),
-            //Filter::Environment { regex} => write!(f, "Environment({})", regex),
-            //Filter::Variable { regex} => write!(f, "Variable({})", regex),
+            //Filter::Environment { regex } => write!(f, "Environment({})", regex),
+            Filter::Variable { key, value } => write!(f, "Variable({}: {})", key, value),
         }
     }
 }
@@ -82,8 +83,11 @@ impl Filter {
                 regex: Regex::new(&regex)?,
             },
             //loading::Filter::Environment ( regex ) => Filter::Environment { regex:
-            // Regex::new(&regex)? }, loading::Filter::Variable ( regex ) =>
-            // Filter::Variable { regex: Regex::new(&regex)? },
+            // Regex::new(&regex)? },
+            loading::Filter::Variable(key, value) => Filter::Variable {
+                key: Regex::new(&key)?,
+                value: Regex::new(&value)?,
+            },
         })
     }
 
@@ -105,7 +109,17 @@ impl Filter {
                 None => false,
             },
             //Filter::Environment { regex} => write!(f, "Environment({})", regex),
-            //Filter::Variable { regex} => write!(f, "Variable({})", regex),
+            Filter::Variable { key, value } => {
+                match pipeline
+                    .object_attributes
+                    .variables
+                    .iter()
+                    .find(|f| key.is_match(&f.key))
+                {
+                    Some(v) => value.is_match(&v.value),
+                    None => false,
+                }
+            },
         }
     }
 }
@@ -177,6 +191,7 @@ impl Config {
         Ok(Self {
             channels,
             data_path: config.data_path,
+            gitlab_token: config.gitlab_token,
         })
     }
 
@@ -433,6 +448,17 @@ mod tests {
         assert!(!filter.apply(&p, 1));
         assert!(!filter.apply(&p, 2));
         assert!(filter.apply(&p, 3));
+    }
+
+    #[test]
+    // No token so only empty variable
+    fn filter_variable() {
+        let p = pipeline();
+        let filter = Filter::Variable {
+            key: Regex::new("").unwrap(),
+            value: Regex::new("").unwrap(),
+        };
+        assert!(!filter.apply(&p, 0));
     }
 
     #[test]

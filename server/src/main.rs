@@ -31,7 +31,7 @@ pub use db::{DbConnection, FsStorage};
 
 lazy_static::lazy_static! {
     /// Contains all configuration needed.
-    pub static ref CONFIG: Config = Config::compile(loading::Config::load(Path::new(CONFIG_PATH)).expect(&format!("Couldn't open config file {}", CONFIG_PATH))).unwrap();
+    pub static ref CONFIG: Config = Config::compile(loading::Config::load(Path::new(CONFIG_PATH)).unwrap_or_else(|_| panic!("Couldn't open config file {}", CONFIG_PATH))).unwrap();
 }
 
 #[rocket::launch]

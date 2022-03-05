@@ -33,7 +33,7 @@ pub async fn process(
     };
 
     for artifact in artifacts {
-        if let Err(e) = transfer(artifact, &channel, &mut db).await {
+        if let Err(e) = transfer(artifact, channel, &mut db).await {
             tracing::error!(?e, "Failed to transfer artifact");
         }
     }
