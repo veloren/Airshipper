@@ -1,6 +1,30 @@
-use crate::{metrics::Metrics, Result};
-use rocket::{http::Status, response::Redirect, *};
+use crate::{config::Platform, metrics::Metrics, Result};
+use rocket::{http::Status, response::Redirect, serde::json::Json, *};
 use std::sync::Arc;
+
+// List all channels that are supported for a specific platform
+#[get("/channels/<os>/<arch>")]
+pub async fn channels(
+    _db: crate::DbConnection,
+    os: String,
+    arch: String,
+) -> Json<Vec<String>> {
+    let platform = Platform { os, arch };
+
+    let result = crate::CONFIG
+        .channels
+        .iter()
+        .flat_map(|(name, c)| {
+            if c.build_map.iter().any(|m| m.platform == platform) {
+                Some(name.clone())
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>();
+
+    Json(result)
+}
 
 // If no channel specified we default to nightly.
 // NOTE: We want to change this behaviour once stable releases are more used than nightly

@@ -66,6 +66,7 @@ async fn build() -> Result<rocket::Rocket<rocket::Build>> {
             routes::user::ping,
             routes::user::robots,
             routes::user::favicon,
+            routes::api::channels,
             routes::api::version,
             routes::api::channel_version,
             routes::api::download,
