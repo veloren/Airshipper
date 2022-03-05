@@ -1,31 +1,57 @@
 use crate::{
-    config::GithubReleaseConfig, models::Artifact, FsStorage, Result,
+    config::{self, GithubReleaseConfig},
+    models::Artifact,
+    FsStorage, Result,
     ServerError::OctocrabError,
 };
 use octocrab::{models::repos::Release, GitHubError, Octocrab};
-use reqwest::Url;
 use serde::Deserialize;
+use url::Url;
 
-pub fn process(artifacts: Vec<Artifact>, mut db: crate::DbConnection) {
-    tokio::spawn(async move {
-        for artifact in artifacts {
-            if let Err(e) = transfer(artifact, &mut db).await {
-                tracing::error!("Failed to transfer artifact: {}.", e);
-            }
+#[tracing::instrument(skip(artifacts, db))]
+pub async fn process(
+    artifacts: Vec<Artifact>,
+    channel: String,
+    mut db: crate::DbConnection,
+) {
+    match db.exist(&artifacts).await {
+        Ok(true) => tracing::warn!("Received duplicate artifacts!"),
+        Err(e) => {
+            tracing::error!(?e, "Error checking for duplicate artifacts in db");
+            return;
+        },
+        _ => (),
+    }
+
+    let len = artifacts.len();
+    tracing::debug!(?len, "artifacts len");
+    tracing::debug!(?artifacts, "Artifacts");
+
+    let channel = match crate::CONFIG.channels.get(&channel) {
+        Some(channel) => channel,
+        None => unreachable!("channel must exist in config at this point"),
+    };
+
+    for artifact in artifacts {
+        if let Err(e) = transfer(artifact, &channel, &mut db).await {
+            tracing::error!(?e, "Failed to transfer artifact");
         }
-        if let Err(e) = crate::prune::prune(&mut db).await {
-            tracing::error!("Pruning failed: {}.", e);
-        }
-    });
+    }
+    if let Err(e) = crate::prune::prune(&mut db).await {
+        tracing::error!(?e, "Pruning failed");
+    }
 }
 
-#[tracing::instrument(skip(db))]
-async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()> {
+async fn transfer(
+    artifact: Artifact,
+    channel: &config::Channel,
+    db: &mut crate::DbConnection,
+) -> Result<()> {
     use tokio::{fs::File, io::AsyncWriteExt};
 
     tracing::info!("Downloading...");
 
-    let mut resp = reqwest::get(&artifact.get_url()).await?;
+    let mut resp = reqwest::get(artifact.get_artifact_url()).await?;
     let mut file = File::create(&artifact.file_name).await?;
     let mut content = vec![];
     while let Some(chunk) = resp.chunk().await? {
@@ -34,24 +60,24 @@ async fn transfer(artifact: Artifact, db: &mut crate::DbConnection) -> Result<()
     }
     file.sync_data().await?;
 
-    let hash = format!("{:x}", md5::compute(content));
+    let downloaded_hash = format!("{:x}", md5::compute(content));
     let remote_hash = get_remote_hash(&resp);
 
-    if hash != remote_hash {
+    if downloaded_hash != remote_hash {
         tracing::error!(
-            "Downloaded file has '{}' MD5 hash while remote hash is '{}'. Exiting...",
-            hash,
-            remote_hash
+            ?downloaded_hash,
+            ?remote_hash,
+            "Hash does not match. Exiting...",
         );
         // Clean up
         tokio::fs::remove_file(&artifact.file_name).await?;
     } else {
-        tracing::debug!("Computed hash: {}, remote_hash: {}", hash, remote_hash);
+        tracing::debug!(?downloaded_hash, "Hash matches remote hash",);
         tracing::info!("Storing...");
 
         FsStorage::store(&artifact).await?;
 
-        if let Some(github_release_config) = &crate::CONFIG.github_release_config {
+        if let Some(github_release_config) = &channel.github_release_config {
             let upload_to_github_result =
                 upload_to_github_release(&artifact.file_name, github_release_config)
                     .await;
