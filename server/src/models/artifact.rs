@@ -47,22 +47,16 @@ impl Artifact {
     ) -> Option<Self> {
         // Check if it contains artifact
         if build.artifacts_file.filename.is_some() {
-            let date = NaiveDateTime::parse_from_str(
-                &pipe
-                    .commit
-                    .timestamp
-                    .format("%Y-%m-%dT%H:%M:%SZ")
-                    .to_string(),
-                "%Y-%m-%dT%H:%M:%SZ",
-            )
-            .expect("Failed to parse date!");
+            // Datetime<Utc> isn't store-able in diesel.
+            let date = pipe.commit.timestamp.naive_utc();
+
             let build_id = build.id as i64;
-            let platform = format!("{}", platform.os);
+            let platform = format!("{}-{}", platform.os, platform.arch);
             let file_name = format!(
                 "{}-{}-{}.zip",
                 &channel.name,
                 platform,
-                date.format("%Y-%m-%d-%H_%M")
+                date.format("%Y-%m-%dT%H:%M")
             );
             let download_uri = format!("/{}", FsStorage::get_download_url(&file_name));
 
