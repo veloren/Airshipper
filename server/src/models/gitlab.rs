@@ -14,43 +14,55 @@ pub struct PipelineUpdate {
 }
 
 impl PipelineUpdate {
-    pub(crate) fn artifacts(&self) -> Option<Vec<Artifact>> {
+    pub(crate) fn channel(&self) -> Option<String> {
+        //Global Filter for invalid webhooks
+        if self.object_attributes.status != "success" {
+            let status = &self.object_attributes.status;
+            tracing::debug!(?status, "Skipping update as it isn't successful",);
+            return None;
+        }
+
+        for (channel_name, channel) in &crate::CONFIG.channels {
+            // check if at least one filter matches
+            for filter in &channel.channel_filters {
+                tracing::trace!(?channel, ?filter, "checking channel filter");
+                if filter.apply(self, 0) {
+                    tracing::debug!(
+                        ?channel,
+                        ?filter,
+                        "Filter applied successful, channel determited",
+                    );
+                    return Some(channel_name.clone());
+                }
+            }
+        }
+        None
+    }
+
+    pub(crate) fn artifacts(&self, channel: &str) -> Vec<Artifact> {
         let mut artifacts = Vec::new();
 
-        if self.object_attributes.branch != CONFIG.target_branch {
-            tracing::debug!(
-                "Branch '{}' does not match target '{}'",
-                self.object_attributes.branch,
-                CONFIG.target_branch
-            );
-            return None;
-        }
+        let channel = CONFIG.channels.get(channel).unwrap();
 
-        if self.object_attributes.status != "success" {
-            tracing::debug!(
-                "Skipping update as it isn't successful ('{}')",
-                self.object_attributes.status
-            );
-            return None;
-        }
-
-        for build in &self.builds {
-            // Skip non-artifact builds.
-            if build.stage != crate::CONFIG.artifact_stage {
-                tracing::debug!("Skipping artifact in '{}' stage...", build.stage);
-                continue;
-            }
-
-            if let Some(artifact) = Artifact::try_from(self, build) {
-                artifacts.push(artifact);
+        // Apply filters
+        for (i, build) in self.builds.iter().enumerate() {
+            // find matching Platform
+            for filter in &channel.build_map {
+                if filter.filter.apply(&self, i) {
+                    let platform = &filter.platform;
+                    let filter = &filter.filter;
+                    if let Some(artifact) =
+                        Artifact::try_from(self, channel, build, platform)
+                    {
+                        let id = artifact.build_id;
+                        tracing::trace!(?id, ?filter, "artifact matched with");
+                        artifacts.push(artifact);
+                    }
+                }
             }
         }
 
-        if artifacts.is_empty() {
-            None
-        } else {
-            Some(artifacts)
-        }
+        artifacts
     }
 }
 

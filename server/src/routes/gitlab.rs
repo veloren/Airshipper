@@ -6,6 +6,7 @@ use crate::{
 };
 use rocket::{http::Status, serde::json::Json, *};
 use std::sync::Arc;
+use tracing::*;
 
 #[tracing::instrument(skip(_secret, _event, metrics, payload, db))]
 #[post("/", format = "json", data = "<payload>")]
@@ -18,17 +19,32 @@ pub async fn post_pipeline_update(
 ) -> Result<Status> {
     match payload {
         Some(update) => {
-            if let Some(artifacts) = update.artifacts() {
-                if !db.does_not_exist(&artifacts).await? {
-                    tracing::warn!("Received duplicate artifacts!");
-                }
-
-                tracing::debug!("Found {} artifacts.", artifacts.len());
-                webhook::process(artifacts, db);
-                metrics.uploads.inc();
-                Ok(Status::Accepted)
-            } else {
-                Ok(Status::Ok)
+            let pipeline_id = update.object_attributes.id;
+            match update.channel() {
+                Some(channel) => {
+                    let artifacts = update.artifacts(&channel);
+                    if artifacts.is_empty() {
+                        tracing::debug!(
+                            ?pipeline_id,
+                            ?channel,
+                            "Request rejected, no artifacts"
+                        );
+                        Ok(Status::Ok)
+                    } else {
+                        let channel = channel.clone();
+                        let c = channel.clone();
+                        tokio::spawn(
+                            webhook::process(artifacts, c, db)
+                                .instrument(tracing::info_span!("")),
+                        );
+                        metrics.uploads.inc();
+                        Ok(Status::Accepted)
+                    }
+                },
+                None => {
+                    tracing::trace!(?pipeline_id, "Request rejected, no channel");
+                    Ok(Status::Ok)
+                },
             }
         },
         None => Ok(Status::UnprocessableEntity),

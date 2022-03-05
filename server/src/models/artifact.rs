@@ -1,9 +1,11 @@
 use crate::{
+    config::{Channel, Platform},
     db::{schema::artifacts, DbArtifact, FsStorage},
     models::{Build, PipelineUpdate},
 };
 use chrono::NaiveDateTime;
 use diesel::Queryable;
+use url::Url;
 
 #[derive(Debug, Queryable, Insertable, Clone)]
 #[table_name = "artifacts"]
@@ -37,11 +39,14 @@ impl From<&DbArtifact> for Artifact {
 }
 
 impl Artifact {
-    pub fn try_from(pipe: &PipelineUpdate, build: &Build) -> Option<Self> {
+    pub fn try_from(
+        pipe: &PipelineUpdate,
+        channel: &Channel,
+        build: &Build,
+        platform: &Platform,
+    ) -> Option<Self> {
         // Check if it contains artifact
-        if crate::CONFIG.target_executable.contains(&build.name)
-            && build.artifacts_file.filename.is_some()
-        {
+        if build.artifacts_file.filename.is_some() {
             let date = NaiveDateTime::parse_from_str(
                 &pipe
                     .commit
@@ -52,11 +57,10 @@ impl Artifact {
             )
             .expect("Failed to parse date!");
             let build_id = build.id as i64;
-            let platform = Self::get_platform(&build.name)?;
-            let channel = Self::get_channel();
+            let platform = format!("{}", platform.os);
             let file_name = format!(
                 "{}-{}-{}.zip",
-                channel,
+                &channel.name,
                 platform,
                 date.format("%Y-%m-%d-%H_%M")
             );
@@ -69,7 +73,7 @@ impl Artifact {
                 author: pipe.commit.author.name.clone(),
                 merged_by: pipe.user.name.clone(),
                 platform,
-                channel,
+                channel: channel.name.clone(),
                 file_name,
                 download_uri,
             })
@@ -78,12 +82,13 @@ impl Artifact {
         }
     }
 
-    pub fn get_url(&self) -> String {
-        format!(
+    pub fn get_artifact_url(&self) -> Url {
+        Url::parse(&format!(
             "https://gitlab.com/api/v4/projects/{}/jobs/{}/artifacts",
             crate::config::PROJECT_ID,
             self.build_id
-        )
+        ))
+        .unwrap()
     }
 
     /// Returns the file extension
@@ -95,23 +100,5 @@ impl Artifact {
             .unwrap_or_else(|| OsStr::new("zip"))
             .to_string_lossy()
             .into()
-    }
-
-    fn get_platform(name: &str) -> Option<String> {
-        if name.contains("windows") {
-            Some("windows".into())
-        } else if name.contains("linux-aarch64") {
-            Some("linux-aarch64".into())
-        } else if name.contains("linux") {
-            Some("linux".into())
-        } else if name.contains("macos") {
-            Some("macos".into())
-        } else {
-            None
-        }
-    }
-
-    fn get_channel() -> String {
-        "nightly".into()
     }
 }

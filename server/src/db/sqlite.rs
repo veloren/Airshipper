@@ -155,7 +155,7 @@ impl DbConnection {
         Ok(artis.iter().map(|x| (*x).into()).collect())
     }
 
-    pub async fn does_not_exist(&self, cmp: &[Artifact]) -> Result<bool> {
+    pub async fn exist(&self, cmp: &[Artifact]) -> Result<bool> {
         use schema::artifacts::dsl::*;
         let uris: Vec<String> = cmp.iter().map(|x| &x.download_uri).cloned().collect();
         let count: Option<i64> = self
@@ -171,9 +171,9 @@ impl DbConnection {
             .map_err(ServerError::DieselError)?;
 
         match count {
-            Some(0) => Ok(true),
-            Some(_) => Ok(false),
-            None => Ok(true),
+            Some(0) => Ok(false),
+            Some(_) => Ok(true),
+            None => Ok(false),
         }
     }
 }
