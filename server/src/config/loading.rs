@@ -22,7 +22,7 @@ pub enum Filter {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AndFilter(pub Vec<Filter>);
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Platform {
     pub os: String,
     pub arch: String,
