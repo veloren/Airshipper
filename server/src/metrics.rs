@@ -4,13 +4,8 @@ use prometheus::{Encoder, IntCounter, IntCounterVec, Opts, Registry, TextEncoder
 /// Prometheus Metrics
 pub struct Metrics {
     registry: Registry,
-
-    downloads_windows: IntCounter,
-    downloads_linux: IntCounter,
-    downloads_linux_aarch64: IntCounter,
-    downloads_macos: IntCounter,
+    downloads: IntCounterVec,
     pub uploads: IntCounter,
-
     http_routes_in: IntCounterVec,
 }
 
@@ -18,22 +13,13 @@ impl Metrics {
     pub fn new() -> Result<Self> {
         let registry = Registry::new();
 
-        let downloads_windows = IntCounter::new(
-            "windows_downloads",
-            "shows the number of requests which want to download Veloren for Windows",
-        )?;
-        let downloads_linux = IntCounter::new(
-            "linux_downloads",
-            "shows the number of requests which want to download Veloren for Linux",
-        )?;
-        let downloads_macos = IntCounter::new(
-            "macos_downloads",
-            "shows the number of requests which want to download Veloren for MacOS",
-        )?;
-        let downloads_linux_aarch64 = IntCounter::new(
-            "linux_aarch64_downloads",
-            "shows the number of requests which want to download Veloren for \
-             linux-aarch64",
+        let downloads = IntCounterVec::new(
+            Opts::new(
+                "downloads",
+                "shows the number of requests which want to download Veloren by os and \
+                 arch",
+            ),
+            &["os", "arch"],
         )?;
         let uploads = IntCounter::new(
             "uploads_total",
@@ -47,40 +33,24 @@ impl Metrics {
             &["http"],
         )?;
 
-        registry.register(Box::new(downloads_windows.clone()))?;
-        registry.register(Box::new(downloads_linux.clone()))?;
-        registry.register(Box::new(downloads_linux_aarch64.clone()))?;
-        registry.register(Box::new(downloads_macos.clone()))?;
+        registry.register(Box::new(downloads.clone()))?;
         registry.register(Box::new(uploads.clone()))?;
         registry.register(Box::new(http_routes_in.clone()))?;
 
         Ok(Self {
             registry,
-
-            downloads_windows,
-            downloads_linux,
-            downloads_linux_aarch64,
-            downloads_macos,
+            downloads,
             uploads,
-
             http_routes_in,
         })
     }
 
     /// Will try to identify the platform and increment the respective downloads
-    ///
-    /// Note: Will ignore unknown platforms
-    pub fn increment(&self, platform: &str) {
-        match platform.to_lowercase().as_ref() {
-            "windows" => self.downloads_windows.inc(),
-            "linux" => self.downloads_linux.inc(),
-            "linux-aarch64" => self.downloads_linux_aarch64.inc(),
-            "macos" => self.downloads_macos.inc(),
-            _ => {},
-        }
+    pub fn increment(&self, os: &str, arch: &str) {
+        self.downloads.with_label_values(&[os, arch]).inc();
     }
 
-    // Returns statistics
+    /// Returns statistics
     pub fn gather(&self) -> Result<String> {
         let mut buffer = vec![];
         let encoder = TextEncoder::new();
