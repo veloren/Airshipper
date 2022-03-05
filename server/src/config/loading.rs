@@ -25,7 +25,7 @@ pub struct AndFilter(pub Vec<Filter>);
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Platform {
     pub os: String,
-    //pub arch: String,
+    pub arch: String,
 }
 
 /// Filter that need to apply to result in an platform configuration
@@ -80,7 +80,8 @@ impl Default for Config {
             build_map: vec![PlatformMapper {
                 filter: AndFilter(vec![Filter::BuildName(".*linux-x86_64.*".to_owned())]),
                 platform: Platform {
-                    os: "linux".to_owned(), /* , arch: "x86_64".to_owned() */
+                    os: "linux".to_owned(),
+                    arch: "x86_64".to_owned(),
                 },
             }],
         };

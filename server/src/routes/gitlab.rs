@@ -32,9 +32,8 @@ pub async fn post_pipeline_update(
                         Ok(Status::Ok)
                     } else {
                         let channel = channel.clone();
-                        let c = channel.clone();
                         tokio::spawn(
-                            webhook::process(artifacts, c, db)
+                            webhook::process(artifacts, channel, db)
                                 .instrument(tracing::info_span!("")),
                         );
                         metrics.uploads.inc();
