@@ -54,13 +54,8 @@ pub fn process() -> Result<()> {
         let mut state = Airshipper::load(cmd.clone()).await;
 
         // handle arguments
-        process_arguments(
-            &mut state.active_profile,
-            cmd.action.unwrap(),
-            cmd.verbose,
-            &state.default_view.env_vars,
-        )
-        .await?;
+        process_arguments(&mut state.active_profile, cmd.action.unwrap(), cmd.verbose)
+            .await?;
 
         // Save state
         state.save_mut().await?;
@@ -76,9 +71,8 @@ async fn process_arguments(
     profile: &mut Profile,
     action: Action,
     verbose: i32,
-    env_vars: &str,
 ) -> Result<()> {
-    let log_level = match verbose {
+    profile.log_level = match verbose {
         0 => LogLevel::Default,
         1 => LogLevel::Debug,
         _ => LogLevel::Trace,
@@ -86,10 +80,10 @@ async fn process_arguments(
 
     match action {
         Action::Update => update(profile, true).await?,
-        Action::Start => start(profile, log_level, env_vars).await?,
+        Action::Start => start(profile).await?,
         Action::Run => {
             update(profile, false).await?;
-            start(profile, log_level, env_vars).await?
+            start(profile).await?
         },
         #[cfg(windows)]
         Action::Upgrade => {
@@ -149,16 +143,14 @@ async fn download(profile: Profile) -> Result<()> {
     Ok(())
 }
 
-async fn start(profile: &mut Profile, log_level: LogLevel, env_vars: &str) -> Result<()> {
+async fn start(profile: &mut Profile) -> Result<()> {
     if !profile.installed() {
         log::info!("Profile is not installed. Install it via `airshipper update`");
         return Ok(());
     }
 
     log::info!("Starting...");
-    let mut stream =
-        crate::io::stream_process(&mut Profile::start(profile, log_level, env_vars))?
-            .boxed();
+    let mut stream = crate::io::stream_process(&mut Profile::start(profile))?.boxed();
 
     while let Some(progress) = stream.next().await {
         match progress {
