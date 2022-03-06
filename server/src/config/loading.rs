@@ -25,7 +25,7 @@ pub enum Filter {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AndFilter(pub Vec<Filter>);
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Platform {
     pub os: String,
     pub arch: String,
@@ -64,6 +64,30 @@ pub struct Channel {
     /// A list of Filters, the first Filter that matches determines the respective
     /// Platform that is used
     pub build_map: Vec<PlatformMapper>,
+}
+
+impl Platform {
+    pub fn new<T: Into<String>>(os: T, arch: T) -> Self {
+        Self {
+            os: os.into(),
+            arch: arch.into(),
+        }
+    }
+}
+
+impl std::fmt::Debug for Platform {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.arch.is_empty() {
+            write!(f, "{}", self.os)
+        } else {
+            write!(f, "{}-{}", self.os, self.arch)
+        }
+    }
+}
+impl std::fmt::Display for Platform {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 impl Default for Config {
