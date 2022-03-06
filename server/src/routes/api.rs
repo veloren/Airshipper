@@ -56,7 +56,7 @@ pub async fn channel_platform_version(
     channel: String,
 ) -> Result<String> {
     match db
-        .get_latest_version(&format!("{}-{}", os, arch), channel)
+        .get_latest_version(Platform::new(&os, &arch).to_string(), channel)
         .await?
     {
         Some(ver) => Ok(ver),
@@ -106,7 +106,7 @@ pub async fn channel_platform_download(
     channel: String,
 ) -> Result<Redirect> {
     match db
-        .get_latest_uri(&format!("{}-{}", os, arch), channel)
+        .get_latest_uri(Platform::new(&os, &arch).to_string(), channel)
         .await?
     {
         Some(uri) => {

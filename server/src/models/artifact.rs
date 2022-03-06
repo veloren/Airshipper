@@ -51,7 +51,7 @@ impl Artifact {
             let date = pipe.commit.timestamp.naive_utc();
 
             let build_id = build.id as i64;
-            let platform = format!("{}-{}", platform.os, platform.arch);
+            let platform = platform.to_string();
             let file_name = format!(
                 "{}-{}-{}.zip",
                 &channel.name,
