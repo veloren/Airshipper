@@ -22,12 +22,15 @@ impl<'r> FromRequest<'r> for GitlabSecret {
         match keys.len() {
             0 => Outcome::Failure((Status::Unauthorized, SecretError::MissingSecret)),
             1 => {
-                for channel in crate::CONFIG.channels.values() {
-                    if channel.gitlab_secret == keys[0] {
-                        return Outcome::Success(GitlabSecret {});
-                    }
+                if crate::CONFIG
+                    .channels
+                    .values()
+                    .any(|c| c.gitlab_secret == keys[0])
+                {
+                    Outcome::Success(GitlabSecret {})
+                } else {
+                    Outcome::Failure((Status::Unauthorized, SecretError::InvalidSecret))
                 }
-                Outcome::Failure((Status::Unauthorized, SecretError::InvalidSecret))
             },
             _ => Outcome::Failure((Status::BadRequest, SecretError::MultipleSecrets)),
         }
