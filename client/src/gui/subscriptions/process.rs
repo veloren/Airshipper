@@ -1,19 +1,15 @@
 use crate::{
     io::{self, ProcessUpdate},
-    profiles::{LogLevel, Profile},
+    profiles::Profile,
 };
 use iced::{futures, Subscription};
 use iced_native::subscription::Recipe;
 
-pub fn stream(
-    profile: Profile,
-    log_level: LogLevel,
-    env_vars: String,
-) -> iced::Subscription<io::ProcessUpdate> {
-    Subscription::from_recipe(Process(profile, log_level, env_vars))
+pub fn stream(profile: Profile) -> iced::Subscription<io::ProcessUpdate> {
+    Subscription::from_recipe(Process(profile))
 }
 
-struct Process(Profile, LogLevel, String);
+struct Process(Profile);
 
 impl<H, I> Recipe<H, I> for Process
 where
@@ -35,7 +31,7 @@ where
     ) -> futures::stream::BoxStream<'static, Self::Output> {
         use iced::futures::stream::StreamExt;
 
-        let mut cmd = Profile::start(&self.0, self.1, &self.2);
+        let mut cmd = Profile::start(&self.0);
         match io::stream_process(&mut cmd) {
             Ok(stream) => stream.boxed(),
             Err(err) => {
