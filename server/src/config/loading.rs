@@ -1,7 +1,7 @@
 use super::DEFAULT_DATA_PATH;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path};
-use tracing::{error, warn};
+use tracing::error;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -99,22 +99,32 @@ impl Default for Config {
 
 impl Config {
     pub fn load(path: &Path) -> Result<Self, Box<dyn std::error::Error>> {
-        let file = fs::File::open(&path)?;
+        let create_default = || {
+            let default_settings = Self::default();
+            let template_path = path.with_extension("template.ron");
+            tracing::info!(
+                "creating a template file for you to migrate your current settings \
+                 file: {}",
+                template_path.display()
+            );
+            if let Err(e) = default_settings.save_to_file(&template_path) {
+                error!(?e, "Failed to create template settings file")
+            }
+        };
+
+        let file = match fs::File::open(&path) {
+            Ok(file) => file,
+            Err(e) => {
+                error!(?e, "Config File does not exist!",);
+                create_default();
+                return Err(e.into());
+            },
+        };
         match ron::de::from_reader(file) {
             Ok(x) => Ok(x),
             Err(e) => {
-                let default_settings = Self::default();
-                let template_path = path.with_extension("template.ron");
-                warn!(
-                    ?e,
-                    "Failed to parse setting file! Falling back to default settings and \
-                     creating a template file for you to migrate your current settings \
-                     file: {}",
-                    template_path.display()
-                );
-                if let Err(e) = default_settings.save_to_file(&template_path) {
-                    error!(?e, "Failed to create template settings file")
-                }
+                error!(?e, "Failed to parse setting file!",);
+                create_default();
                 Err(e.into())
             },
         }

@@ -56,7 +56,7 @@ impl Artifact {
                 "{}-{}-{}.zip",
                 &channel.name,
                 platform,
-                date.format("%Y-%m-%dT%H:%M")
+                date.format("%Y-%m-%dT%H_%M")
             );
             let download_uri = format!("/{}", FsStorage::get_download_url(&file_name));
 
