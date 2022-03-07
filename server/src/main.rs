@@ -22,15 +22,16 @@ mod routes;
 mod webhook;
 
 use crate::error::ServerError;
-use config::{ServerConfig, LOCAL_STORAGE_PATH};
+use config::{loading, Config, CONFIG_PATH, LOCAL_STORAGE_PATH};
 use metrics::Metrics;
+use std::path::Path;
 
 pub type Result<T> = std::result::Result<T, ServerError>;
 pub use db::{DbConnection, FsStorage};
 
 lazy_static::lazy_static! {
     /// Contains all configuration needed.
-    pub static ref CONFIG: ServerConfig = ServerConfig::load();
+    pub static ref CONFIG: Config = Config::compile(loading::Config::load(Path::new(CONFIG_PATH)).unwrap_or_else(|_| panic!("Couldn't open config file {}", CONFIG_PATH))).unwrap();
 }
 
 #[rocket::launch]
@@ -65,10 +66,13 @@ async fn build() -> Result<rocket::Rocket<rocket::Build>> {
             routes::user::ping,
             routes::user::robots,
             routes::user::favicon,
+            routes::api::channels,
             routes::api::version,
             routes::api::channel_version,
+            routes::api::channel_platform_version,
             routes::api::download,
             routes::api::channel_download,
+            routes::api::channel_platform_download,
             routes::metrics::metrics,
         ])
         .mount(

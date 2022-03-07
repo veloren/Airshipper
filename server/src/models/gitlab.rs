@@ -1,6 +1,7 @@
 use super::Artifact;
 use crate::CONFIG;
 use chrono::{DateTime, Utc};
+use reqwest::header::{HeaderMap, HeaderValue, ACCEPT};
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -14,43 +15,120 @@ pub struct PipelineUpdate {
 }
 
 impl PipelineUpdate {
-    pub(crate) fn artifacts(&self) -> Option<Vec<Artifact>> {
+    ///Global Filter for invalid webhooks
+    pub(crate) fn early_filter(&self) -> bool {
+        if self.object_attributes.status != "success" {
+            let status = &self.object_attributes.status;
+            tracing::debug!(?status, "Skipping update as it isn't successful",);
+            return false;
+        }
+        true
+    }
+
+    pub(crate) fn channel(&self) -> Option<String> {
+        for (channel_name, channel) in &crate::CONFIG.channels {
+            // check if at least one filter matches
+            for filter in &channel.channel_filters {
+                tracing::trace!(?channel, ?filter, "checking channel filter");
+                if filter.apply(self, 0) {
+                    tracing::debug!(
+                        ?channel,
+                        ?filter,
+                        "Filter applied successful, channel determited",
+                    );
+                    return Some(channel_name.clone());
+                }
+            }
+        }
+        None
+    }
+
+    pub(crate) fn artifacts(&self, channel: &str) -> Vec<Artifact> {
         let mut artifacts = Vec::new();
 
-        if self.object_attributes.branch != CONFIG.target_branch {
-            tracing::debug!(
-                "Branch '{}' does not match target '{}'",
-                self.object_attributes.branch,
-                CONFIG.target_branch
-            );
-            return None;
-        }
+        let channel = CONFIG.channels.get(channel).unwrap();
 
-        if self.object_attributes.status != "success" {
-            tracing::debug!(
-                "Skipping update as it isn't successful ('{}')",
-                self.object_attributes.status
-            );
-            return None;
-        }
-
-        for build in &self.builds {
-            // Skip non-artifact builds.
-            if build.stage != crate::CONFIG.artifact_stage {
-                tracing::debug!("Skipping artifact in '{}' stage...", build.stage);
-                continue;
-            }
-
-            if let Some(artifact) = Artifact::try_from(self, build) {
-                artifacts.push(artifact);
+        // Apply filters
+        for (i, build) in self.builds.iter().enumerate() {
+            // find matching Platform
+            for filter in &channel.build_map {
+                if filter.filter.apply(self, i) {
+                    let platform = &filter.platform;
+                    let filter = &filter.filter;
+                    if let Some(artifact) =
+                        Artifact::try_from(self, channel, build, platform)
+                    {
+                        let id = artifact.build_id;
+                        tracing::trace!(?id, ?filter, "artifact matched with");
+                        artifacts.push(artifact);
+                    }
+                }
             }
         }
 
-        if artifacts.is_empty() {
-            None
-        } else {
-            Some(artifacts)
+        artifacts
+    }
+
+    pub(crate) async fn extends_variables(
+        &mut self,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        #[derive(Debug, Deserialize)]
+        struct LastPipeline {
+            id: u64,
         }
+
+        #[derive(Debug, Deserialize)]
+        struct Schedule {
+            //id: u64,
+            variables: Vec<Variable>,
+            last_pipeline: LastPipeline,
+        }
+
+        #[derive(Debug, Deserialize)]
+        struct Schedules {
+            id: u64,
+        }
+
+        if let Some(token) = &crate::CONFIG.gitlab_token {
+            let pipeline_id = self.object_attributes.id;
+            // get all schedules available
+            let mut headers = HeaderMap::new();
+            headers.insert("PRIVATE-TOKEN", HeaderValue::from_str(token)?);
+            headers.insert(ACCEPT, HeaderValue::from_static("*/*"));
+            let client = reqwest::Client::builder()
+                .default_headers(headers)
+                .build()?;
+            let schedules = client
+                .get(format!(
+                    "https://gitlab.com/api/v4/projects/{}/pipeline_schedules",
+                    crate::config::PROJECT_ID,
+                ))
+                .send()
+                .await?
+                .json::<Vec<Schedules>>()
+                .await?;
+            tracing::trace!(?schedules, "Schedules");
+            for schedule in schedules {
+                let id = schedule.id;
+                let mut details = client
+                    .get(format!(
+                        "https://gitlab.com/api/v4/projects/{}/pipeline_schedules/{}",
+                        crate::config::PROJECT_ID,
+                        id
+                    ))
+                    .send()
+                    .await?
+                    .json::<Schedule>()
+                    .await?;
+                tracing::trace!(?details, "Details");
+                if details.last_pipeline.id == pipeline_id {
+                    self.object_attributes
+                        .variables
+                        .append(&mut details.variables);
+                }
+            }
+        }
+        Ok(())
     }
 }
 
