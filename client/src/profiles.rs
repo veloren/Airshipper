@@ -95,13 +95,6 @@ impl Server {
             Server::Test => "https://download.test.veloren.net",
         }
     }
-
-    pub fn osdir(&self) -> String {
-        match (std::env::consts::OS, std::env::consts::ARCH) {
-            os_arch @ ("linux", "aarch64") => format!("{}-{}", os_arch.0, os_arch.1),
-            (os, _) => os.to_string(),
-        }
-    }
 }
 
 #[derive(Debug, derive_more::Display, Clone, Copy, Serialize, Deserialize)]
@@ -143,12 +136,15 @@ impl Profile {
 
     /// Returns the download url for this profile
     pub fn url(&self) -> String {
-        format!(
-            "{}/latest/{}/{}",
-            self.server.url(),
-            self.server.osdir(),
-            self.channel
-        )
+        match std::env::consts::OS {
+            "linux" => format!(
+                "{}/latest/linux/{}/{}",
+                self.server.url(),
+                std::env::consts::ARCH,
+                self.channel
+            ),
+            os => format!("{}/latest/{}/{}", self.server.url(), os, self.channel),
+        }
     }
 
     pub fn download_path(&self) -> PathBuf {
@@ -156,12 +152,15 @@ impl Profile {
     }
 
     fn version_url(&self) -> String {
-        format!(
-            "{}/version/{}/{}",
-            self.server.url(),
-            self.server.osdir(),
-            self.channel
-        )
+        match std::env::consts::OS {
+            "linux" => format!(
+                "{}/version/linux/{}/{}",
+                self.server.url(),
+                std::env::consts::ARCH,
+                self.channel
+            ),
+            os => format!("{}/version/{}/{}", self.server.url(), os, self.channel),
+        }
     }
 
     // TODO: add possibility to start the server too
