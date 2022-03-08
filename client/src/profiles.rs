@@ -136,15 +136,13 @@ impl Profile {
 
     /// Returns the download url for this profile
     pub fn url(&self) -> String {
-        match std::env::consts::OS {
-            "linux" => format!(
-                "{}/latest/linux/{}/{}",
-                self.server.url(),
-                std::env::consts::ARCH,
-                self.channel
-            ),
-            os => format!("{}/latest/{}/{}", self.server.url(), os, self.channel),
-        }
+        format!(
+            "{}/latest/{}/{}/{}",
+            self.server.url(),
+            std::env::consts::OS,
+            std::env::consts::ARCH,
+            self.channel
+        )
     }
 
     pub fn download_path(&self) -> PathBuf {
@@ -152,15 +150,13 @@ impl Profile {
     }
 
     fn version_url(&self) -> String {
-        match std::env::consts::OS {
-            "linux" => format!(
-                "{}/version/linux/{}/{}",
-                self.server.url(),
-                std::env::consts::ARCH,
-                self.channel
-            ),
-            os => format!("{}/version/{}/{}", self.server.url(), os, self.channel),
-        }
+        format!(
+            "{}/version/{}/{}/{}",
+            self.server.url(),
+            std::env::consts::OS,
+            std::env::consts::ARCH,
+            self.channel
+        )
     }
 
     // TODO: add possibility to start the server too
