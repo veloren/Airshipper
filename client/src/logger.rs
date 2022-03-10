@@ -1,119 +1,104 @@
-use crate::fs;
-use fern::colors::{Color, ColoredLevelConfig};
-use log::LevelFilter;
+use std::path::Path;
+use termcolor::{ColorChoice, StandardStream};
+use tracing::info;
+use tracing_appender::non_blocking::WorkerGuard;
+use tracing_subscriber::{
+    filter::LevelFilter, fmt::writer::MakeWriter, prelude::*, registry, EnvFilter,
+};
 
-const MAX_LOG_LINES: usize = 10_000;
+const RUST_LOG_ENV: &str = "RUST_LOG";
 
-/// Setup logging.
-pub fn log(level: LevelFilter) {
-    // Clean up log file if possible
-    if fs::log_file().exists() {
-        if let Ok(count) =
-            std::fs::read_to_string(fs::log_file()).map(|x| x.lines().count())
-        {
-            if count > MAX_LOG_LINES {
-                let _ = std::fs::remove_file(fs::log_file());
+pub fn init(log_path_file: Option<(&Path, &str)>, level: LevelFilter) -> Vec<impl Drop> {
+    let mut guards: Vec<WorkerGuard> = Vec::new();
+    let terminal = || StandardStream::stdout(ColorChoice::Auto);
+
+    let base_exceptions = |env: EnvFilter| {
+        env.add_directive("html5ever=error".parse().unwrap())
+            .add_directive("winit=error".parse().unwrap())
+            .add_directive("wgpu_native=info".parse().unwrap())
+            .add_directive("strip_markdown=warn".parse().unwrap())
+            .add_directive("tokio_reactor=warn".parse().unwrap())
+            .add_directive("h2=info".parse().unwrap())
+            .add_directive("hyper=warn".parse().unwrap())
+            .add_directive("iced_wgpu::renderer=warn".parse().unwrap())
+            .add_directive("iced_winit=info".parse().unwrap())
+            .add_directive("gfx_backend_vulkan=warn".parse().unwrap())
+            .add_directive("gfx_backend_dx12=info".parse().unwrap())
+            .add_directive("isahc=info".parse().unwrap())
+            .add_directive("iced_wgpu::image::atlas=warn".parse().unwrap())
+            .add_directive("wgpu_core=warn".parse().unwrap())
+            .add_directive("wgpu=warn".parse().unwrap())
+            .add_directive("iced_wgpu::backend=warn".parse().unwrap())
+            .add_directive("reqwest=info".parse().unwrap())
+            .add_directive("gpu_alloc=warn".parse().unwrap())
+            .add_directive("naga=info".parse().unwrap())
+            .add_directive("output=warn".parse().unwrap())
+            .add_directive("rustls=info".parse().unwrap())
+            .add_directive("want=info".parse().unwrap())
+            .add_directive("tokio_util=info".parse().unwrap())
+            .add_directive(level.into())
+    };
+
+    let filter = match std::env::var_os(RUST_LOG_ENV).map(|s| s.into_string()) {
+        Some(Ok(env)) => {
+            let mut filter = base_exceptions(EnvFilter::new(""));
+            for s in env.split(',') {
+                match s.parse() {
+                    Ok(d) => filter = filter.add_directive(d),
+                    Err(err) => println!("WARN ignoring log directive: `{}`: {}", s, err),
+                };
             }
+            filter
+        },
+        _ => base_exceptions(EnvFilter::from_env(RUST_LOG_ENV)),
+    };
+
+    let registry = registry();
+    let mut file_setup = false;
+
+    let registry = {
+        let (non_blocking, stdio_guard) =
+            tracing_appender::non_blocking(terminal.make_writer());
+        guards.push(stdio_guard);
+        registry.with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
+    };
+
+    if let Some((path, file)) = log_path_file {
+        match std::fs::create_dir_all(path) {
+            Ok(_) => {
+                let file_appender = tracing_appender::rolling::never(path, file); // It is actually rolling daily since the log name is changing daily
+                let (non_blocking_file, file_guard) =
+                    tracing_appender::non_blocking(file_appender);
+                guards.push(file_guard);
+                file_setup = true;
+                registry
+                    .with(tracing_subscriber::fmt::layer().with_writer(non_blocking_file))
+                    .with(filter)
+                    .init();
+            },
+            Err(e) => {
+                tracing::error!(
+                    ?e,
+                    "Failed to create log file!. Falling back to terminal logging only.",
+                );
+                registry.with(filter).init();
+            },
         }
-    }
-
-    let colors = ColoredLevelConfig::new()
-        .error(Color::Red)
-        .warn(Color::Yellow)
-        .info(Color::Cyan)
-        .debug(Color::Green)
-        .trace(Color::BrightBlack);
-
-    let base = fern::Dispatch::new()
-        .level_for("html5ever", LevelFilter::Error)
-        .level_for("winit", LevelFilter::Error)
-        .level_for("wgpu_native", LevelFilter::Info)
-        .level_for("strip_markdown", LevelFilter::Warn)
-        .level_for("tokio_reactor", LevelFilter::Warn)
-        .level_for("hyper", LevelFilter::Warn)
-        .level_for("iced_wgpu::renderer", LevelFilter::Info)
-        .level_for("iced_winit", LevelFilter::Info)
-        .level_for("wgpu_native", LevelFilter::Warn)
-        .level_for("gfx_backend_vulkan", LevelFilter::Warn)
-        .level_for("gfx_backend_dx12", LevelFilter::Info)
-        .level_for("isahc", LevelFilter::Info)
-        .level_for("iced_wgpu::image::atlas", LevelFilter::Warn)
-        .level_for("wgpu_core", LevelFilter::Warn)
-        .level_for("wgpu", LevelFilter::Warn)
-        .level_for("iced_wgpu::backend", LevelFilter::Warn)
-        .level_for("reqwest", LevelFilter::Info)
-        .level_for("tracing", LevelFilter::Warn)
-        .level_for("gpu_alloc", LevelFilter::Warn)
-        .level_for("naga", LevelFilter::Info);
-
-    let file_cfg = fern::Dispatch::new()
-        .level(LevelFilter::Info)
-        .level_for("airshipper", LevelFilter::Debug)
-        .level_for("output::Veloren", LevelFilter::Off)
-        .format(|out, message, record| {
-            out.finish(format_args!(
-                "{}[{}:{}][{}] {}",
-                chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
-                record.target(),
-                record
-                    .line()
-                    .map(|x| x.to_string())
-                    .unwrap_or_else(|| "X".to_string()),
-                record.level(),
-                message
-            ))
-        })
-        .chain(fern::log_file(&fs::log_file()).expect("Failed to setup log file!"));
-
-    #[allow(unused_mut)]
-    let mut color = colored::control::SHOULD_COLORIZE.should_colorize();
-
-    #[cfg(windows)]
-    {
-        color &= crate::windows::color_support();
-    }
-
-    let mut stdout_cfg = fern::Dispatch::new()
-        .level(level)
-        .level_for("wgpu_core::device", LevelFilter::Error)
-        .level_for("gpu_alloc", LevelFilter::Warn)
-        .level_for("naga", LevelFilter::Error);
-    // If more verbose debugging is requested. We will print the lines too.
-    if level == LevelFilter::Debug || level == LevelFilter::Trace {
-        stdout_cfg = stdout_cfg.format(move |out, message, record| {
-            out.finish(format_args!(
-                "[{}:{}][{}] {}",
-                record.target(),
-                record
-                    .line()
-                    .map(|x| x.to_string())
-                    .unwrap_or_else(|| "X".to_string()),
-                if color {
-                    colors.color(record.level()).to_string()
-                } else {
-                    record.level().to_string()
-                },
-                message
-            ))
-        });
     } else {
-        stdout_cfg = stdout_cfg.format(move |out, message, record| {
-            out.finish(format_args!(
-                "[{}] {}",
-                if color {
-                    colors.color(record.level()).to_string()
-                } else {
-                    record.level().to_string()
-                },
-                message
-            ))
-        });
+        registry.with(filter).init();
     }
 
-    stdout_cfg = stdout_cfg.chain(std::io::stdout());
+    if file_setup {
+        let (path, file) = log_path_file.unwrap();
+        info!(?path, ?file, "Setup terminal and file logging.");
+    }
 
-    base.chain(file_cfg)
-        .chain(stdout_cfg)
-        .apply()
-        .expect("Failed to setup logging.");
+    if tracing::level_enabled!(tracing::Level::TRACE) {
+        info!("Tracing Level: TRACE");
+    } else if tracing::level_enabled!(tracing::Level::DEBUG) {
+        info!("Tracing Level: DEBUG");
+    };
+
+    // Return the guards
+    guards
 }

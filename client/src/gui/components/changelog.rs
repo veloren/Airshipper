@@ -168,7 +168,7 @@ impl Changelog {
                 if version != remote_version {
                     return Ok(Some(Self::fetch().await?));
                 } else {
-                    log::debug!("Changelog up-to-date.");
+                    tracing::debug!("Changelog up-to-date.");
                     Ok(None)
                 }
             },

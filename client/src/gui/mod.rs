@@ -64,7 +64,7 @@ impl Airshipper {
                         state
                     },
                     Err(e) => {
-                        log::debug!(
+                        tracing::debug!(
                             "Reading state failed. Falling back to default: {}",
                             e
                         );
@@ -72,7 +72,7 @@ impl Airshipper {
                     },
                 }
             } else {
-                log::debug!("Falling back to default state.");
+                tracing::debug!("Falling back to default state.");
                 Self::default()
             }
         })
