@@ -8,6 +8,8 @@ target/
 # Direnv
 /.direnv
 /.envrc
+/config/config.ron
+/config/config.template.ron
 
 # IDE
 .idea
