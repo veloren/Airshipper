@@ -54,7 +54,7 @@ impl Artifact {
 
             let build_id = build.id as i64;
             let os = platform.os.clone();
-            let arch = platform.os.clone();
+            let arch = platform.arch.clone();
             let platform = platform.to_string();
             let file_name = format!(
                 "{}-{}-{}.zip",
