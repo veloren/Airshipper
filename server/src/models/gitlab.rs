@@ -30,13 +30,17 @@ impl PipelineUpdate {
             // check if at least one filter matches
             for filter in &channel.channel_filters {
                 tracing::trace!(?channel, ?filter, "checking channel filter");
-                if filter.apply(self, 0) {
-                    tracing::debug!(
-                        ?channel,
-                        ?filter,
-                        "Filter applied successful, channel determited",
-                    );
-                    return Some(channel_name.clone());
+                // The filter must apply to at least 1 build_id
+                for (build, _) in self.builds.iter().enumerate() {
+                    if filter.apply(self, build) {
+                        tracing::debug!(
+                            ?channel,
+                            ?filter,
+                            ?build,
+                            "Filter applied successful, channel determined",
+                        );
+                        return Some(channel_name.clone());
+                    }
                 }
             }
         }
