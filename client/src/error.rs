@@ -41,7 +41,7 @@ macro_rules! impl_from {
     ($trait:ty, $variant:expr) => {
         impl From<$trait> for ClientError {
             fn from(err: $trait) -> Self {
-                log::error!("{} => {}", $variant, err);
+                tracing::error!("{} => {}", $variant, err);
                 $variant
             }
         }
@@ -76,7 +76,7 @@ pub fn panic_hook() {
             .to_string(),
         };
 
-        log::error!("Airshipper panicked: \n\n{}: {}", reason, panic_info,);
+        tracing::error!("Airshipper panicked: \n\n{}: {}", reason, panic_info,);
 
         default_hook(panic_info);
     }));

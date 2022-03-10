@@ -110,14 +110,14 @@ impl UpdateView {
             UpdateViewMessage::Action(_) => {},
 
             UpdateViewMessage::UpdatePressed => {
-                log::info!("Updating Airshipper...");
+                tracing::info!("Updating Airshipper...");
                 self.message = "Updating Airshipper...".to_string();
                 let release = release.as_ref().unwrap().clone();
                 return Command::perform(
                     async {
                         tokio::task::block_in_place(move || {
                             if let Err(e) = crate::windows::update(&release) {
-                                log::error!("Failed to update Airshipper: {}", e);
+                                tracing::error!("Failed to update Airshipper: {}", e);
                                 return e.to_string();
                             }
                             String::new()

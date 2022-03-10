@@ -392,7 +392,7 @@ impl DefaultView {
                 },
                 Ok(None) => {},
                 Err(e) => {
-                    log::trace!("Failed to update changelog: {}", e);
+                    tracing::trace!("Failed to update changelog: {}", e);
                 },
             },
             DefaultViewMessage::NewsUpdate(update) => match update {
@@ -405,7 +405,7 @@ impl DefaultView {
                 },
                 Ok(None) => {},
                 Err(e) => {
-                    log::trace!("Failed to update news: {}", e);
+                    tracing::trace!("Failed to update news: {}", e);
                 },
             },
             DefaultViewMessage::GameUpdate(update) => match update {
@@ -435,10 +435,10 @@ impl DefaultView {
             },
             DefaultViewMessage::ProcessUpdate(update) => match update {
                 ProcessUpdate::Line(msg) => {
-                    log::info!(target: "output::Veloren","[Veloren] {}", msg);
+                    tracing::info!(target: "output::Veloren","[Veloren] {}", msg);
                 },
                 ProcessUpdate::Exit(code) => {
-                    log::debug!("Veloren exited with {}", code);
+                    tracing::debug!("Veloren exited with {}", code);
                     self.state = State::QueryingForUpdates(false);
                     return Command::perform(
                         Profile::update(active_profile.clone()),
@@ -446,7 +446,7 @@ impl DefaultView {
                     );
                 },
                 ProcessUpdate::Error(err) => {
-                    log::error!(
+                    tracing::error!(
                         "Failed to receive an update from Veloren process! {}",
                         err
                     );
@@ -455,7 +455,7 @@ impl DefaultView {
             },
             DefaultViewMessage::DownloadProgress(progress) => match progress {
                 net::Progress::Errored(err) => {
-                    log::error!("Download failed with: {}", err);
+                    tracing::error!("Download failed with: {}", err);
                     self.state = State::Retry;
                     let mut profile = active_profile.clone();
                     profile.version = None;
@@ -489,7 +489,7 @@ impl DefaultView {
                     );
                 },
                 Err(e) => {
-                    log::error!("Installation failed with: {}", e);
+                    tracing::error!("Installation failed with: {}", e);
                     self.state = State::Retry;
                     let mut profile = active_profile.clone();
                     profile.version = None;
@@ -574,11 +574,11 @@ impl DefaultView {
                 },
                 Interaction::ReadMore(url) => {
                     if let Err(e) = opener::open(&url) {
-                        log::error!("failed to open {} : {}", url, e);
+                        tracing::error!("failed to open {} : {}", url, e);
                     }
                 },
                 Interaction::ServerChanged(new_server) => {
-                    log::debug!("new server selected {}", new_server);
+                    tracing::debug!("new server selected {}", new_server);
                     self.state = State::QueryingForUpdates(false);
                     let mut profile = active_profile.clone();
                     profile.server = new_server;
@@ -624,7 +624,7 @@ impl DefaultView {
                 },
                 Interaction::OpenLogsPressed => {
                     if let Err(e) = opener::open(active_profile.voxygen_logs_path()) {
-                        log::error!("Failed to open logs dir: {:?}", e);
+                        tracing::error!("Failed to open logs dir: {:?}", e);
                     }
                 },
                 Interaction::EnvVarsChanged(vars) => {
