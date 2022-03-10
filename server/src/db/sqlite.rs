@@ -15,27 +15,31 @@ pub struct DbArtifact {
     pub author: String,
     pub merged_by: String,
 
-    pub platform: String,
+    pub os: String,
+    pub arch: String,
     pub channel: String,
     pub file_name: String,
     pub download_uri: String,
 }
 
 impl DbConnection {
-    pub async fn get_latest_version<T: ToString, Y: ToString>(
+    pub async fn get_latest_version<T: ToString, U: ToString, Y: ToString>(
         &self,
-        searched_platform: T,
+        searched_os: T,
+        searched_arch: U,
         searched_channel: Y,
     ) -> Result<Option<String>> {
         use schema::artifacts::dsl::*;
-        let searched_platform = searched_platform.to_string().to_lowercase();
+        let searched_os = searched_os.to_string().to_lowercase();
+        let searched_arch = searched_arch.to_string().to_lowercase();
         let searched_channel = searched_channel.to_string().to_lowercase();
         self.0
             .run(move |conn| {
                 artifacts
                     .select(hash)
                     .order(date.desc())
-                    .filter(platform.eq(searched_platform))
+                    .filter(os.eq(searched_os))
+                    .filter(arch.eq(searched_arch))
                     .filter(channel.eq(searched_channel))
                     .first(conn)
                     .optional()
@@ -44,13 +48,15 @@ impl DbConnection {
             .map_err(ServerError::DieselError)
     }
 
-    pub async fn get_latest_uri<T: ToString, Y: ToString>(
+    pub async fn get_latest_uri<T: ToString, U: ToString, Y: ToString>(
         &self,
-        searched_platform: T,
+        searched_os: T,
+        searched_arch: U,
         searched_channel: Y,
     ) -> Result<Option<String>> {
         use schema::artifacts::dsl::*;
-        let searched_platform = searched_platform.to_string().to_lowercase();
+        let searched_os = searched_os.to_string().to_lowercase();
+        let searched_arch = searched_arch.to_string().to_lowercase();
         let searched_channel = searched_channel.to_string().to_lowercase();
 
         self.0
@@ -58,7 +64,8 @@ impl DbConnection {
                 artifacts
                     .select(download_uri)
                     .order(date.desc())
-                    .filter(platform.eq(searched_platform))
+                    .filter(os.eq(searched_os))
+                    .filter(arch.eq(searched_arch))
                     .filter(channel.eq(searched_channel))
                     .first(conn)
                     .optional()
@@ -118,32 +125,20 @@ impl DbConnection {
             .await
             .map_err(ServerError::DieselError)?;
 
-        let win_artis = artis
-            .iter()
-            .filter(|x| x.platform == "windows")
-            .skip(1) // Do not prune all artifacts from one platform!
-            .collect::<Vec<_>>();
-        let lin_artis = artis
-            .iter()
-            .filter(|x| x.platform == "linux")
-            .skip(1) // Do not prune all artifacts from one platform!
-            .collect::<Vec<_>>();
-        let mac_artis = artis
-            .iter()
-            .filter(|x| x.platform == "macos")
-            .skip(1) // Do not prune all artifacts from one platform!
-            .collect::<Vec<_>>();
-        let aarch64_artis = artis
-            .iter()
-            .filter(|x| x.platform == "linux-aarch64")
-            .skip(1) // Do not prune all artifacts from one platform!
-            .collect::<Vec<_>>();
+        let mut artises = vec![];
 
-        let mut artis = vec![];
-        artis.extend(win_artis);
-        artis.extend(lin_artis);
-        artis.extend(mac_artis);
-        artis.extend(aarch64_artis);
+        let platforms = crate::CONFIG.get_platforms();
+        for platform in platforms {
+            let platform_artis = artis
+                .iter()
+                .filter(|x| x.os == platform.os)
+                .filter(|x| x.arch == platform.arch)
+                .skip(1) // Do not prune all artifacts from one platform!
+                .collect::<Vec<_>>();
+            artises.extend(platform_artis);
+        }
+
+        let artis = artises;
 
         let ids: Vec<_> = artis.iter().map(|x| x.id).collect();
         self.0
