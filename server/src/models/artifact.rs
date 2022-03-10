@@ -16,7 +16,8 @@ pub struct Artifact {
     pub author: String,
     pub merged_by: String,
 
-    pub platform: String,
+    pub os: String,
+    pub arch: String,
     pub channel: String,
     pub file_name: String,
     pub download_uri: String,
@@ -30,7 +31,8 @@ impl From<&DbArtifact> for Artifact {
             hash: db.hash.clone(),
             author: db.author.clone(),
             merged_by: db.merged_by.clone(),
-            platform: db.platform.clone(),
+            os: db.os.clone(),
+            arch: db.arch.clone(),
             channel: db.channel.clone(),
             file_name: db.file_name.clone(),
             download_uri: db.download_uri.clone(),
@@ -51,6 +53,8 @@ impl Artifact {
             let date = pipe.commit.timestamp.naive_utc();
 
             let build_id = build.id as i64;
+            let os = platform.os.clone();
+            let arch = platform.arch.clone();
             let platform = platform.to_string();
             let file_name = format!(
                 "{}-{}-{}.zip",
@@ -66,7 +70,8 @@ impl Artifact {
                 hash: pipe.object_attributes.sha.clone(),
                 author: pipe.commit.author.name.clone(),
                 merged_by: pipe.user.name.clone(),
-                platform,
+                os,
+                arch,
                 channel: channel.name.clone(),
                 file_name,
                 download_uri,
