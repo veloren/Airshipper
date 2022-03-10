@@ -30,7 +30,7 @@ pub async fn channels(
 // NOTE: We want to change this behaviour once stable releases are more used than nightly
 #[get("/version/<platform>")]
 pub async fn version(db: crate::DbConnection, platform: String) -> Result<String> {
-    match db.get_latest_version(platform, "nightly").await? {
+    match db.get_latest_version(platform, "", "nightly").await? {
         Some(ver) => Ok(ver),
         None => Err(Status::NotFound.into()),
     }
@@ -42,7 +42,7 @@ pub async fn channel_version(
     platform: String,
     channel: String,
 ) -> Result<String> {
-    match db.get_latest_version(platform, channel).await? {
+    match db.get_latest_version(platform, "", channel).await? {
         Some(ver) => Ok(ver),
         None => Err(Status::NotFound.into()),
     }
@@ -55,10 +55,7 @@ pub async fn channel_platform_version(
     arch: String,
     channel: String,
 ) -> Result<String> {
-    match db
-        .get_latest_version(Platform::new(&os, &arch).to_string(), channel)
-        .await?
-    {
+    match db.get_latest_version(&os, &arch, channel).await? {
         Some(ver) => Ok(ver),
         None => Err(Status::NotFound.into()),
     }
@@ -72,7 +69,7 @@ pub async fn download(
     metrics: &State<Arc<Metrics>>,
     platform: String,
 ) -> Result<Redirect> {
-    match db.get_latest_uri(&platform, "nightly").await? {
+    match db.get_latest_uri(&platform, "", "nightly").await? {
         Some(uri) => {
             metrics.increment(&platform, "");
             Ok(Redirect::to(uri))
@@ -88,7 +85,7 @@ pub async fn channel_download(
     platform: String,
     channel: String,
 ) -> Result<Redirect> {
-    match db.get_latest_uri(&platform, channel).await? {
+    match db.get_latest_uri(&platform, "", channel).await? {
         Some(uri) => {
             metrics.increment(&platform, "");
             Ok(Redirect::to(uri))
@@ -105,10 +102,7 @@ pub async fn channel_platform_download(
     arch: String,
     channel: String,
 ) -> Result<Redirect> {
-    match db
-        .get_latest_uri(Platform::new(&os, &arch).to_string(), channel)
-        .await?
-    {
+    match db.get_latest_uri(&os, &arch, channel).await? {
         Some(uri) => {
             metrics.increment(&os, &arch);
             Ok(Redirect::to(uri))

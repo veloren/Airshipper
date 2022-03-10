@@ -1,7 +1,7 @@
 pub use crate::config::loading::{GithubReleaseConfig, Platform};
 use regex::Regex;
 use rocket::{serde::json::Value, Rocket};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub mod loading;
 
@@ -221,6 +221,18 @@ impl Config {
             Figment::from(config).merge(("databases", map!["sqlite" => &options]));
 
         rocket::custom(provider)
+    }
+
+    pub fn get_platforms(&self) -> HashSet<&Platform> {
+        self.channels
+            .iter()
+            .flat_map(|(_, channel)| {
+                channel
+                    .build_map
+                    .iter()
+                    .map(|platform_mapper| &(platform_mapper.platform))
+            })
+            .collect()
     }
 }
 
