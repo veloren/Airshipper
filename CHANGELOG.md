@@ -13,6 +13,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Fixed
 
+## [0.7.0] - 2022-03-10
+
+## Added
+- pretty print markdown changelog
+- support for multiple channels
+- better architecture support
+- specify env variables for Voxygen
+- added support for github releases as distribution channel
+
+## Fixed
+- switched to 64 bit ids, as 32 bit ids where running out
+
 ## [0.6.0] - 2021-08-31
 
 ## Added
@@ -141,4 +153,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.4.1]: https://github.com/veloren/Airshipper/releases/tag/v0.4.1
 [0.4.2]: https://github.com/veloren/Airshipper/releases/tag/v0.4.2
 [0.5.0]: https://github.com/veloren/Airshipper/releases/tag/v0.5.0
-[0.5.0]: https://github.com/veloren/Airshipper/releases/tag/v0.6.0
+[0.6.0]: https://github.com/veloren/Airshipper/releases/tag/v0.6.0
+[0.7.0]: https://github.com/veloren/Airshipper/releases/tag/v0.7.0
