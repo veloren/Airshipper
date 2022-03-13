@@ -17,6 +17,13 @@ use iced::{
 };
 use std::path::PathBuf;
 
+use lazy_static::lazy_static;
+use regex::Regex;
+
+lazy_static! {
+    static ref LOG_REGEX: Regex = Regex::new(r"(?:\x{1b}\[\dm)?(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{1,6}Z)(?:\x{1b}\[\dm\s+\x{1b}\[\d{2}m)?\s?(INFO|TRACE|DEBUG|ERROR|WARN)(?:\x{1b}\[\dm\s\x{1b}\[\dm)?\s?((?:[A-Za-z_]+:{0,2})+)\s?(.*)").unwrap();
+}
+
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DefaultView {
     changelog: Changelog,
@@ -435,7 +442,52 @@ impl DefaultView {
             },
             DefaultViewMessage::ProcessUpdate(update) => match update {
                 ProcessUpdate::Line(msg) => {
-                    tracing::info!(target: "output::Veloren","[Veloren] {}", msg);
+                    if let Some(cap) = LOG_REGEX.captures(&msg) {
+                        if let (Some(level), Some(target), Some(msg)) =
+                            (cap.get(2), cap.get(3), cap.get(4))
+                        {
+                            let target = target.as_str();
+                            let msg = msg.as_str();
+
+                            match level.as_str() {
+                                "TRACE" => tracing::trace!(
+                                    target: "voxygen",
+                                    "{} {}",
+                                    target,
+                                    msg,
+                                ),
+                                "DEBUG" => tracing::debug!(
+                                    target: "voxygen",
+                                    "{} {}",
+                                    target,
+                                    msg,
+                                ),
+                                "INFO" => tracing::info!(
+                                    target: "voxygen",
+                                    "{} {}",
+                                    target,
+                                    msg,
+                                ),
+                                "WARN" => tracing::warn!(
+                                    target: "voxygen",
+                                    "{} {}",
+                                    target,
+                                    msg,
+                                ),
+                                "ERROR" => tracing::error!(
+                                    target: "voxygen",
+                                    "{} {}",
+                                    target,
+                                    msg,
+                                ),
+                                _ => tracing::info!(target: "voxygen","{}", msg),
+                            }
+                        } else {
+                            tracing::info!(target: "voxygen","{}", msg);
+                        }
+                    } else {
+                        tracing::info!(target: "voxygen","{}", msg);
+                    }
                 },
                 ProcessUpdate::Exit(code) => {
                     tracing::debug!("Veloren exited with {}", code);

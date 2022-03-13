@@ -1,7 +1,7 @@
 //! Deals with all filesystem specific details
 
 use crate::{consts, profiles::Profile, Result};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 lazy_static::lazy_static! {
     // Base for config, profiles, ...
@@ -53,9 +53,9 @@ pub fn log_file() -> PathBuf {
     BASE_PATH.join(consts::LOG_FILE)
 }
 
-/// Returns path to the file where the logs will be stored
-pub fn log_path_file() -> (PathBuf, String) {
-    (BASE_PATH.to_path_buf(), consts::LOG_FILE.to_owned())
+/// Returns log-directory and log-file
+pub fn log_path_file() -> (&'static Path, &'static str) {
+    (&BASE_PATH, consts::LOG_FILE)
 }
 
 /// Extracts downloaded zip file and deletes it after successful extraction.

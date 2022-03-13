@@ -73,6 +73,7 @@ dependencies = [
  "opener",
  "openssl-sys",
  "pulldown-cmark 0.8.0",
+ "regex",
  "reqwest",
  "ron 0.6.4",
  "rss",
