@@ -1,7 +1,7 @@
 //! Deals with all filesystem specific details
 
 use crate::{consts, profiles::Profile, Result};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 lazy_static::lazy_static! {
     // Base for config, profiles, ...
@@ -53,11 +53,16 @@ pub fn log_file() -> PathBuf {
     BASE_PATH.join(consts::LOG_FILE)
 }
 
+/// Returns log-directory and log-file
+pub fn log_path_file() -> (&'static Path, &'static str) {
+    (&BASE_PATH, consts::LOG_FILE)
+}
+
 /// Extracts downloaded zip file and deletes it after successful extraction.
 ///
 /// Note: it's synchronous!
 pub fn unzip(profile: &Profile) -> Result<()> {
-    log::info!("Unzipping to {:?}", profile.directory());
+    tracing::info!("Unzipping to {:?}", profile.directory());
     let mut zip_file =
         std::fs::File::open(&profile.directory().join(consts::DOWNLOAD_FILE))?;
 
@@ -88,7 +93,7 @@ pub fn unzip(profile: &Profile) -> Result<()> {
     }
 
     // Delete downloaded zip
-    log::trace!("Extracted files, deleting zip archive.");
+    tracing::trace!("Extracted files, deleting zip archive.");
     std::fs::remove_file(profile.directory().join(consts::DOWNLOAD_FILE))?;
 
     Ok(())

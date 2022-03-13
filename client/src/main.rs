@@ -23,8 +23,8 @@ fn main() {
     error::panic_hook();
 
     if let Err(e) = cli::process() {
-        log::error!("{}", e);
-        log::info!("Press enter to exit...");
+        tracing::error!("{}", e);
+        tracing::info!("Press enter to exit...");
         let _ = std::io::stdin().read_line(&mut String::new());
     }
 }

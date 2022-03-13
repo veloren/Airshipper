@@ -44,7 +44,7 @@ pub fn is_nixos() -> Result<bool> {
 ///
 /// Note: it's synchronous!
 pub fn patch_elf(voxygen_file: &Path, server_cli_file: &Path) -> Result<()> {
-    log::info!("Patching voxygen and server CLI executable files");
+    tracing::info!("Patching voxygen and server CLI executable files");
 
     let parent_dir = voxygen_file
         .parent()

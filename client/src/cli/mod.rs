@@ -6,33 +6,35 @@ use iced::futures::stream::StreamExt;
 use crate::profiles::LogLevel;
 use gui::Airshipper;
 pub use parse::CmdLine;
+use tracing::level_filters::LevelFilter;
 
 /// Process command line arguments and optionally starts GUI
 pub fn process() -> Result<()> {
     let mut cmd = CmdLine::new();
 
     let level = match cmd.debug {
-        0 => log::LevelFilter::Info,
-        1 => log::LevelFilter::Debug,
-        2 => log::LevelFilter::Trace,
-        _ => log::LevelFilter::Trace,
+        0 => LevelFilter::INFO,
+        1 => LevelFilter::DEBUG,
+        2 => LevelFilter::TRACE,
+        _ => LevelFilter::TRACE,
     };
 
-    logger::log(level);
+    let log = fs::log_path_file();
+    let _guard = logger::init(Some((log.0, log.1)), level);
 
-    log::debug!("Running on {}", std::env::consts::OS);
-    log::debug!("Base Path: {}", fs::base_path());
-    log::debug!("Log file: {}", fs::log_file().display());
+    tracing::debug!("Running on {}", std::env::consts::OS);
+    tracing::debug!("Base Path: {}", fs::base_path());
+    tracing::debug!("Log file: {}", fs::log_file().display());
     #[cfg(windows)]
-    log::debug!("Cache Path: {}", fs::get_cache_path().display());
-    log::debug!("Cmdline args: {:?}", cmd);
+    tracing::debug!("Cache Path: {}", fs::get_cache_path().display());
+    tracing::debug!("Cmdline args: {:?}", cmd);
 
     // GUI
     if cmd.action.is_none() {
         match gui::run(cmd.clone()) {
             Ok(_) => return Ok(()),
             Err(_) => {
-                log::error!("Failed to start GUI. Falling back to terminal...");
+                tracing::error!("Failed to start GUI. Falling back to terminal...");
                 cmd.action = Some(Action::Run);
             },
         }
@@ -96,23 +98,23 @@ async fn process_arguments(
 async fn update(profile: &mut Profile, do_not_ask: bool) -> Result<()> {
     if let Some(version) = Profile::update(profile.clone()).await? {
         if do_not_ask {
-            log::info!("Updating...");
+            tracing::info!("Updating...");
             download(profile.clone()).await?;
-            log::info!("Extracting...");
+            tracing::info!("Extracting...");
             *profile = Profile::install(profile.clone(), version).await?;
-            log::info!("Done!");
+            tracing::info!("Done!");
         } else {
-            log::info!("Update found, do you want to update? [Y/n]");
+            tracing::info!("Update found, do you want to update? [Y/n]");
             if confirm_action()? {
-                log::info!("Updating...");
+                tracing::info!("Updating...");
                 download(profile.clone()).await?;
-                log::info!("Extracting...");
+                tracing::info!("Extracting...");
                 *profile = Profile::install(profile.clone(), version).await?;
-                log::info!("Done!");
+                tracing::info!("Done!");
             }
         }
     } else {
-        log::info!("Profile already up-to-date.");
+        tracing::info!("Profile already up-to-date.");
     }
     Ok(())
 }
@@ -145,17 +147,19 @@ async fn download(profile: Profile) -> Result<()> {
 
 async fn start(profile: &mut Profile) -> Result<()> {
     if !profile.installed() {
-        log::info!("Profile is not installed. Install it via `airshipper update`");
+        tracing::info!("Profile is not installed. Install it via `airshipper update`");
         return Ok(());
     }
 
-    log::info!("Starting...");
+    tracing::info!("Starting...");
     let mut stream = crate::io::stream_process(&mut Profile::start(profile))?.boxed();
 
     while let Some(progress) = stream.next().await {
         match progress {
-            io::ProcessUpdate::Line(line) => log::info!("[Veloren] {}", line),
-            io::ProcessUpdate::Exit(exit) => log::info!("Veloren exited with {}", exit),
+            io::ProcessUpdate::Line(line) => tracing::info!("[Veloren] {}", line),
+            io::ProcessUpdate::Exit(exit) => {
+                tracing::info!("Veloren exited with {}", exit)
+            },
             io::ProcessUpdate::Error(e) => return Err(e.into()),
         }
     }
@@ -166,10 +170,10 @@ async fn start(profile: &mut Profile) -> Result<()> {
 fn upgrade() -> Result<()> {
     match crate::windows::query()? {
         Some(release) => {
-            log::info!("Found new Airshipper release: {}", release.version);
+            tracing::info!("Found new Airshipper release: {}", release.version);
             crate::windows::update(&release)?;
         },
-        None => log::info!("Airshipper is up-to-date."),
+        None => tracing::info!("Airshipper is up-to-date."),
     }
     Ok(())
 }
