@@ -20,7 +20,7 @@ pub fn process() -> Result<()> {
     };
 
     let log = fs::log_path_file();
-    let _guard = logger::init(Some((&log.0, &log.1)), level);
+    let _guard = logger::init(Some((log.0, log.1)), level);
 
     tracing::debug!("Running on {}", std::env::consts::OS);
     tracing::debug!("Base Path: {}", fs::base_path());
