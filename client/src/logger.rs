@@ -16,41 +16,51 @@ pub fn init(log_path_file: Option<(&Path, &str)>, level: LevelFilter) -> Vec<imp
     let mut guards: Vec<WorkerGuard> = Vec::new();
     let terminal = || StandardStream::stdout(ColorChoice::Auto);
 
-    let base_exceptions = |env: EnvFilter| {
-        env.add_directive("html5ever=error".parse().unwrap())
-            .add_directive("winit=error".parse().unwrap())
-            .add_directive("wgpu_native=info".parse().unwrap())
-            .add_directive("strip_markdown=warn".parse().unwrap())
-            .add_directive("tokio_reactor=warn".parse().unwrap())
-            .add_directive("h2=info".parse().unwrap())
-            .add_directive("hyper=warn".parse().unwrap())
-            .add_directive("iced_wgpu::renderer=warn".parse().unwrap())
-            .add_directive("iced_winit=info".parse().unwrap())
-            .add_directive("iced_wgpu::image::atlas=warn".parse().unwrap())
-            .add_directive("wgpu_core=warn".parse().unwrap())
-            .add_directive("wgpu=warn".parse().unwrap())
-            .add_directive("iced_wgpu::backend=warn".parse().unwrap())
-            .add_directive("reqwest=info".parse().unwrap())
-            .add_directive("gpu_alloc=warn".parse().unwrap())
-            .add_directive("naga=info".parse().unwrap())
-            .add_directive("rustls=info".parse().unwrap())
-            .add_directive("want=info".parse().unwrap())
-            .add_directive(level.into())
-    };
+    let mut filter = EnvFilter::default().add_directive(level.into());
 
-    let filter = match std::env::var_os(RUST_LOG_ENV).map(|s| s.into_string()) {
-        Some(Ok(env)) => {
-            let mut filter = base_exceptions(EnvFilter::new(""));
-            for s in env.split(',').into_iter() {
+    let default_directives = [
+        "html5ever=error",
+        "winit=error",
+        "wgpu_native=info",
+        "strip_markdown=warn",
+        "tokio_reactor=warn",
+        "h2=info",
+        "hyper=warn",
+        "iced_wgpu::renderer=warn",
+        "iced_winit=info",
+        "iced_wgpu::image::atlas=warn",
+        "wgpu_core=warn",
+        "wgpu=warn",
+        "iced_wgpu::backend=warn",
+        "reqwest=info",
+        "gpu_alloc=warn",
+        "naga=info",
+        "rustls=info",
+        "want=info",
+    ];
+
+    for s in default_directives {
+        filter = filter.add_directive(s.parse().unwrap());
+    }
+
+    match std::env::var(RUST_LOG_ENV) {
+        Ok(env) => {
+            for s in env.split(',') {
                 match s.parse() {
                     Ok(d) => filter = filter.add_directive(d),
-                    Err(err) => println!("WARN ignoring log directive: `{}`: {}", s, err),
-                };
+                    Err(err) => eprintln!("WARN ignoring log directive: `{s}`: {err}"),
+                }
             }
-            filter
         },
-        _ => base_exceptions(EnvFilter::from_env(RUST_LOG_ENV)),
+        Err(std::env::VarError::NotUnicode(os_string)) => {
+            eprintln!(
+                "WARN ignoring log directives due to non-unicode data: {os_string:?}"
+            );
+        },
+        Err(std::env::VarError::NotPresent) => {},
     };
+
+    let filter = filter; // mutation is done
 
     let registry = registry();
     let mut file_setup = false;
@@ -77,12 +87,11 @@ pub fn init(log_path_file: Option<(&Path, &str)>, level: LevelFilter) -> Vec<imp
 
         match std::fs::create_dir_all(path) {
             Ok(_) => {
-                let file_appender = tracing_appender::rolling::never(path, file); // It is actually rolling daily since the log name is changing daily
+                let file_appender = tracing_appender::rolling::never(path, file);
                 let (non_blocking_file, file_guard) =
                     tracing_appender::non_blocking(file_appender);
                 guards.push(file_guard);
                 file_setup = true;
-                let filter = filter.add_directive("output::Veloren=off".parse().unwrap());
                 registry
                     .with(
                         tracing_subscriber::fmt::layer()
