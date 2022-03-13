@@ -40,7 +40,7 @@ impl News {
                 if version != remote_version {
                     return Ok(Some(Self::fetch().await?));
                 } else {
-                    log::debug!("News up-to-date.");
+                    tracing::debug!("News up-to-date.");
                     Ok(None)
                 }
             },

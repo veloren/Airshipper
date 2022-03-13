@@ -47,10 +47,13 @@ indicatif = "0.16"
 iced = { git = "https://github.com/hecrj/iced.git", rev = "2d65621a3b680457e689b93c800e74f726ffc175", default-features = false, features = ["wgpu", "tokio", "image"] }
 iced_native = { git = "https://github.com/hecrj/iced.git", rev = "2d65621a3b680457e689b93c800e74f726ffc175" }
 # Logging
-fern = { version = "0.6.0", features = ["colored"] }
-colored = "2.0"
-chrono = "0.4.19"
-log = "0.4.11"
+tracing = { version = "0.1.21", features = ["log"] }
+tracing-futures = "0.2.4"
+tracing-subscriber = { version = "0.3.7", default-features = false, features = ["env-filter", "fmt", "time", "ansi", "smallvec", "tracing-log"]}
+termcolor = "1.1.3"
+tracing-appender = "0.2.0"
+tracing-log = "0.1.1"
+regex = "1.5"
 # Networking
 reqwest = { version = "0.11.4", default-features = false, features = ["rustls-tls"] }
 # Parsing

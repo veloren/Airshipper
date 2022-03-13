@@ -36,6 +36,7 @@ enum State {
 }
 
 pub(crate) fn download(url: String, location: PathBuf) -> impl Stream<Item = Progress> {
+    tracing::debug!(?url, ?location, "start downloading");
     futures::stream::unfold(State::Ready(url, location), |state| async move {
         match state {
             State::Ready(url, location) => {

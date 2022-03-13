@@ -97,11 +97,19 @@ impl Server {
     }
 }
 
-#[derive(Debug, derive_more::Display, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Channel {
     Nightly,
     /* TODO: Release,
      * TODO: Source, */
+}
+
+impl std::fmt::Display for Channel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Channel::Nightly => write!(f, "nightly"),
+        }
+    }
 }
 
 impl Profile {
@@ -195,15 +203,15 @@ impl Profile {
 
         let (env_vars, env_var_errors) = parse_env_vars(&profile.env_vars);
         for err in env_var_errors {
-            log::error!("Environment variable error: {}", err);
+            tracing::error!("Environment variable error: {}", err);
         }
         for (var, value) in env_vars {
             envs.insert(var, OsString::from(value));
         }
 
-        log::debug!("Launching {}", profile.voxygen_path().display());
-        log::debug!("CWD: {:?}", profile.directory());
-        log::debug!("ENV: {:?}", envs);
+        tracing::debug!("Launching {}", profile.voxygen_path().display());
+        tracing::debug!("CWD: {:?}", profile.directory());
+        tracing::debug!("ENV: {:?}", envs);
 
         let mut cmd = Command::new(profile.voxygen_path());
         cmd.current_dir(&profile.directory());

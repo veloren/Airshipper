@@ -17,6 +17,13 @@ use iced::{
 };
 use std::path::PathBuf;
 
+use lazy_static::lazy_static;
+use regex::Regex;
+
+lazy_static! {
+    static ref LOG_REGEX: Regex = Regex::new(r"(?:\x{1b}\[\dm)?(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{1,6}Z)(?:\x{1b}\[\dm\s+\x{1b}\[\d{2}m)?\s?(INFO|TRACE|DEBUG|ERROR|WARN)(?:\x{1b}\[\dm\s\x{1b}\[\dm)?\s?((?:[A-Za-z_]+:{0,2})+)\s?(.*)").unwrap();
+}
+
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DefaultView {
     changelog: Changelog,
@@ -392,7 +399,7 @@ impl DefaultView {
                 },
                 Ok(None) => {},
                 Err(e) => {
-                    log::trace!("Failed to update changelog: {}", e);
+                    tracing::trace!("Failed to update changelog: {}", e);
                 },
             },
             DefaultViewMessage::NewsUpdate(update) => match update {
@@ -405,7 +412,7 @@ impl DefaultView {
                 },
                 Ok(None) => {},
                 Err(e) => {
-                    log::trace!("Failed to update news: {}", e);
+                    tracing::trace!("Failed to update news: {}", e);
                 },
             },
             DefaultViewMessage::GameUpdate(update) => match update {
@@ -435,10 +442,55 @@ impl DefaultView {
             },
             DefaultViewMessage::ProcessUpdate(update) => match update {
                 ProcessUpdate::Line(msg) => {
-                    log::info!(target: "output::Veloren","[Veloren] {}", msg);
+                    if let Some(cap) = LOG_REGEX.captures(&msg) {
+                        if let (Some(level), Some(target), Some(msg)) =
+                            (cap.get(2), cap.get(3), cap.get(4))
+                        {
+                            let target = target.as_str();
+                            let msg = msg.as_str();
+
+                            match level.as_str() {
+                                "TRACE" => tracing::trace!(
+                                    target: "voxygen",
+                                    "{} {}",
+                                    target,
+                                    msg,
+                                ),
+                                "DEBUG" => tracing::debug!(
+                                    target: "voxygen",
+                                    "{} {}",
+                                    target,
+                                    msg,
+                                ),
+                                "INFO" => tracing::info!(
+                                    target: "voxygen",
+                                    "{} {}",
+                                    target,
+                                    msg,
+                                ),
+                                "WARN" => tracing::warn!(
+                                    target: "voxygen",
+                                    "{} {}",
+                                    target,
+                                    msg,
+                                ),
+                                "ERROR" => tracing::error!(
+                                    target: "voxygen",
+                                    "{} {}",
+                                    target,
+                                    msg,
+                                ),
+                                _ => tracing::info!(target: "voxygen","{}", msg),
+                            }
+                        } else {
+                            tracing::info!(target: "voxygen","{}", msg);
+                        }
+                    } else {
+                        tracing::info!(target: "voxygen","{}", msg);
+                    }
                 },
                 ProcessUpdate::Exit(code) => {
-                    log::debug!("Veloren exited with {}", code);
+                    tracing::debug!("Veloren exited with {}", code);
                     self.state = State::QueryingForUpdates(false);
                     return Command::perform(
                         Profile::update(active_profile.clone()),
@@ -446,7 +498,7 @@ impl DefaultView {
                     );
                 },
                 ProcessUpdate::Error(err) => {
-                    log::error!(
+                    tracing::error!(
                         "Failed to receive an update from Veloren process! {}",
                         err
                     );
@@ -455,7 +507,7 @@ impl DefaultView {
             },
             DefaultViewMessage::DownloadProgress(progress) => match progress {
                 net::Progress::Errored(err) => {
-                    log::error!("Download failed with: {}", err);
+                    tracing::error!("Download failed with: {}", err);
                     self.state = State::Retry;
                     let mut profile = active_profile.clone();
                     profile.version = None;
@@ -489,7 +541,7 @@ impl DefaultView {
                     );
                 },
                 Err(e) => {
-                    log::error!("Installation failed with: {}", e);
+                    tracing::error!("Installation failed with: {}", e);
                     self.state = State::Retry;
                     let mut profile = active_profile.clone();
                     profile.version = None;
@@ -574,11 +626,11 @@ impl DefaultView {
                 },
                 Interaction::ReadMore(url) => {
                     if let Err(e) = opener::open(&url) {
-                        log::error!("failed to open {} : {}", url, e);
+                        tracing::error!("failed to open {} : {}", url, e);
                     }
                 },
                 Interaction::ServerChanged(new_server) => {
-                    log::debug!("new server selected {}", new_server);
+                    tracing::debug!("new server selected {}", new_server);
                     self.state = State::QueryingForUpdates(false);
                     let mut profile = active_profile.clone();
                     profile.server = new_server;
@@ -624,7 +676,7 @@ impl DefaultView {
                 },
                 Interaction::OpenLogsPressed => {
                     if let Err(e) = opener::open(active_profile.voxygen_logs_path()) {
-                        log::error!("Failed to open logs dir: {:?}", e);
+                        tracing::error!("Failed to open logs dir: {:?}", e);
                     }
                 },
                 Interaction::EnvVarsChanged(vars) => {
