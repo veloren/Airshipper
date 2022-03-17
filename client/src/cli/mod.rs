@@ -46,7 +46,7 @@ pub fn process() -> Result<()> {
     // let the user know incase airshipper can be updated.
     #[cfg(windows)]
     if let Ok(Some(release)) = crate::windows::query() {
-        log::info!(
+        tracing::info!(
             "New Airshipper release found: {}. Run `airshipper upgrade` to update.",
             release.version
         );
