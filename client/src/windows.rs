@@ -40,10 +40,10 @@ pub fn query() -> Result<Option<Release>> {
                 .or_else(|| latest_release.asset_for(".msi"))
                 .is_some()
         {
-            log::debug!("Found new Airshipper release: {}", &latest_release.version);
+            tracing::debug!("Found new Airshipper release: {}", &latest_release.version);
             return Ok(Some(latest_release.clone()));
         } else {
-            log::debug!("Airshipper is up-to-date.");
+            tracing::debug!("Airshipper is up-to-date.");
         }
     }
     Ok(None)
@@ -60,8 +60,8 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
 
     // Check Github release provides artifact for current platform
     if let Some(asset) = asset {
-        log::debug!("Found asset: {:?}", asset);
-        log::debug!(
+        tracing::debug!("Found asset: {:?}", asset);
+        tracing::debug!(
             "Downloading '{}' to '{}'",
             &asset.download_url,
             fs::get_cache_path().join(&asset.name).display()
@@ -81,7 +81,7 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
 
         // Extract installer incase it's zipped
         if asset.name.ends_with(".zip") {
-            log::debug!("Extracting asset...");
+            tracing::debug!("Extracting asset...");
             self_update::Extract::from_source(&msi_file_path)
                 .archive(self_update::ArchiveKind::Zip)
                 .extract_file(
@@ -92,7 +92,7 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
 
         drop(msi_file);
 
-        log::debug!("Starting installer...");
+        tracing::debug!("Starting installer...");
         // Execute msi installer
         let result = windows::execute_as_admin(
             "msiexec",
@@ -106,7 +106,7 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
         );
 
         if result <= 32 {
-            log::error!(
+            tracing::error!(
                 "Failed to update airshipper! {}",
                 std::io::Error::last_os_error()
             );
