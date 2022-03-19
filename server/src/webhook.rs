@@ -43,7 +43,7 @@ pub async fn process(
 }
 
 async fn transfer(
-    artifact: Artifact,
+    mut artifact: Artifact,
     channel: &config::Channel,
     db: &mut crate::DbConnection,
 ) -> Result<()> {
@@ -81,8 +81,9 @@ async fn transfer(
             let upload_to_github_result =
                 upload_to_github_release(&artifact.file_name, github_release_config)
                     .await;
-            if let Err(e) = upload_to_github_result {
-                tracing::error!(?e, "Couldn't upload to github");
+            match upload_to_github_result {
+                Ok(download_url) => artifact.download_uri = download_url.to_string(),
+                Err(e) => tracing::error!(?e, "Couldn't upload to github"),
             }
         }
 
