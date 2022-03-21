@@ -11,13 +11,9 @@ use winapi::{
     ctypes::c_int,
     shared::minwindef::DWORD,
     um::{
-        consoleapi::GetConsoleMode,
-        handleapi::INVALID_HANDLE_VALUE,
-        processenv::GetStdHandle,
         processthreadsapi::GetCurrentProcessId,
         shellapi::ShellExecuteW,
-        winbase::STD_OUTPUT_HANDLE,
-        wincon::{GetConsoleWindow, ENABLE_VIRTUAL_TERMINAL_PROCESSING},
+        wincon::GetConsoleWindow,
         winuser::{GetWindowThreadProcessId, ShowWindow, SW_HIDE, SW_SHOW},
     },
 };
