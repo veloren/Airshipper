@@ -68,11 +68,7 @@ async fn build() -> Result<rocket::Rocket<rocket::Build>> {
             routes::user::favicon,
             routes::api::channels,
             routes::api::version,
-            routes::api::channel_version,
-            routes::api::channel_platform_version,
             routes::api::download,
-            routes::api::channel_download,
-            routes::api::channel_platform_download,
             routes::metrics::metrics,
         ])
         .mount(
