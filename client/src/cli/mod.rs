@@ -28,6 +28,7 @@ pub fn process() -> Result<()> {
     #[cfg(windows)]
     tracing::debug!("Cache Path: {}", fs::get_cache_path().display());
     tracing::debug!("Cmdline args: {:?}", cmd);
+    tracing::info!("Visit https://book.veloren.net/ for an FAQ and Troubleshooting");
 
     // GUI
     if cmd.action.is_none() {
