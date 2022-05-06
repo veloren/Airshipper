@@ -95,18 +95,47 @@ impl Filter {
         &self,
         pipeline: &crate::models::PipelineUpdate,
         build_id: usize,
-    ) -> bool {
+    ) -> Result<(), String> {
         match self {
             Filter::Stage { regex } => match pipeline.builds.get(build_id) {
-                Some(b) => regex.is_match(&b.stage),
-                None => false,
+                Some(b) => {
+                    if regex.is_match(&b.stage) {
+                        Ok(())
+                    } else {
+                        Err(format!(
+                            "Filter::Stage failed: {regex} doesn't match {}",
+                            &b.stage
+                        ))
+                    }
+                },
+                None => Err(format!(
+                    "Filter::Stage failed: no build for build_id={build_id}"
+                )),
             },
             Filter::TargetBranch { regex } => {
-                regex.is_match(&pipeline.object_attributes.branch)
+                if regex.is_match(&pipeline.object_attributes.branch) {
+                    Ok(())
+                } else {
+                    Err(format!(
+                        "Filter::TargetBranch failed: {regex} doesn't match {}",
+                        &pipeline.object_attributes.branch
+                    ))
+                }
             },
             Filter::BuildName { regex } => match pipeline.builds.get(build_id) {
-                Some(b) => regex.is_match(&b.name),
-                None => false,
+                Some(b) => {
+                    if regex.is_match(&b.name) {
+                        Ok(())
+                    } else {
+                        Err(format!(
+                            "Filter::BuildName failed: {regex} doesn't match {}",
+                            &b.name
+                        ))
+                    }
+                },
+                None => Err(format!(
+                    "Filter::BuildName failed: no build for build_id={build_id}"
+                )),
             },
             //Filter::Environment { regex} => write!(f, "Environment({})", regex),
             Filter::Variable { key, value } => {
@@ -116,8 +145,26 @@ impl Filter {
                     .iter()
                     .find(|f| key.is_match(&f.key))
                 {
-                    Some(v) => value.is_match(&v.value),
-                    None => false,
+                    Some(v) => {
+                        if value.is_match(&v.value) {
+                            Ok(())
+                        } else {
+                            Err(format!(
+                                "Filter::Variable failed: {value} doesn't match {}",
+                                &v.value
+                            ))
+                        }
+                    },
+                    None => Err(format!(
+                        "Filter::Variable failed: didn't found key {key} in regex vec {}",
+                        pipeline
+                            .object_attributes
+                            .variables
+                            .iter()
+                            .map(|v| v.key.to_string())
+                            .collect::<Vec<_>>()
+                            .join(",")
+                    )),
                 }
             },
         }
@@ -139,13 +186,11 @@ impl AndFilter {
         &self,
         pipeline: &crate::models::PipelineUpdate,
         build_id: usize,
-    ) -> bool {
+    ) -> Result<(), String> {
         for f in &self.0 {
-            if !f.apply(pipeline, build_id) {
-                return false;
-            }
+            f.apply(pipeline, build_id)?;
         }
-        true
+        Ok(())
     }
 }
 
@@ -255,7 +300,7 @@ mod tests {
                 created_at: Some("2022-03-03 16:37:55 UTC".to_owned()),
                 finished_at: Some("2022-03-03 17:21:30 UTC".to_owned()),
                 duration: Some(2613),
-                variables: vec!(),
+                variables: vec!(Variable{key: "foo".to_string(), value: "bar".to_string()}),
             },
             user: User {
                 name: "Marcel".to_owned(),
@@ -396,10 +441,13 @@ mod tests {
         let filter = Filter::Stage {
             regex: Regex::new("build").unwrap(),
         };
-        assert!(filter.apply(&p, 0));
-        assert!(filter.apply(&p, 1));
-        assert!(!filter.apply(&p, 2));
-        assert!(filter.apply(&p, 3));
+        assert!(filter.apply(&p, 0).is_ok());
+        assert!(filter.apply(&p, 1).is_ok());
+        assert_eq!(
+            filter.apply(&p, 2),
+            Err("Filter::Stage failed: build doesn't match publish".to_string())
+        );
+        assert!(filter.apply(&p, 3).is_ok());
     }
 
     #[test]
@@ -408,10 +456,19 @@ mod tests {
         let filter = Filter::Stage {
             regex: Regex::new(".*ublis.*").unwrap(),
         };
-        assert!(!filter.apply(&p, 0));
-        assert!(!filter.apply(&p, 1));
-        assert!(filter.apply(&p, 2));
-        assert!(!filter.apply(&p, 3));
+        assert_eq!(
+            filter.apply(&p, 0),
+            Err("Filter::Stage failed: .*ublis.* doesn't match build".to_string())
+        );
+        assert_eq!(
+            filter.apply(&p, 1),
+            Err("Filter::Stage failed: .*ublis.* doesn't match build".to_string())
+        );
+        assert!(filter.apply(&p, 2).is_ok());
+        assert_eq!(
+            filter.apply(&p, 3),
+            Err("Filter::Stage failed: .*ublis.* doesn't match build".to_string())
+        );
     }
 
     #[test]
@@ -420,10 +477,10 @@ mod tests {
         let filter = Filter::TargetBranch {
             regex: Regex::new("master").unwrap(),
         };
-        assert!(filter.apply(&p, 0));
-        assert!(filter.apply(&p, 1));
-        assert!(filter.apply(&p, 2));
-        assert!(filter.apply(&p, 3));
+        assert!(filter.apply(&p, 0).is_ok());
+        assert!(filter.apply(&p, 1).is_ok());
+        assert!(filter.apply(&p, 2).is_ok());
+        assert!(filter.apply(&p, 3).is_ok());
     }
 
     #[test]
@@ -432,10 +489,22 @@ mod tests {
         let filter = Filter::TargetBranch {
             regex: Regex::new("nightly").unwrap(),
         };
-        assert!(!filter.apply(&p, 0));
-        assert!(!filter.apply(&p, 1));
-        assert!(!filter.apply(&p, 2));
-        assert!(!filter.apply(&p, 3));
+        assert_eq!(
+            filter.apply(&p, 0),
+            Err("Filter::TargetBranch failed: nightly doesn't match master".to_string())
+        );
+        assert_eq!(
+            filter.apply(&p, 1),
+            Err("Filter::TargetBranch failed: nightly doesn't match master".to_string())
+        );
+        assert_eq!(
+            filter.apply(&p, 2),
+            Err("Filter::TargetBranch failed: nightly doesn't match master".to_string())
+        );
+        assert_eq!(
+            filter.apply(&p, 3),
+            Err("Filter::TargetBranch failed: nightly doesn't match master".to_string())
+        );
     }
 
     #[test]
@@ -444,10 +513,24 @@ mod tests {
         let filter = Filter::BuildName {
             regex: Regex::new("linux-.*").unwrap(),
         };
-        assert!(filter.apply(&p, 0));
-        assert!(!filter.apply(&p, 1));
-        assert!(!filter.apply(&p, 2));
-        assert!(!filter.apply(&p, 3));
+        assert!(filter.apply(&p, 0).is_ok());
+        assert_eq!(
+            filter.apply(&p, 1),
+            Err(
+                "Filter::BuildName failed: linux-.* doesn't match benchmarks".to_string()
+            )
+        );
+        assert_eq!(
+            filter.apply(&p, 2),
+            Err("Filter::BuildName failed: linux-.* doesn't match pages".to_string())
+        );
+        assert_eq!(
+            filter.apply(&p, 3),
+            Err(
+                "Filter::BuildName failed: linux-.* doesn't match macos-aarch64"
+                    .to_string()
+            )
+        );
     }
 
     #[test]
@@ -456,10 +539,42 @@ mod tests {
         let filter = Filter::BuildName {
             regex: Regex::new(".*-aarch64").unwrap(),
         };
-        assert!(!filter.apply(&p, 0));
-        assert!(!filter.apply(&p, 1));
-        assert!(!filter.apply(&p, 2));
-        assert!(filter.apply(&p, 3));
+        assert_eq!(
+            filter.apply(&p, 0),
+            Err(
+                "Filter::BuildName failed: .*-aarch64 doesn't match linux-x86_64"
+                    .to_string()
+            )
+        );
+        assert_eq!(
+            filter.apply(&p, 1),
+            Err(
+                "Filter::BuildName failed: .*-aarch64 doesn't match benchmarks"
+                    .to_string()
+            )
+        );
+        assert_eq!(
+            filter.apply(&p, 2),
+            Err("Filter::BuildName failed: .*-aarch64 doesn't match pages".to_string())
+        );
+        assert!(filter.apply(&p, 3).is_ok());
+    }
+
+    #[test]
+    // No token so only empty variable
+    fn filter_no_variable() {
+        let p = pipeline();
+        let filter = Filter::Variable {
+            key: Regex::new("^$").unwrap(),
+            value: Regex::new("^$").unwrap(),
+        };
+        assert_eq!(
+            filter.apply(&p, 0),
+            Err(
+                "Filter::Variable failed: didn't found key ^$ in regex vec foo"
+                    .to_string()
+            )
+        );
     }
 
     #[test]
@@ -467,10 +582,10 @@ mod tests {
     fn filter_variable() {
         let p = pipeline();
         let filter = Filter::Variable {
-            key: Regex::new("").unwrap(),
-            value: Regex::new("").unwrap(),
+            key: Regex::new("foo").unwrap(),
+            value: Regex::new("bar").unwrap(),
         };
-        assert!(!filter.apply(&p, 0));
+        assert!(filter.apply(&p, 0).is_ok());
     }
 
     #[test]
@@ -483,9 +598,23 @@ mod tests {
             regex: Regex::new("build").unwrap(),
         };
         let filter = AndFilter(vec![filter1, filter2]);
-        assert!(!filter.apply(&p, 0));
-        assert!(!filter.apply(&p, 1));
-        assert!(!filter.apply(&p, 2));
-        assert!(filter.apply(&p, 3));
+        assert_eq!(
+            filter.apply(&p, 0),
+            Err(
+                "Filter::BuildName failed: macos-.* doesn't match linux-x86_64"
+                    .to_string()
+            )
+        );
+        assert_eq!(
+            filter.apply(&p, 1),
+            Err(
+                "Filter::BuildName failed: macos-.* doesn't match benchmarks".to_string()
+            )
+        );
+        assert_eq!(
+            filter.apply(&p, 2),
+            Err("Filter::BuildName failed: macos-.* doesn't match pages".to_string())
+        );
+        assert!(filter.apply(&p, 3).is_ok());
     }
 }
