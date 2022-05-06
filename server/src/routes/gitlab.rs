@@ -38,11 +38,15 @@ pub async fn post_pipeline_update(
                         tracing::debug!(?channel, "Request rejected, no artifacts");
                         Ok(Status::Ok)
                     } else {
+                        for a in &artifacts {
+                            metrics.increment_artifact_upload(&a.os, &a.arch, &channel);
+                        }
+                        let c = channel.clone();
                         tokio::spawn(
                             webhook::process(artifacts, channel, db)
                                 .instrument(tracing::info_span!("")),
                         );
-                        metrics.uploads.inc();
+                        metrics.increment_upload(&c);
                         Ok(Status::Accepted)
                     }
                 },
