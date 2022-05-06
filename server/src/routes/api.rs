@@ -47,9 +47,9 @@ pub async fn download(
     arch: String,
     channel: String,
 ) -> Result<Redirect> {
-    match db.get_latest_uri(&os, &arch, channel).await? {
+    match db.get_latest_uri(&os, &arch, &channel).await? {
         Some(uri) => {
-            metrics.increment(&os, &arch);
+            metrics.increment_download(&os, &arch, &channel);
             Ok(Redirect::to(uri))
         },
         None => Err(Status::NotFound.into()),
