@@ -145,6 +145,8 @@ impl PipelineUpdate {
                         .append(&mut details.variables);
                 }
             }
+        } else {
+            tracing::trace!("skip variable extension, no gitlab token provided");
         }
         Ok(())
     }
