@@ -85,7 +85,12 @@ async fn process_arguments(
         Action::Update => update(profile, true).await?,
         Action::Start => start(profile).await?,
         Action::Run => {
-            update(profile, false).await?;
+            if let Err(e) = update(profile, false).await {
+                tracing::error!(
+                    ?e,
+                    "Couldn't update the game, starting installed version."
+                );
+            }
             start(profile).await?
         },
         #[cfg(windows)]
