@@ -19,8 +19,8 @@ A cross-platform Veloren launcher.
 #### Compile from source
 
 ```bash
-git clone https://github.com/veloren/Airshipper.git
-cd Airshipper
+git clone https://gitlab.com/veloren/airshipper.git
+cd airshipper
 cargo run --release
 ```
 
