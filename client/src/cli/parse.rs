@@ -1,9 +1,9 @@
 //! This module parses command line arguments and returns a parsed struct on which
 //! the GUI/CLI can act upon.
-use clap::{crate_authors, crate_version, Clap};
+use clap::{crate_authors, crate_version, Parser, Subcommand};
 
 /// Provides automatic updates for the voxel RPG Veloren. ( <https://veloren.net> )
-#[derive(Clap, Debug, Default, Clone)]
+#[derive(Parser, Debug, Default, Clone)]
 #[clap(name = "Airshipper", version = crate_version!(), author = crate_authors!())]
 pub struct CmdLine {
     #[clap(subcommand)]
@@ -16,7 +16,7 @@ pub struct CmdLine {
     pub debug: i32,
 }
 
-#[derive(Clap, Debug, Clone)]
+#[derive(Debug, Clone, Subcommand)]
 pub enum Action {
     /// Starts the game without updating.
     Start,
