@@ -4,7 +4,7 @@ use crate::{
     gui::views::default::{DefaultViewMessage, Interaction},
     net, Result,
 };
-use iced::{scrollable, Element};
+use iced::pure::{column, container, scrollable, text, Element};
 use rss::Channel;
 use serde::{Deserialize, Serialize};
 
@@ -12,9 +12,6 @@ use serde::{Deserialize, Serialize};
 pub struct News {
     posts: Vec<Post>,
     pub etag: String,
-
-    #[serde(skip)]
-    news_scrollable_state: scrollable::State,
 }
 
 impl News {
@@ -29,11 +26,10 @@ impl News {
         Ok(News {
             posts: feed.items().iter().take(15).map(Post::from).collect(),
             etag,
-            ..Default::default()
         })
     }
 
-    /// Returns new News incase remote one is newer
+    /// Returns new News in case remote one is newer
     pub(crate) async fn update(version: String) -> Result<Option<Self>> {
         match net::query_etag(consts::NEWS_URL).await? {
             Some(remote_version) => {
@@ -50,19 +46,17 @@ impl News {
         }
     }
 
-    pub(crate) fn view(&mut self) -> Element<DefaultViewMessage> {
+    pub(crate) fn view(&self) -> Element<DefaultViewMessage> {
         use crate::gui::style;
-        use iced::{Container, Length, Scrollable};
+        use iced::Length;
 
-        let mut news = Scrollable::new(&mut self.news_scrollable_state)
-            .spacing(20)
-            .padding(25);
+        let mut news = column().spacing(20).padding(25);
 
-        for post in &mut self.posts {
+        for post in &self.posts {
             news = news.push(post.view());
         }
 
-        Container::new(news)
+        container(scrollable(news))
             .width(Length::FillPortion(2))
             .height(Length::Fill)
             .style(style::News)
@@ -75,25 +69,20 @@ pub(crate) struct Post {
     pub title: String,
     pub description: String,
     pub button_url: String,
-
-    #[serde(skip)]
-    pub btn_state: iced::button::State,
 }
 
 impl Post {
-    pub(crate) fn view(&mut self) -> Element<DefaultViewMessage> {
+    pub(crate) fn view(&self) -> Element<DefaultViewMessage> {
         use crate::gui::views::default::secondary_button;
-        use iced::{Column, Text};
 
-        Column::new()
+        column()
             .push(
-                Text::new(&self.title)
+                text(&self.title)
                     .font(HAXRCORP_4089_FONT)
                     .size(HAXRCORP_4089_FONT_SIZE_2),
             )
-            .push(Text::new(&self.description).size(18))
+            .push(text(&self.description).size(18))
             .push(secondary_button(
-                &mut self.btn_state,
                 "Read More",
                 Interaction::ReadMore(self.button_url.clone()),
             ))
@@ -123,8 +112,6 @@ impl From<&rss::Item> for Post {
             title: post.title().unwrap_or("Missing title").into(),
             description: Self::process_description(post.description()),
             button_url: post.link().unwrap_or("https://www.veloren.net").into(),
-
-            btn_state: Default::default(),
         }
     }
 }

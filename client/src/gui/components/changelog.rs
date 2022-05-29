@@ -4,7 +4,10 @@ use crate::{
     gui::views::default::{secondary_button, DefaultViewMessage, Interaction},
     net, Result,
 };
-use iced::{button, scrollable, Column, Element, Length, Row, Rule, Scrollable, Text};
+use iced::{
+    pure::{column, row, scrollable, text, Element},
+    Length, Rule,
+};
 use pulldown_cmark::{Event, Options, Parser, Tag};
 use serde::{Deserialize, Serialize};
 
@@ -12,19 +15,6 @@ use serde::{Deserialize, Serialize};
 pub struct Changelog {
     pub versions: Vec<ChangelogVersion>,
     pub etag: String,
-
-    #[serde(skip)]
-    changelog_scrollable_state: scrollable::State,
-    #[serde(skip)]
-    read_on_gitlab_btn: button::State,
-    #[serde(skip)]
-    show_more_btn: button::State,
-    #[serde(skip)]
-    show_less_btn: button::State,
-    #[serde(skip)]
-    show_all_btn: button::State,
-    #[serde(skip)]
-    show_latest_only_btn: button::State,
     #[serde(skip)]
     pub display_count: usize,
 }
@@ -157,7 +147,6 @@ impl Changelog {
             etag,
             versions,
             display_count: 2,
-            ..Default::default()
         })
     }
 
@@ -172,57 +161,50 @@ impl Changelog {
                     Ok(None)
                 }
             },
-            // We query the changelog incase there's no etag to be found
+            // We query the changelog in case there's no etag to be found
             // to make sure the player stays informed.
             None => Ok(Some(Self::fetch().await?)),
         }
     }
 
-    pub fn view(&mut self) -> Element<DefaultViewMessage> {
-        let mut changelog = Scrollable::new(&mut self.changelog_scrollable_state)
-            .height(Length::Fill)
-            .padding(15)
-            .spacing(20);
+    pub fn view(&self) -> Element<DefaultViewMessage> {
+        let mut changelog = column().padding(15).spacing(10);
 
         for version in &mut self.versions.iter().take(self.display_count as usize) {
             changelog = changelog.push(version.view());
         }
 
-        changelog
+        let changelog = changelog
             .push(
-                Row::new()
+                row()
                     .spacing(10)
                     .push(secondary_button(
-                        &mut self.show_more_btn,
                         "Show More",
                         Interaction::SetChangelogDisplayCount(
                             self.display_count.saturating_add(1),
                         ),
                     ))
                     .push(secondary_button(
-                        &mut self.show_less_btn,
                         "Show Less",
                         Interaction::SetChangelogDisplayCount(
                             self.display_count.saturating_sub(1),
                         ),
                     ))
                     .push(secondary_button(
-                        &mut self.show_all_btn,
                         "Show All",
                         Interaction::SetChangelogDisplayCount(self.versions.len()),
                     ))
                     .push(secondary_button(
-                        &mut self.show_latest_only_btn,
                         "Show Latest Only",
                         Interaction::SetChangelogDisplayCount(1),
                     )),
             )
             .push(secondary_button(
-                &mut self.read_on_gitlab_btn,
                 "Read Changelog on Gitlab",
                 Interaction::ReadMore(consts::CHANGELOG_URL_LINK.to_owned()),
-            ))
-            .into()
+            ));
+
+        scrollable(changelog).height(Length::Fill).into()
     }
 }
 
@@ -244,10 +226,10 @@ impl ChangelogVersion {
             },
         };
 
-        let mut version = Column::new().spacing(10).push(
-            Column::new()
+        let mut version = column().spacing(10).push(
+            column()
                 .push(
-                    Text::new(version_string)
+                    text(version_string)
                         .font(HAXRCORP_4089_FONT)
                         .size(HAXRCORP_4089_FONT_SIZE_2),
                 )
@@ -255,18 +237,15 @@ impl ChangelogVersion {
         );
 
         for note in &self.notes {
-            version = version.push(Text::new(note).size(18));
+            version = version.push(text(note).size(18));
         }
 
         for (section_name, section_lines) in &self.sections {
-            let mut section = Column::new().push(Text::new(section_name).size(22));
+            let mut section = column().push(text(section_name).size(22));
 
             for line in section_lines {
-                section = section.push(
-                    Row::new()
-                        .push(Text::new(" • ").size(18))
-                        .push(Text::new(line).size(18)),
-                );
+                section = section
+                    .push(row().push(text(" • ").size(18)).push(text(line).size(18)));
             }
 
             version = version.push(section);
