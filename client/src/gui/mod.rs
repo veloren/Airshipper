@@ -4,7 +4,10 @@ mod subscriptions;
 mod views;
 
 use crate::{cli::CmdLine, fs, profiles::Profile, Result};
-use iced::{Application, Command, Element, Settings, Subscription};
+use iced::{
+    pure::{Application, Element},
+    Command, Settings, Subscription,
+};
 use ron::ser::PrettyConfig;
 use tokio::{fs::File, io::AsyncWriteExt};
 #[cfg(windows)]
@@ -226,7 +229,7 @@ impl Application for Airshipper {
         Command::none()
     }
 
-    fn view(&mut self) -> Element<Message> {
+    fn view(&self) -> Element<Message> {
         let Self {
             view, default_view, ..
         } = self;

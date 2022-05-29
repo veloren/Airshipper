@@ -12,12 +12,12 @@ use crate::{
 };
 use iced::{
     alignment::{Horizontal, Vertical},
-    button,
     image::Handle,
-    pick_list, text_input,
+    pure::{
+        button, column, container, pick_list, row, text, text_input, tooltip, Element,
+    },
     tooltip::Position,
-    Alignment, Button, Column, Command, Container, Element, Image, Length, PickList,
-    ProgressBar, Row, Text, TextInput, Tooltip,
+    Alignment, Command, Image, Length, ProgressBar,
 };
 use std::path::PathBuf;
 
@@ -34,25 +34,10 @@ pub struct DefaultView {
     news: News,
     #[serde(skip)]
     state: State,
-
-    #[serde(skip)]
-    play_button_state: button::State,
-    #[serde(skip)]
-    settings_button_state: button::State,
-    #[serde(skip)]
-    open_logs_button_state: button::State,
-    #[serde(skip)]
-    server_picker_state: pick_list::State<profiles::Server>,
-    #[serde(skip)]
-    wgpu_backend_picker_state: pick_list::State<profiles::WgpuBackend>,
-    #[serde(skip)]
-    log_level_picker_state: pick_list::State<profiles::LogLevel>,
     #[serde(skip)]
     download_progress: Option<net::Progress>,
     #[serde(skip)]
     show_settings: bool,
-    #[serde(skip)]
-    env_var_state: text_input::State,
 }
 
 #[derive(Debug, Clone)]
@@ -128,23 +113,23 @@ impl DefaultView {
         }
     }
 
-    pub fn view(&mut self, active_profile: &Profile) -> Element<DefaultViewMessage> {
+    pub fn view(&self, active_profile: &Profile) -> Element<DefaultViewMessage> {
         let Self {
             changelog,
             news,
             state,
-            play_button_state,
-            settings_button_state,
+            //play_button_state,
+            //settings_button_state,
             download_progress,
             ..
         } = self;
 
-        let logo = Container::new(
+        let logo = container(
             Image::new(Handle::from_memory(crate::assets::VELOREN_LOGO.to_vec()))
                 .width(Length::FillPortion(10)),
         );
 
-        let icons = Row::new()
+        let icons = row()
             .width(Length::Fill)
             .height(Length::Units(90))
             .align_items(Alignment::Center)
@@ -153,7 +138,7 @@ impl DefaultView {
             .push(logo);
 
         // Contains title, changelog
-        let left = Column::new()
+        let left = column()
             .width(Length::FillPortion(3))
             .height(Length::Fill)
             .padding(15)
@@ -161,90 +146,100 @@ impl DefaultView {
             .push(changelog.view());
 
         // Contains the news pane and optionally the settings pane at the bottom
-        let mut right = Column::new()
+        let mut right = column()
             .width(Length::FillPortion(2))
             .height(Length::Fill)
             .push(news.view());
 
         if self.show_settings {
-            let server_picker = widget_with_label_and_tooltip(
-                "Server:",
-                "The download server used for game files",
-                pick_list(
-                    &mut self.server_picker_state,
-                    Some(active_profile.server),
-                    profiles::SERVERS,
-                    Interaction::ServerChanged,
+            let server_picker = tooltip(
+                widget_with_label(
+                    "Server:",
+                    picklist(
+                        Some(active_profile.server),
+                        profiles::SERVERS,
+                        Interaction::ServerChanged,
+                    ),
                 ),
-            );
+                "The download server used for game files",
+                Position::Top,
+            )
+            .style(style::Tooltip)
+            .gap(5);
 
-            let wgpu_backend_picker = widget_with_label_and_tooltip(
-                "Graphics Mode:",
+            let wgpu_backend_picker = tooltip(
+                widget_with_label(
+                    "Graphics Mode:",
+                    picklist(
+                        Some(active_profile.wgpu_backend),
+                        profiles::WGPU_BACKENDS,
+                        Interaction::WgpuBackendChanged,
+                    ),
+                ),
                 "The rendering backend that the game will use. \nLeave on Auto unless \
                  you are experiencing issues",
-                pick_list(
-                    &mut self.wgpu_backend_picker_state,
-                    Some(active_profile.wgpu_backend),
-                    profiles::WGPU_BACKENDS,
-                    Interaction::WgpuBackendChanged,
-                ),
-            );
+                Position::Top,
+            )
+            .style(style::Tooltip)
+            .gap(5);
 
-            let log_level_picker = widget_with_label_and_tooltip(
-                "Log Level:",
-                "Changes the amount of information that the game outputs to its log file",
-                pick_list(
-                    &mut self.log_level_picker_state,
-                    Some(active_profile.log_level),
-                    profiles::LOG_LEVELS,
-                    Interaction::LogLevelChanged,
+            let log_level_picker = tooltip(
+                widget_with_label(
+                    "Log Level:",
+                    picklist(
+                        Some(active_profile.log_level),
+                        profiles::LOG_LEVELS,
+                        Interaction::LogLevelChanged,
+                    ),
                 ),
-            );
+                "Changes the amount of information that the game outputs to its log file",
+                Position::Top,
+            )
+            .style(style::Tooltip)
+            .gap(5);
 
             let open_logs_button = secondary_button_with_width(
-                &mut self.open_logs_button_state,
                 "Open Logs",
                 Interaction::OpenLogsPressed,
                 Length::Fill,
             );
 
-            let env_vars = widget_with_label_and_tooltip(
-                "Env vars:",
-                "Environment variables set when running Voxygen",
-                TextInput::new(
-                    &mut self.env_var_state,
-                    "FOO=foo, BAR=bar",
-                    &active_profile.env_vars,
-                    |vars| {
+            let env_vars = tooltip(
+                widget_with_label(
+                    "Env vars:",
+                    text_input("FOO=foo, BAR=bar", &active_profile.env_vars, |vars| {
                         DefaultViewMessage::Interaction(Interaction::EnvVarsChanged(vars))
-                    },
-                )
-                .width(Length::Fill)
-                .into(),
-            );
+                    })
+                    .width(Length::Fill)
+                    .into(),
+                ),
+                "Environment variables set when running Voxygen",
+                Position::Top,
+            )
+            .style(style::Tooltip)
+            .gap(5);
 
-            let settings = Container::new(
-                Column::new()
+            let settings = container(
+                column()
                     .padding(2)
                     .align_items(Alignment::End)
                     .push(
-                        Row::new()
+                        row()
                             .padding(5)
-                            .spacing(10)
                             .align_items(Alignment::Center)
                             .push(wgpu_backend_picker)
                             .push(server_picker),
                     )
                     .push(
-                        Row::new()
+                        row()
                             .padding(5)
-                            .spacing(10)
                             .align_items(Alignment::Center)
                             .push(log_level_picker)
                             .push(open_logs_button),
                     )
-                    .push(Row::new().padding(5).spacing(10).push(env_vars)),
+                    .push(row().padding(5).spacing(10).push(env_vars)),
             )
+            .padding(10)
             .width(Length::Fill)
             .style(gui::style::News);
 
@@ -252,7 +247,7 @@ impl DefaultView {
         }
 
         // Contains logo, changelog and news
-        let middle = Container::new(Row::new().padding(2).push(left).push(right))
+        let middle = container(row().padding(2).push(left).push(right))
             .height(Length::FillPortion(6))
             .style(style::Middle);
 
@@ -271,17 +266,17 @@ impl DefaultView {
             _ => 0.0,
         };
         let play_button_text = match state {
-            State::Downloading(_, _, _) => "Downloading".to_string(),
-            State::Installing => "Installing".into(),
-            State::QueryingForUpdates(_) => "Loading".into(),
-            State::ReadyToPlay => "Play".into(),
+            State::Downloading(_, _, _) => "Downloading",
+            State::Installing => "Installing",
+            State::QueryingForUpdates(_) => "Loading",
+            State::ReadyToPlay => "Play",
             State::Offline(available) => match available {
-                true => "Play".into(),
-                false => "Retry".into(),
+                true => "Play",
+                false => "Retry",
             },
-            State::UpdateAvailable(_) => "Update".into(),
-            State::Playing(..) => "Playing".into(),
-            State::Retry => "Retry".into(),
+            State::UpdateAvailable(_) => "Update",
+            State::Playing(..) => "Playing",
+            State::Retry => "Retry",
         };
 
         let download_text = match state {
@@ -301,17 +296,16 @@ impl DefaultView {
             State::Playing(..) => "Much fun playing!".to_string(),
             State::Retry => "Error occured. Give it a retry.".to_string(),
         };
-        let download_speed = Text::new(&download_text).size(16);
+        let download_speed = text(&download_text).size(16);
         let download_progressbar =
             ProgressBar::new(0.0..=100.0, download_progress).style(style::Progress);
-        let download = Column::new()
+        let download = column()
             .width(Length::FillPortion(4))
             .spacing(5)
             .push(download_speed)
             .push(download_progressbar);
 
         let play = primary_button(
-            play_button_state,
             play_button_text,
             match state {
                 State::ReadyToPlay
@@ -329,14 +323,11 @@ impl DefaultView {
             },
         );
 
-        let settings_button = settings_button(
-            settings_button_state,
-            Interaction::SettingsPressed,
-            style::SettingsButton,
-        );
+        let settings_button =
+            settings_button(Interaction::SettingsPressed, style::SettingsButton);
 
-        let bottom = Container::new(
-            Row::new()
+        let bottom = container(
+            row()
                 .align_items(Alignment::End)
                 .spacing(10)
                 .padding(10)
@@ -347,14 +338,14 @@ impl DefaultView {
         .style(style::Bottom);
 
         // Contains everything
-        let content = Column::new()
+        let content = column()
             .padding(2)
             .width(Length::Fill)
             .height(Length::Fill)
             .push(middle)
             .push(bottom);
 
-        Container::new(content)
+        container(content)
             .width(Length::Fill)
             .height(Length::Fill)
             .style(style::Content)
@@ -699,15 +690,13 @@ impl DefaultView {
     }
 }
 
-pub fn primary_button(
-    state: &mut button::State,
-    label: impl Into<String>,
+pub fn primary_button<'a>(
+    label: &'static str,
     interaction: Interaction,
-    style: impl button::StyleSheet + 'static,
-) -> Element<DefaultViewMessage> {
-    let btn: Element<Interaction> = Button::new(
-        state,
-        Text::new(label)
+    style: impl iced::button::StyleSheet + 'static,
+) -> Element<'a, DefaultViewMessage> {
+    let btn: Element<Interaction> = button(
+        text(label)
             .font(HAXRCORP_4089_FONT)
             .size(HAXRCORP_4089_FONT_SIZE_3)
             .height(Length::Fill)
@@ -724,15 +713,13 @@ pub fn primary_button(
     btn.map(DefaultViewMessage::Interaction)
 }
 
-pub fn settings_button(
-    state: &mut button::State,
+pub fn settings_button<'a>(
     interaction: Interaction,
-    style: impl button::StyleSheet + 'static,
-) -> Element<DefaultViewMessage> {
-    let btn: Element<Interaction> = Button::new(
-        state,
-        Image::new(Handle::from_memory(crate::assets::SETTINGS_ICON.to_vec())),
-    )
+    style: impl iced::button::StyleSheet + 'static,
+) -> Element<'a, DefaultViewMessage> {
+    let btn: Element<Interaction> = button(Image::new(Handle::from_memory(
+        crate::assets::SETTINGS_ICON.to_vec(),
+    )))
     .on_press(interaction)
     .width(Length::Units(30))
     .height(Length::Units(30))
@@ -741,29 +728,27 @@ pub fn settings_button(
     .into();
 
     let element = btn.map(DefaultViewMessage::Interaction);
-    Tooltip::new(element, "Settings", Position::Top)
+
+    tooltip(element, "Settings", Position::Top)
         .style(style::Tooltip)
         .gap(5)
         .into()
 }
 
-pub fn secondary_button(
-    state: &mut button::State,
+pub fn secondary_button<'a>(
     label: impl Into<String>,
     interaction: Interaction,
-) -> Element<DefaultViewMessage> {
-    secondary_button_with_width(state, label, interaction, Length::Shrink)
+) -> Element<'a, DefaultViewMessage> {
+    secondary_button_with_width(label, interaction, Length::Shrink)
 }
 
-pub fn secondary_button_with_width(
-    state: &mut button::State,
+pub fn secondary_button_with_width<'a>(
     label: impl Into<String>,
     interaction: Interaction,
     width: Length,
-) -> Element<DefaultViewMessage> {
-    let btn: Element<Interaction> = Button::new(
-        state,
-        Text::new(label)
+) -> Element<'a, DefaultViewMessage> {
+    let btn: Element<Interaction> = button(
+        text(label)
             .size(16)
             .horizontal_alignment(Horizontal::Center)
             .vertical_alignment(Vertical::Center),
@@ -776,42 +761,28 @@ pub fn secondary_button_with_width(
     btn.map(DefaultViewMessage::Interaction)
 }
 
-pub fn pick_list<'a, T: Clone + std::cmp::Eq + std::fmt::Display>(
-    state: &'a mut pick_list::State<T>,
+pub fn picklist<'a, T: Clone + Eq + std::fmt::Display + 'static>(
     selected: Option<T>,
     values: &'a [T],
     interaction: impl Fn(T) -> Interaction + 'static,
 ) -> Element<'a, DefaultViewMessage> {
     let selected = Some(selected.unwrap_or_else(|| values[0].clone()));
-    let pick_list: Element<Interaction> =
-        PickList::new(state, values, selected, interaction)
-            .width(Length::Units(100))
-            .style(style::ServerPickList)
-            .padding(4)
-            .into();
+    let pick_list: Element<Interaction> = pick_list(values, selected, interaction)
+        .width(Length::Units(100))
+        .style(style::ServerPickList)
+        .padding(4)
+        .into();
 
     pick_list.map(DefaultViewMessage::Interaction)
 }
 
-pub fn widget_with_label_and_tooltip<'a>(
+pub fn widget_with_label<'a>(
     label_text: &'a str,
-    tooltip_text: &'a str,
     widget: Element<'a, DefaultViewMessage>,
 ) -> Element<'a, DefaultViewMessage> {
-    // The tooltip cannot be attached to the actual pick list since they both use
-    // overlays and aren't (yet) compatible with each other (it results in
-    // the picklist not working at all).
-    Row::new()
+    row()
         .spacing(10)
-        .push(
-            Tooltip::new(
-                Text::new(label_text).horizontal_alignment(Horizontal::Right),
-                tooltip_text,
-                Position::Top,
-            )
-            .style(style::Tooltip)
-            .gap(5),
-        )
+        .push(text(label_text).horizontal_alignment(Horizontal::Right))
         .push(widget)
         .into()
 }

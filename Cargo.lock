@@ -1598,6 +1598,7 @@ dependencies = [
  "iced_futures",
  "iced_graphics",
  "iced_native",
+ "iced_pure",
  "iced_wgpu",
  "iced_winit",
  "thiserror",
@@ -1635,6 +1636,7 @@ dependencies = [
  "bytemuck",
  "glam",
  "iced_native",
+ "iced_pure",
  "iced_style",
  "raw-window-handle 0.4.3",
  "thiserror",
@@ -1652,6 +1654,17 @@ dependencies = [
  "num-traits",
  "twox-hash",
  "unicode-segmentation",
+]
+
+[[package]]
+name = "iced_pure"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e62ec25e07c35821f556e5f776583dcf9e16cc708dedc9430af13339f29d6a2"
+dependencies = [
+ "iced_native",
+ "iced_style",
+ "num-traits",
 ]
 
 [[package]]
