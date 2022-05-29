@@ -4,7 +4,10 @@ mod subscriptions;
 mod views;
 
 use crate::{cli::CmdLine, fs, profiles::Profile, Result};
-use iced::{Application, Command, Element, Settings, Subscription};
+use iced::{
+    pure::{Application, Element},
+    Command, Settings, Subscription,
+};
 use ron::ser::PrettyConfig;
 use tokio::{fs::File, io::AsyncWriteExt};
 #[cfg(windows)]
@@ -147,11 +150,7 @@ impl Application for Airshipper {
         }
     }
 
-    fn update(
-        &mut self,
-        message: Message,
-        _clipboard: &mut iced::Clipboard,
-    ) -> Command<Message> {
+    fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::Loaded(state) => {
                 *self = state;
@@ -230,7 +229,7 @@ impl Application for Airshipper {
         Command::none()
     }
 
-    fn view(&mut self) -> Element<Message> {
+    fn view(&self) -> Element<Message> {
         let Self {
             view, default_view, ..
         } = self;
@@ -270,5 +269,6 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
         exit_on_close_request: true,
         id: Some("airshipper".to_string()),
         text_multithreading: false,
+        try_opengles_first: false, // Only used with glow backend
     }
 }

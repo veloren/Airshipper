@@ -6,16 +6,15 @@ use crate::{
     gui::style,
 };
 use iced::{
-    button, Align, Button, Column, Command, Container, Element, HorizontalAlignment,
-    Length, Row, Text, VerticalAlignment,
+    alignment::{Horizontal, Vertical},
+    pure::{button, column, container, row, text, Element},
+    Alignment, Command, Length,
 };
 use self_update::update::Release;
 
 #[derive(Debug, Clone)]
 pub struct UpdateView {
     message: String,
-    update_button_state: button::State,
-    skip_button_state: button::State,
 }
 
 impl Default for UpdateView {
@@ -23,8 +22,6 @@ impl Default for UpdateView {
         Self {
             message: "Update for Airshipper available. Do you want to update?"
                 .to_string(),
-            update_button_state: Default::default(),
-            skip_button_state: Default::default(),
         }
     }
 }
@@ -43,47 +40,39 @@ pub enum UpdateViewMessage {
 }
 
 impl UpdateView {
-    pub fn view(&mut self) -> Element<UpdateViewMessage> {
-        let Self {
-            update_button_state,
-            skip_button_state,
-            ..
-        } = self;
-
+    pub fn view(&self) -> Element<UpdateViewMessage> {
         // Contains everything
-        let content = Column::new()
-            .align_items(Align::Center)
+        let content = column()
+            .align_items(Alignment::Center)
             .spacing(10)
-            .push(Text::new(&self.message))
+            .push(text(&self.message))
             .push(
-                Row::new()
-                    .align_items(Align::Center)
+                row()
+                    .align_items(Alignment::Center)
                     .spacing(100)
                     .padding(10)
                     .push(
-                        Button::new(
-                            skip_button_state,
-                            Text::new("Skip")
+                        button(
+                            text("Skip")
                                 .font(HAXRCORP_4089_FONT)
                                 .size(HAXRCORP_4089_FONT_SIZE_3)
                                 .height(Length::Fill)
-                                .horizontal_alignment(HorizontalAlignment::Center)
-                                .vertical_alignment(VerticalAlignment::Center),
+                                .horizontal_alignment(Horizontal::Center)
+                                .vertical_alignment(Vertical::Center),
                         )
                         .on_press(UpdateViewMessage::SkipPressed)
                         .style(style::SecondaryButton)
                         .padding(7),
                     )
                     .push(
-                        Button::new(
-                            update_button_state,
-                            Text::new("Update")
+                        button(
+                            text("Update")
                                 .font(HAXRCORP_4089_FONT)
                                 .size(HAXRCORP_4089_FONT_SIZE_3)
                                 .height(Length::Fill)
                                 .width(Length::Units(90))
-                                .horizontal_alignment(HorizontalAlignment::Center)
-                                .vertical_alignment(VerticalAlignment::Center),
+                                .horizontal_alignment(Horizontal::Center)
+                                .vertical_alignment(Vertical::Center),
                         )
                         .on_press(UpdateViewMessage::UpdatePressed)
                         .style(style::PrimaryButton::Enabled)
@@ -91,7 +80,7 @@ impl UpdateView {
                     ),
             );
 
-        Container::new(content)
+        container(content)
             .width(Length::Fill)
             .height(Length::Fill)
             .style(style::Content)
