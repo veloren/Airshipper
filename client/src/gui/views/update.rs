@@ -6,8 +6,8 @@ use crate::{
     gui::style,
 };
 use iced::{
-    button, Align, Button, Column, Command, Container, Element, HorizontalAlignment,
-    Length, Row, Text, VerticalAlignment,
+    alignment::{Horizontal, Vertical},
+    button, Alignment, Button, Column, Command, Container, Element, Length, Row, Text,
 };
 use self_update::update::Release;
 
@@ -52,12 +52,12 @@ impl UpdateView {
 
         // Contains everything
         let content = Column::new()
-            .align_items(Align::Center)
+            .align_items(Alignment::Center)
             .spacing(10)
             .push(Text::new(&self.message))
             .push(
                 Row::new()
-                    .align_items(Align::Center)
+                    .align_items(Alignment::Center)
                     .spacing(100)
                     .padding(10)
                     .push(
@@ -67,8 +67,8 @@ impl UpdateView {
                                 .font(HAXRCORP_4089_FONT)
                                 .size(HAXRCORP_4089_FONT_SIZE_3)
                                 .height(Length::Fill)
-                                .horizontal_alignment(HorizontalAlignment::Center)
-                                .vertical_alignment(VerticalAlignment::Center),
+                                .horizontal_alignment(Horizontal::Center)
+                                .vertical_alignment(Vertical::Center),
                         )
                         .on_press(UpdateViewMessage::SkipPressed)
                         .style(style::SecondaryButton)
@@ -82,8 +82,8 @@ impl UpdateView {
                                 .size(HAXRCORP_4089_FONT_SIZE_3)
                                 .height(Length::Fill)
                                 .width(Length::Units(90))
-                                .horizontal_alignment(HorizontalAlignment::Center)
-                                .vertical_alignment(VerticalAlignment::Center),
+                                .horizontal_alignment(Horizontal::Center)
+                                .vertical_alignment(Vertical::Center),
                         )
                         .on_press(UpdateViewMessage::UpdatePressed)
                         .style(style::PrimaryButton::Enabled)

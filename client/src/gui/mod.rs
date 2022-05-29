@@ -147,11 +147,7 @@ impl Application for Airshipper {
         }
     }
 
-    fn update(
-        &mut self,
-        message: Message,
-        _clipboard: &mut iced::Clipboard,
-    ) -> Command<Message> {
+    fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::Loaded(state) => {
                 *self = state;
@@ -270,5 +266,6 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
         exit_on_close_request: true,
         id: Some("airshipper".to_string()),
         text_multithreading: false,
+        try_opengles_first: false, // Only used with glow backend
     }
 }
