@@ -43,7 +43,7 @@ bundled = ["openssl-sys"]
 clap = { version = "3.1.18", features = ["cargo", "derive"] }
 indicatif = "0.16"
 # UI
-iced = { version = "0.4.2", default-features = false, features = ["wgpu", "tokio", "image", "pure"] }
+iced = { version = "0.4.2", default-features = false, features = ["wgpu", "tokio", "image", "pure", "debug"] }
 iced_native = "0.5.0"
 # Logging
 tracing = { version = "0.1.21", features = ["log"] }

@@ -1,5 +1,10 @@
+use crate::gui::components::Changelog;
 use iced::{
-    button, button::Style, container, pick_list, progress_bar, Background, Color, Vector,
+    button,
+    button::Style,
+    container, pick_list, progress_bar,
+    pure::{text, widget::rule},
+    Background, Color, Vector,
 };
 
 pub enum PrimaryButton {
@@ -20,6 +25,10 @@ const SEA_GREEN: Color = Color::from_rgb(0.18, 0.65, 0.59);
 const DARKER_SEA_GREEN: Color = Color::from_rgb(0.08, 0.61, 0.65);
 const SLATE: Color = Color::from_rgb(0.35, 0.43, 0.46);
 const TRANSPARENT_WHITE: Color = Color::from_rgba(1.0, 1.0, 1.0, 0.1);
+pub const DARK_WHITE: Color = Color::from_rgb(0.9, 0.9, 0.9);
+pub const VERY_DARK_GREY: Color = Color::from_rgb(0.1, 0.1, 0.1);
+const BACKGROUND_GREEN: Color = Color::from_rgb(0.21, 0.35, 0.27);
+const LIME_GREEN: Color = Color::from_rgb(0.41, 0.64, 0.26);
 
 impl button::StyleSheet for PrimaryButton {
     fn active(&self) -> button::Style {
@@ -197,4 +206,84 @@ impl container::StyleSheet for Tooltip {
             ..container::Style::default()
         }
     }
+}
+
+pub struct LeftPanelStyle;
+impl container::StyleSheet for LeftPanelStyle {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(BACKGROUND_GREEN)),
+            ..container::Style::default()
+        }
+    }
+}
+
+pub struct TestStyle2;
+impl container::StyleSheet for TestStyle2 {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(DARKER_SEA_GREEN)),
+            ..container::Style::default()
+        }
+    }
+}
+
+pub struct TestStyle3;
+impl container::StyleSheet for TestStyle3 {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(BACKGROUND_GREEN)),
+            ..container::Style::default()
+        }
+    }
+}
+
+pub struct ChangelogHeaderStyle;
+impl container::StyleSheet for ChangelogHeaderStyle {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(Color::BLACK)),
+            text_color: Some(Color::WHITE),
+            ..container::Style::default()
+        }
+    }
+}
+pub struct ChangelogContainerStyle;
+impl container::StyleSheet for ChangelogContainerStyle {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(VERY_DARK_GREY)),
+            text_color: Some(Color::WHITE),
+            ..container::Style::default()
+        }
+    }
+}
+
+pub struct RuleStyle;
+impl rule::StyleSheet for RuleStyle {
+    fn style(&self) -> rule::Style {
+        rule::Style {
+            width: 1,
+            color: Color::WHITE,
+            ..rule::Style::default()
+        }
+    }
+}
+
+pub struct GitlabChangelogButtonStyle;
+impl button::StyleSheet for GitlabChangelogButtonStyle {
+    fn active(&self) -> Style {
+        Style {
+            background: Some(Background::Color(LIME_GREEN)),
+            border_radius: 25.0,
+            ..button::Style::default()
+        }
+    }
+
+    // fn hovered(&self) -> button::Style {
+    //     button::Style {
+    //         background: Some(Background::Color(TRANSPARENT_WHITE)),
+    //         ..self.active()
+    //     }
+    // }
 }

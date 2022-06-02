@@ -14,13 +14,19 @@ use iced::{
     alignment::{Horizontal, Vertical},
     image::Handle,
     pure::{
-        button, column, container, pick_list, row, text, text_input, tooltip, Element,
+        button, column, container, pick_list, row, text, text_input, tooltip,
+        widget::{Column, Container},
+        Element, Widget,
     },
     tooltip::Position,
-    Alignment, Command, Image, Length, ProgressBar,
+    Alignment, Command, Image, Length, Padding, ProgressBar, Renderer,
 };
 use std::path::PathBuf;
 
+use crate::{
+    assets::VELOREN_LOGO,
+    gui::style::{LeftPanelStyle, TestStyle2, TestStyle3},
+};
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -114,6 +120,45 @@ impl DefaultView {
     }
 
     pub fn view(&self, active_profile: &Profile) -> Element<DefaultViewMessage> {
+        let Self {
+            changelog,
+            news,
+            state,
+            //play_button_state,
+            //settings_button_state,
+            download_progress,
+            ..
+        } = self;
+
+        let left: Container<'_, DefaultViewMessage> = container(
+            column().push(
+                container(Image::new(Handle::from_memory(VELOREN_LOGO.to_vec())))
+                    .padding(Padding::from(20)),
+            ),
+        )
+        .height(Length::Fill)
+        .width(Length::Units(347))
+        .style(LeftPanelStyle);
+        let middle: Container<'_, DefaultViewMessage> = container(changelog.view())
+            .height(Length::Fill)
+            .width(Length::Fill)
+            .style(TestStyle2);
+        let right: Container<'_, DefaultViewMessage> =
+            container(column().push(text("hello3")))
+                .height(Length::Fill)
+                .width(Length::Units(237))
+                .style(TestStyle3);
+
+        let main_row: iced::pure::widget::Row<'_, DefaultViewMessage> =
+            row().push(left).push(middle).push(right);
+
+        container(main_row)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
+    }
+
+    pub fn view_old(&self, active_profile: &Profile) -> Element<DefaultViewMessage> {
         let Self {
             changelog,
             news,
