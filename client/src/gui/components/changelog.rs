@@ -22,13 +22,18 @@ use iced::{
 use iced_native::{image::Handle, widget::Text};
 use pulldown_cmark::{Event, Options, Parser, Tag};
 use serde::{Deserialize, Serialize};
+use tracing::debug;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Changelog {
     pub versions: Vec<ChangelogVersion>,
     pub etag: String,
-    #[serde(skip)]
+    #[serde(skip, default = "default_display_count")]
     pub display_count: usize,
+}
+
+pub fn default_display_count() -> usize {
+    2
 }
 
 impl Changelog {
@@ -167,15 +172,22 @@ impl Changelog {
         match net::query_etag(consts::CHANGELOG_URL).await? {
             Some(remote_version) => {
                 if version != remote_version {
+                    debug!(
+                        "Changelog version different (Local: {} Remote: {}), fetching...",
+                        version, remote_version
+                    );
                     return Ok(Some(Self::fetch().await?));
                 } else {
-                    tracing::debug!("Changelog up-to-date.");
+                    debug!("Changelog up-to-date.");
                     Ok(None)
                 }
             },
             // We query the changelog in case there's no etag to be found
             // to make sure the player stays informed.
-            None => Ok(Some(Self::fetch().await?)),
+            None => {
+                debug!("Changelog missing, fetching...");
+                Ok(Some(Self::fetch().await?))
+            },
         }
     }
 
