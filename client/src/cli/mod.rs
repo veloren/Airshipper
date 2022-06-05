@@ -146,9 +146,13 @@ async fn download(profile: Profile) -> Result<()> {
             net::Progress::Started => {},
             net::Progress::Errored(e) => return Err(e.into()),
             net::Progress::Finished => return Ok(()),
-            net::Progress::Advanced(msg, percentage, _, _) => {
-                progress_bar.set_position(percentage);
-                progress_bar.set_message(msg.to_owned());
+            net::Progress::Advanced(progress_data) => {
+                progress_bar.set_position(progress_data.percent_complete as u64);
+                progress_bar.set_message(format!(
+                    "{} MB / {} MB",
+                    progress_data.downloaded_bytes / 1_000_000,
+                    progress_data.total_bytes / 1_000_000
+                ));
             },
         }
     }

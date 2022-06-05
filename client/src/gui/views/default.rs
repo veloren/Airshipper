@@ -144,235 +144,6 @@ impl DefaultView {
             .into()
     }
 
-    // pub fn view_old(&self, active_profile: &Profile) -> Element<DefaultViewMessage> {
-    //     let Self {
-    //         changelog,
-    //         news,
-    //         state,
-    //         //play_button_state,
-    //         //settings_button_state,
-    //         //download_progress,
-    //         ..
-    //     } = self;
-    //
-    //     let logo = container(
-    //         Image::new(Handle::from_memory(crate::assets::VELOREN_LOGO.to_vec()))
-    //             .width(Length::FillPortion(10)),
-    //     );
-    //
-    //     let icons = row()
-    //         .width(Length::Fill)
-    //         .height(Length::Units(90))
-    //         .align_items(Alignment::Center)
-    //         .spacing(10)
-    //         .padding(15)
-    //         .push(logo);
-    //
-    //     // Contains title, changelog
-    //     let left = column()
-    //         .width(Length::FillPortion(3))
-    //         .height(Length::Fill)
-    //         .padding(15)
-    //         .push(icons)
-    //         .push(changelog.view());
-    //
-    //     // Contains the news pane and optionally the settings pane at the bottom
-    //     let mut right = column()
-    //         .width(Length::FillPortion(2))
-    //         .height(Length::Fill)
-    //         .push(news.view());
-    //
-    //     if self.show_settings {
-    //         let server_picker = tooltip(
-    //             widget_with_label(
-    //                 "Server:",
-    //                 picklist(
-    //                     Some(active_profile.server),
-    //                     profiles::SERVERS,
-    //                     Interaction::ServerChanged,
-    //                 ),
-    //             ),
-    //             "The download server used for game files",
-    //             Position::Top,
-    //         )
-    //         .style(style::Tooltip)
-    //         .gap(5);
-    //
-    //         let wgpu_backend_picker = tooltip(
-    //             widget_with_label(
-    //                 "Graphics Mode:",
-    //                 picklist(
-    //                     Some(active_profile.wgpu_backend),
-    //                     profiles::WGPU_BACKENDS,
-    //                     Interaction::WgpuBackendChanged,
-    //                 ),
-    //             ),
-    //             "The rendering backend that the game will use. \nLeave on Auto unless \
-    //              you are experiencing issues",
-    //             Position::Top,
-    //         )
-    //         .style(style::Tooltip)
-    //         .gap(5);
-    //
-    //         let log_level_picker = tooltip(
-    //             widget_with_label(
-    //                 "Log Level:",
-    //                 picklist(
-    //                     Some(active_profile.log_level),
-    //                     profiles::LOG_LEVELS,
-    //                     Interaction::LogLevelChanged,
-    //                 ),
-    //             ),
-    //             "Changes the amount of information that the game outputs to its log
-    // file",             Position::Top,
-    //         )
-    //         .style(style::Tooltip)
-    //         .gap(5);
-    //
-    //         let open_logs_button = secondary_button_with_width(
-    //             "Open Logs",
-    //             Interaction::OpenLogsPressed,
-    //             Length::Fill,
-    //         );
-    //
-    //         let env_vars = tooltip(
-    //             widget_with_label(
-    //                 "Env vars:",
-    //                 text_input("FOO=foo, BAR=bar", &active_profile.env_vars, |vars| {
-    //
-    // DefaultViewMessage::Interaction(Interaction::EnvVarsChanged(vars))
-    // })                 .width(Length::Fill)
-    //                 .into(),
-    //             ),
-    //             "Environment variables set when running Voxygen",
-    //             Position::Top,
-    //         )
-    //         .style(style::Tooltip)
-    //         .gap(5);
-    //
-    //         let settings = container(
-    //             column()
-    //                 .padding(2)
-    //                 .align_items(Alignment::End)
-    //                 .push(
-    //                     row()
-    //                         .padding(5)
-    //                         .align_items(Alignment::Center)
-    //                         .push(wgpu_backend_picker)
-    //                         .push(server_picker),
-    //                 )
-    //                 .push(
-    //                     row()
-    //                         .padding(5)
-    //                         .align_items(Alignment::Center)
-    //                         .push(log_level_picker)
-    //                         .push(open_logs_button),
-    //                 )
-    //                 .push(row().padding(5).spacing(10).push(env_vars)),
-    //         )
-    //         .padding(10)
-    //         .width(Length::Fill)
-    //         .style(gui::style::News);
-    //
-    //         right = right.push(settings);
-    //     }
-    //
-    //     // Contains logo, changelog and news
-    //     let middle = container(row().padding(2).push(left).push(right))
-    //         .height(Length::FillPortion(6))
-    //         .style(style::Middle);
-    //
-    //     let download_progress = match state {
-    //         State::Downloading(_, _, _, progress) => match progress {
-    //             net::Progress::Advanced(_msg, percentage) => *percentage as f32,
-    //             net::Progress::Finished => 100.0,
-    //             _ => 0.0,
-    //         },
-    //         _ => 0.0,
-    //     };
-    //     let play_button_text = match state {
-    //         State::Downloading(_, _, _, _) => "Downloading",
-    //         State::Installing => "Installing",
-    //         State::QueryingForUpdates(_) => "Loading",
-    //         State::ReadyToPlay => "Play",
-    //         State::Offline(available) => match available {
-    //             true => "Play",
-    //             false => "Retry",
-    //         },
-    //         State::UpdateAvailable(_) => "Update",
-    //         State::Playing(..) => "Playing",
-    //         State::Retry => "Retry",
-    //     };
-    //
-    //     let download_text = match state {
-    //         State::Downloading(_, _, _, progress) => progress.to_string(),
-    //         State::Installing => "Installing...".to_string(),
-    //         State::QueryingForUpdates(_) => "Checking for updates...".to_string(),
-    //         State::ReadyToPlay => "Ready to play...".to_string(),
-    //         State::Offline(available) => match available {
-    //             true => "Ready to play offline...".into(),
-    //             false => "Error: Check your internet and retry.".into(),
-    //         },
-    //         State::UpdateAvailable(_) => "Update available!".to_string(),
-    //         State::Playing(..) => "Much fun playing!".to_string(),
-    //         State::Retry => "Error occured. Give it a retry.".to_string(),
-    //     };
-    //     let download_speed = text(&download_text).size(16);
-    //     let download_progressbar =
-    //         ProgressBar::new(0.0..=100.0, download_progress).style(style::Progress);
-    //     let download = column()
-    //         .width(Length::FillPortion(4))
-    //         .spacing(5)
-    //         .push(download_speed)
-    //         .push(download_progressbar);
-    //
-    //     let play = primary_button(
-    //         play_button_text,
-    //         match state {
-    //             State::ReadyToPlay
-    //             | State::UpdateAvailable(_)
-    //             | State::Offline(_)
-    //             | State::Retry => Interaction::PlayPressed,
-    //             _ => Interaction::Disabled,
-    //         },
-    //         match state {
-    //             State::ReadyToPlay
-    //             | State::UpdateAvailable(_)
-    //             | State::Offline(_)
-    //             | State::Retry => style::PrimaryButton::Enabled,
-    //             _ => style::PrimaryButton::Disabled,
-    //         },
-    //     );
-    //
-    //     let settings_button =
-    //         settings_button(Interaction::SettingsPressed, style::SettingsButton);
-    //
-    //     let bottom = container(
-    //         row()
-    //             .align_items(Alignment::End)
-    //             .spacing(10)
-    //             .padding(10)
-    //             .push(download)
-    //             .push(settings_button)
-    //             .push(play),
-    //     )
-    //     .style(style::Bottom);
-    //
-    //     // Contains everything
-    //     let content = column()
-    //         .padding(2)
-    //         .width(Length::Fill)
-    //         .height(Length::Fill)
-    //         .push(middle)
-    //         .push(bottom);
-    //
-    //     container(content)
-    //         .width(Length::Fill)
-    //         .height(Length::Fill)
-    //         .style(style::Content)
-    //         .into()
-    // }
-
     pub fn update(
         &mut self,
         msg: DefaultViewMessage,
@@ -457,6 +228,7 @@ impl DefaultView {
                         tracing::error!("failed to open {} : {}", url, e);
                     }
                 },
+                // TODO: Move to download panel
                 Interaction::ServerChanged(new_server) => {
                     tracing::debug!("new server selected {}", new_server);
                     self.state = State::QueryingForUpdates(false);
@@ -475,6 +247,7 @@ impl DefaultView {
                         }),
                     ]);
                 },
+                // TODO: Move to changelog
                 Interaction::SetChangelogDisplayCount(count) => {
                     if count <= 1 {
                         self.changelog.display_count = 1;
@@ -484,6 +257,7 @@ impl DefaultView {
                         self.changelog.display_count = count;
                     }
                 },
+                // TODO: Move all of this to new settings panel
                 Interaction::SettingsPressed => {
                     self.show_settings = !self.show_settings;
                 },

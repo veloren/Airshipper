@@ -1,29 +1,44 @@
 use futures_util::stream::Stream;
 use iced::futures;
-use std::path::PathBuf;
-use tokio::{fs::File, io::AsyncWriteExt};
+use std::{
+    path::PathBuf,
+    time::{Duration, Instant},
+};
+use tokio::{fs::File, io::AsyncWriteExt, sync::Mutex};
+
+#[derive(Debug, Clone)]
+pub struct ProgressData {
+    pub percent_complete: f32,
+    pub total_bytes: u64,
+    pub downloaded_bytes: u64,
+    pub bytes_per_sec: u64,
+    pub remaining: Duration,
+}
 
 #[derive(Debug, Clone)]
 pub enum Progress {
     Started,
-    // Message, Percentage, Total, Downloaded
-    Advanced(String, u64, u64, u64),
+    Advanced(ProgressData),
     Finished,
     Errored(String),
 }
 
-impl std::fmt::Display for Progress {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self {
-            Self::Started => write!(f, "Download started..."),
-            Self::Advanced(msg, percentage, _, _) => {
-                write!(f, "{} [{}%]", msg, percentage)
-            },
-            Self::Finished => write!(f, "Download done!"),
-            Self::Errored(err) => write!(f, "{}", err),
-        }
-    }
-}
+// impl std::fmt::Display for Progress {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match &self {
+//             Self::Started => write!(f, "Download started..."),
+//             Self::Advanced(ProgressData {
+//                 _,
+//                 percent_complete,
+//                 ..
+//             }) => {
+//                 write!(f, "{} [{}%]", "msg", percent_complete)
+//             },
+//             Self::Finished => write!(f, "Download done!"),
+//             Self::Errored(err) => write!(f, "{}", err),
+//         }
+//     }
+// }
 
 #[derive(Debug)]
 #[allow(clippy::large_enum_variant)]
@@ -32,8 +47,12 @@ enum State {
     Downloading {
         response: reqwest::Response,
         file: File,
-        total: u64,
-        downloaded: u64,
+        last_rate_check: Instant,
+        downloaded_since_last_check: usize,
+        total_bytes: u64,
+        downloaded_bytes: u64,
+        bytes_per_sec: u64,
+        remaining: Duration,
     },
     Finished,
 }
@@ -63,8 +82,12 @@ pub(crate) fn download(url: String, location: PathBuf) -> impl Stream<Item = Pro
                                     Some((Progress::Started, State::Downloading {
                                         response,
                                         file,
-                                        total,
-                                        downloaded: 0,
+                                        last_rate_check: Instant::now(),
+                                        downloaded_since_last_check: 0,
+                                        total_bytes: total,
+                                        downloaded_bytes: 0,
+                                        bytes_per_sec: 0,
+                                        remaining: Duration::from_secs(0),
                                     }))
                                 },
                                 Err(e) => Some((
@@ -87,26 +110,51 @@ pub(crate) fn download(url: String, location: PathBuf) -> impl Stream<Item = Pro
             State::Downloading {
                 mut response,
                 mut file,
-                total,
-                downloaded,
+                mut last_rate_check,
+                mut downloaded_since_last_check,
+                total_bytes,
+                mut downloaded_bytes,
+                mut bytes_per_sec,
+                mut remaining,
             } => match response.chunk().await {
                 Ok(Some(chunk)) => {
-                    let downloaded = downloaded + chunk.len() as u64;
-                    let percentage = downloaded * 100 / total;
-                    let progress = format!(
-                        "{} MB / {} MB",
-                        downloaded / 1_000_000,
-                        total / 1_000_000
-                    );
+                    downloaded_bytes += chunk.len() as u64;
+                    let percent_complete =
+                        (downloaded_bytes * 100) as f32 / total_bytes as f32;
+
+                    // Calculate download speed
+                    let since_last_check = Instant::now() - last_rate_check;
+                    if since_last_check >= Duration::from_millis(500) {
+                        bytes_per_sec = (downloaded_since_last_check as f32
+                            / since_last_check.as_secs_f32())
+                            as u64;
+                        remaining = Duration::from_secs_f32(
+                            (total_bytes - downloaded_bytes) as f32
+                                / bytes_per_sec.max(1) as f32,
+                        );
+                        downloaded_since_last_check = 0;
+                        last_rate_check = Instant::now()
+                    }
+                    downloaded_since_last_check += chunk.len();
 
                     match file.write_all(&chunk).await {
                         Ok(_) => Some((
-                            Progress::Advanced(progress, percentage, total, downloaded),
+                            Progress::Advanced(ProgressData {
+                                percent_complete,
+                                total_bytes,
+                                downloaded_bytes,
+                                bytes_per_sec,
+                                remaining,
+                            }),
                             State::Downloading {
                                 response,
                                 file,
-                                total,
-                                downloaded,
+                                last_rate_check,
+                                downloaded_since_last_check,
+                                total_bytes,
+                                downloaded_bytes,
+                                bytes_per_sec,
+                                remaining,
                             },
                         )),
                         Err(e) => {
