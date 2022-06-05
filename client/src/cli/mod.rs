@@ -3,7 +3,7 @@ use parse::Action;
 mod parse;
 use iced::futures::stream::StreamExt;
 
-use crate::profiles::LogLevel;
+use crate::{profiles::LogLevel, BASE_PATH};
 use gui::Airshipper;
 pub use parse::CmdLine;
 use tracing::level_filters::LevelFilter;
@@ -29,6 +29,10 @@ pub fn process() -> Result<()> {
     tracing::debug!("Cache Path: {}", fs::get_cache_path().display());
     tracing::debug!("Cmdline args: {:?}", cmd);
     tracing::info!("Visit https://book.veloren.net/ for an FAQ and Troubleshooting");
+
+    if cmd.force_reset {
+        std::fs::remove_dir_all(BASE_PATH.as_path())?;
+    }
 
     // GUI
     if cmd.action.is_none() {
@@ -142,7 +146,7 @@ async fn download(profile: Profile) -> Result<()> {
             net::Progress::Started => {},
             net::Progress::Errored(e) => return Err(e.into()),
             net::Progress::Finished => return Ok(()),
-            net::Progress::Advanced(msg, percentage) => {
+            net::Progress::Advanced(msg, percentage, _, _) => {
                 progress_bar.set_position(percentage);
                 progress_bar.set_message(msg.to_owned());
             },

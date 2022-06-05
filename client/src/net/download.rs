@@ -6,7 +6,8 @@ use tokio::{fs::File, io::AsyncWriteExt};
 #[derive(Debug, Clone)]
 pub enum Progress {
     Started,
-    Advanced(String, u64),
+    // Message, Percentage, Total, Downloaded
+    Advanced(String, u64, u64, u64),
     Finished,
     Errored(String),
 }
@@ -15,7 +16,9 @@ impl std::fmt::Display for Progress {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self {
             Self::Started => write!(f, "Download started..."),
-            Self::Advanced(msg, percentage) => write!(f, "{} [{}%]", msg, percentage),
+            Self::Advanced(msg, percentage, _, _) => {
+                write!(f, "{} [{}%]", msg, percentage)
+            },
             Self::Finished => write!(f, "Download done!"),
             Self::Errored(err) => write!(f, "{}", err),
         }
@@ -91,14 +94,14 @@ pub(crate) fn download(url: String, location: PathBuf) -> impl Stream<Item = Pro
                     let downloaded = downloaded + chunk.len() as u64;
                     let percentage = downloaded * 100 / total;
                     let progress = format!(
-                        "{} / {}",
-                        bytesize::ByteSize(downloaded),
-                        bytesize::ByteSize(total)
+                        "{} MB / {} MB",
+                        downloaded / 1_000_000,
+                        total / 1_000_000
                     );
 
                     match file.write_all(&chunk).await {
                         Ok(_) => Some((
-                            Progress::Advanced(progress, percentage),
+                            Progress::Advanced(progress, percentage, total, downloaded),
                             State::Downloading {
                                 response,
                                 file,

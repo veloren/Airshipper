@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 lazy_static::lazy_static! {
     // Base for config, profiles, ...
-    static ref BASE_PATH: PathBuf = base();
+    pub static ref BASE_PATH: PathBuf = base();
 }
 
 // TODO: Is there a way to figure out whether airshipper has been installed or not

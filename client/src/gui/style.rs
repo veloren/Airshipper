@@ -24,6 +24,7 @@ const TRANSPARENT_WHITE: Color = Color::from_rgba(1.0, 1.0, 1.0, 0.1);
 pub const DARK_WHITE: Color = Color::from_rgb(0.9, 0.9, 0.9);
 pub const VERY_DARK_GREY: Color = Color::from_rgb(0.1, 0.1, 0.1);
 const BACKGROUND_GREEN: Color = Color::from_rgb(0.21, 0.35, 0.27);
+const BACKGROUND_BLUE: Color = Color::from_rgb(0.14, 0.21, 0.41);
 const LIME_GREEN: Color = Color::from_rgb(0.41, 0.64, 0.26);
 const CORNFLOWER_BLUE: Color = Color::from_rgb(0.19, 0.4, 0.85);
 
@@ -169,13 +170,13 @@ impl container::StyleSheet for Bottom {
     }
 }
 
-pub struct Progress;
-impl progress_bar::StyleSheet for Progress {
+pub struct ProgressBarStyle;
+impl progress_bar::StyleSheet for ProgressBarStyle {
     fn style(&self) -> progress_bar::Style {
         progress_bar::Style {
-            background: Background::Color(SLATE),
-            bar: Background::Color(LIGHT_SEA_GREEN),
-            border_radius: 5.0,
+            background: Background::Color(VERY_DARK_GREY),
+            bar: Background::Color(LIME_GREEN),
+            border_radius: 3.0,
         }
     }
 }
@@ -209,7 +210,7 @@ pub struct LeftPanelStyle;
 impl container::StyleSheet for LeftPanelStyle {
     fn style(&self) -> container::Style {
         container::Style {
-            background: Some(Background::Color(BACKGROUND_GREEN)),
+            background: Some(Background::Color(BACKGROUND_BLUE)),
             ..container::Style::default()
         }
     }
@@ -229,7 +230,7 @@ pub struct TestStyle3;
 impl container::StyleSheet for TestStyle3 {
     fn style(&self) -> container::Style {
         container::Style {
-            background: Some(Background::Color(BACKGROUND_GREEN)),
+            background: Some(Background::Color(BACKGROUND_BLUE)),
             ..container::Style::default()
         }
     }
@@ -325,10 +326,9 @@ fn active_download_button_style(background_color: Color) -> Style {
 fn disabled_download_button_style() -> Style {
     Style {
         background: Some(Background::Color(SLATE)),
-        border_color: BROWN,
-        border_width: 4.0,
         shadow_offset: Vector::new(1.0, 1.0),
         text_color: LIGHT_GREY,
+        border_radius: 4.0,
         ..button::Style::default()
     }
 }

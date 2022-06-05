@@ -13,12 +13,12 @@ use crate::{
 use iced::{
     alignment::{Horizontal, Vertical},
     pure::{button, column, container, progress_bar, row, text, widget::Image, Element},
-    Length, Padding,
+    Alignment, Color, Length, Padding,
 };
 use iced_native::{image::Handle, Command};
 use std::path::PathBuf;
 
-use crate::gui::style::{ButtonState, DownloadButtonStyle};
+use crate::gui::style::{ButtonState, DownloadButtonStyle, ProgressBarStyle};
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -328,7 +328,6 @@ impl GamePanelComponent {
 
 impl GamePanelComponent {
     fn download_area(&self) -> Element<GamePanelMessage> {
-        println!("{:?}", self.state);
         match &self.state {
             GamePanelState::ReadyToPlay
             | GamePanelState::UpdateAvailable(_)
@@ -402,25 +401,48 @@ impl GamePanelComponent {
                     .into()
             },
             GamePanelState::Downloading(_, _, _) => {
-                let download_progress = match self
+                let (percent, total, downloaded) = match self
                     .download_progress
                     .as_ref()
                     .unwrap_or(&Progress::Started)
                 {
-                    Progress::Advanced(_msg, percentage) => *percentage as f32,
-                    Progress::Finished => 100.0,
-                    _ => 0.0,
+                    Progress::Advanced(_msg, percentage, total, downloaded) => (
+                        *percentage as f32,
+                        *total / 1_000_000,
+                        *downloaded / 1_000_000,
+                    ),
+                    Progress::Finished => (100.0, 0, 0),
+                    _ => (0.0, 0, 0),
                 };
 
+                let progress_text =
+                    format!("{} MB / {} MB [ {}%]", downloaded, total, percent);
                 container(
                     column()
-                        .push(text("Downloading").font(POPPINS_MEDIUM_FONT))
                         .push(
-                            row()
-                                .push(Image::new(Handle::from_memory(
-                                    DOWNLOAD_ICON.to_vec(),
-                                )))
-                                .push(progress_bar(0.0..=100.0f32, download_progress)),
+                            text("Downloading")
+                                .font(POPPINS_BOLD_FONT)
+                                .color(Color::WHITE)
+                                .size(20),
+                        )
+                        .push(
+                            container(
+                                row()
+                                    .push(Image::new(Handle::from_memory(
+                                        DOWNLOAD_ICON.to_vec(),
+                                    )))
+                                    .push(
+                                        text(progress_text).color(Color::WHITE).size(17),
+                                    )
+                                    .spacing(5)
+                                    .align_items(Alignment::Center),
+                            )
+                            .padding(Padding::from([5, 0])),
+                        )
+                        .push(
+                            progress_bar(0.0..=100.0f32, percent)
+                                .height(Length::Units(28))
+                                .style(ProgressBarStyle),
                         ),
                 )
                 .into()
