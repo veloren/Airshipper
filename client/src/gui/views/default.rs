@@ -2,7 +2,7 @@ use super::Action;
 use crate::{
     gui,
     gui::{
-        components::{Changelog, LogoPanelComponent, News},
+        components::{ChangelogPanelComponent, LogoPanelComponent, News},
         style, subscriptions, Result,
     },
     io, net, profiles,
@@ -24,13 +24,16 @@ use iced_lazy::Component;
 use std::path::PathBuf;
 
 use crate::gui::{
-    components::{CommunityShowcaseComponent, GamePanelComponent, GamePanelMessage},
+    components::{
+        ChangelogPanelMessage, CommunityShowcaseComponent, GamePanelComponent,
+        GamePanelMessage,
+    },
     style::{LeftPanelStyle, TestStyle2, TestStyle3},
 };
 
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DefaultView {
-    changelog: Changelog,
+    changelog: ChangelogPanelComponent,
     #[serde(skip)]
     logo_panel_component: LogoPanelComponent,
     #[serde(skip)]
@@ -66,7 +69,6 @@ pub enum DefaultViewMessage {
     Query,
 
     // Updates
-    ChangelogUpdate(Result<Option<Changelog>>),
     NewsUpdate(Result<Option<News>>),
     #[cfg(windows)]
     LauncherUpdate(Result<Option<self_update::update::Release>>),
@@ -76,6 +78,9 @@ pub enum DefaultViewMessage {
 
     // Game Panel Messages
     GamePanel(GamePanelMessage),
+
+    // Changelog Messages
+    ChangelogPanel(ChangelogPanelMessage),
 }
 
 #[derive(Debug, Clone)]
@@ -84,7 +89,6 @@ pub enum Interaction {
     ServerChanged(profiles::Server),
     WgpuBackendChanged(profiles::WgpuBackend),
     ReadMore(String),
-    SetChangelogDisplayCount(usize),
     SettingsPressed,
     OpenLogsPressed,
     OpenURL(String),
@@ -156,8 +160,14 @@ impl DefaultView {
             DefaultViewMessage::Query => {
                 return Command::batch(vec![
                     Command::perform(
-                        Changelog::update(self.changelog.etag.clone()),
-                        DefaultViewMessage::ChangelogUpdate,
+                        ChangelogPanelComponent::update_changelog(
+                            self.changelog.etag.clone(),
+                        ),
+                        |update| {
+                            DefaultViewMessage::ChangelogPanel(
+                                ChangelogPanelMessage::UpdateChangelog(update),
+                            )
+                        },
                     ),
                     Command::perform(
                         News::update(self.news.etag.clone()),
@@ -183,19 +193,10 @@ impl DefaultView {
                     return command;
                 }
             },
-            // Updates
-            DefaultViewMessage::ChangelogUpdate(update) => match update {
-                Ok(Some(changelog)) => {
-                    self.changelog = changelog;
-                    return Command::perform(
-                        async { Action::Save },
-                        DefaultViewMessage::Action,
-                    );
-                },
-                Ok(None) => {},
-                Err(e) => {
-                    tracing::trace!("Failed to update changelog: {}", e);
-                },
+            DefaultViewMessage::ChangelogPanel(msg) => {
+                if let Some(command) = self.changelog.update(msg) {
+                    return command;
+                }
             },
             DefaultViewMessage::NewsUpdate(update) => match update {
                 Ok(Some(news)) => {
@@ -246,16 +247,6 @@ impl DefaultView {
                             ))
                         }),
                     ]);
-                },
-                // TODO: Move to changelog
-                Interaction::SetChangelogDisplayCount(count) => {
-                    if count <= 1 {
-                        self.changelog.display_count = 1;
-                    } else if count >= self.changelog.versions.len() {
-                        self.changelog.display_count = self.changelog.versions.len();
-                    } else {
-                        self.changelog.display_count = count;
-                    }
                 },
                 // TODO: Move all of this to new settings panel
                 Interaction::SettingsPressed => {

@@ -10,22 +10,33 @@ use crate::{
             ChangelogContainerStyle, ChangelogHeaderStyle, GitlabChangelogButtonStyle,
             RuleStyle, DARK_WHITE,
         },
-        views::default::{secondary_button, DefaultViewMessage, Interaction},
+        views::{
+            default::{secondary_button, DefaultViewMessage, Interaction},
+            Action,
+        },
     },
     net, Result,
 };
 use iced::{
     alignment::Vertical,
-    pure::{button, column, container, image, row, scrollable, text, Element},
+    pure::{button, column, container, image, row, scrollable, text, Element, Widget},
     Alignment, Color, Image, Length, Padding, Rule,
 };
-use iced_native::{image::Handle, widget::Text};
+use iced_native::{image::Handle, widget::Text, Command};
 use pulldown_cmark::{Event, Options, Parser, Tag};
 use serde::{Deserialize, Serialize};
 use tracing::debug;
 
+#[derive(Clone, Debug)]
+pub enum ChangelogPanelMessage {
+    ScrollPositionChanged(f32),
+    UpdateChangelog(Result<Option<ChangelogPanelComponent>>),
+}
+
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct Changelog {
+pub struct ChangelogPanelComponent {
+    // TODO: Separate the Changelog data from the Panel data to avoid replacing the whole
+    // panel when the changelog is updated
     pub versions: Vec<ChangelogVersion>,
     pub etag: String,
     #[serde(skip, default = "default_display_count")]
@@ -36,7 +47,7 @@ pub fn default_display_count() -> usize {
     2
 }
 
-impl Changelog {
+impl ChangelogPanelComponent {
     #[allow(clippy::while_let_on_iterator)]
     async fn fetch() -> Result<Self> {
         let mut versions: Vec<ChangelogVersion> = Vec::new();
@@ -160,7 +171,7 @@ impl Changelog {
             }
         }
 
-        Ok(Changelog {
+        Ok(ChangelogPanelComponent {
             etag,
             versions,
             display_count: 2,
@@ -168,7 +179,7 @@ impl Changelog {
     }
 
     /// Returns new Changelog incase remote one is newer
-    pub async fn update(version: String) -> Result<Option<Self>> {
+    pub async fn update_changelog(version: String) -> Result<Option<Self>> {
         match net::query_etag(consts::CHANGELOG_URL).await? {
             Some(remote_version) => {
                 if version != remote_version {
@@ -191,37 +202,40 @@ impl Changelog {
         }
     }
 
+    pub fn update(
+        &mut self,
+        msg: ChangelogPanelMessage,
+    ) -> Option<Command<DefaultViewMessage>> {
+        match msg {
+            ChangelogPanelMessage::UpdateChangelog(result) => match result {
+                Ok(Some(changelog)) => {
+                    *self = changelog;
+                    return Some(Command::perform(
+                        async { Action::Save },
+                        DefaultViewMessage::Action,
+                    ));
+                },
+                Ok(None) => None,
+                Err(e) => {
+                    tracing::trace!("Failed to update changelog: {}", e);
+                    None
+                },
+            },
+            ChangelogPanelMessage::ScrollPositionChanged(pos) => {
+                if pos > 0.9 && self.display_count < self.versions.len() {
+                    self.display_count += 1;
+                }
+                None
+            },
+        }
+    }
+
     pub fn view(&self) -> Element<DefaultViewMessage> {
         let mut changelog = column().spacing(10);
 
         for version in &mut self.versions.iter().take(self.display_count as usize) {
             changelog = changelog.push(version.view());
         }
-
-        let changelog = changelog.push(
-            row()
-                .spacing(10)
-                .push(secondary_button(
-                    "Show More",
-                    Interaction::SetChangelogDisplayCount(
-                        self.display_count.saturating_add(1),
-                    ),
-                ))
-                .push(secondary_button(
-                    "Show Less",
-                    Interaction::SetChangelogDisplayCount(
-                        self.display_count.saturating_sub(1),
-                    ),
-                ))
-                .push(secondary_button(
-                    "Show All",
-                    Interaction::SetChangelogDisplayCount(self.versions.len()),
-                ))
-                .push(secondary_button(
-                    "Show Latest Only",
-                    Interaction::SetChangelogDisplayCount(1),
-                )),
-        );
 
         let top_row = row().height(Length::Units(50)).push(
             column().push(
@@ -290,10 +304,18 @@ impl Changelog {
             )
             .push(
                 column().push(
-                    container(scrollable(changelog).height(Length::Fill))
-                        .height(Length::Fill)
-                        .width(Length::Fill)
-                        .style(ChangelogContainerStyle),
+                    container(
+                        scrollable(changelog)
+                            .on_scroll(|pos| {
+                                DefaultViewMessage::ChangelogPanel(
+                                    ChangelogPanelMessage::ScrollPositionChanged(pos),
+                                )
+                            })
+                            .height(Length::Fill),
+                    )
+                    .height(Length::Fill)
+                    .width(Length::Fill)
+                    .style(ChangelogContainerStyle),
                 ),
             );
 

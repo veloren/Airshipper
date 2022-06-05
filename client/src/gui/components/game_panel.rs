@@ -83,7 +83,7 @@ impl GamePanelComponent {
         msg: GamePanelMessage,
         active_profile: &Profile,
     ) -> Option<Command<DefaultViewMessage>> {
-        let command = match msg {
+        match msg {
             GamePanelMessage::PlayPressed => match &self.state {
                 GamePanelState::UpdateAvailable(version) => {
                     self.state = GamePanelState::Downloading(
@@ -94,7 +94,6 @@ impl GamePanelComponent {
                     None
                 },
                 GamePanelState::ReadyToPlay => {
-                    println!("Play pressed");
                     self.state = GamePanelState::Playing(active_profile.clone());
                     None
                 },
@@ -282,23 +281,19 @@ impl GamePanelComponent {
                     Ok(Some(version)) => {
                         // Skip asking
                         if let GamePanelState::QueryingForUpdates(true) = self.state {
-                            println!("GameUpdate, QueryingForUpdates(true)");
                             self.state = GamePanelState::Downloading(
                                 active_profile.url(),
                                 active_profile.download_path(),
                                 version,
                             );
                         } else {
-                            println!("GameUpdate, not querying for updates true");
                             self.state = GamePanelState::UpdateAvailable(version);
                         }
                     },
                     Ok(None) => {
-                        println!("GameUpdate, None");
                         self.state = GamePanelState::ReadyToPlay;
                     },
                     Err(_) => {
-                        println!("GameUpdate, Err");
                         // Go into offline mode incase game can't be updated.
                         if active_profile.installed() {
                             self.state = GamePanelState::Offline(true);
@@ -309,9 +304,7 @@ impl GamePanelComponent {
                 };
                 None
             },
-        };
-
-        command
+        }
     }
 
     pub fn view(&self) -> Element<GamePanelMessage> {
