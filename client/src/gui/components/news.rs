@@ -1,5 +1,4 @@
 use crate::{
-    assets::{HAXRCORP_4089_FONT, HAXRCORP_4089_FONT_SIZE_2},
     consts,
     gui::views::default::{DefaultViewMessage, Interaction},
     net, Result,
@@ -76,11 +75,7 @@ impl Post {
         use crate::gui::views::default::secondary_button;
 
         column()
-            .push(
-                text(&self.title)
-                    .font(HAXRCORP_4089_FONT)
-                    .size(HAXRCORP_4089_FONT_SIZE_2),
-            )
+            .push(text(&self.title))
             .push(text(&self.description).size(18))
             .push(secondary_button(
                 "Read More",

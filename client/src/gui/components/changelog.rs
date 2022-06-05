@@ -1,10 +1,10 @@
 use crate::{
     assets::{
-        CHANGELOG_ICON, HAXRCORP_4089_FONT, HAXRCORP_4089_FONT_SIZE_2,
-        POPPINS_BLACK_FONT, POPPINS_BOLD_FONT, POPPINS_EXTRA_BOLD_FONT, POPPINS_FONT,
-        POPPINS_LIGHT_FONT, POPPINS_MEDIUM_FONT, UP_RIGHT_ARROW_ICON,
+        CHANGELOG_ICON, POPPINS_BOLD_FONT, POPPINS_LIGHT_FONT, POPPINS_MEDIUM_FONT,
+        UP_RIGHT_ARROW_ICON,
     },
     consts,
+    consts::GITLAB_MERGED_MR_URL,
     gui::{
         style::{
             ChangelogContainerStyle, ChangelogHeaderStyle, GitlabChangelogButtonStyle,
@@ -17,7 +17,7 @@ use crate::{
 use iced::{
     alignment::Vertical,
     pure::{button, column, container, image, row, scrollable, text, Element},
-    Alignment, Application, Color, Image, Length, Padding, Rule,
+    Alignment, Color, Image, Length, Padding, Rule,
 };
 use iced_native::{image::Handle, widget::Text};
 use pulldown_cmark::{Event, Options, Parser, Tag};
@@ -186,35 +186,30 @@ impl Changelog {
             changelog = changelog.push(version.view());
         }
 
-        let changelog = changelog
-            .push(
-                row()
-                    .spacing(10)
-                    .push(secondary_button(
-                        "Show More",
-                        Interaction::SetChangelogDisplayCount(
-                            self.display_count.saturating_add(1),
-                        ),
-                    ))
-                    .push(secondary_button(
-                        "Show Less",
-                        Interaction::SetChangelogDisplayCount(
-                            self.display_count.saturating_sub(1),
-                        ),
-                    ))
-                    .push(secondary_button(
-                        "Show All",
-                        Interaction::SetChangelogDisplayCount(self.versions.len()),
-                    ))
-                    .push(secondary_button(
-                        "Show Latest Only",
-                        Interaction::SetChangelogDisplayCount(1),
-                    )),
-            )
-            .push(secondary_button(
-                "Read Changelog on Gitlab",
-                Interaction::ReadMore(consts::CHANGELOG_URL_LINK.to_owned()),
-            ));
+        let changelog = changelog.push(
+            row()
+                .spacing(10)
+                .push(secondary_button(
+                    "Show More",
+                    Interaction::SetChangelogDisplayCount(
+                        self.display_count.saturating_add(1),
+                    ),
+                ))
+                .push(secondary_button(
+                    "Show Less",
+                    Interaction::SetChangelogDisplayCount(
+                        self.display_count.saturating_sub(1),
+                    ),
+                ))
+                .push(secondary_button(
+                    "Show All",
+                    Interaction::SetChangelogDisplayCount(self.versions.len()),
+                ))
+                .push(secondary_button(
+                    "Show Latest Only",
+                    Interaction::SetChangelogDisplayCount(1),
+                )),
+        );
 
         let top_row = row().height(Length::Units(50)).push(
             column().push(
@@ -247,8 +242,7 @@ impl Changelog {
                                         .push(
                                             text("Gitlab Changelog")
                                                 .color(Color::WHITE)
-                                                .size(14)
-                                                .font(POPPINS_FONT),
+                                                .size(14),
                                         )
                                         .push(image(Handle::from_memory(
                                             UP_RIGHT_ARROW_ICON.to_vec(),
@@ -256,6 +250,11 @@ impl Changelog {
                                         .spacing(5)
                                         .align_items(Alignment::Center),
                                 )
+                                .on_press(DefaultViewMessage::Interaction(
+                                    Interaction::OpenURL(
+                                        GITLAB_MERGED_MR_URL.to_string(),
+                                    ),
+                                ))
                                 .padding(Padding::from([2, 10, 2, 10]))
                                 .height(Length::Units(20))
                                 .style(GitlabChangelogButtonStyle),
@@ -319,12 +318,11 @@ impl ChangelogVersion {
         );
 
         for note in &self.notes {
-            version = version.push(text(note).font(POPPINS_FONT).size(18));
+            version = version.push(text(note).size(18));
         }
 
         for (section_name, section_lines) in &self.sections {
-            let mut section_col =
-                column().push(text(section_name).size(23).font(POPPINS_FONT));
+            let mut section_col = column().push(text(section_name).size(23));
 
             for line in section_lines {
                 section_col = section_col.push(

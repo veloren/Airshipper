@@ -1,9 +1,5 @@
-use crate::gui::components::Changelog;
 use iced::{
-    button,
-    button::Style,
-    container, pick_list, progress_bar,
-    pure::{text, widget::rule},
+    button, button::Style, container, pick_list, progress_bar, pure::widget::rule,
     Background, Color, Vector,
 };
 
@@ -29,6 +25,7 @@ pub const DARK_WHITE: Color = Color::from_rgb(0.9, 0.9, 0.9);
 pub const VERY_DARK_GREY: Color = Color::from_rgb(0.1, 0.1, 0.1);
 const BACKGROUND_GREEN: Color = Color::from_rgb(0.21, 0.35, 0.27);
 const LIME_GREEN: Color = Color::from_rgb(0.41, 0.64, 0.26);
+const CORNFLOWER_BLUE: Color = Color::from_rgb(0.19, 0.4, 0.85);
 
 impl button::StyleSheet for PrimaryButton {
     fn active(&self) -> button::Style {
@@ -279,11 +276,59 @@ impl button::StyleSheet for GitlabChangelogButtonStyle {
             ..button::Style::default()
         }
     }
+}
 
-    // fn hovered(&self) -> button::Style {
-    //     button::Style {
-    //         background: Some(Background::Color(TRANSPARENT_WHITE)),
-    //         ..self.active()
-    //     }
-    // }
+pub struct TransparentButtonStyle;
+impl button::StyleSheet for TransparentButtonStyle {
+    fn active(&self) -> Style {
+        Style {
+            background: None,
+            ..button::Style::default()
+        }
+    }
+}
+
+pub enum ButtonState {
+    Enabled,
+    Disabled,
+}
+pub enum DownloadButtonStyle {
+    Launch(ButtonState),
+    Update(ButtonState),
+}
+
+impl button::StyleSheet for DownloadButtonStyle {
+    fn active(&self) -> Style {
+        match self {
+            Self::Launch(ButtonState::Enabled) => {
+                active_download_button_style(LIME_GREEN)
+            },
+            Self::Update(ButtonState::Enabled) => {
+                active_download_button_style(CORNFLOWER_BLUE)
+            },
+            Self::Launch(ButtonState::Disabled) | Self::Update(ButtonState::Disabled) => {
+                disabled_download_button_style()
+            },
+        }
+    }
+}
+
+fn active_download_button_style(background_color: Color) -> Style {
+    Style {
+        background: Some(Background::Color(background_color)),
+        text_color: Color::WHITE,
+        border_radius: 4.0,
+        ..button::Style::default()
+    }
+}
+
+fn disabled_download_button_style() -> Style {
+    Style {
+        background: Some(Background::Color(SLATE)),
+        border_color: BROWN,
+        border_width: 4.0,
+        shadow_offset: Vector::new(1.0, 1.0),
+        text_color: LIGHT_GREY,
+        ..button::Style::default()
+    }
 }

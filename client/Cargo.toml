@@ -45,6 +45,8 @@ indicatif = "0.16"
 # UI
 iced = { version = "0.4.2", default-features = false, features = ["wgpu", "tokio", "image", "pure", "debug"] }
 iced_native = "0.5.0"
+iced_lazy = "0.1.0"
+
 # Logging
 tracing = { version = "0.1.21", features = ["log"] }
 tracing-futures = "0.2.4"

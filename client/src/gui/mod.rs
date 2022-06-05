@@ -1,4 +1,5 @@
 pub mod components;
+mod custom_widgets;
 mod style;
 mod subscriptions;
 mod views;
@@ -251,7 +252,7 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
 
     Settings {
         window: Window {
-            size: (1050, 620),
+            size: (1050, 700),
             resizable: true,
             decorations: true,
             icon: Some(
@@ -262,7 +263,7 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
             ..Default::default()
         },
         flags: cmd,
-        default_font: Some(crate::assets::OPEN_SANS_BYTES),
+        default_font: Some(crate::assets::POPPINS_FONT_BYTES),
         default_text_size: 20,
         // https://github.com/hecrj/iced/issues/537
         antialiasing: false,
