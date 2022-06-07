@@ -25,7 +25,7 @@ pub enum Filter {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AndFilter(pub Vec<Filter>);
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Eq, Hash, PartialOrd, Ord)]
 pub struct Platform {
     pub os: String,
     pub arch: String,
