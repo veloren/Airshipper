@@ -24,7 +24,7 @@ mod webhook;
 use crate::error::ServerError;
 use config::{loading, Config, CONFIG_PATH, LOCAL_STORAGE_PATH};
 use metrics::Metrics;
-use std::path::Path;
+use std::{path::Path, sync::Arc};
 
 pub type Result<T> = std::result::Result<T, ServerError>;
 pub use db::{DbConnection, FsStorage};
@@ -37,12 +37,13 @@ lazy_static::lazy_static! {
 #[rocket::launch]
 async fn rocket() -> _ {
     dotenv::from_path("server/.env").ok();
-    let _guard = logger::init(tracing::metadata::LevelFilter::INFO);
     build().await.unwrap()
 }
 
 #[allow(clippy::nonstandard_macro_braces)]
 async fn build() -> Result<rocket::Rocket<rocket::Build>> {
+    let guard = Arc::new(logger::init(tracing::metadata::LevelFilter::INFO));
+
     let local_storage_folder = CONFIG.get_local_storage_path();
     if !local_storage_folder.exists() {
         tokio::fs::create_dir_all(local_storage_folder.clone())
@@ -51,7 +52,7 @@ async fn build() -> Result<rocket::Rocket<rocket::Build>> {
     }
 
     let metrics = Metrics::new().expect("Failed to create prometheus statistics!");
-    let metrics = std::sync::Arc::new(metrics);
+    let metrics = Arc::new(metrics);
 
     // Base of the config and attach everything else
     Ok(CONFIG
@@ -59,6 +60,7 @@ async fn build() -> Result<rocket::Rocket<rocket::Build>> {
         .attach(DbConnection::fairing())
         .attach(fairings::db::DbInit)
         .attach(metrics.clone())
+        .manage(guard)
         .manage(metrics)
         .mount("/", routes![
             routes::gitlab::post_pipeline_update,
