@@ -110,32 +110,37 @@ impl DbConnection {
         }
     }
 
-    /// Prunes all artifacts but two per os
+    /// Prunes all artifacts but one per os/arch/channel combination
     pub async fn prune_artifacts(&self) -> Result<Vec<Artifact>> {
         use schema::artifacts::dsl::*;
         let artis = self
             .0
-            .run(move |conn| {
-                artifacts
-                    .order(date.desc())
-                    .limit(1000)
-                    .offset(3)
-                    .load::<DbArtifact>(conn)
-            })
+            .run(move |conn| artifacts.order(date.desc()).load::<DbArtifact>(conn))
             .await
             .map_err(ServerError::DieselError)?;
 
         let mut artises = vec![];
 
-        let platforms = crate::CONFIG.get_platforms();
-        for platform in platforms {
-            let platform_artis = artis
+        // Keep 1 for each os/arch/channel
+        for c in crate::CONFIG.channels.values() {
+            let mut platforms = c
+                .build_map
                 .iter()
-                .filter(|x| x.os == platform.os)
-                .filter(|x| x.arch == platform.arch)
-                .skip(1) // Do not prune all artifacts from one platform!
+                .map(|platform_mapper| &(platform_mapper.platform))
                 .collect::<Vec<_>>();
-            artises.extend(platform_artis);
+            platforms.sort_unstable();
+            platforms.dedup();
+
+            for platform in platforms {
+                let platform_artis = artis
+                    .iter()
+                    .filter(|x| x.channel == c.name)
+                    .filter(|x| x.os == platform.os)
+                    .filter(|x| x.arch == platform.arch)
+                    .skip(1) // Do not prune all artifacts from one platform!
+                    .collect::<Vec<_>>();
+                artises.extend(platform_artis);
+            }
         }
 
         let artis = artises;
