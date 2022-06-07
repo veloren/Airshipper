@@ -1,8 +1,8 @@
 use rocket::*;
 
 #[get("/")]
-pub fn index() -> rocket::response::content::Html<&'static str> {
-    rocket::response::content::Html(
+pub fn index() -> rocket::response::content::RawHtml<&'static str> {
+    rocket::response::content::RawHtml(
         r#"<html>
 <h1>Veloren Airshipper Download Server</h1>
 
