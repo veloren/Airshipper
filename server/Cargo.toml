@@ -29,8 +29,8 @@ ron = "0.7"
 regex = "1.5"
 
 # Webserver
-rocket = { git = "https://github.com/SergioBenitez/Rocket", rev = "2fc4b156ebcc3e7220159dd638286e8d890cccba", features = ["json"] }
-rocket_sync_db_pools = { git = "https://github.com/SergioBenitez/Rocket", rev = "2fc4b156ebcc3e7220159dd638286e8d890cccba", features = ["diesel_sqlite_pool"] }
+rocket = { version = "0.5.0-rc.2", features = ["json"] }
+rocket_sync_db_pools = { version = "0.1.0-rc.2", features = ["diesel_sqlite_pool"] }
 # Networking
 reqwest = { version = "0.11.4", features = ["stream"] }
 # Github
