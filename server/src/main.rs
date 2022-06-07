@@ -37,7 +37,7 @@ lazy_static::lazy_static! {
 #[rocket::launch]
 async fn rocket() -> _ {
     dotenv::from_path("server/.env").ok();
-    logger::init();
+    let _guard = logger::init(tracing::metadata::LevelFilter::INFO);
     build().await.unwrap()
 }
 
