@@ -19,9 +19,11 @@ bundled = ["openssl-sys"]
 tokio-util = { version = "0.6.7", features = ["codec"] }
 tokio = { version = "1.7.1", features = ["fs", "rt-multi-thread"] }
 # logging
+termcolor = "1.1"
 tracing = { version = "0.1.21", features = ["log"] }
-tracing-futures = "0.2.4"
-tracing-subscriber = "0.2.15"
+tracing-appender = "0.2.0"
+tracing-subscriber = { version = "0.3.7", default-features = false, features = ["env-filter", "fmt", "time", "ansi", "smallvec", "tracing-log"]}
+tracing-log = "0.1.1"
 # config handling
 ron = "0.7"
 regex = "1.5"

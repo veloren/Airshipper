@@ -37,6 +37,7 @@ pub fn init(log_path_file: Option<(&Path, &str)>, level: LevelFilter) -> Vec<imp
         "naga=info",
         "rustls=info",
         "want=info",
+        "tokio_util::codec=error",
     ];
 
     for s in default_directives {
