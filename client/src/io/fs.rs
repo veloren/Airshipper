@@ -31,9 +31,12 @@ pub fn base_path() -> impl std::fmt::Display {
     BASE_PATH.display()
 }
 
-#[cfg(windows)]
 pub fn get_cache_path() -> PathBuf {
-    dirs::cache_dir().unwrap().join(env!("CARGO_PKG_NAME"))
+    let cache_path = dirs::cache_dir()
+        .expect("Couldn't find OS cache directory")
+        .join(env!("CARGO_PKG_NAME"));
+    std::fs::create_dir_all(&cache_path).expect("failed to create cache directory!");
+    cache_path
 }
 
 /// Returns path to the file which saves the current state

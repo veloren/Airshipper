@@ -1,3 +1,5 @@
+#![feature(async_closure)]
+#![feature(let_chains)]
 mod assets;
 mod cli;
 mod consts;

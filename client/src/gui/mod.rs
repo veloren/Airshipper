@@ -59,25 +59,34 @@ impl Airshipper {
 
     pub async fn load(flags: CmdLine) -> Self {
         tokio::task::block_in_place(|| {
-            if let Ok(file) = std::fs::File::open(fs::savedstate_file()) {
-                match ron::de::from_reader(file) {
-                    Ok(state) => {
-                        // Rust type inference magic
-                        let mut state: Airshipper = state;
-                        state.cmd = flags;
-                        state
-                    },
-                    Err(e) => {
-                        tracing::debug!(
-                            "Reading state failed. Falling back to default: {}",
-                            e
-                        );
-                        Self::default()
-                    },
-                }
-            } else {
-                tracing::debug!("Falling back to default state.");
-                Self::default()
+            let saved_state_file = fs::savedstate_file();
+            match std::fs::File::open(&saved_state_file) {
+                Ok(file) => {
+                    match ron::de::from_reader(file) {
+                        Ok(state) => {
+                            // Rust type inference magic
+                            let mut state: Airshipper = state;
+                            state.cmd = flags;
+                            state
+                        },
+                        Err(e) => {
+                            tracing::debug!(
+                                "Reading state failed. Falling back to default: {}",
+                                e
+                            );
+                            Self::default()
+                        },
+                    }
+                },
+                Err(e) => {
+                    tracing::debug!(
+                        ?e,
+                        "Failed to read saved state from {}, falling back to default \
+                         state",
+                        saved_state_file.to_string_lossy()
+                    );
+                    Self::default()
+                },
             }
         })
     }

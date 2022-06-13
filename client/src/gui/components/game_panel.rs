@@ -1,5 +1,5 @@
 use crate::{
-    assets::{DOWNLOAD_ICON, POPPINS_BOLD_FONT, POPPINS_MEDIUM_FONT},
+    assets::{DOWNLOAD_ICON, POPPINS_BOLD_FONT},
     gui::{
         custom_widgets::heading_with_rule,
         subscriptions,
@@ -68,11 +68,11 @@ impl GamePanelComponent {
         match &self.state {
             GamePanelState::Downloading(url, location, _) => {
                 subscriptions::download::file(url, location)
-                    .map(|progress| GamePanelMessage::DownloadProgress(progress))
+                    .map(GamePanelMessage::DownloadProgress)
             },
             &GamePanelState::Playing(ref profile) => {
                 subscriptions::process::stream(profile.clone())
-                    .map(|process_update| GamePanelMessage::ProcessUpdate(process_update))
+                    .map(GamePanelMessage::ProcessUpdate)
             },
             _ => iced::Subscription::none(),
         }
@@ -145,10 +145,10 @@ impl GamePanelComponent {
                         self.state = GamePanelState::Retry;
                         let mut profile = active_profile.clone();
                         profile.version = None;
-                        return Some(Command::perform(
+                        Some(Command::perform(
                             async { Action::UpdateProfile(profile) },
                             DefaultViewMessage::Action,
-                        ));
+                        ))
                     },
                     Progress::Finished => {
                         let version = match &self.state {
@@ -161,14 +161,14 @@ impl GamePanelComponent {
                             ),
                         };
                         self.state = GamePanelState::Installing;
-                        return Some(Command::perform(
+                        Some(Command::perform(
                             Profile::install(active_profile.clone(), version),
                             |result| {
                                 DefaultViewMessage::GamePanel(
                                     GamePanelMessage::InstallDone(result),
                                 )
                             },
-                        ));
+                        ))
                     },
                     p => {
                         match &self.state {
@@ -188,10 +188,10 @@ impl GamePanelComponent {
             GamePanelMessage::InstallDone(profile) => match profile {
                 Ok(profile) => {
                     self.state = GamePanelState::ReadyToPlay;
-                    return Some(Command::perform(
+                    Some(Command::perform(
                         async { Action::UpdateProfile(profile) },
                         DefaultViewMessage::Action,
-                    ));
+                    ))
                 },
                 Err(_e) => {
                     // TODO: Fix
@@ -199,10 +199,10 @@ impl GamePanelComponent {
                     self.state = GamePanelState::Retry;
                     let mut profile = active_profile.clone();
                     profile.version = None;
-                    return Some(Command::perform(
+                    Some(Command::perform(
                         async { Action::UpdateProfile(profile) },
                         DefaultViewMessage::Action,
-                    ));
+                    ))
                 },
             },
             GamePanelMessage::ProcessUpdate(update) => match update {
@@ -258,14 +258,14 @@ impl GamePanelComponent {
                 ProcessUpdate::Exit(code) => {
                     tracing::debug!("Veloren exited with {}", code);
                     self.state = GamePanelState::QueryingForUpdates(false);
-                    return Some(Command::perform(
+                    Some(Command::perform(
                         Profile::update(active_profile.clone()),
                         |update| {
                             DefaultViewMessage::GamePanel(GamePanelMessage::GameUpdate(
                                 update,
                             ))
                         },
-                    ));
+                    ))
                 },
                 ProcessUpdate::Error(err) => {
                     tracing::error!(

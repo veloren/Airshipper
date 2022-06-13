@@ -11,7 +11,7 @@ use crate::{
             RuleStyle, DARK_WHITE,
         },
         views::{
-            default::{secondary_button, DefaultViewMessage, Interaction},
+            default::{DefaultViewMessage, Interaction},
             Action,
         },
     },
@@ -19,7 +19,7 @@ use crate::{
 };
 use iced::{
     alignment::Vertical,
-    pure::{button, column, container, image, row, scrollable, text, Element, Widget},
+    pure::{button, column, container, image, row, scrollable, text, Element},
     Alignment, Color, Image, Length, Padding, Rule,
 };
 use iced_native::{image::Handle, widget::Text, Command};
@@ -210,10 +210,10 @@ impl ChangelogPanelComponent {
             ChangelogPanelMessage::UpdateChangelog(result) => match result {
                 Ok(Some(changelog)) => {
                     *self = changelog;
-                    return Some(Command::perform(
+                    Some(Command::perform(
                         async { Action::Save },
                         DefaultViewMessage::Action,
-                    ));
+                    ))
                 },
                 Ok(None) => None,
                 Err(e) => {

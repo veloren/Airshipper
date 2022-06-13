@@ -4,7 +4,7 @@ use std::{
     path::PathBuf,
     time::{Duration, Instant},
 };
-use tokio::{fs::File, io::AsyncWriteExt, sync::Mutex};
+use tokio::{fs::File, io::AsyncWriteExt};
 
 #[derive(Debug, Clone)]
 pub struct ProgressData {
@@ -22,23 +22,6 @@ pub enum Progress {
     Finished,
     Errored(String),
 }
-
-// impl std::fmt::Display for Progress {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match &self {
-//             Self::Started => write!(f, "Download started..."),
-//             Self::Advanced(ProgressData {
-//                 _,
-//                 percent_complete,
-//                 ..
-//             }) => {
-//                 write!(f, "{} [{}%]", "msg", percent_complete)
-//             },
-//             Self::Finished => write!(f, "Download done!"),
-//             Self::Errored(err) => write!(f, "{}", err),
-//         }
-//     }
-// }
 
 #[derive(Debug)]
 #[allow(clippy::large_enum_variant)]

@@ -12,7 +12,7 @@ pub enum PrimaryButton {
 const LIGHT_BLUE: Color = Color::from_rgb(0.05, 0.44, 0.62);
 const BROWN: Color = Color::from_rgb(0.29, 0.19, 0.03);
 const LIGHT_GREY: Color = Color::from_rgb(0.93, 0.93, 0.93);
-const MEDIUM_GREY: Color = Color::from_rgb(0.7, 0.7, 0.7);
+pub const MEDIUM_GREY: Color = Color::from_rgb(0.7, 0.7, 0.7);
 const DARK_TEAL: Color = Color::from_rgb(0.10, 0.21, 0.25);
 const MEDIUM_TEAL: Color = Color::from_rgb(0.09, 0.24, 0.29);
 const LIGHT_TEAL: Color = Color::from_rgb(0.14, 0.29, 0.35);
@@ -27,6 +27,8 @@ const BACKGROUND_GREEN: Color = Color::from_rgb(0.21, 0.35, 0.27);
 const BACKGROUND_BLUE: Color = Color::from_rgb(0.14, 0.21, 0.41);
 const LIME_GREEN: Color = Color::from_rgb(0.41, 0.64, 0.26);
 const CORNFLOWER_BLUE: Color = Color::from_rgb(0.19, 0.4, 0.85);
+const BLOG_POST_BACKGROUND_BLUE: Color = Color::from_rgb(0.24, 0.33, 0.58);
+pub const LILAC: Color = Color::from_rgb(0.62, 0.66, 0.79);
 
 impl button::StyleSheet for PrimaryButton {
     fn active(&self) -> button::Style {
@@ -206,8 +208,8 @@ impl container::StyleSheet for Tooltip {
     }
 }
 
-pub struct LeftPanelStyle;
-impl container::StyleSheet for LeftPanelStyle {
+pub struct SidePanelStyle;
+impl container::StyleSheet for SidePanelStyle {
     fn style(&self) -> container::Style {
         container::Style {
             background: Some(Background::Color(BACKGROUND_BLUE)),
@@ -251,6 +253,17 @@ impl container::StyleSheet for ChangelogContainerStyle {
     fn style(&self) -> container::Style {
         container::Style {
             background: Some(Background::Color(VERY_DARK_GREY)),
+            text_color: Some(Color::WHITE),
+            ..container::Style::default()
+        }
+    }
+}
+
+pub struct BlogPostContainerStyle;
+impl container::StyleSheet for BlogPostContainerStyle {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(BLOG_POST_BACKGROUND_BLUE)),
             text_color: Some(Color::WHITE),
             ..container::Style::default()
         }

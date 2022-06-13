@@ -1,65 +1,40 @@
 use super::Action;
 use crate::{
-    gui,
     gui::{
-        components::{ChangelogPanelComponent, LogoPanelComponent, News},
-        style, subscriptions, Result,
+        components::{ChangelogPanelComponent, LogoPanelComponent, NewsPanelComponent},
+        style, Result,
     },
-    io, net, profiles,
+    profiles,
     profiles::Profile,
-    ProcessUpdate, Progress,
 };
 use iced::{
     alignment::{Horizontal, Vertical},
     image::Handle,
-    pure::{
-        button, column, container, pick_list, row, text, text_input, tooltip,
-        widget::{Column, Container},
-        Application, Element, Widget,
-    },
+    pure::{button, column, container, pick_list, row, text, tooltip, Element},
     tooltip::Position,
-    Alignment, Command, Image, Length, Padding, ProgressBar, Renderer,
+    Command, Image, Length,
 };
-use iced_lazy::Component;
-use std::path::PathBuf;
 
 use crate::gui::{
     components::{
         ChangelogPanelMessage, CommunityShowcaseComponent, GamePanelComponent,
-        GamePanelMessage,
+        GamePanelMessage, NewsPanelMessage,
     },
-    style::{LeftPanelStyle, TestStyle2, TestStyle3},
+    style::SidePanelStyle,
 };
 
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DefaultView {
-    changelog: ChangelogPanelComponent,
+    changelog_panel_component: ChangelogPanelComponent,
     #[serde(skip)]
     logo_panel_component: LogoPanelComponent,
     #[serde(skip)]
     community_showcase_component: CommunityShowcaseComponent,
     #[serde(skip)]
     game_panel_component: GamePanelComponent,
-    news: News,
-    #[serde(skip)]
-    state: State,
+    news_panel_component: NewsPanelComponent,
     #[serde(skip)]
     show_settings: bool,
-}
-
-#[derive(Debug, Clone)]
-pub enum State {
-    // do not ask, used for retry.
-    QueryingForUpdates(bool),
-    //Playing(Profile),
-    /// bool indicates whether Veloren can be started offline
-    Offline(bool),
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self::QueryingForUpdates(false)
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -68,8 +43,6 @@ pub enum DefaultViewMessage {
     Action(Action),
     Query,
 
-    // Updates
-    NewsUpdate(Result<Option<News>>),
     #[cfg(windows)]
     LauncherUpdate(Result<Option<self_update::update::Release>>),
 
@@ -79,8 +52,11 @@ pub enum DefaultViewMessage {
     // Game Panel Messages
     GamePanel(GamePanelMessage),
 
-    // Changelog Messages
+    // Changelog Panel Messages
     ChangelogPanel(ChangelogPanelMessage),
+
+    // News Panel Messages
+    NewsPanel(NewsPanelMessage),
 }
 
 #[derive(Debug, Clone)]
@@ -100,13 +76,13 @@ impl DefaultView {
     pub fn subscription(&self) -> iced::Subscription<DefaultViewMessage> {
         self.game_panel_component
             .subscription()
-            .map(|msg| DefaultViewMessage::GamePanel(msg))
+            .map(DefaultViewMessage::GamePanel)
     }
 
     pub fn view(&self, active_profile: &Profile) -> Element<DefaultViewMessage> {
         let Self {
-            changelog,
-            news,
+            changelog_panel_component,
+            news_panel_component,
             logo_panel_component,
             community_showcase_component,
             game_panel_component,
@@ -130,15 +106,14 @@ impl DefaultView {
         )
         .height(Length::Fill)
         .width(Length::Units(347))
-        .style(LeftPanelStyle);
-        let middle = container(changelog.view())
+        .style(SidePanelStyle);
+        let middle = container(changelog_panel_component.view())
             .height(Length::Fill)
-            .width(Length::Fill)
-            .style(TestStyle2);
-        let right = container(column().push(text("hello3")))
+            .width(Length::Fill);
+        let right = container(news_panel_component.view())
             .height(Length::Fill)
             .width(Length::Units(237))
-            .style(TestStyle3);
+            .style(SidePanelStyle);
 
         let main_row = row().push(left).push(middle).push(right);
 
@@ -161,7 +136,7 @@ impl DefaultView {
                 return Command::batch(vec![
                     Command::perform(
                         ChangelogPanelComponent::update_changelog(
-                            self.changelog.etag.clone(),
+                            self.changelog_panel_component.etag.clone(),
                         ),
                         |update| {
                             DefaultViewMessage::ChangelogPanel(
@@ -170,8 +145,14 @@ impl DefaultView {
                         },
                     ),
                     Command::perform(
-                        News::update(self.news.etag.clone()),
-                        DefaultViewMessage::NewsUpdate,
+                        NewsPanelComponent::update_news(
+                            self.news_panel_component.etag().to_owned(),
+                        ),
+                        |update| {
+                            DefaultViewMessage::NewsPanel(NewsPanelMessage::UpdateNews(
+                                update,
+                            ))
+                        },
                     ),
                     Command::perform(Profile::update(active_profile.clone()), |update| {
                         DefaultViewMessage::GamePanel(GamePanelMessage::GameUpdate(
@@ -194,22 +175,14 @@ impl DefaultView {
                 }
             },
             DefaultViewMessage::ChangelogPanel(msg) => {
-                if let Some(command) = self.changelog.update(msg) {
+                if let Some(command) = self.changelog_panel_component.update(msg) {
                     return command;
                 }
             },
-            DefaultViewMessage::NewsUpdate(update) => match update {
-                Ok(Some(news)) => {
-                    self.news = news;
-                    return Command::perform(
-                        async { Action::Save },
-                        DefaultViewMessage::Action,
-                    );
-                },
-                Ok(None) => {},
-                Err(e) => {
-                    tracing::trace!("Failed to update news: {}", e);
-                },
+            DefaultViewMessage::NewsPanel(msg) => {
+                if let Some(command) = self.news_panel_component.update(msg) {
+                    return command;
+                }
             },
 
             #[cfg(windows)]
@@ -232,7 +205,7 @@ impl DefaultView {
                 // TODO: Move to download panel
                 Interaction::ServerChanged(new_server) => {
                     tracing::debug!("new server selected {}", new_server);
-                    self.state = State::QueryingForUpdates(false);
+                    //self.state = State::QueryingForUpdates(false);
                     let mut profile = active_profile.clone();
                     profile.server = new_server;
                     let profile2 = profile.clone();
