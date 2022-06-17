@@ -97,17 +97,21 @@ impl Server {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Channel {
     Nightly,
+    Weekly,
     /* TODO: Release,
      * TODO: Source, */
 }
+
+pub static CHANNELS: &[Channel] = &[Channel::Nightly, Channel::Weekly];
 
 impl std::fmt::Display for Channel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Channel::Nightly => write!(f, "nightly"),
+            Channel::Weekly => write!(f, "weekly"),
         }
     }
 }
