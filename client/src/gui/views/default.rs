@@ -89,6 +89,7 @@ pub enum Interaction {
     PlayPressed,
     LogLevelChanged(profiles::LogLevel),
     ServerChanged(profiles::Server),
+    ChannelChanged(profiles::Channel),
     WgpuBackendChanged(profiles::WgpuBackend),
     ReadMore(String),
     SetChangelogDisplayCount(usize),
@@ -167,6 +168,21 @@ impl DefaultView {
             .style(style::Tooltip)
             .gap(5);
 
+            let channel_picker = tooltip(
+                widget_with_label(
+                    "Channel:",
+                    picklist(
+                        Some(active_profile.channel),
+                        profiles::CHANNELS,
+                        Interaction::ChannelChanged,
+                    ),
+                ),
+                "The download channel used for game files",
+                Position::Top,
+            )
+            .style(style::Tooltip)
+            .gap(5);
+
             let wgpu_backend_picker = tooltip(
                 widget_with_label(
                     "Graphics Mode:",
@@ -227,8 +243,14 @@ impl DefaultView {
                         row()
                             .padding(5)
                             .align_items(Alignment::Center)
-                            .push(wgpu_backend_picker)
-                            .push(server_picker),
+                            .push(wgpu_backend_picker),
+                    )
+                    .push(
+                        row()
+                            .padding(5)
+                            .align_items(Alignment::Center)
+                            .push(server_picker)
+                            .push(channel_picker),
                     )
                     .push(
                         row()
@@ -629,6 +651,23 @@ impl DefaultView {
                     self.state = State::QueryingForUpdates(false);
                     let mut profile = active_profile.clone();
                     profile.server = new_server;
+                    let profile2 = profile.clone();
+                    return Command::batch(vec![
+                        Command::perform(
+                            async { Action::UpdateProfile(profile2) },
+                            DefaultViewMessage::Action,
+                        ),
+                        Command::perform(
+                            Profile::update(profile),
+                            DefaultViewMessage::GameUpdate,
+                        ),
+                    ]);
+                },
+                Interaction::ChannelChanged(new_channel) => {
+                    tracing::debug!("new channel selected {}", new_channel);
+                    self.state = State::QueryingForUpdates(false);
+                    let mut profile = active_profile.clone();
+                    profile.channel = new_channel;
                     let profile2 = profile.clone();
                     return Command::batch(vec![
                         Command::perform(
