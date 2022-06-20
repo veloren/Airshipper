@@ -12,13 +12,26 @@ use crate::{
 };
 use iced::{
     alignment::{Horizontal, Vertical},
-    pure::{button, column, container, progress_bar, row, text, widget::Image, Element},
+    pure::{
+        button, column, container, image, progress_bar, row, text, tooltip,
+        widget::Image, Element,
+    },
     Alignment, Color, Length, Padding,
 };
-use iced_native::{image::Handle, Command};
+use iced_native::{image::Handle, widget::tooltip::Position, Command};
 use std::{path::PathBuf, time::Duration};
 
-use crate::gui::style::{ButtonState, DownloadButtonStyle, ProgressBarStyle};
+use crate::{
+    assets::SETTINGS_ICON,
+    gui::{
+        style,
+        style::{
+            ButtonState, ChangelogHeaderStyle, DownloadButtonStyle, ProgressBarStyle,
+            SettingsButton, TestStyle2, TestStyle3, TransparentButtonStyle, LIGHT_GREY,
+        },
+        views::default::Interaction::SettingsPressed,
+    },
+};
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -307,9 +320,47 @@ impl GamePanelComponent {
         }
     }
 
-    pub fn view(&self) -> Element<GamePanelMessage> {
+    pub fn view(&self) -> Element<DefaultViewMessage> {
         column()
-            .push(heading_with_rule::<GamePanelMessage>("Game Version"))
+            .push(heading_with_rule::<DefaultViewMessage>("Game Version"))
+            .push(
+                // TODO: Actual version / date - not available via Airshipper Server
+                // currently?
+                container(
+                    row()
+                        .height(Length::Units(30))
+                        .push(
+                            container(
+                                text("Pre-Alpha v0.12.0 (2022-06-13)")
+                                    .size(15)
+                                    .color(LIGHT_GREY),
+                            )
+                            .align_y(Vertical::Bottom)
+                            .width(Length::Fill)
+                            .height(Length::Fill),
+                        )
+                        .push(
+                            tooltip(
+                                container(
+                                    button(image(Handle::from_memory(
+                                        SETTINGS_ICON.to_vec(),
+                                    )))
+                                    .style(SettingsButton)
+                                    .on_press(
+                                        DefaultViewMessage::Interaction(SettingsPressed),
+                                    ),
+                                )
+                                .center_y(),
+                                "Settings",
+                                Position::Left,
+                            )
+                            .size(18)
+                            .style(style::TooltipStyle)
+                            .gap(5),
+                        ),
+                )
+                .padding(Padding::from([0, 20])),
+            )
             .push(
                 container(self.download_area())
                     .width(Length::Fill)
@@ -320,7 +371,7 @@ impl GamePanelComponent {
 }
 
 impl GamePanelComponent {
-    fn download_area(&self) -> Element<GamePanelMessage> {
+    fn download_area(&self) -> Element<DefaultViewMessage> {
         match &self.state {
             GamePanelState::Downloading(_, _, _) => {
                 // When the game is downloading, the download progress bar and related
@@ -475,7 +526,9 @@ impl GamePanelComponent {
                 .height(Length::Units(75));
 
                 if enabled {
-                    button = button.on_press(GamePanelMessage::PlayPressed);
+                    button = button.on_press(DefaultViewMessage::GamePanel(
+                        GamePanelMessage::PlayPressed,
+                    ));
                 }
 
                 container(button)

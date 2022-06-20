@@ -12,6 +12,7 @@ pub const HEART_ICON: &[u8] = include_bytes!("../assets/icons/heart.png");
 pub const BOOK_ICON: &[u8] = include_bytes!("../assets/icons/book.png");
 pub const USER_ICON: &[u8] = include_bytes!("../assets/icons/user.png");
 pub const DOWNLOAD_ICON: &[u8] = include_bytes!("../assets/icons/download.png");
+pub const FOLDER_ICON: &[u8] = include_bytes!("../assets/icons/folder.png");
 pub const UP_RIGHT_ARROW_ICON: &[u8] =
     include_bytes!("../assets/icons/up_right_arrow.png");
 

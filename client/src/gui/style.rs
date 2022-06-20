@@ -1,5 +1,8 @@
 use iced::{
-    button, button::Style, container, pick_list, progress_bar, pure::widget::rule,
+    button,
+    button::Style,
+    container, pick_list, progress_bar,
+    pure::widget::{rule, text_input},
     Background, Color, Vector,
 };
 
@@ -11,7 +14,7 @@ pub enum PrimaryButton {
 // Colors
 const LIGHT_BLUE: Color = Color::from_rgb(0.05, 0.44, 0.62);
 const BROWN: Color = Color::from_rgb(0.29, 0.19, 0.03);
-const LIGHT_GREY: Color = Color::from_rgb(0.93, 0.93, 0.93);
+pub const LIGHT_GREY: Color = Color::from_rgb(0.93, 0.93, 0.93);
 pub const MEDIUM_GREY: Color = Color::from_rgb(0.7, 0.7, 0.7);
 const DARK_TEAL: Color = Color::from_rgb(0.10, 0.21, 0.25);
 const MEDIUM_TEAL: Color = Color::from_rgb(0.09, 0.24, 0.29);
@@ -29,6 +32,8 @@ const LIME_GREEN: Color = Color::from_rgb(0.41, 0.64, 0.26);
 const CORNFLOWER_BLUE: Color = Color::from_rgb(0.19, 0.4, 0.85);
 const BLOG_POST_BACKGROUND_BLUE: Color = Color::from_rgb(0.24, 0.33, 0.58);
 pub const LILAC: Color = Color::from_rgb(0.62, 0.66, 0.79);
+const NAVY_BLUE: Color = Color::from_rgb(0.07, 0.09, 0.15);
+const LIGHT_NAVY_BLUE: Color = Color::from_rgb(0.12, 0.14, 0.20);
 
 impl button::StyleSheet for PrimaryButton {
     fn active(&self) -> button::Style {
@@ -112,9 +117,10 @@ impl pick_list::StyleSheet for ServerPickList {
     fn menu(&self) -> pick_list::Menu {
         pick_list::Menu {
             text_color: Color::WHITE,
-            background: Background::Color(DARK_TEAL),
-            selected_background: Background::Color(SEA_GREEN),
+            background: Background::Color(NAVY_BLUE),
+            selected_background: Background::Color(LIGHT_NAVY_BLUE),
             selected_text_color: Color::WHITE,
+            border_width: 0.0,
             ..pick_list::Menu::default()
         }
     }
@@ -122,8 +128,10 @@ impl pick_list::StyleSheet for ServerPickList {
     fn active(&self) -> pick_list::Style {
         pick_list::Style {
             text_color: Color::WHITE,
-            background: Background::Color(DARK_TEAL),
+            background: Background::Color(NAVY_BLUE),
             icon_size: 0.5,
+            border_width: 0.0,
+            border_radius: 3.0,
             ..pick_list::Style::default()
         }
     }
@@ -194,17 +202,46 @@ impl container::StyleSheet for Content {
     }
 }
 
-pub struct Tooltip;
-
-impl container::StyleSheet for Tooltip {
+pub struct TooltipStyle;
+impl container::StyleSheet for TooltipStyle {
     fn style(&self) -> container::Style {
         container::Style {
             text_color: Some(LIGHT_GREY),
-            background: Some(Background::Color(DARK_TEAL)),
+            background: Some(Background::Color(NAVY_BLUE)),
             border_color: MEDIUM_GREY,
             border_width: 1.0,
             ..container::Style::default()
         }
+    }
+}
+
+pub struct TextInputStyle;
+impl text_input::StyleSheet for TextInputStyle {
+    fn active(&self) -> text_input::Style {
+        text_input::Style {
+            background: Background::Color(NAVY_BLUE),
+            border_width: 0.0,
+            border_radius: 3.0,
+            ..text_input::Style::default()
+        }
+    }
+
+    fn focused(&self) -> text_input::Style {
+        let active = self.active();
+
+        text_input::Style { ..active }
+    }
+
+    fn placeholder_color(&self) -> Color {
+        MEDIUM_GREY
+    }
+
+    fn value_color(&self) -> Color {
+        LIGHT_GREY
+    }
+
+    fn selection_color(&self) -> Color {
+        LIGHT_NAVY_BLUE
     }
 }
 
@@ -232,7 +269,7 @@ pub struct TestStyle3;
 impl container::StyleSheet for TestStyle3 {
     fn style(&self) -> container::Style {
         container::Style {
-            background: Some(Background::Color(BACKGROUND_BLUE)),
+            background: Some(Background::Color(LIME_GREEN)),
             ..container::Style::default()
         }
     }

@@ -18,7 +18,7 @@ use iced::{
 use crate::gui::{
     components::{
         ChangelogPanelMessage, CommunityShowcaseComponent, GamePanelComponent,
-        GamePanelMessage, NewsPanelMessage,
+        GamePanelMessage, NewsPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
     },
     style::SidePanelStyle,
 };
@@ -33,6 +33,8 @@ pub struct DefaultView {
     #[serde(skip)]
     game_panel_component: GamePanelComponent,
     news_panel_component: NewsPanelComponent,
+    #[serde(skip)]
+    settings_panel_component: SettingsPanelComponent,
     #[serde(skip)]
     show_settings: bool,
 }
@@ -49,27 +51,18 @@ pub enum DefaultViewMessage {
     // User Interactions
     Interaction(Interaction),
 
-    // Game Panel Messages
+    // Panel-specific messages
     GamePanel(GamePanelMessage),
-
-    // Changelog Panel Messages
     ChangelogPanel(ChangelogPanelMessage),
-
-    // News Panel Messages
     NewsPanel(NewsPanelMessage),
+    SettingsPanel(SettingsPanelMessage),
 }
 
 #[derive(Debug, Clone)]
 pub enum Interaction {
-    LogLevelChanged(profiles::LogLevel),
-    ServerChanged(profiles::Server),
-    WgpuBackendChanged(profiles::WgpuBackend),
-    ReadMore(String),
     SettingsPressed,
-    OpenLogsPressed,
     OpenURL(String),
     Disabled,
-    EnvVarsChanged(String),
 }
 
 impl DefaultView {
@@ -86,23 +79,21 @@ impl DefaultView {
             logo_panel_component,
             community_showcase_component,
             game_panel_component,
+            settings_panel_component,
             ..
         } = self;
+
+        let left_middle_contents = if self.show_settings {
+            settings_panel_component.view(active_profile)
+        } else {
+            community_showcase_component.view()
+        };
 
         let left = container(
             column()
                 .push(container(logo_panel_component.view()).height(Length::Fill))
-                .push(
-                    container(community_showcase_component.view()).height(Length::Shrink),
-                )
-                .push(
-                    container(
-                        game_panel_component
-                            .view()
-                            .map(DefaultViewMessage::GamePanel),
-                    )
-                    .height(Length::Shrink),
-                ),
+                .push(container(left_middle_contents).height(Length::Shrink))
+                .push(container(game_panel_component.view()).height(Length::Shrink)),
         )
         .height(Length::Fill)
         .width(Length::Units(347))
@@ -185,6 +176,14 @@ impl DefaultView {
                 }
             },
 
+            DefaultViewMessage::SettingsPanel(msg) => {
+                if let Some(command) =
+                    self.settings_panel_component.update(msg, active_profile)
+                {
+                    return command;
+                }
+            },
+
             #[cfg(windows)]
             DefaultViewMessage::LauncherUpdate(update) => {
                 if let Ok(Some(release)) = update {
@@ -197,62 +196,8 @@ impl DefaultView {
 
             // User Interaction
             DefaultViewMessage::Interaction(interaction) => match interaction {
-                Interaction::ReadMore(url) => {
-                    if let Err(e) = opener::open(&url) {
-                        tracing::error!("failed to open {} : {}", url, e);
-                    }
-                },
-                // TODO: Move to download panel
-                Interaction::ServerChanged(new_server) => {
-                    tracing::debug!("new server selected {}", new_server);
-                    //self.state = State::QueryingForUpdates(false);
-                    let mut profile = active_profile.clone();
-                    profile.server = new_server;
-                    let profile2 = profile.clone();
-                    return Command::batch(vec![
-                        Command::perform(
-                            async { Action::UpdateProfile(profile2) },
-                            DefaultViewMessage::Action,
-                        ),
-                        Command::perform(Profile::update(profile), |update| {
-                            DefaultViewMessage::GamePanel(GamePanelMessage::GameUpdate(
-                                update,
-                            ))
-                        }),
-                    ]);
-                },
-                // TODO: Move all of this to new settings panel
                 Interaction::SettingsPressed => {
                     self.show_settings = !self.show_settings;
-                },
-                Interaction::WgpuBackendChanged(wgpu_backend) => {
-                    let mut profile = active_profile.clone();
-                    profile.wgpu_backend = wgpu_backend;
-                    return Command::perform(
-                        async { Action::UpdateProfile(profile) },
-                        DefaultViewMessage::Action,
-                    );
-                },
-                Interaction::LogLevelChanged(log_level) => {
-                    let mut profile = active_profile.clone();
-                    profile.log_level = log_level;
-                    return Command::perform(
-                        async { Action::UpdateProfile(profile) },
-                        DefaultViewMessage::Action,
-                    );
-                },
-                Interaction::OpenLogsPressed => {
-                    if let Err(e) = opener::open(active_profile.voxygen_logs_path()) {
-                        tracing::error!("Failed to open logs dir: {:?}", e);
-                    }
-                },
-                Interaction::EnvVarsChanged(vars) => {
-                    let mut profile = active_profile.clone();
-                    profile.env_vars = vars;
-                    return Command::perform(
-                        async { Action::UpdateProfile(profile) },
-                        DefaultViewMessage::Action,
-                    );
                 },
                 Interaction::Disabled => {},
                 Interaction::OpenURL(url) => {
@@ -287,50 +232,39 @@ pub fn settings_button<'a>(
     let element = btn.map(DefaultViewMessage::Interaction);
 
     tooltip(element, "Settings", Position::Top)
-        .style(style::Tooltip)
+        .style(style::TooltipStyle)
         .gap(5)
         .into()
 }
 
-pub fn secondary_button<'a>(
-    label: impl Into<String>,
-    interaction: Interaction,
-) -> Element<'a, DefaultViewMessage> {
-    secondary_button_with_width(label, interaction, Length::Shrink)
-}
-
 pub fn secondary_button_with_width<'a>(
     label: impl Into<String>,
-    interaction: Interaction,
+    on_click_msg: DefaultViewMessage,
     width: Length,
 ) -> Element<'a, DefaultViewMessage> {
-    let btn: Element<Interaction> = button(
+    button(
         text(label)
             .size(16)
             .horizontal_alignment(Horizontal::Center)
             .vertical_alignment(Vertical::Center),
     )
-    .on_press(interaction)
+    .on_press(on_click_msg)
     .width(width)
     .style(style::SecondaryButton)
-    .into();
-
-    btn.map(DefaultViewMessage::Interaction)
+    .into()
 }
 
 pub fn picklist<'a, T: Clone + Eq + std::fmt::Display + 'static>(
     selected: Option<T>,
     values: &'a [T],
-    interaction: impl Fn(T) -> Interaction + 'static,
+    on_selected_msg: impl Fn(T) -> DefaultViewMessage + 'static,
 ) -> Element<'a, DefaultViewMessage> {
     let selected = Some(selected.unwrap_or_else(|| values[0].clone()));
-    let pick_list: Element<Interaction> = pick_list(values, selected, interaction)
-        .width(Length::Units(100))
-        .style(style::ServerPickList)
-        .padding(4)
-        .into();
 
-    pick_list.map(DefaultViewMessage::Interaction)
+    pick_list(values, selected, on_selected_msg)
+        .style(style::ServerPickList)
+        .padding(10)
+        .into()
 }
 
 pub fn widget_with_label<'a>(
