@@ -54,7 +54,7 @@ tracing-appender = "0.2.0"
 tracing-log = "0.1.1"
 regex = "1.5"
 # Networking
-reqwest = { version = "0.11.4", default-features = false, features = ["rustls-tls"] }
+reqwest = { version = "0.11.4", default-features = false, features = ["rustls-tls", "json"] }
 # Parsing
 pulldown-cmark = "0.8.0"
 strip_markdown = "0.2.0"

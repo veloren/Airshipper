@@ -3,7 +3,7 @@ mod style;
 mod subscriptions;
 mod views;
 
-use crate::{cli::CmdLine, fs, profiles::Profile, Result};
+use crate::{channels::Channels, cli::CmdLine, fs, profiles::Profile, Result};
 use iced::{
     pure::{Application, Element},
     Command, Settings, Subscription,
@@ -102,6 +102,11 @@ impl Airshipper {
 
         Ok(())
     }
+
+    pub async fn load_channels(airshipper: Self) -> Result<Channels> {
+        let channels = Channels::fetch(airshipper.active_profile.channel_url()).await?;
+        Ok(channels)
+    }
 }
 
 #[allow(clippy::enum_variant_names, clippy::large_enum_variant)]
@@ -113,6 +118,7 @@ pub enum Message {
     // Messages
 
     // Updates
+    ChannelsLoaded(Result<Channels>),
 
     // Views
     DefaultViewMessage(DefaultViewMessage),
@@ -154,16 +160,26 @@ impl Application for Airshipper {
         match message {
             Message::Loaded(state) => {
                 *self = state;
-                return self
-                    .default_view
-                    .update(DefaultViewMessage::Query, &self.active_profile)
-                    .map(Message::DefaultViewMessage);
+                return Command::perform(
+                    Self::load_channels(self.clone()),
+                    Message::ChannelsLoaded,
+                );
             },
             Message::Saved(_) => {},
 
             // Messages
 
             // Updates
+            Message::ChannelsLoaded(channels) => {
+                if let Ok(channels) = channels {
+                    tracing::debug!(?channels, "got possible channels:");
+                    self.default_view.channels = channels;
+                }
+                return self
+                    .default_view
+                    .update(DefaultViewMessage::Query, &self.active_profile)
+                    .map(Message::DefaultViewMessage);
+            },
 
             // Views
             Message::DefaultViewMessage(msg) => {
