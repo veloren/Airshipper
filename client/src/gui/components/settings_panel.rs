@@ -1,38 +1,24 @@
 use crate::{
-    assets::{COMMUNITY_SHOWCASE_DEMO, FOLDER_ICON},
-    gui,
+    assets::FOLDER_ICON,
     gui::{
         components::GamePanelMessage,
         custom_widgets::heading_with_rule,
         style,
-        style::{
-            TestStyle3, TextInputStyle, TransparentButtonStyle, LIGHT_GREY,
-            VERY_DARK_GREY,
-        },
-        views::{
-            default::{
-                picklist, secondary_button_with_width, widget_with_label,
-                DefaultViewMessage,
-            },
-            Action,
-        },
+        style::{TextInputStyle, TransparentButtonStyle, LIGHT_GREY},
+        views::{default::DefaultViewMessage, Action},
     },
     profiles,
     profiles::Profile,
 };
 use iced::{
-    alignment::{Horizontal, Vertical},
+    alignment::Horizontal,
     pure::{
         button, column, container, image, pick_list, row, text, text_input, tooltip,
-        Element, Widget,
+        Element,
     },
-    Alignment, ContentFit, Length, Padding,
+    Alignment, Length, Padding,
 };
-use iced_native::{
-    image::Handle,
-    widget::{tooltip::Position, Image},
-    Command,
-};
+use iced_native::{image::Handle, widget::tooltip::Position, Command};
 
 #[derive(Clone, Debug)]
 pub enum SettingsPanelMessage {
@@ -56,7 +42,6 @@ impl SettingsPanelComponent {
         match msg {
             SettingsPanelMessage::ServerChanged(new_server) => {
                 tracing::debug!("new server selected {}", new_server);
-                //self.state = State::QueryingForUpdates(false);
                 let mut profile = active_profile.clone();
                 profile.server = new_server;
                 let profile2 = profile.clone();

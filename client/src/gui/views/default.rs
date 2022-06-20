@@ -2,17 +2,13 @@ use super::Action;
 use crate::{
     gui::{
         components::{ChangelogPanelComponent, LogoPanelComponent, NewsPanelComponent},
-        style, Result,
+        Result,
     },
-    profiles,
     profiles::Profile,
 };
 use iced::{
-    alignment::{Horizontal, Vertical},
-    image::Handle,
-    pure::{button, column, container, pick_list, row, text, tooltip, Element},
-    tooltip::Position,
-    Command, Image, Length,
+    pure::{column, container, row, Element},
+    Command, Length,
 };
 
 use crate::gui::{
@@ -62,7 +58,6 @@ pub enum DefaultViewMessage {
 pub enum Interaction {
     SettingsPressed,
     OpenURL(String),
-    Disabled,
 }
 
 impl DefaultView {
@@ -199,7 +194,6 @@ impl DefaultView {
                 Interaction::SettingsPressed => {
                     self.show_settings = !self.show_settings;
                 },
-                Interaction::Disabled => {},
                 Interaction::OpenURL(url) => {
                     if let Err(e) = opener::open(url) {
                         tracing::error!(
@@ -213,67 +207,4 @@ impl DefaultView {
 
         Command::none()
     }
-}
-
-pub fn settings_button<'a>(
-    interaction: Interaction,
-    style: impl iced::button::StyleSheet + 'static,
-) -> Element<'a, DefaultViewMessage> {
-    let btn: Element<Interaction> = button(Image::new(Handle::from_memory(
-        crate::assets::SETTINGS_ICON.to_vec(),
-    )))
-    .on_press(interaction)
-    .width(Length::Units(30))
-    .height(Length::Units(30))
-    .style(style)
-    .padding(2)
-    .into();
-
-    let element = btn.map(DefaultViewMessage::Interaction);
-
-    tooltip(element, "Settings", Position::Top)
-        .style(style::TooltipStyle)
-        .gap(5)
-        .into()
-}
-
-pub fn secondary_button_with_width<'a>(
-    label: impl Into<String>,
-    on_click_msg: DefaultViewMessage,
-    width: Length,
-) -> Element<'a, DefaultViewMessage> {
-    button(
-        text(label)
-            .size(16)
-            .horizontal_alignment(Horizontal::Center)
-            .vertical_alignment(Vertical::Center),
-    )
-    .on_press(on_click_msg)
-    .width(width)
-    .style(style::SecondaryButton)
-    .into()
-}
-
-pub fn picklist<'a, T: Clone + Eq + std::fmt::Display + 'static>(
-    selected: Option<T>,
-    values: &'a [T],
-    on_selected_msg: impl Fn(T) -> DefaultViewMessage + 'static,
-) -> Element<'a, DefaultViewMessage> {
-    let selected = Some(selected.unwrap_or_else(|| values[0].clone()));
-
-    pick_list(values, selected, on_selected_msg)
-        .style(style::ServerPickList)
-        .padding(10)
-        .into()
-}
-
-pub fn widget_with_label<'a>(
-    label_text: &'a str,
-    widget: Element<'a, DefaultViewMessage>,
-) -> Element<'a, DefaultViewMessage> {
-    row()
-        .spacing(10)
-        .push(text(label_text).horizontal_alignment(Horizontal::Right))
-        .push(widget)
-        .into()
 }

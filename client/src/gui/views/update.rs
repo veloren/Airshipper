@@ -1,7 +1,7 @@
 //! Display an update dialog (windows only) to ask whether to update airshipper
 
 use super::{Action, View};
-use crate::gui::style;
+use crate::gui::{style, style::ButtonState};
 use iced::{
     alignment::{Horizontal, Vertical},
     pure::{button, column, container, row, text, Element},
@@ -56,7 +56,8 @@ impl UpdateView {
                                 .vertical_alignment(Vertical::Center),
                         )
                         .on_press(UpdateViewMessage::SkipPressed)
-                        .style(style::SecondaryButton)
+                        .style(style::DownloadButtonStyle::Skip)
+                        .width(Length::Units(100))
                         .padding(7),
                     )
                     .push(
@@ -68,7 +69,8 @@ impl UpdateView {
                                 .vertical_alignment(Vertical::Center),
                         )
                         .on_press(UpdateViewMessage::UpdatePressed)
-                        .style(style::PrimaryButton::Enabled)
+                        .style(style::DownloadButtonStyle::Update(ButtonState::Enabled))
+                        .width(Length::Units(100))
                         .padding(7),
                     ),
             );
@@ -76,7 +78,7 @@ impl UpdateView {
         container(content)
             .width(Length::Fill)
             .height(Length::Fill)
-            .style(style::Content)
+            .style(style::DarkContainerStyle)
             .center_x()
             .center_y()
             .into()

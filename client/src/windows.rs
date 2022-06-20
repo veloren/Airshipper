@@ -19,7 +19,6 @@ use winapi::{
 };
 
 pub fn query() -> Result<Option<Release>> {
-    // TODO: Has to be adjusted.
     let releases = self_update::backends::github::ReleaseList::configure()
         .repo_owner("veloren")
         .repo_name("airshipper")
@@ -47,10 +46,12 @@ pub fn query() -> Result<Option<Release>> {
 
 /// Tries to self update with provided release
 pub(crate) fn update(latest_release: &Release) -> Result<()> {
-    let cache_path = fs::get_cache_path().join("update");
+    let update_cache_path = fs::get_cache_path().join("update");
 
     // Cleanup
-    let _ = std::fs::remove_dir_all(&cache_path);
+    let _ = std::fs::remove_dir_all(&update_cache_path);
+    std::fs::create_dir_all(&update_cache_path)
+        .expect("failed to create cache directory!");
 
     let asset = latest_release
         .asset_for("windows")
@@ -62,9 +63,9 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
         tracing::debug!(
             "Downloading '{}' to '{}'",
             &asset.download_url,
-            cache_path.join(&asset.name).display()
+            update_cache_path.join(&asset.name).display()
         );
-        let msi_file_path = cache_path.join(&asset.name);
+        let msi_file_path = update_cache_path.join(&asset.name);
 
         let msi_file = File::create(&msi_file_path)?;
 
@@ -81,7 +82,10 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
             tracing::debug!("Extracting asset...");
             self_update::Extract::from_source(&msi_file_path)
                 .archive(self_update::ArchiveKind::Zip)
-                .extract_file(&cache_path, asset.name.strip_suffix(".zip").unwrap())?;
+                .extract_file(
+                    &update_cache_path,
+                    asset.name.strip_suffix(".zip").unwrap(),
+                )?;
         }
 
         drop(msi_file);
@@ -93,7 +97,7 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
             &format!(
                 "/passive /i \"{}\" /L*V \"{}\" AUTOSTART=1",
                 msi_file_path.display(),
-                cache_path.join("airshipper-install.log").display()
+                update_cache_path.join("airshipper-install.log").display()
             ),
         );
 

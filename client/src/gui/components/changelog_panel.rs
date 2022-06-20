@@ -7,7 +7,7 @@ use crate::{
     consts::GITLAB_MERGED_MR_URL,
     gui::{
         style::{
-            ChangelogContainerStyle, ChangelogHeaderStyle, GitlabChangelogButtonStyle,
+            ChangelogHeaderStyle, DarkContainerStyle, GitlabChangelogButtonStyle,
             RuleStyle, DARK_WHITE,
         },
         views::{
@@ -315,7 +315,7 @@ impl ChangelogPanelComponent {
                     )
                     .height(Length::Fill)
                     .width(Length::Fill)
-                    .style(ChangelogContainerStyle),
+                    .style(DarkContainerStyle),
                 ),
             );
 

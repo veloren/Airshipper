@@ -26,8 +26,8 @@ use crate::{
     gui::{
         style,
         style::{
-            ButtonState, ChangelogHeaderStyle, DownloadButtonStyle, ProgressBarStyle,
-            SettingsButton, TestStyle2, TestStyle3, TransparentButtonStyle, LIGHT_GREY,
+            ButtonState, DownloadButtonStyle, ProgressBarStyle, SettingsButtonStyle,
+            LIGHT_GREY,
         },
         views::default::Interaction::SettingsPressed,
     },
@@ -345,7 +345,7 @@ impl GamePanelComponent {
                                     button(image(Handle::from_memory(
                                         SETTINGS_ICON.to_vec(),
                                     )))
-                                    .style(SettingsButton)
+                                    .style(SettingsButtonStyle)
                                     .on_press(
                                         DefaultViewMessage::Interaction(SettingsPressed),
                                     ),
