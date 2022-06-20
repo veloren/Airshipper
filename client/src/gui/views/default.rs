@@ -1,6 +1,7 @@
 use super::Action;
 use crate::{
     assets::{HAXRCORP_4089_FONT, HAXRCORP_4089_FONT_SIZE_3},
+    channels::{Channel, Channels},
     gui,
     gui::{
         components::{Changelog, News},
@@ -38,6 +39,8 @@ pub struct DefaultView {
     download_progress: Option<net::Progress>,
     #[serde(skip)]
     show_settings: bool,
+    #[serde(skip)]
+    pub channels: Channels,
 }
 
 #[derive(Debug, Clone)]
@@ -89,7 +92,7 @@ pub enum Interaction {
     PlayPressed,
     LogLevelChanged(profiles::LogLevel),
     ServerChanged(profiles::Server),
-    ChannelChanged(profiles::Channel),
+    ChannelChanged(Channel),
     WgpuBackendChanged(profiles::WgpuBackend),
     ReadMore(String),
     SetChangelogDisplayCount(usize),
@@ -172,8 +175,8 @@ impl DefaultView {
                 widget_with_label(
                     "Channel:",
                     picklist(
-                        Some(active_profile.channel),
-                        profiles::CHANNELS,
+                        Some(active_profile.channel.clone()),
+                        &self.channels.names,
                         Interaction::ChannelChanged,
                     ),
                 ),
