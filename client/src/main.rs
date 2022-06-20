@@ -1,4 +1,5 @@
 mod assets;
+mod channels;
 mod cli;
 mod consts;
 mod error;
