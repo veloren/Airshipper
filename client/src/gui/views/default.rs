@@ -1,5 +1,6 @@
 use super::Action;
 use crate::{
+    channels::Channels,
     gui::{
         components::{ChangelogPanelComponent, LogoPanelComponent, NewsPanelComponent},
         Result,
@@ -138,6 +139,14 @@ impl DefaultView {
                             DefaultViewMessage::NewsPanel(NewsPanelMessage::UpdateNews(
                                 update,
                             ))
+                        },
+                    ),
+                    Command::perform(
+                        Channels::fetch(active_profile.channel_url()),
+                        |channels| {
+                            DefaultViewMessage::SettingsPanel(
+                                SettingsPanelMessage::ChannelsLoaded(channels),
+                            )
                         },
                     ),
                     Command::perform(Profile::update(active_profile.clone()), |update| {

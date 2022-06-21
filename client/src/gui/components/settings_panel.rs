@@ -1,5 +1,6 @@
 use crate::{
     assets::FOLDER_ICON,
+    channels::{Channel, Channels},
     gui::{
         components::GamePanelMessage,
         custom_widgets::heading_with_rule,
@@ -9,6 +10,7 @@ use crate::{
     },
     profiles,
     profiles::Profile,
+    Result,
 };
 use iced::{
     alignment::Horizontal,
@@ -19,19 +21,23 @@ use iced::{
     Alignment, Length, Padding,
 };
 use iced_native::{image::Handle, widget::tooltip::Position, Command};
+use tracing::debug;
 
 #[derive(Clone, Debug)]
 pub enum SettingsPanelMessage {
     LogLevelChanged(profiles::LogLevel),
     ServerChanged(profiles::Server),
-    ChannelChanged(profiles::Channel),
+    ChannelChanged(Channel),
     WgpuBackendChanged(profiles::WgpuBackend),
     EnvVarsChanged(String),
     OpenLogsPressed,
+    ChannelsLoaded(Result<Channels>),
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct SettingsPanelComponent {}
+pub struct SettingsPanelComponent {
+    channels: Channels,
+}
 
 impl SettingsPanelComponent {
     pub fn update(
@@ -103,6 +109,14 @@ impl SettingsPanelComponent {
                     async { Action::UpdateProfile(profile) },
                     DefaultViewMessage::Action,
                 ))
+            },
+            SettingsPanelMessage::ChannelsLoaded(result) => {
+                if let Ok(channels) = result {
+                    debug!(?channels, "Fetched available channels:");
+                    self.channels = channels;
+                }
+
+                None
             },
         }
     }
@@ -247,8 +261,8 @@ impl SettingsPanelComponent {
                 .push(
                     container(
                         pick_list(
-                            profiles::CHANNELS,
-                            Some(active_profile.channel),
+                            self.channels.names.clone(),
+                            Some(active_profile.channel.clone()),
                             |x| {
                                 DefaultViewMessage::SettingsPanel(
                                     SettingsPanelMessage::ChannelChanged(x),

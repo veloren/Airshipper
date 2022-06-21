@@ -1,6 +1,7 @@
 #![feature(async_closure)]
 #![feature(let_chains)]
 mod assets;
+mod channels;
 mod cli;
 mod consts;
 mod error;

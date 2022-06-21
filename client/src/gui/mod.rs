@@ -120,10 +120,6 @@ pub enum Message {
     Loaded(Airshipper), // Todo: put in Box<>
     Saved(Result<()>),
 
-    // Messages
-
-    // Updates
-
     // Views
     DefaultViewMessage(DefaultViewMessage),
     #[cfg(windows)]
@@ -164,16 +160,13 @@ impl Application for Airshipper {
         match message {
             Message::Loaded(state) => {
                 *self = state;
+
                 return self
                     .default_view
                     .update(DefaultViewMessage::Query, &self.active_profile)
                     .map(Message::DefaultViewMessage);
             },
             Message::Saved(_) => {},
-
-            // Messages
-
-            // Updates
 
             // Views
             Message::DefaultViewMessage(msg) => {

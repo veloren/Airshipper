@@ -1,6 +1,6 @@
 #[cfg(unix)]
 use crate::nix;
-use crate::{consts, fs, net, Result};
+use crate::{channels::Channel, consts, fs, net, Result};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, ffi::OsString, path::PathBuf};
 use tokio::process::Command;
@@ -27,9 +27,14 @@ pub struct Profile {
     pub env_vars: String,
 }
 
+const DEFAULT_PROFILE_NAME: &str = "default";
 impl Default for Profile {
     fn default() -> Self {
-        Profile::new("default".to_owned(), Server::Production, Channel::Nightly)
+        Profile::new(
+            DEFAULT_PROFILE_NAME.to_owned(),
+            Server::Production,
+            Channel("nightly".to_owned()),
+        )
     }
 }
 
@@ -97,18 +102,6 @@ impl Server {
     }
 }
 
-#[derive(
-    Debug, Clone, Copy, derive_more::Display, Serialize, Deserialize, PartialEq, Eq,
-)]
-pub enum Channel {
-    Nightly,
-    Weekly,
-    /* TODO: Release,
-     * TODO: Source, */
-}
-
-pub static CHANNELS: &[Channel] = &[Channel::Nightly, Channel::Weekly];
-
 impl Profile {
     pub fn new(name: String, server: Server, channel: Channel) -> Self {
         Self {
@@ -161,6 +154,15 @@ impl Profile {
             std::env::consts::OS,
             std::env::consts::ARCH,
             self.channel
+        )
+    }
+
+    pub(crate) fn channel_url(&self) -> String {
+        format!(
+            "{}/channels/{}/{}",
+            self.server.url(),
+            std::env::consts::OS,
+            std::env::consts::ARCH,
         )
     }
 
