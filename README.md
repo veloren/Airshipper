@@ -26,6 +26,26 @@ cargo run --release
 
 Make sure to have [rustup](https://rustup.rs/) installed to compile rust code and [git lfs](https://book.veloren.net/contributors/development-tools.html#git-lfs) for assets.
 
+### Airshipper-Server
+
+**NOTE:** Airshipper-Server is not required by end-users.
+
+#### Compile from source
+
+```bash
+git clone https://gitlab.com/veloren/airshipper.git
+cd airshipper
+cargo run --release --bin airshipper-server
+```
+
+On first execution, a template configuration file will be created at `config/config.template.ron` and the server will exit.
+
+Rename this to `config.ron` and edit as appropriate before running again.
+
+```bash
+cargo run --release --bin airshipper-server
+```
+
 #### For NixOS users
 
 You can install Airshipper with:
