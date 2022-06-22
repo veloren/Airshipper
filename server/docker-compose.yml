@@ -7,11 +7,8 @@ services:
     image: registry.gitlab.com/veloren/airshipper/server:master
     volumes:
       - "./data:/opt/app/data"
+      - "./config:/opt/app/config"
     environment:
-      - AIRSHIPPER_GITLAB_SECRET=<secret>
-      - AIRSHIPPER_ARTIFACT_STAGE=build
-      - AIRSHIPPER_TARGET_BRANCH=master
-      - AIRSHIPPER_TARGET_EXECUTABLES=linux,windows,macos,linux-aarch64
       - RUST_LOG=info,server=debug
       - ROCKET_ENV=production
     ports:
