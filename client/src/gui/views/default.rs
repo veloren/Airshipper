@@ -17,6 +17,7 @@ use crate::gui::{
         ChangelogPanelMessage, CommunityShowcaseComponent, GamePanelComponent,
         GamePanelMessage, NewsPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
     },
+    rss_feed::RssFeedComponentMessage::UpdateRssFeed,
     style::SidePanelStyle,
 };
 
@@ -136,8 +137,8 @@ impl DefaultView {
                             self.news_panel_component.etag().to_owned(),
                         ),
                         |update| {
-                            DefaultViewMessage::NewsPanel(NewsPanelMessage::UpdateNews(
-                                update,
+                            DefaultViewMessage::NewsPanel(NewsPanelMessage::RssUpdate(
+                                UpdateRssFeed(update),
                             ))
                         },
                     ),
