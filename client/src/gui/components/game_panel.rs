@@ -323,9 +323,12 @@ impl GamePanelComponent {
             },
             GamePanelMessage::GameUpdate(update) => {
                 let next_state = match update {
+                    // The update check succeeded and found a new version
                     Ok(Some(version)) => {
-                        // Skip asking
                         if let GamePanelState::QueryingForUpdates(true) = self.state {
+                            // The retry button was pressed so immediately attempt the
+                            // download rather than
+                            // requiring the user to click Update again.
                             GamePanelState::Downloading {
                                 url: active_profile.url(),
                                 download_path: active_profile.download_path(),
@@ -336,9 +339,11 @@ impl GamePanelComponent {
                             GamePanelState::UpdateAvailable(version)
                         }
                     },
+                    // The update check succeeded but the game is already up-to-date
                     Ok(None) => GamePanelState::ReadyToPlay,
+                    // The update check failed, so go to offline mode, allowing the user
+                    // to play the previously downloaded version if present
                     Err(_) => {
-                        // Go into offline mode incase game can't be updated.
                         if active_profile.installed() {
                             GamePanelState::Offline(true)
                         } else {
@@ -357,24 +362,25 @@ impl GamePanelComponent {
         command
     }
 
-    pub fn view(&self) -> Element<DefaultViewMessage> {
+    pub fn view(&self, active_profile: &Profile) -> Element<DefaultViewMessage> {
+        // TODO: Improve this with actual game version / date (requires changes to
+        // Airshipper Server)
+        let mut version_string = "Pre-Alpha".to_owned();
+        if let Some(version) = &active_profile.version {
+            version_string.push_str(format!(" ({})", &version[..7]).as_str())
+        }
+
         column()
             .push(heading_with_rule::<DefaultViewMessage>("Game Version"))
             .push(
-                // TODO: Actual version / date - not available via Airshipper Server
-                // currently?
                 container(
                     row()
                         .height(Length::Units(30))
                         .push(
-                            container(
-                                text("Pre-Alpha v0.12.0 (2022-06-13)")
-                                    .size(15)
-                                    .color(LIGHT_GREY),
-                            )
-                            .align_y(Vertical::Bottom)
-                            .width(Length::Fill)
-                            .height(Length::Fill),
+                            container(text(version_string).size(15).color(LIGHT_GREY))
+                                .align_y(Vertical::Bottom)
+                                .width(Length::Fill)
+                                .height(Length::Fill),
                         )
                         .push(
                             tooltip(

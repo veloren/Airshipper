@@ -91,7 +91,10 @@ impl DefaultView {
             column()
                 .push(container(logo_panel_component.view()).height(Length::Fill))
                 .push(container(left_middle_contents).height(Length::Shrink))
-                .push(container(game_panel_component.view()).height(Length::Shrink)),
+                .push(
+                    container(game_panel_component.view(active_profile))
+                        .height(Length::Shrink),
+                ),
         )
         .height(Length::Fill)
         .width(Length::Units(347))
