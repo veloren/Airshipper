@@ -19,6 +19,7 @@ use iced::{
     ContentFit, Length, Padding,
 };
 use iced_native::{image::Handle, widget::Image, Command};
+use rand::{prelude::SliceRandom, thread_rng};
 use serde::{Deserialize, Serialize};
 use std::cmp::{max, min};
 
@@ -43,17 +44,11 @@ pub enum CommunityShowcasePanelMessage {
 
 impl RssFeedComponent for CommunityShowcaseComponent {
     fn store_feed(&mut self, rss_feed: RssFeedData) {
-        use rand::{seq::SliceRandom, thread_rng};
-
         self.posts = rss_feed
             .posts
             .into_iter()
             .map(|rss_post| CommunityPost { rss_post })
             .collect();
-
-        // Shuffle Community Showcase posts each time they're loaded so that users see
-        // different posts even if they never click the next/prev buttons.
-        self.posts.shuffle(&mut thread_rng());
 
         self.etag = rss_feed.etag;
     }
@@ -66,7 +61,7 @@ impl RssFeedComponent for CommunityShowcaseComponent {
         self.posts.iter_mut().map(|x| &mut x.rss_post).collect()
     }
 
-    fn rss_update_command(&self, url: String) -> Command<DefaultViewMessage> {
+    fn rss_post_update_command(&self, url: String) -> Command<DefaultViewMessage> {
         // TODO: All of this except the specific DefaultViewMessage is the same for every
         // RssComponent so could be better encapsulated within the RssFeedComponent trait.
         Command::perform(RssFeedData::fetch_image(url.to_owned()), move |img| {
@@ -79,6 +74,12 @@ impl RssFeedComponent for CommunityShowcaseComponent {
                 ),
             )
         })
+    }
+
+    fn after_rss_feed_updated(&mut self) {
+        // Shuffle Community Showcase posts each time they're loaded so that users
+        // see different posts even if they never click the next/prev buttons.
+        self.posts.shuffle(&mut thread_rng());
     }
 }
 

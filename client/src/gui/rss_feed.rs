@@ -36,7 +36,10 @@ pub trait RssFeedComponent {
 
     /// Triggers an update message when an RSS post is updated to signal to the view that
     /// it should refresh
-    fn rss_update_command(&self, url: String) -> Command<DefaultViewMessage>;
+    fn rss_post_update_command(&self, url: String) -> Command<DefaultViewMessage>;
+
+    /// An optional hook that is called after the RSS feed is updated
+    fn after_rss_feed_updated(&mut self) {}
 
     fn handle_update(
         &mut self,
@@ -46,6 +49,7 @@ pub trait RssFeedComponent {
             RssFeedComponentMessage::UpdateRssFeed(status) => match status {
                 RssFeedUpdateStatus::Updated(rss_feed_data) => {
                     self.store_feed(rss_feed_data);
+                    self.after_rss_feed_updated();
 
                     Some(Command::perform(
                         async { Action::Save },
@@ -69,9 +73,12 @@ pub trait RssFeedComponent {
                                 return None;
                             }
                             let url = post.image_url.as_ref().unwrap().to_owned();
-                            Some(self.rss_update_command(url))
+                            Some(self.rss_post_update_command(url))
                         })
                         .collect();
+
+                    self.after_rss_feed_updated();
+
                     debug!("Fetching images for {} cached blog posts", commands.len());
                     Some(Command::batch(commands))
                 },

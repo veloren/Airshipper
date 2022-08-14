@@ -256,7 +256,7 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
 
     Settings {
         window: Window {
-            size: (1050, 700),
+            size: (1050, 720),
             resizable: true,
             decorations: true,
             icon: Some(

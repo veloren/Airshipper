@@ -50,7 +50,7 @@ impl RssFeedComponent for NewsPanelComponent {
         self.posts.iter_mut().map(|x| &mut x.rss_post).collect()
     }
 
-    fn rss_update_command(&self, url: String) -> Command<DefaultViewMessage> {
+    fn rss_post_update_command(&self, url: String) -> Command<DefaultViewMessage> {
         // TODO: All of this except the specific DefaultViewMessage is the same for every
         // RssComponent so could be better encapsulated within the RssFeedComponent trait.
         Command::perform(RssFeedData::fetch_image(url.to_owned()), move |img| {
