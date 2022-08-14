@@ -102,7 +102,7 @@ dependencies = [
 
 [[package]]
 name = "airshipper"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "bytesize",
  "clap",
@@ -121,6 +121,7 @@ dependencies = [
  "opener",
  "openssl-sys",
  "pulldown-cmark 0.8.0",
+ "rand 0.8.5",
  "regex",
  "reqwest",
  "ron 0.6.6",

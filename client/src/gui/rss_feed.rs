@@ -27,10 +27,15 @@ pub enum RssFeedComponentMessage {
 
 /// Allows a component to handle updates to an RSS feed that it owns
 pub trait RssFeedComponent {
+    /// Stores the feed against the component's own state
     fn store_feed(&mut self, rss_feed_data: RssFeedData);
+
+    /// Returns the posts that the component has previously fetched from the RSS feed
     fn posts(&self) -> Vec<RssPost>;
     fn posts_mut(&mut self) -> Vec<&mut RssPost>;
-    fn update_posts(&mut self, posts: Vec<RssPost>);
+
+    /// Triggers an update message when an RSS post is updated to signal to the view that
+    /// it should refresh
     fn rss_update_command(&self, url: String) -> Command<DefaultViewMessage>;
 
     fn handle_update(
@@ -154,6 +159,8 @@ impl RssFeedData {
         let futs = feed
             .items()
             .iter()
+            // TODO: Currently we want 15 blog posts and 15 community showcase posts - if this is ever not the case 
+            // then this number will need parameterising.
             .take(15)
             .map(async move |item| {
                 let mut post = RssPost::from(item);

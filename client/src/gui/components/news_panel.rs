@@ -33,14 +33,13 @@ pub enum NewsPanelMessage {
 }
 
 impl RssFeedComponent for NewsPanelComponent {
-    fn store_feed(&mut self, news: RssFeedData) {
-        println!("STORE_FEED");
-        self.posts = news
+    fn store_feed(&mut self, rss_feed: RssFeedData) {
+        self.posts = rss_feed
             .posts
             .into_iter()
             .map(|rss_post| NewsPost { rss_post })
             .collect();
-        self.etag = news.etag;
+        self.etag = rss_feed.etag;
     }
 
     fn posts(&self) -> Vec<RssPost> {
@@ -49,12 +48,6 @@ impl RssFeedComponent for NewsPanelComponent {
 
     fn posts_mut(&mut self) -> Vec<&mut RssPost> {
         self.posts.iter_mut().map(|x| &mut x.rss_post).collect()
-    }
-    fn update_posts(&mut self, posts: Vec<RssPost>) {
-        self.posts = posts
-            .into_iter()
-            .map(|rss_post| NewsPost { rss_post })
-            .collect()
     }
 
     fn rss_update_command(&self, url: String) -> Command<DefaultViewMessage> {

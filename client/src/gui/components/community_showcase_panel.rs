@@ -6,8 +6,11 @@ use crate::{
             RssFeedComponent, RssFeedComponentMessage, RssFeedData, RssFeedUpdateStatus,
             RssPost,
         },
-        style::NextPrevTextButtonStyle,
-        views::default::DefaultViewMessage,
+        style::{
+            LoadingBlogPostContainerStyle, NextPrevTextButtonStyle,
+            TransparentButtonStyle,
+        },
+        views::default::{DefaultViewMessage, Interaction},
     },
 };
 use iced::{
@@ -39,13 +42,20 @@ pub enum CommunityShowcasePanelMessage {
 }
 
 impl RssFeedComponent for CommunityShowcaseComponent {
-    fn store_feed(&mut self, news: RssFeedData) {
-        self.posts = news
+    fn store_feed(&mut self, rss_feed: RssFeedData) {
+        use rand::{seq::SliceRandom, thread_rng};
+
+        self.posts = rss_feed
             .posts
             .into_iter()
             .map(|rss_post| CommunityPost { rss_post })
             .collect();
-        self.etag = news.etag;
+
+        // Shuffle Community Showcase posts each time they're loaded so that users see
+        // different posts even if they never click the next/prev buttons.
+        self.posts.shuffle(&mut thread_rng());
+
+        self.etag = rss_feed.etag;
     }
 
     fn posts(&self) -> Vec<RssPost> {
@@ -54,14 +64,6 @@ impl RssFeedComponent for CommunityShowcaseComponent {
 
     fn posts_mut(&mut self) -> Vec<&mut RssPost> {
         self.posts.iter_mut().map(|x| &mut x.rss_post).collect()
-    }
-    fn update_posts(&mut self, posts: Vec<RssPost>) {
-        self.offset = 0;
-
-        self.posts = posts
-            .into_iter()
-            .map(|rss_post| CommunityPost { rss_post })
-            .collect()
     }
 
     fn rss_update_command(&self, url: String) -> Command<DefaultViewMessage> {
@@ -117,12 +119,10 @@ impl CommunityShowcaseComponent {
 
     pub fn view(&self) -> Element<DefaultViewMessage> {
         let current_post = if let Some(post) = self.posts.get(self.offset) {
-            container(post.view())
+            container(post.view()).width(Length::Fill)
         } else {
             container(text("Nothing to show"))
         };
-
-        // TODO: Randomise the order on startup (not just on fetch)
 
         let mut prev_button = button("<< Prev").style(NextPrevTextButtonStyle);
         if self.offset > 0 {
@@ -173,7 +173,9 @@ impl CommunityPost {
     pub(crate) fn view(&self) -> Element<DefaultViewMessage> {
         let post = &self.rss_post;
 
-        // TODO: Tooltip with post description?
+        // TODO: Tooltip with post description once Iced supports tooltip layering
+        // correctly. Currently tooltips get mixed up with the changelog text
+        // because Iced doesn't support multiple layers correctly.
         let image_container = if let Some(bytes) = &post.image_bytes {
             container(
                 Image::new(Handle::from_memory(bytes.clone()))
@@ -181,14 +183,19 @@ impl CommunityPost {
             )
             .height(Length::Units(180))
         } else {
-            container(
-                text("Loading...")
-                    .horizontal_alignment(Horizontal::Center)
-                    .vertical_alignment(Vertical::Center)
-                    .width(Length::Fill)
-                    .height(Length::Fill),
-            )
+            container(text("Loading..."))
+                .align_x(Horizontal::Center)
+                .align_y(Vertical::Center)
+                .style(LoadingBlogPostContainerStyle)
+                .height(Length::Units(180))
+                .width(Length::Fill)
         };
-        image_container.into()
+        button(image_container)
+            .style(TransparentButtonStyle)
+            .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
+                post.button_url.clone(),
+            )))
+            .width(Length::Fill)
+            .into()
     }
 }
