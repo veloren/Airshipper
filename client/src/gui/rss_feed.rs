@@ -111,6 +111,13 @@ impl RssFeedData {
             match net::query_etag(feed_url).await? {
                 Some(remote_version) => {
                     if local_version != remote_version {
+                        debug!(
+                            ?feed_url,
+                            "Local version {} does not match remote version {}, \
+                             fetching feed",
+                            local_version,
+                            remote_version
+                        );
                         Ok(RssFeedUpdateStatus::Updated(
                             RssFeedData::fetch(feed_url).await?,
                         ))

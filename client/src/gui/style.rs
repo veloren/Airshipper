@@ -174,6 +174,17 @@ impl container::StyleSheet for ChangelogHeaderStyle {
     }
 }
 
+pub struct NextPrevTextButtonStyle;
+impl button::StyleSheet for NextPrevTextButtonStyle {
+    fn active(&self) -> Style {
+        Style {
+            background: None,
+            text_color: DARK_WHITE,
+            ..button::Style::default()
+        }
+    }
+}
+
 // Used by ChangelogPanel and Update screen
 pub struct DarkContainerStyle;
 impl container::StyleSheet for DarkContainerStyle {
@@ -204,6 +215,19 @@ impl button::StyleSheet for GitlabChangelogButtonStyle {
             background: Some(Background::Color(LIME_GREEN)),
             border_radius: 25.0,
             ..button::Style::default()
+        }
+    }
+}
+
+pub struct LoadingBlogPostContainerStyle;
+impl container::StyleSheet for LoadingBlogPostContainerStyle {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: None,
+            border_width: 0.7,
+            border_color: DARK_WHITE,
+            text_color: Some(DARK_WHITE),
+            ..container::Style::default()
         }
     }
 }

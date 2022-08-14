@@ -6,7 +6,10 @@ use crate::{
             RssFeedComponent, RssFeedComponentMessage, RssFeedData, RssFeedUpdateStatus,
             RssPost,
         },
-        style::{BlogPostContainerStyle, TransparentButtonStyle, LILAC},
+        style::{
+            BlogPostContainerStyle, LoadingBlogPostContainerStyle,
+            TransparentButtonStyle, LILAC,
+        },
         views::default::{DefaultViewMessage, Interaction},
     },
 };
@@ -20,7 +23,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct NewsPanelComponent {
-    posts: Vec<Post>,
+    posts: Vec<NewsPost>,
     etag: String,
 }
 
@@ -31,10 +34,11 @@ pub enum NewsPanelMessage {
 
 impl RssFeedComponent for NewsPanelComponent {
     fn store_feed(&mut self, news: RssFeedData) {
+        println!("STORE_FEED");
         self.posts = news
             .posts
             .into_iter()
-            .map(|rss_post| Post { rss_post })
+            .map(|rss_post| NewsPost { rss_post })
             .collect();
         self.etag = news.etag;
     }
@@ -49,7 +53,7 @@ impl RssFeedComponent for NewsPanelComponent {
     fn update_posts(&mut self, posts: Vec<RssPost>) {
         self.posts = posts
             .into_iter()
-            .map(|rss_post| Post { rss_post })
+            .map(|rss_post| NewsPost { rss_post })
             .collect()
     }
 
@@ -82,8 +86,7 @@ impl NewsPanelComponent {
     ) -> Option<Command<DefaultViewMessage>> {
         match msg {
             NewsPanelMessage::RssUpdate(rss_msg) => self.handle_update(rss_msg),
-        };
-        None
+        }
     }
 
     pub(crate) fn view(&self) -> Element<DefaultViewMessage> {
@@ -101,11 +104,11 @@ impl NewsPanelComponent {
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct Post {
+pub struct NewsPost {
     pub rss_post: RssPost,
 }
 
-impl Post {
+impl NewsPost {
     pub(crate) fn view(&self) -> Element<DefaultViewMessage> {
         let post = &self.rss_post;
 
@@ -121,6 +124,7 @@ impl Post {
                     .width(Length::Fill)
                     .height(Length::Fill),
             )
+            .style(LoadingBlogPostContainerStyle)
         };
 
         button(

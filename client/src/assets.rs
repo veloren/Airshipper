@@ -1,8 +1,5 @@
 use iced::Font;
 
-pub const COMMUNITY_SHOWCASE_DEMO: &[u8] =
-    include_bytes!("../assets/images/community_showcase_demo.png");
-
 pub const VELOREN_LOGO: &[u8] = include_bytes!("../assets/images/veloren-logo.png");
 pub const VELOREN_ICON: &[u8] = include_bytes!("../assets/icons/logo.ico");
 pub const SETTINGS_ICON: &[u8] = include_bytes!("../assets/icons/settings.png");

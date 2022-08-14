@@ -96,6 +96,7 @@ impl Airshipper {
         let data = tokio::task::block_in_place(|| {
             ron::ser::to_string_pretty(&airshipper, PrettyConfig::default())
         })?;
+
         let mut file = File::create(fs::savedstate_file()).await?;
         file.write_all(data.as_bytes()).await?;
         file.sync_all().await?;

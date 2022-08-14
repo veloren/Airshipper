@@ -14,8 +14,9 @@ use iced::{
 
 use crate::gui::{
     components::{
-        ChangelogPanelMessage, CommunityShowcaseComponent, GamePanelComponent,
-        GamePanelMessage, NewsPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
+        ChangelogPanelMessage, CommunityShowcaseComponent, CommunityShowcasePanelMessage,
+        GamePanelComponent, GamePanelMessage, NewsPanelMessage, SettingsPanelComponent,
+        SettingsPanelMessage,
     },
     rss_feed::RssFeedComponentMessage::UpdateRssFeed,
     style::SidePanelStyle,
@@ -26,7 +27,6 @@ pub struct DefaultView {
     changelog_panel_component: ChangelogPanelComponent,
     #[serde(skip)]
     logo_panel_component: LogoPanelComponent,
-    #[serde(skip)]
     community_showcase_component: CommunityShowcaseComponent,
     #[serde(skip)]
     game_panel_component: GamePanelComponent,
@@ -52,6 +52,7 @@ pub enum DefaultViewMessage {
     // Panel-specific messages
     GamePanel(GamePanelMessage),
     ChangelogPanel(ChangelogPanelMessage),
+    CommunityShowcasePanel(CommunityShowcasePanelMessage),
     NewsPanel(NewsPanelMessage),
     SettingsPanel(SettingsPanelMessage),
 }
@@ -123,6 +124,16 @@ impl DefaultView {
             DefaultViewMessage::Query => {
                 return Command::batch(vec![
                     Command::perform(
+                        NewsPanelComponent::update_news(
+                            self.news_panel_component.etag().to_owned(),
+                        ),
+                        |update| {
+                            DefaultViewMessage::NewsPanel(NewsPanelMessage::RssUpdate(
+                                UpdateRssFeed(update),
+                            ))
+                        },
+                    ),
+                    Command::perform(
                         ChangelogPanelComponent::update_changelog(
                             self.changelog_panel_component.etag.clone(),
                         ),
@@ -133,13 +144,15 @@ impl DefaultView {
                         },
                     ),
                     Command::perform(
-                        NewsPanelComponent::update_news(
-                            self.news_panel_component.etag().to_owned(),
+                        CommunityShowcaseComponent::update_community_posts(
+                            self.community_showcase_component.etag().to_owned(),
                         ),
                         |update| {
-                            DefaultViewMessage::NewsPanel(NewsPanelMessage::RssUpdate(
-                                UpdateRssFeed(update),
-                            ))
+                            DefaultViewMessage::CommunityShowcasePanel(
+                                CommunityShowcasePanelMessage::RssUpdate(UpdateRssFeed(
+                                    update,
+                                )),
+                            )
                         },
                     ),
                     Command::perform(
@@ -172,6 +185,11 @@ impl DefaultView {
             },
             DefaultViewMessage::ChangelogPanel(msg) => {
                 if let Some(command) = self.changelog_panel_component.update(msg) {
+                    return command;
+                }
+            },
+            DefaultViewMessage::CommunityShowcasePanel(msg) => {
+                if let Some(command) = self.community_showcase_component.update(msg) {
                     return command;
                 }
             },

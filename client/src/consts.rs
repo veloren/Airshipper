@@ -32,5 +32,9 @@ pub const CHANGELOG_URL: &str =
 // For user linking
 pub const NEWS_URL: &str = "https://veloren.net/rss.xml";
 
+// TODO: UPDATE WITH ACTUAL URL
+pub const COMMUNITY_SHOWCASE_URL: &str =
+    "http://127.0.0.1:1111/community-showcase/rss.xml";
+
 pub const GITLAB_MERGED_MR_URL: &str =
     "https://gitlab.com/veloren/veloren/-/merge_requests?scope=all&state=merged";
