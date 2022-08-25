@@ -1,25 +1,53 @@
 use crate::{
-    assets::{HAXRCORP_4089_FONT, HAXRCORP_4089_FONT_SIZE_2},
+    assets::{
+        CHANGELOG_ICON, POPPINS_BOLD_FONT, POPPINS_LIGHT_FONT, POPPINS_MEDIUM_FONT,
+        UP_RIGHT_ARROW_ICON,
+    },
     consts,
-    gui::views::default::{secondary_button, DefaultViewMessage, Interaction},
+    consts::GITLAB_MERGED_MR_URL,
+    gui::{
+        style::{
+            ChangelogHeaderStyle, DarkContainerStyle, GitlabChangelogButtonStyle,
+            RuleStyle, DARK_WHITE,
+        },
+        views::{
+            default::{DefaultViewMessage, Interaction},
+            Action,
+        },
+    },
     net, Result,
 };
 use iced::{
-    pure::{column, row, scrollable, text, Element},
-    Length, Rule,
+    alignment::Vertical,
+    pure::{button, column, container, image, row, scrollable, text, Element},
+    Alignment, Color, Image, Length, Padding, Rule,
 };
+use iced_native::{image::Handle, widget::Text, Command};
 use pulldown_cmark::{Event, Options, Parser, Tag};
 use serde::{Deserialize, Serialize};
+use tracing::debug;
+
+#[derive(Clone, Debug)]
+pub enum ChangelogPanelMessage {
+    ScrollPositionChanged(f32),
+    UpdateChangelog(Result<Option<ChangelogPanelComponent>>),
+}
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct Changelog {
+pub struct ChangelogPanelComponent {
+    // TODO: Separate the Changelog data from the Panel data to avoid replacing the whole
+    // panel when the changelog is updated
     pub versions: Vec<ChangelogVersion>,
     pub etag: String,
-    #[serde(skip)]
+    #[serde(skip, default = "default_display_count")]
     pub display_count: usize,
 }
 
-impl Changelog {
+pub fn default_display_count() -> usize {
+    2
+}
+
+impl ChangelogPanelComponent {
     #[allow(clippy::while_let_on_iterator)]
     async fn fetch() -> Result<Self> {
         let mut versions: Vec<ChangelogVersion> = Vec::new();
@@ -143,7 +171,7 @@ impl Changelog {
             }
         }
 
-        Ok(Changelog {
+        Ok(ChangelogPanelComponent {
             etag,
             versions,
             display_count: 2,
@@ -151,60 +179,148 @@ impl Changelog {
     }
 
     /// Returns new Changelog incase remote one is newer
-    pub async fn update(version: String) -> Result<Option<Self>> {
+    pub async fn update_changelog(version: String) -> Result<Option<Self>> {
         match net::query_etag(consts::CHANGELOG_URL).await? {
             Some(remote_version) => {
                 if version != remote_version {
+                    debug!(
+                        "Changelog version different (Local: {} Remote: {}), fetching...",
+                        version, remote_version
+                    );
                     return Ok(Some(Self::fetch().await?));
                 } else {
-                    tracing::debug!("Changelog up-to-date.");
+                    debug!("Changelog up-to-date.");
                     Ok(None)
                 }
             },
             // We query the changelog in case there's no etag to be found
             // to make sure the player stays informed.
-            None => Ok(Some(Self::fetch().await?)),
+            None => {
+                debug!("Changelog missing, fetching...");
+                Ok(Some(Self::fetch().await?))
+            },
+        }
+    }
+
+    pub fn update(
+        &mut self,
+        msg: ChangelogPanelMessage,
+    ) -> Option<Command<DefaultViewMessage>> {
+        match msg {
+            ChangelogPanelMessage::UpdateChangelog(result) => match result {
+                Ok(Some(changelog)) => {
+                    *self = changelog;
+                    Some(Command::perform(
+                        async { Action::Save },
+                        DefaultViewMessage::Action,
+                    ))
+                },
+                Ok(None) => None,
+                Err(e) => {
+                    tracing::trace!("Failed to update changelog: {}", e);
+                    None
+                },
+            },
+            ChangelogPanelMessage::ScrollPositionChanged(pos) => {
+                if pos > 0.9 && self.display_count < self.versions.len() {
+                    self.display_count += 1;
+                }
+                None
+            },
         }
     }
 
     pub fn view(&self) -> Element<DefaultViewMessage> {
-        let mut changelog = column().padding(15).spacing(10);
+        let mut changelog = column().spacing(10);
 
         for version in &mut self.versions.iter().take(self.display_count as usize) {
             changelog = changelog.push(version.view());
         }
 
-        let changelog = changelog
-            .push(
-                row()
-                    .spacing(10)
-                    .push(secondary_button(
-                        "Show More",
-                        Interaction::SetChangelogDisplayCount(
-                            self.display_count.saturating_add(1),
-                        ),
-                    ))
-                    .push(secondary_button(
-                        "Show Less",
-                        Interaction::SetChangelogDisplayCount(
-                            self.display_count.saturating_sub(1),
-                        ),
-                    ))
-                    .push(secondary_button(
-                        "Show All",
-                        Interaction::SetChangelogDisplayCount(self.versions.len()),
-                    ))
-                    .push(secondary_button(
-                        "Show Latest Only",
-                        Interaction::SetChangelogDisplayCount(1),
-                    )),
-            )
-            .push(secondary_button(
-                "Read Changelog on Gitlab",
-                Interaction::ReadMore(consts::CHANGELOG_URL_LINK.to_owned()),
-            ));
+        let top_row = row().height(Length::Units(50)).push(
+            column().push(
+                container(
+                    row()
+                        .push(
+                            container(Image::new(Handle::from_memory(
+                                CHANGELOG_ICON.to_vec(),
+                            )))
+                            .height(Length::Fill)
+                            .width(Length::Shrink)
+                            .align_y(Vertical::Center)
+                            .padding(Padding::from([0, 0, 0, 12])),
+                        )
+                        .push(
+                            container(
+                                Text::new("Latest Patch Notes")
+                                    .color(DARK_WHITE)
+                                    .font(POPPINS_MEDIUM_FONT),
+                            )
+                            .width(Length::Fill)
+                            .height(Length::Fill)
+                            .align_y(Vertical::Center)
+                            .padding(Padding::from([1, 0, 0, 8])),
+                        )
+                        .push(
+                            container(
+                                button(
+                                    row()
+                                        .push(
+                                            text("Recent Changes")
+                                                .color(Color::WHITE)
+                                                .size(14),
+                                        )
+                                        .push(image(Handle::from_memory(
+                                            UP_RIGHT_ARROW_ICON.to_vec(),
+                                        )))
+                                        .spacing(5)
+                                        .align_items(Alignment::Center),
+                                )
+                                .on_press(DefaultViewMessage::Interaction(
+                                    Interaction::OpenURL(
+                                        GITLAB_MERGED_MR_URL.to_string(),
+                                    ),
+                                ))
+                                .padding(Padding::from([2, 10, 2, 10]))
+                                .height(Length::Units(20))
+                                .style(GitlabChangelogButtonStyle),
+                            )
+                            .padding(Padding::from([0, 20, 0, 0]))
+                            .height(Length::Fill)
+                            .align_y(Vertical::Center)
+                            .width(Length::Shrink),
+                        )
+                        .height(Length::Fill),
+                )
+                .align_y(Vertical::Center),
+            ),
+        );
 
-        scrollable(changelog).height(Length::Fill).into()
+        let col = column()
+            .push(
+                container(top_row)
+                    .width(Length::Fill)
+                    .style(ChangelogHeaderStyle),
+            )
+            .push(
+                column().push(
+                    container(
+                        scrollable(changelog)
+                            .on_scroll(|pos| {
+                                DefaultViewMessage::ChangelogPanel(
+                                    ChangelogPanelMessage::ScrollPositionChanged(pos),
+                                )
+                            })
+                            .height(Length::Fill),
+                    )
+                    .height(Length::Fill)
+                    .width(Length::Fill)
+                    .style(DarkContainerStyle),
+                ),
+            );
+
+        let changelog_container = container(col);
+        changelog_container.into()
     }
 }
 
@@ -229,11 +345,10 @@ impl ChangelogVersion {
         let mut version = column().spacing(10).push(
             column()
                 .push(
-                    text(version_string)
-                        .font(HAXRCORP_4089_FONT)
-                        .size(HAXRCORP_4089_FONT_SIZE_2),
+                    container(text(version_string).font(POPPINS_BOLD_FONT).size(28))
+                        .padding(Padding::from([20, 0, 6, 33])),
                 )
-                .push(Rule::horizontal(8)),
+                .push(Rule::horizontal(8).style(RuleStyle)),
         );
 
         for note in &self.notes {
@@ -241,16 +356,22 @@ impl ChangelogVersion {
         }
 
         for (section_name, section_lines) in &self.sections {
-            let mut section = column().push(text(section_name).size(22));
+            let mut section_col = column().push(text(section_name).size(23));
 
             for line in section_lines {
-                section = section
-                    .push(row().push(text(" • ").size(18)).push(text(line).size(18)));
+                section_col = section_col.push(
+                    container(
+                        row()
+                            .push(text(" •  ").font(POPPINS_LIGHT_FONT).size(17))
+                            .push(text(line).font(POPPINS_LIGHT_FONT).size(17)),
+                    )
+                    .padding(Padding::from([1, 0, 1, 10])),
+                );
             }
 
-            version = version.push(section);
+            version = version
+                .push(container(section_col).padding(Padding::from([0, 33, 0, 33])));
         }
-
-        version.into()
+        container(version).into()
     }
 }

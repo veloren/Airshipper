@@ -14,6 +14,9 @@ pub struct CmdLine {
     /// Set the logging verbosity for Airshipper (d = DEBUG, dd = TRACE)
     #[clap(short, long, parse(from_occurrences), global = true)]
     pub debug: i32,
+    /// Force a reset of all user data on startup
+    #[clap(long, global = true)]
+    pub force_reset: bool,
 }
 
 #[derive(Debug, Clone, Subcommand)]

@@ -27,12 +27,13 @@ pub struct Profile {
     pub env_vars: String,
 }
 
+const DEFAULT_PROFILE_NAME: &str = "default";
 impl Default for Profile {
     fn default() -> Self {
         Profile::new(
-            "default".to_owned(),
+            DEFAULT_PROFILE_NAME.to_owned(),
             Server::Production,
-            "nightly".to_owned(),
+            Channel("nightly".to_owned()),
         )
     }
 }
