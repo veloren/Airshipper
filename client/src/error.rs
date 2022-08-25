@@ -47,7 +47,6 @@ macro_rules! impl_from {
         }
     };
 }
-
 impl_from!(std::io::Error, ClientError::IoError);
 impl_from!(reqwest::Error, ClientError::NetworkError);
 impl_from!(ron::Error, ClientError::RonError);
