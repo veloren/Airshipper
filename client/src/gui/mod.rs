@@ -1,9 +1,11 @@
 pub mod components;
+mod custom_widgets;
+mod rss_feed;
 mod style;
 mod subscriptions;
 mod views;
 
-use crate::{channels::Channels, cli::CmdLine, fs, profiles::Profile, Result};
+use crate::{cli::CmdLine, fs, profiles::Profile, Result};
 use iced::{
     pure::{Application, Element},
     Command, Settings, Subscription,
@@ -58,25 +60,34 @@ impl Airshipper {
 
     pub async fn load(flags: CmdLine) -> Self {
         tokio::task::block_in_place(|| {
-            if let Ok(file) = std::fs::File::open(fs::savedstate_file()) {
-                match ron::de::from_reader(file) {
-                    Ok(state) => {
-                        // Rust type inference magic
-                        let mut state: Airshipper = state;
-                        state.cmd = flags;
-                        state
-                    },
-                    Err(e) => {
-                        tracing::debug!(
-                            "Reading state failed. Falling back to default: {}",
-                            e
-                        );
-                        Self::default()
-                    },
-                }
-            } else {
-                tracing::debug!("Falling back to default state.");
-                Self::default()
+            let saved_state_file = fs::savedstate_file();
+            match std::fs::File::open(&saved_state_file) {
+                Ok(file) => {
+                    match ron::de::from_reader(file) {
+                        Ok(state) => {
+                            // Rust type inference magic
+                            let mut state: Airshipper = state;
+                            state.cmd = flags;
+                            state
+                        },
+                        Err(e) => {
+                            tracing::debug!(
+                                "Reading state failed. Falling back to default: {}",
+                                e
+                            );
+                            Self::default()
+                        },
+                    }
+                },
+                Err(e) => {
+                    tracing::debug!(
+                        ?e,
+                        "Failed to read saved state from {}, falling back to default \
+                         state",
+                        saved_state_file.to_string_lossy()
+                    );
+                    Self::default()
+                },
             }
         })
     }
@@ -85,6 +96,7 @@ impl Airshipper {
         let data = tokio::task::block_in_place(|| {
             ron::ser::to_string_pretty(&airshipper, PrettyConfig::default())
         })?;
+
         let mut file = File::create(fs::savedstate_file()).await?;
         file.write_all(data.as_bytes()).await?;
         file.sync_all().await?;
@@ -102,11 +114,6 @@ impl Airshipper {
 
         Ok(())
     }
-
-    pub async fn load_channels(airshipper: Self) -> Result<Channels> {
-        let channels = Channels::fetch(airshipper.active_profile.channel_url()).await?;
-        Ok(channels)
-    }
 }
 
 #[allow(clippy::enum_variant_names, clippy::large_enum_variant)]
@@ -114,11 +121,6 @@ impl Airshipper {
 pub enum Message {
     Loaded(Airshipper), // Todo: put in Box<>
     Saved(Result<()>),
-
-    // Messages
-
-    // Updates
-    ChannelsLoaded(Result<Channels>),
 
     // Views
     DefaultViewMessage(DefaultViewMessage),
@@ -160,26 +162,13 @@ impl Application for Airshipper {
         match message {
             Message::Loaded(state) => {
                 *self = state;
-                return Command::perform(
-                    Self::load_channels(self.clone()),
-                    Message::ChannelsLoaded,
-                );
-            },
-            Message::Saved(_) => {},
 
-            // Messages
-
-            // Updates
-            Message::ChannelsLoaded(channels) => {
-                if let Ok(channels) = channels {
-                    tracing::debug!(?channels, "got possible channels:");
-                    self.default_view.channels = channels;
-                }
                 return self
                     .default_view
                     .update(DefaultViewMessage::Query, &self.active_profile)
                     .map(Message::DefaultViewMessage);
             },
+            Message::Saved(_) => {},
 
             // Views
             Message::DefaultViewMessage(msg) => {
@@ -267,7 +256,7 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
 
     Settings {
         window: Window {
-            size: (1050, 620),
+            size: (1050, 720),
             resizable: true,
             decorations: true,
             icon: Some(
@@ -278,7 +267,7 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
             ..Default::default()
         },
         flags: cmd,
-        default_font: Some(crate::assets::OPEN_SANS_BYTES),
+        default_font: Some(crate::assets::POPPINS_FONT_BYTES),
         default_text_size: 20,
         // https://github.com/hecrj/iced/issues/537
         antialiasing: false,
