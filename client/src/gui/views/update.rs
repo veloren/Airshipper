@@ -1,10 +1,7 @@
 //! Display an update dialog (windows only) to ask whether to update airshipper
 
 use super::{Action, View};
-use crate::{
-    assets::{HAXRCORP_4089_FONT, HAXRCORP_4089_FONT_SIZE_3},
-    gui::style,
-};
+use crate::gui::{style, style::ButtonState};
 use iced::{
     alignment::{Horizontal, Vertical},
     pure::{button, column, container, row, text, Element},
@@ -54,28 +51,26 @@ impl UpdateView {
                     .push(
                         button(
                             text("Skip")
-                                .font(HAXRCORP_4089_FONT)
-                                .size(HAXRCORP_4089_FONT_SIZE_3)
                                 .height(Length::Fill)
                                 .horizontal_alignment(Horizontal::Center)
                                 .vertical_alignment(Vertical::Center),
                         )
                         .on_press(UpdateViewMessage::SkipPressed)
-                        .style(style::SecondaryButton)
+                        .style(style::DownloadButtonStyle::Skip)
+                        .width(Length::Units(100))
                         .padding(7),
                     )
                     .push(
                         button(
                             text("Update")
-                                .font(HAXRCORP_4089_FONT)
-                                .size(HAXRCORP_4089_FONT_SIZE_3)
                                 .height(Length::Fill)
                                 .width(Length::Units(90))
                                 .horizontal_alignment(Horizontal::Center)
                                 .vertical_alignment(Vertical::Center),
                         )
                         .on_press(UpdateViewMessage::UpdatePressed)
-                        .style(style::PrimaryButton::Enabled)
+                        .style(style::DownloadButtonStyle::Update(ButtonState::Enabled))
+                        .width(Length::Units(100))
                         .padding(7),
                     ),
             );
@@ -83,7 +78,7 @@ impl UpdateView {
         container(content)
             .width(Length::Fill)
             .height(Length::Fill)
-            .style(style::Content)
+            .style(style::DarkContainerStyle)
             .center_x()
             .center_y()
             .into()

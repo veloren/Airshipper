@@ -1,6 +1,22 @@
 use crate::{net, Result};
+use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 
-pub type Channel = String;
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+pub struct Channel(pub String);
+
+// Channels are lowercase when received from the server but should be
+// displayed with the first character uppercase when displayed
+impl Display for Channel {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}{}",
+            (&self.0[..1].to_string()).to_uppercase(),
+            &self.0[1..]
+        )
+    }
+}
 
 #[derive(Default, Debug, Clone)]
 pub struct Channels {
