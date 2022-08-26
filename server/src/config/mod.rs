@@ -16,6 +16,8 @@ const DATABASE_FILE: &str = "airshipper.db";
 /// path: /opt/airshipper/config/config.ron
 pub const CONFIG_PATH: &str = "config/config.ron";
 
+pub const SUPPORTED_AIRSHIPPER_CLIENT_VERSIONS: &str = ">=0.8.0";
+
 #[derive(Debug, Clone)]
 pub struct Config {
     pub channels: HashMap<String, Channel>,
