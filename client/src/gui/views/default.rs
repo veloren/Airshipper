@@ -148,6 +148,7 @@ impl DefaultView {
                     Command::perform(
                         ChangelogPanelComponent::update_changelog(
                             self.changelog_panel_component.etag.clone(),
+                            active_profile.channel.clone(),
                         ),
                         |update| {
                             DefaultViewMessage::ChangelogPanel(
