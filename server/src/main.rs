@@ -69,7 +69,7 @@ async fn build() -> Result<rocket::Rocket<rocket::Build>> {
             routes::user::robots,
             routes::user::favicon,
             routes::api::announcement,
-            routes::api::supported_airshipper_client_versions,
+            routes::api::api_version,
             routes::api::channels,
             routes::api::version,
             routes::api::download,
