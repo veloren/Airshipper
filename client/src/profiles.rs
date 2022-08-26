@@ -33,7 +33,7 @@ impl Default for Profile {
         Profile::new(
             DEFAULT_PROFILE_NAME.to_owned(),
             Server::Production,
-            Channel("nightly".to_owned()),
+            Channel("weekly".to_owned()),
         )
     }
 }
