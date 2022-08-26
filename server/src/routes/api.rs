@@ -1,16 +1,22 @@
-use crate::{config::Platform, config::SUPPORTED_AIRSHIPPER_CLIENT_VERSIONS, metrics::Metrics, Result};
+use crate::{
+    config::{Platform, SUPPORTED_AIRSHIPPER_CLIENT_VERSIONS},
+    metrics::Metrics,
+    Result,
+};
 use rocket::{http::Status, response::Redirect, serde::json::Json, *};
 use std::sync::Arc;
 
-
 // List all channels that are supported for a specific platform
 #[get("/supported-airshipper-client-versions")]
-pub async fn supported_airshipper_client_versions(
-    _db: crate::DbConnection,
-) -> String {
+pub async fn supported_airshipper_client_versions(_db: crate::DbConnection) -> String {
     SUPPORTED_AIRSHIPPER_CLIENT_VERSIONS.to_string()
 }
 
+// List all channels that are supported for a specific platform
+#[get("/announcement")]
+pub async fn announcement(_db: crate::DbConnection) -> Option<String> {
+    None
+}
 
 // List all channels that are supported for a specific platform
 #[get("/channels/<os>/<arch>")]
