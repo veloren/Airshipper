@@ -1,6 +1,29 @@
-use crate::{config::Platform, metrics::Metrics, Result};
+use crate::{
+    config::{Platform, API_VERSION},
+    metrics::Metrics,
+    Result,
+};
 use rocket::{http::Status, response::Redirect, serde::json::Json, *};
 use std::sync::Arc;
+
+#[derive(crate::serde::Serialize)]
+pub struct Version {
+    version: u32,
+}
+
+// List all channels that are supported for a specific platform
+#[get("/api/version")]
+pub async fn api_version(_db: crate::DbConnection) -> Json<Version> {
+    Json(Version {
+        version: API_VERSION,
+    })
+}
+
+// List all channels that are supported for a specific platform
+#[get("/announcement")]
+pub async fn announcement(_db: crate::DbConnection) -> Option<String> {
+    None
+}
 
 // List all channels that are supported for a specific platform
 #[get("/channels/<os>/<arch>")]
