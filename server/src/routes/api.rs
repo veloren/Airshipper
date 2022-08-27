@@ -19,10 +19,19 @@ pub async fn api_version(_db: crate::DbConnection) -> Json<Version> {
     })
 }
 
+#[derive(crate::serde::Serialize)]
+pub struct Announcement {
+    message: Option<String>,
+    last_change: chrono::DateTime<chrono::Utc>,
+}
+
 // List all channels that are supported for a specific platform
 #[get("/announcement")]
-pub async fn announcement(_db: crate::DbConnection) -> Option<String> {
-    None
+pub async fn announcement(_db: crate::DbConnection) -> Json<Announcement> {
+    Json(Announcement {
+        message: None,
+        last_change: chrono::Utc::now(),
+    })
 }
 
 // List all channels that are supported for a specific platform
