@@ -1,3 +1,5 @@
+pub const SUPPORTED_SERVER_API_VERSION: u32 = 1;
+
 // Filesystem
 
 #[cfg(windows)]
@@ -36,3 +38,5 @@ pub const COMMUNITY_SHOWCASE_URL: &str = "https://veloren.net/community-showcase
 
 pub const GITLAB_MERGED_MR_URL: &str =
     "https://gitlab.com/veloren/veloren/-/merge_requests?scope=all&state=merged";
+
+pub const AIRSHIPPER_RELEASE_URL: &str = "https://github.com/veloren/Airshipper/releases";
