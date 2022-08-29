@@ -21,6 +21,7 @@ const BLOG_POST_BACKGROUND_BLUE: Color = Color::from_rgb(0.24, 0.33, 0.58);
 pub const LILAC: Color = Color::from_rgb(0.62, 0.66, 0.79);
 const NAVY_BLUE: Color = Color::from_rgb(0.07, 0.09, 0.15);
 const LIGHT_NAVY_BLUE: Color = Color::from_rgb(0.12, 0.14, 0.20);
+const BRIGHT_ORANGE: Color = Color::from_rgb(0.94, 0.40, 0.24);
 #[cfg(windows)]
 const TOMATO_RED: Color = Color::from_rgb(0.91, 0.31, 0.31);
 
@@ -198,6 +199,18 @@ impl container::StyleSheet for DarkContainerStyle {
     }
 }
 
+// Used by AnnouncementPanel
+pub struct AnnouncementStyle;
+impl container::StyleSheet for AnnouncementStyle {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(BRIGHT_ORANGE)),
+            text_color: Some(Color::WHITE),
+            ..container::Style::default()
+        }
+    }
+}
+
 pub struct BlogPostContainerStyle;
 impl container::StyleSheet for BlogPostContainerStyle {
     fn style(&self) -> container::Style {
@@ -214,6 +227,17 @@ impl button::StyleSheet for GitlabChangelogButtonStyle {
     fn active(&self) -> Style {
         Style {
             background: Some(Background::Color(LIME_GREEN)),
+            border_radius: 25.0,
+            ..button::Style::default()
+        }
+    }
+}
+
+pub struct AirshipperDownloadButtonStyle;
+impl button::StyleSheet for AirshipperDownloadButtonStyle {
+    fn active(&self) -> Style {
+        Style {
+            background: Some(Background::Color(VERY_DARK_GREY)),
             border_radius: 25.0,
             ..button::Style::default()
         }
