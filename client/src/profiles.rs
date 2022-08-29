@@ -166,6 +166,14 @@ impl Profile {
         )
     }
 
+    pub(crate) fn api_version_url(&self) -> String {
+        format!("{}/api/version", self.server.url(),)
+    }
+
+    pub(crate) fn announcement_url(&self) -> String {
+        format!("{}/announcement", self.server.url(),)
+    }
+
     // TODO: add possibility to start the server too
     pub fn start(profile: &Profile) -> Command {
         let mut envs = HashMap::new();
