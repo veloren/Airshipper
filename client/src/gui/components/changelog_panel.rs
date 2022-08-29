@@ -3,6 +3,7 @@ use crate::{
         CHANGELOG_ICON, POPPINS_BOLD_FONT, POPPINS_LIGHT_FONT, POPPINS_MEDIUM_FONT,
         UP_RIGHT_ARROW_ICON,
     },
+    channels::Channel,
     consts,
     consts::GITLAB_MERGED_MR_URL,
     gui::{
@@ -49,10 +50,11 @@ pub fn default_display_count() -> usize {
 
 impl ChangelogPanelComponent {
     #[allow(clippy::while_let_on_iterator)]
-    async fn fetch() -> Result<Self> {
+    async fn fetch(channel: Channel) -> Result<Self> {
         let mut versions: Vec<ChangelogVersion> = Vec::new();
 
-        let changelog = net::query(consts::CHANGELOG_URL).await?;
+        let changelog =
+            net::query(consts::CHANGELOG_URL.replace("{tag}", &channel.0)).await?;
         let etag = net::get_etag(&changelog);
 
         let changelog_text = changelog.text().await?;
@@ -179,15 +181,18 @@ impl ChangelogPanelComponent {
     }
 
     /// Returns new Changelog incase remote one is newer
-    pub async fn update_changelog(version: String) -> Result<Option<Self>> {
-        match net::query_etag(consts::CHANGELOG_URL).await? {
+    pub async fn update_changelog(
+        version: String,
+        channel: Channel,
+    ) -> Result<Option<Self>> {
+        match net::query_etag(consts::CHANGELOG_URL.replace("{tag}", &channel.0)).await? {
             Some(remote_version) => {
                 if version != remote_version {
                     debug!(
                         "Changelog version different (Local: {} Remote: {}), fetching...",
                         version, remote_version
                     );
-                    return Ok(Some(Self::fetch().await?));
+                    return Ok(Some(Self::fetch(channel).await?));
                 } else {
                     debug!("Changelog up-to-date.");
                     Ok(None)
@@ -197,7 +202,7 @@ impl ChangelogPanelComponent {
             // to make sure the player stays informed.
             None => {
                 debug!("Changelog missing, fetching...");
-                Ok(Some(Self::fetch().await?))
+                Ok(Some(Self::fetch(channel).await?))
             },
         }
     }
