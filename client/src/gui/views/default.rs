@@ -11,9 +11,9 @@ use iced::{
 
 use crate::gui::{
     components::{
-        ChangelogPanelMessage, CommunityShowcaseComponent, CommunityShowcasePanelMessage,
-        GamePanelComponent, GamePanelMessage, NewsPanelMessage, SettingsPanelComponent,
-        SettingsPanelMessage,
+        AnnouncementPanelComponent, AnnouncementPanelMessage, ChangelogPanelMessage,
+        CommunityShowcaseComponent, CommunityShowcasePanelMessage, GamePanelComponent,
+        GamePanelMessage, NewsPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
     },
     rss_feed::RssFeedComponentMessage::UpdateRssFeed,
     style::SidePanelStyle,
@@ -25,6 +25,7 @@ use crate::gui::Result;
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DefaultView {
     changelog_panel_component: ChangelogPanelComponent,
+    announcement_panel_component: AnnouncementPanelComponent,
     #[serde(skip)]
     logo_panel_component: LogoPanelComponent,
     community_showcase_component: CommunityShowcaseComponent,
@@ -52,6 +53,7 @@ pub enum DefaultViewMessage {
     // Panel-specific messages
     GamePanel(GamePanelMessage),
     ChangelogPanel(ChangelogPanelMessage),
+    AnnouncementPanel(AnnouncementPanelMessage),
     CommunityShowcasePanel(CommunityShowcasePanelMessage),
     NewsPanel(NewsPanelMessage),
     SettingsPanel(SettingsPanelMessage),
@@ -73,6 +75,7 @@ impl DefaultView {
     pub fn view(&self, active_profile: &Profile) -> Element<DefaultViewMessage> {
         let Self {
             changelog_panel_component,
+            announcement_panel_component,
             news_panel_component,
             logo_panel_component,
             community_showcase_component,
@@ -99,9 +102,15 @@ impl DefaultView {
         .height(Length::Fill)
         .width(Length::Units(347))
         .style(SidePanelStyle);
-        let middle = container(changelog_panel_component.view())
-            .height(Length::Fill)
-            .width(Length::Fill);
+        let middle = container(
+            column()
+                .push(
+                    container(announcement_panel_component.view()).height(Length::Shrink),
+                )
+                .push(container(changelog_panel_component.view()).height(Length::Fill)),
+        )
+        .height(Length::Fill)
+        .width(Length::Fill);
         let right = container(news_panel_component.view())
             .height(Length::Fill)
             .width(Length::Units(237))
@@ -147,6 +156,17 @@ impl DefaultView {
                         },
                     ),
                     Command::perform(
+                        AnnouncementPanelComponent::update_announcement(
+                            active_profile.clone(),
+                            self.announcement_panel_component.announcement_last_change,
+                        ),
+                        |update| {
+                            DefaultViewMessage::AnnouncementPanel(
+                                AnnouncementPanelMessage::UpdateAnnouncement(update),
+                            )
+                        },
+                    ),
+                    Command::perform(
                         CommunityShowcaseComponent::update_community_posts(
                             self.community_showcase_component.etag().to_owned(),
                         ),
@@ -188,6 +208,11 @@ impl DefaultView {
             },
             DefaultViewMessage::ChangelogPanel(msg) => {
                 if let Some(command) = self.changelog_panel_component.update(msg) {
+                    return command;
+                }
+            },
+            DefaultViewMessage::AnnouncementPanel(msg) => {
+                if let Some(command) = self.announcement_panel_component.update(msg) {
                     return command;
                 }
             },
