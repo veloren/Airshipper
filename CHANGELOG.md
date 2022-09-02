@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Fixed
 
+## [0.8.0] - 2022-09-02
+
+## Added
+- complete redesign of the UI
+- added UI for channels
+- added announcements and update notification
+
 ## [0.7.0] - 2022-03-10
 
 ## Added
@@ -143,9 +150,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added GUI
 
-[unreleased]: https://github.com/veloren/Airshipper/compare/v0.6.0...master
-[0.2.1]: https://github.com/veloren/Airshipper/releases/tag/v0.2.1
+[unreleased]: https://github.com/veloren/Airshipper/compare/v0.8.0...master
 [0.2.0]: https://github.com/veloren/Airshipper/releases/tag/v0.2.0
+[0.2.1]: https://github.com/veloren/Airshipper/releases/tag/v0.2.1
 [0.3.0]: https://github.com/veloren/Airshipper/releases/tag/v0.3.0
 [0.3.1]: https://github.com/veloren/Airshipper/releases/tag/v0.3.1
 [0.3.2]: https://github.com/veloren/Airshipper/releases/tag/v0.3.2
@@ -155,3 +162,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.5.0]: https://github.com/veloren/Airshipper/releases/tag/v0.5.0
 [0.6.0]: https://github.com/veloren/Airshipper/releases/tag/v0.6.0
 [0.7.0]: https://github.com/veloren/Airshipper/releases/tag/v0.7.0
+[0.8.0]: https://github.com/veloren/Airshipper/releases/tag/v0.8.0
