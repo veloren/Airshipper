@@ -20,11 +20,15 @@ pub fn is_nixos() -> Result<bool> {
 pub fn patch(profile_directory: &Path) -> Result<()> {
     tracing::info!("Patching voxygen and server CLI executable files for NixOS");
 
-    let patcher = get_patcher().ok_or_else(|| ClientError::Custom("patcher binary was not detected.".to_string()))?;
+    let patcher = get_patcher().ok_or_else(|| {
+        ClientError::Custom("patcher binary was not detected.".to_string())
+    })?;
 
     // Patch the files
     tracing::info!("Executing {patcher:?} on directory {profile_directory:?}");
-    let output = std::process::Command::new(patcher).current_dir(profile_directory).output()?;
+    let output = std::process::Command::new(patcher)
+        .current_dir(profile_directory)
+        .output()?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -32,7 +36,8 @@ pub fn patch(profile_directory: &Path) -> Result<()> {
     // Return error if patcher fails
     if !output.status.success() {
         return Err(ClientError::Custom(format!(
-            "Failed to patch files for NixOS: patcher output:\nstderr: {stderr}\nstdout: {stdout}",
+            "Failed to patch files for NixOS: patcher output:\nstderr: \
+             {stderr}\nstdout: {stdout}",
         )));
     } else {
         tracing::info!("Patched voxygen and server CLI executable files:\n{stdout}");
