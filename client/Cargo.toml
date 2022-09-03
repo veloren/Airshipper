@@ -14,17 +14,6 @@ repository = "https://gitlab.com/veloren/airshipper"
 [package.metadata.nix]
 build = true
 app = true
-runtimeLibs = [
-    "vulkan-loader",
-    "wayland",
-    "wayland-protocols",
-    "libxkbcommon",
-    "xorg.libX11",
-    "xorg.libXrandr",
-    "xorg.libXi",
-    "xorg.libXcursor",
-]
-buildInputs = ["libxkbcommon"]
 
 [package.metadata.nix.desktopFile]
 name = "Airshipper"
