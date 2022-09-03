@@ -9,6 +9,7 @@ use iced::{
 // Colors
 pub const LIGHT_GREY: Color = Color::from_rgb(0.93, 0.93, 0.93);
 pub const MEDIUM_GREY: Color = Color::from_rgb(0.7, 0.7, 0.7);
+pub const EXTRA_MEDIUM_GREY: Color = Color::from_rgb(0.5, 0.5, 0.5);
 const DARKER_SEA_GREEN: Color = Color::from_rgb(0.08, 0.61, 0.65);
 const SLATE: Color = Color::from_rgb(0.35, 0.43, 0.46);
 const TRANSPARENT_WHITE: Color = Color::from_rgba(1.0, 1.0, 1.0, 0.1);
@@ -322,5 +323,37 @@ fn disabled_download_button_style() -> Style {
         text_color: LIGHT_GREY,
         border_radius: 4.0,
         ..button::Style::default()
+    }
+}
+
+pub struct ServerBrowserButtonStyle;
+impl button::StyleSheet for ServerBrowserButtonStyle {
+    fn active(&self) -> Style {
+        Style {
+            background: Some(Background::Color(CORNFLOWER_BLUE)),
+            text_color: Color::WHITE,
+            border_radius: 4.0,
+            ..button::Style::default()
+        }
+    }
+}
+
+pub struct ColumnHeadingButtonStyle;
+impl button::StyleSheet for ColumnHeadingButtonStyle {
+    fn active(&self) -> Style {
+        Style {
+            text_color: Color::WHITE,
+            ..button::Style::default()
+        }
+    }
+}
+
+pub struct ColumnHeadingContainerStyle;
+impl container::StyleSheet for ColumnHeadingContainerStyle {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(EXTRA_MEDIUM_GREY)),
+            ..container::Style::default()
+        }
     }
 }

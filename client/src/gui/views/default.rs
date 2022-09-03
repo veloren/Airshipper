@@ -13,7 +13,8 @@ use crate::gui::{
     components::{
         AnnouncementPanelComponent, AnnouncementPanelMessage, ChangelogPanelMessage,
         CommunityShowcaseComponent, CommunityShowcasePanelMessage, GamePanelComponent,
-        GamePanelMessage, NewsPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
+        GamePanelMessage, NewsPanelMessage, ServerBrowserPanelComponent,
+        ServerBrowserPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
     },
     rss_feed::RssFeedComponentMessage::UpdateRssFeed,
     style::SidePanelStyle,
@@ -35,7 +36,11 @@ pub struct DefaultView {
     #[serde(skip)]
     settings_panel_component: SettingsPanelComponent,
     #[serde(skip)]
+    server_browser_panel_component: ServerBrowserPanelComponent,
+    #[serde(skip)]
     show_settings: bool,
+    #[serde(skip)]
+    show_server_browser: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -57,11 +62,13 @@ pub enum DefaultViewMessage {
     CommunityShowcasePanel(CommunityShowcasePanelMessage),
     NewsPanel(NewsPanelMessage),
     SettingsPanel(SettingsPanelMessage),
+    ServerBrowserPanel(ServerBrowserPanelMessage),
 }
 
 #[derive(Debug, Clone)]
 pub enum Interaction {
     SettingsPressed,
+    ToggleServerBrowser,
     OpenURL(String),
 }
 
@@ -81,6 +88,7 @@ impl DefaultView {
             community_showcase_component,
             game_panel_component,
             settings_panel_component,
+            server_browser_panel_component,
             ..
         } = self;
 
@@ -102,21 +110,34 @@ impl DefaultView {
         .height(Length::Fill)
         .width(Length::Units(347))
         .style(SidePanelStyle);
-        let middle = container(
-            column()
-                .push(
-                    container(announcement_panel_component.view()).height(Length::Shrink),
-                )
-                .push(container(changelog_panel_component.view()).height(Length::Fill)),
-        )
-        .height(Length::Fill)
-        .width(Length::Fill);
-        let right = container(news_panel_component.view())
-            .height(Length::Fill)
-            .width(Length::Units(237))
-            .style(SidePanelStyle);
 
-        let main_row = row().push(left).push(middle).push(right);
+        let mut main_row = row().push(left);
+
+        if !self.show_server_browser {
+            let middle = container(
+                column()
+                    .push(
+                        container(announcement_panel_component.view())
+                            .height(Length::Shrink),
+                    )
+                    .push(
+                        container(changelog_panel_component.view()).height(Length::Fill),
+                    ),
+            )
+            .height(Length::Fill)
+            .width(Length::Fill);
+            let right = container(news_panel_component.view())
+                .height(Length::Fill)
+                .width(Length::Units(237))
+                .style(SidePanelStyle);
+
+            main_row = main_row.push(middle).push(right);
+        } else {
+            let server_browser = container(server_browser_panel_component.view())
+                .height(Length::Fill)
+                .width(Length::Fill);
+            main_row = main_row.push(server_browser);
+        }
 
         container(main_row)
             .width(Length::Fill)
@@ -235,6 +256,11 @@ impl DefaultView {
                     return command;
                 }
             },
+            DefaultViewMessage::ServerBrowserPanel(msg) => {
+                if let Some(command) = self.server_browser_panel_component.update(msg) {
+                    return command;
+                }
+            },
 
             #[cfg(windows)]
             DefaultViewMessage::LauncherUpdate(update) => {
@@ -250,6 +276,9 @@ impl DefaultView {
             DefaultViewMessage::Interaction(interaction) => match interaction {
                 Interaction::SettingsPressed => {
                     self.show_settings = !self.show_settings;
+                },
+                Interaction::ToggleServerBrowser => {
+                    self.show_server_browser = !self.show_server_browser;
                 },
                 Interaction::OpenURL(url) => {
                     if let Err(e) = opener::open(url) {
