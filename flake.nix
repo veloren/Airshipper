@@ -34,6 +34,24 @@
           "PACKAGING.md"
         ];
     };
+    makePatcher = pkgs: let
+      runtimeLibs = with pkgs; (
+        [libxkbcommon udev alsa-lib stdenv.cc.cc.lib]
+        ++ (with xorg; [libxcb libX11])
+      );
+    in
+      pkgs.writeShellScript "patch" ''
+        echo "making binaries executable"
+        chmod +x {veloren-voxygen,veloren-server-cli}
+        echo "patching dynamic linkers"
+        ${pkgs.patchelf}/bin/patchelf \
+          --set-interpreter "${pkgs.stdenv.cc.bintools.dynamicLinker}" \
+          veloren-server-cli
+        ${pkgs.patchelf}/bin/patchelf \
+          --set-interpreter "${pkgs.stdenv.cc.bintools.dynamicLinker}" \
+          --set-rpath "${lib.makeLibraryPath runtimeLibs}" \
+          veloren-voxygen
+      '';
   in
     inputs.nci.lib.makeOutputs {
       root = ./.;
@@ -62,6 +80,17 @@
             "xorg.libXcursor"
           ];
         };
+        airshipper.wrapper = common: _: old: let
+          patcher = makePatcher common.pkgs;
+        in
+          common.internal.nci-pkgs.utils.wrapDerivation old
+          {nativeBuildInputs = [common.pkgs.makeWrapper];}
+          ''
+            rm -rf $out/bin
+            mkdir -p $out/bin
+            ln -sf ${old}/bin/* $out/bin
+            wrapProgram $out/bin/* --set VELOREN_PATCHER "${patcher}"
+          '';
       };
-    };  
+    };
 }

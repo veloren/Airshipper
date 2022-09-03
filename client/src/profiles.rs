@@ -242,15 +242,14 @@ impl Profile {
 
         #[cfg(unix)]
         {
-            let voxygen_file = profile.directory().join(consts::VOXYGEN_FILE);
-            let server_cli_file = profile.directory().join(consts::SERVER_CLI_FILE);
+            let profile_directory = profile.directory();
 
             // Patch executable files if we are on NixOS
             if nix::is_nixos()? {
-                tokio::task::block_in_place(|| {
-                    nix::patch_elf(&voxygen_file, &server_cli_file)
-                })?;
+                tokio::task::block_in_place(|| nix::patch(&profile_directory))?;
             } else {
+                let voxygen_file = profile_directory.join(consts::VOXYGEN_FILE);
+                let server_cli_file = profile_directory.join(consts::SERVER_CLI_FILE);
                 set_permissions(vec![&voxygen_file, &server_cli_file]).await?;
             }
         }
