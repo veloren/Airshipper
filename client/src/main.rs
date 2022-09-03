@@ -12,6 +12,7 @@ mod net;
 #[cfg(unix)]
 mod nix;
 mod profiles;
+mod server_list;
 #[cfg(windows)]
 mod windows;
 
