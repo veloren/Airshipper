@@ -22,14 +22,14 @@ use iced_native::{image::Handle, widget::tooltip::Position, Command};
 use std::{path::PathBuf, time::Duration};
 
 use crate::{
-    assets::SETTINGS_ICON,
+    assets::{POPPINS_MEDIUM_FONT, SETTINGS_ICON},
     gui::{
         style,
         style::{
-            ButtonState, DownloadButtonStyle, ProgressBarStyle, SettingsButtonStyle,
-            LIGHT_GREY,
+            ButtonState, DownloadButtonStyle, ProgressBarStyle, ServerBrowserButtonStyle,
+            SettingsButtonStyle, LIGHT_GREY,
         },
-        views::default::Interaction::SettingsPressed,
+        views::default::{Interaction, Interaction::SettingsPressed},
     },
 };
 use lazy_static::lazy_static;
@@ -571,7 +571,7 @@ impl GamePanelComponent {
                     _ => unreachable!(),
                 };
 
-                let mut button = button(
+                let mut launch_button = button(
                     text(button_text)
                         .font(POPPINS_BOLD_FONT)
                         .size(45)
@@ -580,19 +580,38 @@ impl GamePanelComponent {
                         .width(Length::Fill),
                 )
                 .style(button_style)
-                .width(Length::Fill)
+                .width(Length::FillPortion(3))
                 .height(Length::Units(75));
 
                 if enabled {
-                    button = button.on_press(DefaultViewMessage::GamePanel(
-                        GamePanelMessage::PlayPressed,
-                    ));
+                    launch_button = launch_button.on_press(
+                        DefaultViewMessage::GamePanel(GamePanelMessage::PlayPressed),
+                    );
                 }
 
-                container(button)
-                    .width(Length::Fill)
-                    .align_y(Vertical::Center)
-                    .into()
+                let server_browser_button = button(
+                    text("Server Browser")
+                        .font(POPPINS_MEDIUM_FONT)
+                        .size(22)
+                        .horizontal_alignment(Horizontal::Center)
+                        .vertical_alignment(Vertical::Center),
+                )
+                .width(Length::FillPortion(1))
+                .height(Length::Units(75))
+                .style(ServerBrowserButtonStyle)
+                .on_press(DefaultViewMessage::Interaction(
+                    Interaction::ToggleServerBrowser,
+                ));
+
+                container(
+                    row()
+                        .push(launch_button)
+                        .push(server_browser_button)
+                        .spacing(10),
+                )
+                .width(Length::Fill)
+                .align_y(Vertical::Center)
+                .into()
             },
         }
     }
