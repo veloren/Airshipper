@@ -1,6 +1,6 @@
 #[cfg(unix)]
 use crate::nix;
-use crate::{channels::Channel, consts, fs, net, server_list, Result};
+use crate::{channels::Channel, consts, fs, net, Result};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, ffi::OsString, path::PathBuf};
 use tokio::process::Command;

@@ -12,6 +12,13 @@ pub const DOWNLOAD_ICON: &[u8] = include_bytes!("../assets/icons/download.png");
 pub const FOLDER_ICON: &[u8] = include_bytes!("../assets/icons/folder.png");
 pub const UP_RIGHT_ARROW_ICON: &[u8] =
     include_bytes!("../assets/icons/up_right_arrow.png");
+pub const STAR_ICON: &[u8] = include_bytes!("../assets/icons/star.png");
+
+pub const PING1_ICON: &[u8] = include_bytes!("../assets/icons/ping1.png");
+pub const PING2_ICON: &[u8] = include_bytes!("../assets/icons/ping2.png");
+pub const PING3_ICON: &[u8] = include_bytes!("../assets/icons/ping3.png");
+pub const PING4_ICON: &[u8] = include_bytes!("../assets/icons/ping4.png");
+pub const PING_ERROR_ICON: &[u8] = include_bytes!("../assets/icons/ping_error.png");
 
 // Fonts
 // POPPINS_FONT_BYTES is a slice not a Font as it's used as the default application font
