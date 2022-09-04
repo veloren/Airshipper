@@ -1,6 +1,6 @@
 #[cfg(unix)]
 use crate::nix;
-use crate::{channels::Channel, consts, fs, net, Result};
+use crate::{channels::Channel, consts, fs, net, server_list, Result};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, ffi::OsString, path::PathBuf};
 use tokio::process::Command;
@@ -175,7 +175,7 @@ impl Profile {
     }
 
     // TODO: add possibility to start the server too
-    pub fn start(profile: &Profile) -> Command {
+    pub fn start(profile: &Profile, game_server_address: Option<&str>) -> Command {
         let mut envs = HashMap::new();
         let userdata_dir = profile.directory().join("userdata").into_os_string();
         let screenshot_dir = profile.directory().join("screenshots").into_os_string();
@@ -223,6 +223,11 @@ impl Profile {
         let mut cmd = Command::new(profile.voxygen_path());
         cmd.current_dir(&profile.directory());
         cmd.envs(envs);
+
+        // If a server is selected in the server browser pass it through to Voxygen
+        if let Some(game_server_address) = game_server_address {
+            cmd.args(&["--server", game_server_address]);
+        }
 
         cmd
     }

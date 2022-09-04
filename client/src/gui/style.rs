@@ -357,3 +357,33 @@ impl container::StyleSheet for ColumnHeadingContainerStyle {
         }
     }
 }
+
+pub enum ServerListEntryButtonStyle {
+    Selected,
+    NotSelected,
+}
+
+impl button::StyleSheet for ServerListEntryButtonStyle {
+    fn active(&self) -> Style {
+        match self {
+            Self::Selected => server_list_entry_selected_style(),
+            Self::NotSelected => server_list_entry_not_selected_style(),
+        }
+    }
+}
+
+fn server_list_entry_selected_style() -> Style {
+    Style {
+        background: Some(Background::Color(TOMATO_RED)),
+        text_color: Color::WHITE,
+        ..button::Style::default()
+    }
+}
+
+fn server_list_entry_not_selected_style() -> Style {
+    Style {
+        background: Some(Background::Color(EXTRA_MEDIUM_GREY)),
+        text_color: Color::WHITE,
+        ..button::Style::default()
+    }
+}
