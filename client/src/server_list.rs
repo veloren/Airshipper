@@ -4,13 +4,13 @@ use serde::{
     Deserialize,
 };
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(transparent)]
 pub struct ServerList {
     pub servers: Vec<Server>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Server {
     /// The name of the server.
     pub name: String,

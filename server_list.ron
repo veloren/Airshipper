@@ -13,4 +13,20 @@
         /// Whether the server is officially affiliated with the Veloren project.
         official: true,
     ),
+    Server(
+        name: "Veloren ES",
+        description: "",
+        address: "server.veloren.es",
+        country: "ES",
+        channel: Some("weekly"),
+        official: false,
+    ),
+    Server(
+        name: "VELOREN LATAM",
+        description: "",
+        address: "server.velorenlatam.net",
+        country: "BR",
+        channel: Some("weekly"),
+        official: false,
+    ),
 ]

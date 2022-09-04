@@ -47,6 +47,7 @@ pub enum GamePanelMessage {
     DownloadProgress(Progress),
     InstallDone(Result<Profile>),
     PlayPressed,
+    ServerBrowserServerChanged(Option<String>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -76,6 +77,7 @@ pub enum GamePanelState {
 pub struct GamePanelComponent {
     state: GamePanelState,
     download_progress: Option<Progress>,
+    selected_server_browser_address: Option<String>,
 }
 
 impl Default for GamePanelComponent {
@@ -83,6 +85,7 @@ impl Default for GamePanelComponent {
         Self {
             state: GamePanelState::QueryingForUpdates(false),
             download_progress: None,
+            selected_server_browser_address: None,
         }
     }
 }
@@ -94,10 +97,11 @@ impl GamePanelComponent {
                 url, download_path, ..
             } => subscriptions::download::file(url, download_path)
                 .map(GamePanelMessage::DownloadProgress),
-            &GamePanelState::Playing(ref profile) => {
-                subscriptions::process::stream(profile.clone())
-                    .map(GamePanelMessage::ProcessUpdate)
-            },
+            &GamePanelState::Playing(ref profile) => subscriptions::process::stream(
+                profile.clone(),
+                self.selected_server_browser_address.clone(),
+            )
+            .map(GamePanelMessage::ProcessUpdate),
             _ => iced::Subscription::none(),
         }
     }
@@ -352,6 +356,10 @@ impl GamePanelComponent {
                     },
                 };
                 (Some(next_state), None)
+            },
+            GamePanelMessage::ServerBrowserServerChanged(server_address) => {
+                self.selected_server_browser_address = server_address;
+                (None, None)
             },
         };
 

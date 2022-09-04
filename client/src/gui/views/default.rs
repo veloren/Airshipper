@@ -3,6 +3,7 @@ use crate::{
     channels::Channels,
     gui::components::{ChangelogPanelComponent, LogoPanelComponent, NewsPanelComponent},
     profiles::Profile,
+    ProcessUpdate,
 };
 use iced::{
     pure::{column, container, row, Element},
@@ -63,6 +64,8 @@ pub enum DefaultViewMessage {
     NewsPanel(NewsPanelMessage),
     SettingsPanel(SettingsPanelMessage),
     ServerBrowserPanel(ServerBrowserPanelMessage),
+
+    ProcessUpdate(ProcessUpdate),
 }
 
 #[derive(Debug, Clone)]
@@ -289,6 +292,8 @@ impl DefaultView {
                     }
                 },
             },
+
+            DefaultViewMessage::ProcessUpdate(update) => {},
         }
 
         Command::none()
