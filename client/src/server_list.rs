@@ -1,3 +1,4 @@
+use crate::{net, Result};
 use country_parser::Country;
 use serde::{
     de::{Deserializer, Error, Unexpected},
@@ -5,9 +6,18 @@ use serde::{
 };
 
 #[derive(Deserialize, Debug, Clone)]
-#[serde(transparent)]
 pub struct ServerList {
     pub servers: Vec<Server>,
+}
+
+impl ServerList {
+    pub(crate) async fn fetch(url: String) -> Result<Self> {
+        let response = net::query(url).await?;
+
+        let server_list = response.json::<ServerList>().await?;
+
+        Ok(server_list)
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -24,7 +34,7 @@ pub struct Server {
     /// as an indication of factors like ping, not the language of the server).
     #[serde(deserialize_with = "deserialize_country")]
     #[serde(default)]
-    pub country: Option<Country>,
+    pub location: Option<Country>,
     /// The auth server that must be used to connect to this server. `None` means the
     /// official auth server.
     #[serde(default)]
@@ -39,15 +49,16 @@ pub struct Server {
 
 fn deserialize_country<'de, D: Deserializer<'de>>(
     de: D,
-) -> Result<Option<Country>, D::Error> {
-    country_parser::parse(String::deserialize(de)?)
-        .map(Some)
-        .ok_or_else(|| {
+) -> std::result::Result<Option<Country>, D::Error> {
+    let res = String::deserialize(de);
+    res.map_or(Ok(None), |x| {
+        country_parser::parse(x).map(Some).ok_or_else(|| {
             D::Error::invalid_value(
                 Unexpected::Other("invalid country"),
                 &"valid ISO-3166 country",
             )
         })
+    })
 }
 
 #[cfg(test)]

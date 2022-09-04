@@ -3,7 +3,7 @@ use parse::Action;
 mod parse;
 use iced::futures::stream::StreamExt;
 
-use crate::{profiles::LogLevel, server_list::Server, BASE_PATH};
+use crate::{profiles::LogLevel, BASE_PATH};
 use gui::Airshipper;
 pub use parse::CmdLine;
 use tracing::level_filters::LevelFilter;

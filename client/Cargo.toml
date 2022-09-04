@@ -57,6 +57,9 @@ tracing-log = "0.1.1"
 regex = "1.5"
 # Networking
 reqwest = { version = "0.11.4", default-features = false, features = ["rustls-tls", "json"] }
+surge-ping = "0.7.2"
+async-std-resolver = "0.19.7"
+
 # Parsing
 pulldown-cmark = "0.8.0"
 strip_markdown = "0.2.0"
@@ -82,7 +85,7 @@ dirs = { package = "dirs-next", version = "2.0.0" }
 md5 = "0.7.0"
 rand = "0.8.5"
 chrono = { version = "0.4.22", features = ["serde"] }
-country-parser = "0.1"
+country-parser = { path = "../../country-parser" }
 
 # bundle all the things!
 openssl-sys = { version = "*", features = ["vendored"], optional = true }
