@@ -74,13 +74,9 @@ pub enum Interaction {
 
 impl DefaultView {
     pub fn subscription(&self) -> iced::Subscription<DefaultViewMessage> {
-        /*self.game_panel_component
-           .subscription()
-           .map(DefaultViewMessage::GamePanel)
-        */
-        self.server_browser_panel_component
+        self.game_panel_component
             .subscription()
-            .map(DefaultViewMessage::ServerBrowserPanel)
+            .map(DefaultViewMessage::GamePanel)
     }
 
     pub fn view(&self, active_profile: &Profile) -> Element<DefaultViewMessage> {
