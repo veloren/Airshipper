@@ -38,6 +38,8 @@ pub fn init(log_path_file: Option<(&Path, &str)>, level: LevelFilter) -> Vec<imp
         "rustls=info",
         "want=info",
         "tokio_util::codec=error",
+        "trust_dns_resolver=info",
+        "trust_dns_proto=info",
     ];
 
     for s in default_directives {
@@ -96,6 +98,7 @@ pub fn init(log_path_file: Option<(&Path, &str)>, level: LevelFilter) -> Vec<imp
                 registry
                     .with(
                         tracing_subscriber::fmt::layer()
+                            .with_ansi(false)
                             .with_writer(non_blocking_file)
                             .with_filter(
                                 Targets::new()

@@ -9,10 +9,10 @@ use crate::{
             ChangelogHeaderStyle, ColumnHeadingButtonStyle, ColumnHeadingContainerStyle,
             DarkContainerStyle, ServerListEntryButtonStyle, DARK_WHITE,
         },
-        subscriptions,
-        subscriptions::ping_servers::PingResult,
         views::default::DefaultViewMessage,
     },
+    net,
+    ping::PingResult,
     server_list::{Server, ServerList},
     Result,
 };
@@ -24,7 +24,11 @@ use iced::{
     Length, Padding, Text,
 };
 use iced_native::{image::Handle, Command};
-use std::hash::{Hash, Hasher};
+use std::{
+    hash::{Hash, Hasher},
+    sync::Arc,
+};
+use tracing::debug;
 
 #[derive(Debug, Clone)]
 pub struct ServerBrowserEntry {
@@ -54,7 +58,6 @@ pub enum ServerBrowserPanelMessage {
 pub struct ServerBrowserPanelComponent {
     servers: Vec<ServerBrowserEntry>,
     selected_index: usize,
-    waiting_for_pings: Vec<String>,
 }
 
 impl Default for ServerBrowserPanelComponent {
@@ -62,7 +65,6 @@ impl Default for ServerBrowserPanelComponent {
         Self {
             servers: vec![],
             selected_index: 0,
-            waiting_for_pings: vec![],
         }
     }
 }
@@ -72,11 +74,6 @@ impl ServerBrowserPanelComponent {
         let server_list =
             ServerList::fetch("https://serverlist.veloren.net/v1/servers".to_owned())
                 .await?;
-        let waiting_for_pings = server_list
-            .servers
-            .iter()
-            .map(|x| x.address.clone())
-            .collect();
         Ok(Some(Self {
             servers: server_list
                 .servers
@@ -84,17 +81,7 @@ impl ServerBrowserPanelComponent {
                 .map(|server| ServerBrowserEntry::from(server))
                 .collect(),
             selected_index: 0,
-            waiting_for_pings,
         }))
-    }
-
-    pub fn subscription(&self) -> iced::Subscription<ServerBrowserPanelMessage> {
-        if !self.waiting_for_pings.is_empty() {
-            subscriptions::ping_servers::ping_servers(self.waiting_for_pings.clone())
-                .map(ServerBrowserPanelMessage::UpdateServerPing)
-        } else {
-            iced::Subscription::none()
-        }
     }
 
     pub fn view(&self) -> Element<DefaultViewMessage> {
@@ -159,8 +146,8 @@ impl ServerBrowserPanelComponent {
         for (i, server_entry) in self.servers.iter().enumerate() {
             let ping_icon = match server_entry.ping {
                 Some(0..=50) => image(Handle::from_memory(PING1_ICON.to_vec())),
-                Some(50..=150) => image(Handle::from_memory(PING2_ICON.to_vec())),
-                Some(150..=300) => image(Handle::from_memory(PING3_ICON.to_vec())),
+                Some(51..=150) => image(Handle::from_memory(PING2_ICON.to_vec())),
+                Some(151..=300) => image(Handle::from_memory(PING3_ICON.to_vec())),
                 Some(_) => image(Handle::from_memory(PING4_ICON.to_vec())),
                 _ => image(Handle::from_memory(PING_ERROR_ICON.to_vec())),
             };
@@ -254,7 +241,41 @@ impl ServerBrowserPanelComponent {
             ServerBrowserPanelMessage::UpdateServerList(result) => match result {
                 Ok(Some(server_browser)) => {
                     *self = server_browser;
-                    None
+                    if !self.servers.is_empty() {
+                        let client_v4 = Arc::new(
+                            surge_ping::Client::new(&surge_ping::Config::default())
+                                .unwrap(),
+                        );
+                        let client_v6 = Arc::new(
+                            surge_ping::Client::new(
+                                &surge_ping::Config::builder()
+                                    .kind(surge_ping::ICMP::V6)
+                                    .build(),
+                            )
+                            .unwrap(),
+                        );
+
+                        Some(Command::batch(self.servers.iter().enumerate().map(
+                            |(i, server)| {
+                                Command::perform(
+                                    net::ping::ping(
+                                        (client_v4.clone(), client_v6.clone()),
+                                        server.server.address.clone(),
+                                        i as u16,
+                                    ),
+                                    |result| {
+                                        DefaultViewMessage::ServerBrowserPanel(
+                                            ServerBrowserPanelMessage::UpdateServerPing(
+                                                result,
+                                            ),
+                                        )
+                                    },
+                                )
+                            },
+                        )))
+                    } else {
+                        None
+                    }
                 },
                 Ok(None) => None,
                 Err(e) => {
@@ -263,7 +284,7 @@ impl ServerBrowserPanelComponent {
                 },
             },
             ServerBrowserPanelMessage::UpdateServerPing(ping_result) => {
-                println!("ping result: {:?}", ping_result);
+                debug!(?ping_result, "Received ping result for server");
                 self.servers
                     .iter_mut()
                     .find(|x| x.server.address == ping_result.server_address)
@@ -289,3 +310,7 @@ impl ServerBrowserPanelComponent {
         };
     }
 }
+
+// pub(crate) async fn ping_server(server_address: String) -> PingResult {
+//     ping((client_v4, client_v6), server_address, 1).await
+// }
