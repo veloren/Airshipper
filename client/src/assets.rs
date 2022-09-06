@@ -19,6 +19,7 @@ pub const PING2_ICON: &[u8] = include_bytes!("../assets/icons/ping2.png");
 pub const PING3_ICON: &[u8] = include_bytes!("../assets/icons/ping3.png");
 pub const PING4_ICON: &[u8] = include_bytes!("../assets/icons/ping4.png");
 pub const PING_ERROR_ICON: &[u8] = include_bytes!("../assets/icons/ping_error.png");
+pub const GLOBE_ICON: &[u8] = include_bytes!("../assets/icons/globe.png");
 
 // Fonts
 // POPPINS_FONT_BYTES is a slice not a Font as it's used as the default application font

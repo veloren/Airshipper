@@ -85,7 +85,7 @@ dirs = { package = "dirs-next", version = "2.0.0" }
 md5 = "0.7.0"
 rand = "0.8.5"
 chrono = { version = "0.4.22", features = ["serde"] }
-country-parser = { path = "../../country-parser" }
+country-parser = { path = "../../country-parser" } # TODO: Set back to remote before merge
 
 # bundle all the things!
 openssl-sys = { version = "*", features = ["vendored"], optional = true }
