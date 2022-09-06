@@ -13,6 +13,8 @@
 
   outputs = inputs: let
     lib = inputs.nixpkgs.lib;
+    ncl = inputs.nci.lib.nci-lib;
+
     cleanedSrc = builtins.path {
       name = "airshipper-source";
       path = toString ./.;
@@ -34,6 +36,7 @@
           "PACKAGING.md"
         ];
     };
+
     makePatcher = pkgs: let
       runtimeLibs = with pkgs; (
         [libxkbcommon udev alsa-lib stdenv.cc.cc.lib]
@@ -55,17 +58,29 @@
   in
     inputs.nci.lib.makeOutputs {
       root = ./.;
+      disableVendoredCrateOverrides = true;
       defaultOutputs = {
         app = "airshipper";
         package = "airshipper";
       };
-      overrides.crates = common: _: {
+      overrides.crates = common: _: let
+        inherit (common) pkgs;
+        addOpenssl = prev: {
+          buildInputs = ncl.addBuildInputs prev [pkgs.openssl];
+          nativeBuildInputs = ncl.addNativeBuildInputs prev [pkgs.pkg-config];
+        };
+      in {
         airshipper = prev: {
           src = cleanedSrc;
         };
-        airshipper-server = prev: {
-          src = cleanedSrc;
-        };
+        airshipper-server-deps = addOpenssl;
+        airshipper-server = prev:
+          ncl.computeOverridesResult prev [
+            addOpenssl
+            (prev: {
+              src = cleanedSrc;
+            })
+          ];
       };
       perCrateOverrides = {
         airshipper.packageMetadata = prev: {
