@@ -526,63 +526,83 @@ impl GamePanelComponent {
             _ => {
                 // For all other states, the button is shown with different text/styling
                 // dependant on the state
-                let (button_text, button_style, enabled) = match &self.state {
-                    GamePanelState::ReadyToPlay => (
-                        "Launch",
-                        DownloadButtonStyle::Launch(ButtonState::Enabled),
-                        true,
-                    ),
-                    GamePanelState::Offline(true) => (
-                        "Play Offline",
-                        DownloadButtonStyle::Launch(ButtonState::Enabled),
-                        true,
-                    ),
-                    GamePanelState::Offline(false) => (
-                        "Try Again",
-                        DownloadButtonStyle::Update(ButtonState::Enabled),
-                        true,
-                    ),
-                    GamePanelState::Downloading { state, .. }
-                        if *state == DownloadState::Starting =>
-                    {
-                        (
-                            "Starting...",
+                let (button_text, button_style, enabled, custom_font_size) =
+                    match &self.state {
+                        GamePanelState::ReadyToPlay
+                            if self.selected_server_browser_address.is_some() =>
+                        {
+                            (
+                                "Connect to selected server",
+                                DownloadButtonStyle::Launch(ButtonState::Enabled),
+                                true,
+                                Some(25),
+                            )
+                        },
+                        GamePanelState::ReadyToPlay => (
+                            "Launch",
+                            DownloadButtonStyle::Launch(ButtonState::Enabled),
+                            true,
+                            None,
+                        ),
+                        GamePanelState::Offline(true) => (
+                            "Play Offline",
+                            DownloadButtonStyle::Launch(ButtonState::Enabled),
+                            true,
+                            None,
+                        ),
+                        GamePanelState::Offline(false) => (
+                            "Try Again",
+                            DownloadButtonStyle::Update(ButtonState::Enabled),
+                            true,
+                            None,
+                        ),
+                        GamePanelState::Downloading { state, .. }
+                            if *state == DownloadState::Starting =>
+                        {
+                            (
+                                "Starting...",
+                                DownloadButtonStyle::Update(ButtonState::Disabled),
+                                false,
+                                None,
+                            )
+                        },
+                        GamePanelState::Retry => (
+                            "Retry",
+                            DownloadButtonStyle::Update(ButtonState::Enabled),
+                            true,
+                            None,
+                        ),
+                        GamePanelState::Installing => (
+                            "Installing...",
+                            DownloadButtonStyle::Launch(ButtonState::Disabled),
+                            false,
+                            None,
+                        ),
+                        GamePanelState::QueryingForUpdates(_) => (
+                            "Loading...",
                             DownloadButtonStyle::Update(ButtonState::Disabled),
                             false,
-                        )
-                    },
-                    GamePanelState::Retry => (
-                        "Retry",
-                        DownloadButtonStyle::Update(ButtonState::Enabled),
-                        true,
-                    ),
-                    GamePanelState::Installing => (
-                        "Installing...",
-                        DownloadButtonStyle::Launch(ButtonState::Disabled),
-                        false,
-                    ),
-                    GamePanelState::QueryingForUpdates(_) => (
-                        "Loading...",
-                        DownloadButtonStyle::Update(ButtonState::Disabled),
-                        false,
-                    ),
-                    GamePanelState::Playing(_) => (
-                        "Playing",
-                        DownloadButtonStyle::Launch(ButtonState::Disabled),
-                        false,
-                    ),
-                    GamePanelState::UpdateAvailable(_) => (
-                        "Update",
-                        DownloadButtonStyle::Update(ButtonState::Enabled),
-                        true,
-                    ),
-                    _ => unreachable!(),
-                };
+                            None,
+                        ),
+                        GamePanelState::Playing(_) => (
+                            "Playing",
+                            DownloadButtonStyle::Launch(ButtonState::Disabled),
+                            false,
+                            None,
+                        ),
+                        GamePanelState::UpdateAvailable(_) => (
+                            "Update",
+                            DownloadButtonStyle::Update(ButtonState::Enabled),
+                            true,
+                            None,
+                        ),
+                        _ => unreachable!(),
+                    };
 
                 let mut launch_button = button(
                     text(button_text)
                         .font(POPPINS_BOLD_FONT)
-                        .size(45)
+                        .size(custom_font_size.unwrap_or(45))
                         .horizontal_alignment(Horizontal::Center)
                         .vertical_alignment(Vertical::Center)
                         .width(Length::Fill),

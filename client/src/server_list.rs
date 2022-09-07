@@ -37,7 +37,7 @@ pub struct Server {
     pub location: Option<Country>,
     /// The auth server that must be used to connect to this server. `None` means the
     /// official auth server.
-    #[serde(default)]
+    #[serde(default, rename = "authServer")]
     pub auth_server: Option<String>,
     /// The version channel used by the server. `None` means not running a channel
     /// distributed by Airshipper. If in doubt, `"weekly"` is probably correct.
@@ -59,17 +59,4 @@ fn deserialize_country<'de, D: Deserializer<'de>>(
             )
         })
     })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn check_server_list_deserializes() {
-        ron::de::from_reader::<_, ServerList>(
-            &include_bytes!("../../server_list.ron")[..],
-        )
-        .unwrap();
-    }
 }
