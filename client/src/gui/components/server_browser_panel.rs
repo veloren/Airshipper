@@ -175,8 +175,8 @@ impl ServerBrowserPanelComponent {
                         image(Handle::from_memory(KEY_ICON.to_vec()))
                             .height(Length::Units(16))
                             .width(Length::Units(16)),
-                        "This server uses a custom auth server - additional account \
-                         registration required",
+                        "This server is using a custom auth server. Do not log into \
+                         this server unless you trust the owner.",
                         Position::Right,
                     )
                     .gap(5)
@@ -204,7 +204,7 @@ impl ServerBrowserPanelComponent {
                 .push(
                     container(status_icons)
                         .padding(Padding::from([0, 8]))
-                        .width(Length::Units(60))
+                        .width(Length::Units(45))
                         .align_x(Horizontal::Right),
                 )
                 .push(
