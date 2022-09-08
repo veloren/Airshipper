@@ -3,6 +3,7 @@ use crate::{
         GLOBE_ICON, KEY_ICON, PING1_ICON, PING2_ICON, PING3_ICON, PING4_ICON,
         PING_ERROR_ICON, POPPINS_BOLD_FONT, POPPINS_MEDIUM_FONT, STAR_ICON,
     },
+    consts,
     gui::{
         components::GamePanelMessage,
         style::{
@@ -17,6 +18,7 @@ use crate::{
     server_list::{Server, ServerList},
     Result,
 };
+use consts::OFFICIAL_AUTH_SERVER;
 use iced::{
     alignment::{Horizontal, Vertical},
     pure::{
@@ -73,6 +75,9 @@ impl ServerBrowserPanelComponent {
             servers: server_list
                 .servers
                 .into_iter()
+                .filter(|x| {
+                    matches!(x.auth_server.as_deref(), Some(OFFICIAL_AUTH_SERVER))
+                })
                 .map(ServerBrowserEntry::from)
                 .collect(),
             selected_index: None,
@@ -120,12 +125,13 @@ impl ServerBrowserPanelComponent {
             button
         };
 
+        const ICON_COLUMN_WIDTH: u16 = 35;
         let column_headings = container(
             row()
                 .width(Length::Fill)
                 .height(Length::Units(30))
                 // Spacer heading for icons column
-                .push(heading_button("", None).width(Length::Units(65)))
+                .push(heading_button("", None).width(Length::Units(ICON_COLUMN_WIDTH)))
                 .push(
                     heading_button("Server", Some(ServerSortOrder::ServerName))
                         .width(Length::FillPortion(3)),
@@ -168,7 +174,7 @@ impl ServerBrowserPanelComponent {
 
             if !matches!(
                 server_entry.server.auth_server.as_deref(),
-                Some("https://auth.veloren.net")
+                Some(OFFICIAL_AUTH_SERVER)
             ) {
                 status_icons = status_icons.push(
                     tooltip(
@@ -190,7 +196,7 @@ impl ServerBrowserPanelComponent {
                         image(Handle::from_memory(STAR_ICON.to_vec()))
                             .height(Length::Units(16))
                             .width(Length::Units(16)),
-                        "This server is operated by the Veloren development team",
+                        "This is an official server operated by the Veloren project",
                         Position::Right,
                     )
                     .gap(5)
@@ -204,7 +210,7 @@ impl ServerBrowserPanelComponent {
                 .push(
                     container(status_icons)
                         .padding(Padding::from([0, 8]))
-                        .width(Length::Units(45))
+                        .width(Length::Units(ICON_COLUMN_WIDTH))
                         .align_x(Horizontal::Right),
                 )
                 .push(
