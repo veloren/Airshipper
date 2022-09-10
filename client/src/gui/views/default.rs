@@ -284,6 +284,18 @@ impl DefaultView {
                 },
                 Interaction::ToggleServerBrowser => {
                     self.show_server_browser = !self.show_server_browser;
+
+                    // If toggling the server browser panel resulted in it being hidden,
+                    // deselect the selected server to switch the
+                    // Launch button back to saying "Launch" instead of "Connect to
+                    // selected server"
+                    if !self.show_server_browser {
+                        return Command::perform(async {}, |_| {
+                            DefaultViewMessage::ServerBrowserPanel(
+                                ServerBrowserPanelMessage::SelectServerEntry(None),
+                            )
+                        });
+                    }
                 },
                 Interaction::OpenURL(url) => {
                     if let Err(e) = opener::open(url) {
