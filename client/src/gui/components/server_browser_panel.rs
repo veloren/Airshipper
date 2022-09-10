@@ -1,7 +1,7 @@
 use crate::{
     assets::{
-        GLOBE_ICON, KEY_ICON, PING1_ICON, PING2_ICON, PING3_ICON, PING4_ICON,
-        PING_ERROR_ICON, POPPINS_BOLD_FONT, POPPINS_MEDIUM_FONT, STAR_ICON,
+        GLOBE_ICON, KEY_ICON, NOTO_SANS_UNIFIED_FONT, PING1_ICON, PING2_ICON, PING3_ICON,
+        PING4_ICON, PING_ERROR_ICON, POPPINS_BOLD_FONT, POPPINS_MEDIUM_FONT, STAR_ICON,
     },
     consts,
     gui::{
@@ -54,7 +54,7 @@ impl From<Server> for ServerBrowserEntry {
 
 #[derive(Debug, Clone)]
 pub enum ServerBrowserPanelMessage {
-    SelectServerEntry(usize),
+    SelectServerEntry(Option<usize>),
     UpdateServerList(Result<Option<ServerBrowserPanelComponent>>),
     UpdateServerPing(PingResult),
     SortServers(ServerSortOrder),
@@ -154,6 +154,7 @@ impl ServerBrowserPanelComponent {
         let column_cell = |content: &str| {
             text(content)
                 .width(Length::FillPortion(3))
+                .font(NOTO_SANS_UNIFIED_FONT)
                 .height(Length::Fill)
                 .vertical_alignment(Vertical::Center)
         };
@@ -261,7 +262,7 @@ impl ServerBrowserPanelComponent {
             };
             let select_row_button = button(container(row).padding(Padding::from([0, 8])))
                 .on_press(DefaultViewMessage::ServerBrowserPanel(
-                    ServerBrowserPanelMessage::SelectServerEntry(i),
+                    ServerBrowserPanelMessage::SelectServerEntry(Some(i)),
                 ))
                 .style(row_style)
                 .height(Length::Units(30))
@@ -300,12 +301,26 @@ impl ServerBrowserPanelComponent {
                                 column()
                                     .spacing(5)
                                     .push(
-                                        row().spacing(10).push(text(&server.name)).push(
-                                            text(&server.address).color(BRIGHT_ORANGE),
-                                        ),
+                                        row()
+                                            .spacing(10)
+                                            .push(
+                                                text(&server.name)
+                                                    .font(NOTO_SANS_UNIFIED_FONT),
+                                            )
+                                            .push(
+                                                text(&server.address)
+                                                    .font(NOTO_SANS_UNIFIED_FONT)
+                                                    .color(BRIGHT_ORANGE),
+                                            ),
                                     )
-                                    .push(text("Description: "))
-                                    .push(text(&server.description)),
+                                    .push(
+                                        text("Description: ")
+                                            .font(NOTO_SANS_UNIFIED_FONT),
+                                    )
+                                    .push(
+                                        text(&server.description)
+                                            .font(NOTO_SANS_UNIFIED_FONT),
+                                    ),
                             ),
                         ),
                     ))
@@ -391,9 +406,10 @@ impl ServerBrowserPanelComponent {
                 None
             },
             ServerBrowserPanelMessage::SelectServerEntry(index) => {
-                self.selected_index = Some(index);
-                let selected_server =
-                    self.servers.get(index).map(|x| x.server.address.clone());
+                self.selected_index = index;
+                let selected_server = index.and_then(|index| {
+                    self.servers.get(index).map(|x| x.server.address.clone())
+                });
 
                 Some(Command::perform(async {}, move |()| {
                     DefaultViewMessage::GamePanel(
