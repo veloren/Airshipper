@@ -301,4 +301,4 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: airshipper-macos-aarch64
-          path: target/release/airshipper
+          path: target/aarch64-apple-darwin/release/airshipper
