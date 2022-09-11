@@ -9,13 +9,13 @@ use crate::{
         style::{
             ChangelogHeaderStyle, ColumnHeadingButtonStyle, ColumnHeadingContainerStyle,
             DarkContainerStyle, RuleStyle, ServerListEntryButtonStyle, TooltipStyle,
-            BRIGHT_ORANGE, DARK_WHITE,
+            BRIGHT_ORANGE, DARK_WHITE, TOMATO_RED,
         },
         views::default::DefaultViewMessage,
     },
     net,
     ping::PingResult,
-    server_list::{Server, ServerList},
+    server_list::fetch_server_list,
     Result,
 };
 use consts::OFFICIAL_AUTH_SERVER;
@@ -28,26 +28,18 @@ use iced::{
     Alignment, Length, Padding, Text,
 };
 use iced_native::{image::Handle, widget::tooltip::Position, Command};
-use std::{
-    cmp::min,
-    hash::{Hash, Hasher},
-    sync::Arc,
-};
+use std::{cmp::min, sync::Arc};
 use tracing::debug;
+use veloren_serverbrowser_api::GameServer;
 
 #[derive(Debug, Clone)]
 pub struct ServerBrowserEntry {
-    server: Server,
+    server: GameServer,
     ping: Option<u128>,
 }
 
-impl Hash for ServerBrowserEntry {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.server.address.hash(state);
-    }
-}
-impl From<Server> for ServerBrowserEntry {
-    fn from(server: Server) -> Self {
+impl From<GameServer> for ServerBrowserEntry {
+    fn from(server: GameServer) -> Self {
         Self { server, ping: None }
     }
 }
@@ -64,23 +56,33 @@ pub enum ServerBrowserPanelMessage {
 pub struct ServerBrowserPanelComponent {
     servers: Vec<ServerBrowserEntry>,
     selected_index: Option<usize>,
+    server_list_fetch_error: bool,
 }
 
 impl ServerBrowserPanelComponent {
     pub(crate) async fn fetch() -> Result<Option<Self>> {
-        let server_list =
-            ServerList::fetch("https://serverlist.veloren.net/v1/servers".to_owned())
-                .await?;
-        Ok(Some(Self {
-            servers: server_list
+        let servers: Vec<ServerBrowserEntry>;
+        let mut server_list_fetch_error = false;
+
+        if let Ok(server_list) =
+            fetch_server_list("https://serverlist.veloren.net/v1/servers".to_owned())
+                .await
+        {
+            servers = server_list
                 .servers
                 .into_iter()
-                .filter(|x| {
-                    matches!(x.auth_server.as_deref(), Some(OFFICIAL_AUTH_SERVER))
-                })
+                .filter(|x| matches!(x.auth_server.as_str(), OFFICIAL_AUTH_SERVER))
                 .map(ServerBrowserEntry::from)
-                .collect(),
+                .collect();
+        } else {
+            servers = vec![];
+            server_list_fetch_error = true;
+        }
+
+        Ok(Some(Self {
+            servers,
             selected_index: None,
+            server_list_fetch_error,
         }))
     }
 
@@ -174,8 +176,8 @@ impl ServerBrowserPanelComponent {
                 .align_items(Alignment::Center);
 
             if !matches!(
-                server_entry.server.auth_server.as_deref(),
-                Some(OFFICIAL_AUTH_SERVER)
+                server_entry.server.auth_server.as_str(),
+                OFFICIAL_AUTH_SERVER
             ) {
                 status_icons = status_icons.push(
                     tooltip(
@@ -271,61 +273,75 @@ impl ServerBrowserPanelComponent {
             server_list = server_list.push(select_row_button);
         }
 
-        let mut col = column()
-            .push(
-                container(top_row)
-                    .width(Length::Fill)
-                    .height(Length::Shrink)
-                    .style(ChangelogHeaderStyle),
-            )
-            .push(column_headings.height(Length::Shrink))
-            .push(scrollable(server_list).height(Length::Fill));
+        let mut col = column().push(
+            container(top_row)
+                .width(Length::Fill)
+                .height(Length::Shrink)
+                .style(ChangelogHeaderStyle),
+        );
 
-        // If there's a selected server (which there should always be, unless the server
-        // list API returned no servers) show details for that server.
-        let selected_server = self
-            .selected_index
-            .and_then(|x| self.servers.get(x).map(|y| &y.server));
-
-        if let Some(server) = selected_server {
+        if !self.server_list_fetch_error {
             col = col
-                .push(
-                    container(horizontal_rule(8).style(RuleStyle))
-                        .width(Length::Fill)
-                        .padding(Padding::from([5, 0])),
-                )
-                .push(
-                    container(scrollable(
-                        column().push(
-                            row().push(
-                                column()
-                                    .spacing(5)
-                                    .push(
-                                        row()
-                                            .spacing(10)
-                                            .push(
-                                                text(&server.name)
-                                                    .font(NOTO_SANS_UNIFIED_FONT),
-                                            )
-                                            .push(
-                                                text(&server.address)
-                                                    .font(NOTO_SANS_UNIFIED_FONT)
-                                                    .color(BRIGHT_ORANGE),
-                                            ),
-                                    )
-                                    .push(
-                                        text("Description: ")
-                                            .font(NOTO_SANS_UNIFIED_FONT),
-                                    )
-                                    .push(
-                                        text(&server.description)
-                                            .font(NOTO_SANS_UNIFIED_FONT),
-                                    ),
+                .push(column_headings.height(Length::Shrink))
+                .push(scrollable(server_list).height(Length::Fill));
+
+            // If there's a selected server (which there should always be, unless the
+            // server list API returned no servers) show details for that
+            // server.
+            let selected_server = self
+                .selected_index
+                .and_then(|x| self.servers.get(x).map(|y| &y.server));
+
+            if let Some(server) = selected_server {
+                col = col
+                    .push(
+                        container(horizontal_rule(8).style(RuleStyle))
+                            .width(Length::Fill)
+                            .padding(Padding::from([5, 0])),
+                    )
+                    .push(
+                        container(scrollable(
+                            column().push(
+                                row().push(
+                                    column()
+                                        .spacing(5)
+                                        .push(
+                                            row()
+                                                .spacing(10)
+                                                .push(
+                                                    text(&server.name)
+                                                        .font(NOTO_SANS_UNIFIED_FONT),
+                                                )
+                                                .push(
+                                                    text(&server.address)
+                                                        .font(NOTO_SANS_UNIFIED_FONT)
+                                                        .color(BRIGHT_ORANGE),
+                                                ),
+                                        )
+                                        .push(
+                                            text("Description: ")
+                                                .font(NOTO_SANS_UNIFIED_FONT),
+                                        )
+                                        .push(
+                                            text(&server.description)
+                                                .font(NOTO_SANS_UNIFIED_FONT),
+                                        ),
+                                ),
                             ),
-                        ),
-                    ))
-                    .height(Length::Units(128)),
-                );
+                        ))
+                        .height(Length::Units(128)),
+                    );
+            }
+        } else {
+            col = col.push(
+                container(
+                    text("Error fetching server list")
+                        .size(20)
+                        .color(TOMATO_RED),
+                )
+                .padding(20)
+                .align_x(Horizontal::Center),
+            )
         }
 
         let server_browser_container = container(col)

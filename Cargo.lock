@@ -144,6 +144,7 @@ dependencies = [
  "tracing-log",
  "tracing-subscriber",
  "url",
+ "veloren-serverbrowser-api",
  "winapi",
  "winres",
  "zip",
@@ -4909,6 +4910,16 @@ name = "vcpkg"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
+
+[[package]]
+name = "veloren-serverbrowser-api"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3974631142a04d38d765a52cd625d01b2b5632a8e50e9b22509f1c6f14ab01f8"
+dependencies = [
+ "country-parser",
+ "serde",
+]
 
 [[package]]
 name = "version_check"
