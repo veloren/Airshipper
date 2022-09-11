@@ -23,8 +23,7 @@ pub const LILAC: Color = Color::from_rgb(0.62, 0.66, 0.79);
 const NAVY_BLUE: Color = Color::from_rgb(0.07, 0.09, 0.15);
 const LIGHT_NAVY_BLUE: Color = Color::from_rgb(0.12, 0.14, 0.20);
 pub const BRIGHT_ORANGE: Color = Color::from_rgb(0.94, 0.40, 0.24);
-#[cfg(windows)]
-const TOMATO_RED: Color = Color::from_rgb(0.91, 0.31, 0.31);
+pub const TOMATO_RED: Color = Color::from_rgb(0.91, 0.31, 0.31);
 
 //
 // Generic Widget Styles
