@@ -9,7 +9,7 @@ use crate::{
         style::{
             ChangelogHeaderStyle, ColumnHeadingButtonStyle, ColumnHeadingContainerStyle,
             DarkContainerStyle, RuleStyle, ServerListEntryButtonStyle, TooltipStyle,
-            BRIGHT_ORANGE, DARK_WHITE, TOMATO_RED,
+            WarningContainerStyle, BRIGHT_ORANGE, DARK_WHITE, TOMATO_RED,
         },
         views::default::DefaultViewMessage,
     },
@@ -56,6 +56,7 @@ pub enum ServerBrowserPanelMessage {
 pub struct ServerBrowserPanelComponent {
     servers: Vec<ServerBrowserEntry>,
     selected_index: Option<usize>,
+    raw_socket_support: bool,
     server_list_fetch_error: bool,
 }
 
@@ -79,9 +80,17 @@ impl ServerBrowserPanelComponent {
             server_list_fetch_error = true;
         }
 
+        let raw_socket_support = socket2::Socket::new(
+            socket2::Domain::IPV4,
+            socket2::Type::RAW,
+            Some(socket2::Protocol::ICMPV4),
+        )
+        .is_ok();
+
         Ok(Some(Self {
             servers,
             selected_index: None,
+            raw_socket_support,
             server_list_fetch_error,
         }))
     }
@@ -280,6 +289,27 @@ impl ServerBrowserPanelComponent {
                 .style(ChangelogHeaderStyle),
         );
 
+        if !self.raw_socket_support {
+            col = col.push(
+                container(
+                    container(
+                        text(
+                            "Server pings not available - please re-run Airshipper with \
+                             elevated privileges. On Linux the required permissions can \
+                             be granted via the command setcap cap_net_raw \
+                             /path/to/airshipper",
+                        )
+                        .horizontal_alignment(Horizontal::Center),
+                    )
+                    .style(WarningContainerStyle)
+                    .padding(10)
+                    .width(Length::Fill)
+                    .height(Length::Shrink),
+                )
+                .padding(10),
+            )
+        }
+
         if !self.server_list_fetch_error {
             col = col
                 .push(column_headings.height(Length::Shrink))
@@ -360,7 +390,12 @@ impl ServerBrowserPanelComponent {
             ServerBrowserPanelMessage::UpdateServerList(result) => match result {
                 Ok(Some(server_browser)) => {
                     *self = server_browser;
-                    if !self.servers.is_empty() {
+                    if !self.raw_socket_support {
+                        debug!(
+                            "Skipping pinging servers as raw sockets are not supported"
+                        );
+                        None
+                    } else if !self.servers.is_empty() {
                         let client_v4 = Arc::new(
                             surge_ping::Client::new(&surge_ping::Config::default())
                                 .unwrap(),

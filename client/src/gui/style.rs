@@ -211,6 +211,19 @@ impl container::StyleSheet for AnnouncementStyle {
     }
 }
 
+pub struct WarningContainerStyle;
+impl container::StyleSheet for WarningContainerStyle {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(VERY_DARK_GREY)),
+            border_color: TOMATO_RED,
+            border_width: 2.0,
+            text_color: Some(Color::WHITE),
+            ..container::Style::default()
+        }
+    }
+}
+
 pub struct BlogPostContainerStyle;
 impl container::StyleSheet for BlogPostContainerStyle {
     fn style(&self) -> container::Style {
