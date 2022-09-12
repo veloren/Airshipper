@@ -131,6 +131,7 @@ dependencies = [
  "self_update",
  "semver 1.0.13",
  "serde",
+ "socket2",
  "strip_markdown",
  "surge-ping",
  "termcolor",
