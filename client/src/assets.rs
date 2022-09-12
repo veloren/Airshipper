@@ -19,6 +19,7 @@ pub const PING2_ICON: &[u8] = include_bytes!("../assets/icons/ping2.png");
 pub const PING3_ICON: &[u8] = include_bytes!("../assets/icons/ping3.png");
 pub const PING4_ICON: &[u8] = include_bytes!("../assets/icons/ping4.png");
 pub const PING_ERROR_ICON: &[u8] = include_bytes!("../assets/icons/ping_error.png");
+pub const PING_NONE_ICON: &[u8] = include_bytes!("../assets/icons/ping_none.png");
 pub const GLOBE_ICON: &[u8] = include_bytes!("../assets/icons/globe.png");
 pub const KEY_ICON: &[u8] = include_bytes!("../assets/icons/key.png");
 
