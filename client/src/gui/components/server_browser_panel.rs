@@ -415,7 +415,10 @@ impl ServerBrowserPanelComponent {
                                     net::ping::ping(
                                         (client_v4.clone(), client_v6.clone()),
                                         server.server.address.clone(),
-                                        i as u16,
+                                        // On MacOS using zero as a PingIdentifier
+                                        // results in a failure for some reason, so just
+                                        // add 1 to the index
+                                        (i + 1) as u16,
                                     ),
                                     |result| {
                                         DefaultViewMessage::ServerBrowserPanel(
