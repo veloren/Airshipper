@@ -42,3 +42,5 @@ pub const GITLAB_MERGED_MR_URL: &str =
 pub const AIRSHIPPER_RELEASE_URL: &str = "https://github.com/veloren/Airshipper/releases";
 
 pub const OFFICIAL_AUTH_SERVER: &str = "https://auth.veloren.net";
+
+pub const OFFICIAL_SERVER_LIST: &str = "https://serverlist.veloren.net";

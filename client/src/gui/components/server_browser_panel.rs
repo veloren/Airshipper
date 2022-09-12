@@ -1,9 +1,11 @@
 use crate::{
     assets::{
         GLOBE_ICON, KEY_ICON, NOTO_SANS_UNIFIED_FONT, PING1_ICON, PING2_ICON, PING3_ICON,
-        PING4_ICON, PING_ERROR_ICON, POPPINS_BOLD_FONT, POPPINS_MEDIUM_FONT, STAR_ICON,
+        PING4_ICON, PING_ERROR_ICON, PING_NONE_ICON, POPPINS_BOLD_FONT,
+        POPPINS_MEDIUM_FONT, STAR_ICON,
     },
     consts,
+    consts::OFFICIAL_SERVER_LIST,
     gui::{
         components::GamePanelMessage,
         style::{
@@ -66,7 +68,7 @@ impl ServerBrowserPanelComponent {
         let mut server_list_fetch_error = false;
 
         if let Ok(server_list) =
-            fetch_server_list("https://serverlist.veloren.net/v1/servers".to_owned())
+            fetch_server_list(format!("{}/v1/servers", OFFICIAL_SERVER_LIST).to_owned())
                 .await
         {
             servers = server_list
@@ -171,12 +173,16 @@ impl ServerBrowserPanelComponent {
         };
 
         for (i, server_entry) in self.servers.iter().enumerate() {
-            let ping_icon = match server_entry.ping {
-                Some(0..=50) => image(Handle::from_memory(PING1_ICON.to_vec())),
-                Some(51..=150) => image(Handle::from_memory(PING2_ICON.to_vec())),
-                Some(151..=300) => image(Handle::from_memory(PING3_ICON.to_vec())),
-                Some(_) => image(Handle::from_memory(PING4_ICON.to_vec())),
-                _ => image(Handle::from_memory(PING_ERROR_ICON.to_vec())),
+            let ping_icon = if !self.raw_socket_support {
+                image(Handle::from_memory(PING_NONE_ICON.to_vec()))
+            } else {
+                match server_entry.ping {
+                    Some(0..=50) => image(Handle::from_memory(PING1_ICON.to_vec())),
+                    Some(51..=150) => image(Handle::from_memory(PING2_ICON.to_vec())),
+                    Some(151..=300) => image(Handle::from_memory(PING3_ICON.to_vec())),
+                    Some(_) => image(Handle::from_memory(PING4_ICON.to_vec())),
+                    _ => image(Handle::from_memory(PING_ERROR_ICON.to_vec())),
+                }
             };
 
             let mut status_icons = row()
@@ -215,6 +221,12 @@ impl ServerBrowserPanelComponent {
                     .style(TooltipStyle),
                 );
             }
+
+            let no_ping_text = if !self.raw_socket_support {
+                "?"
+            } else {
+                "Error"
+            };
 
             let row = row()
                 .width(Length::Fill)
@@ -260,7 +272,7 @@ impl ServerBrowserPanelComponent {
                         .push(column_cell(
                             &server_entry
                                 .ping
-                                .map_or("Error".to_owned(), |x| format!("{}", x)),
+                                .map_or(no_ping_text.to_owned(), |x| format!("{}", x)),
                         ))
                         .width(Length::FillPortion(1)),
                 )
