@@ -1,9 +1,6 @@
-use async_std_resolver::{
-    config::{ResolverConfig, ResolverOpts},
-    resolver,
-};
 use std::{net::IpAddr, str::FromStr, sync::Arc, time::Duration};
 use surge_ping::{PingIdentifier, PingSequence};
+use tokio::net;
 use tracing::{debug, warn};
 
 #[derive(Clone, Debug)]
@@ -27,30 +24,21 @@ pub async fn ping(
                 server_address
             );
 
-            let resolver =
-                resolver(ResolverConfig::default(), ResolverOpts::default()).await;
-
             // The server address is not an IP address, so attempt to resolve it via DNS
-            if let Ok(resolver) = resolver {
-                let result = resolver
-                    .lookup_ip(server_address.as_str())
-                    .await
-                    .map(|x| x.iter().next())
-                    .ok()
-                    .flatten();
+            match net::lookup_host(format!("{}:14004", server_address.clone())).await {
+                Ok(mut addr_iter) => {
+                    let result = addr_iter.next().map(|x| x.ip());
 
-                debug!(
-                    "DNS resolution of address {} result: {:?}",
-                    server_address, result
-                );
-                result
-            } else {
-                warn!(
-                    "Skipping DNS resolution of address {} as no DNS resolver was \
-                     provided",
-                    server_address
-                );
-                None
+                    debug!(
+                        "DNS resolution of address {} result: {:?}",
+                        server_address, result
+                    );
+                    result
+                },
+                Err(e) => {
+                    warn!(?e, ?server_address, "DNS resolution failed");
+                    None
+                },
             }
         },
     };
