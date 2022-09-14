@@ -22,14 +22,14 @@ use iced_native::{image::Handle, widget::tooltip::Position, Command};
 use std::{path::PathBuf, time::Duration};
 
 use crate::{
-    assets::SETTINGS_ICON,
+    assets::{POPPINS_MEDIUM_FONT, SETTINGS_ICON},
     gui::{
         style,
         style::{
-            ButtonState, DownloadButtonStyle, ProgressBarStyle, SettingsButtonStyle,
-            LIGHT_GREY,
+            ButtonState, DownloadButtonStyle, ProgressBarStyle, ServerBrowserButtonStyle,
+            SettingsButtonStyle, LIGHT_GREY,
         },
-        views::default::Interaction::SettingsPressed,
+        views::default::{Interaction, Interaction::SettingsPressed},
     },
 };
 use lazy_static::lazy_static;
@@ -47,6 +47,7 @@ pub enum GamePanelMessage {
     DownloadProgress(Progress),
     InstallDone(Result<Profile>),
     PlayPressed,
+    ServerBrowserServerChanged(Option<String>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -76,6 +77,7 @@ pub enum GamePanelState {
 pub struct GamePanelComponent {
     state: GamePanelState,
     download_progress: Option<Progress>,
+    selected_server_browser_address: Option<String>,
 }
 
 impl Default for GamePanelComponent {
@@ -83,6 +85,7 @@ impl Default for GamePanelComponent {
         Self {
             state: GamePanelState::QueryingForUpdates(false),
             download_progress: None,
+            selected_server_browser_address: None,
         }
     }
 }
@@ -94,10 +97,11 @@ impl GamePanelComponent {
                 url, download_path, ..
             } => subscriptions::download::file(url, download_path)
                 .map(GamePanelMessage::DownloadProgress),
-            &GamePanelState::Playing(ref profile) => {
-                subscriptions::process::stream(profile.clone())
-                    .map(GamePanelMessage::ProcessUpdate)
-            },
+            &GamePanelState::Playing(ref profile) => subscriptions::process::stream(
+                profile.clone(),
+                self.selected_server_browser_address.clone(),
+            )
+            .map(GamePanelMessage::ProcessUpdate),
             _ => iced::Subscription::none(),
         }
     }
@@ -353,6 +357,10 @@ impl GamePanelComponent {
                 };
                 (Some(next_state), None)
             },
+            GamePanelMessage::ServerBrowserServerChanged(server_address) => {
+                self.selected_server_browser_address = server_address;
+                (None, None)
+            },
         };
 
         if let Some(state) = next_state {
@@ -518,81 +526,120 @@ impl GamePanelComponent {
             _ => {
                 // For all other states, the button is shown with different text/styling
                 // dependant on the state
-                let (button_text, button_style, enabled) = match &self.state {
-                    GamePanelState::ReadyToPlay => (
-                        "Launch",
-                        DownloadButtonStyle::Launch(ButtonState::Enabled),
-                        true,
-                    ),
-                    GamePanelState::Offline(true) => (
-                        "Play Offline",
-                        DownloadButtonStyle::Launch(ButtonState::Enabled),
-                        true,
-                    ),
-                    GamePanelState::Offline(false) => (
-                        "Try Again",
-                        DownloadButtonStyle::Update(ButtonState::Enabled),
-                        true,
-                    ),
-                    GamePanelState::Downloading { state, .. }
-                        if *state == DownloadState::Starting =>
-                    {
-                        (
-                            "Starting...",
+                let (button_text, button_style, enabled, custom_font_size) =
+                    match &self.state {
+                        GamePanelState::ReadyToPlay
+                            if self.selected_server_browser_address.is_some() =>
+                        {
+                            (
+                                "Connect to selected server",
+                                DownloadButtonStyle::Launch(ButtonState::Enabled),
+                                true,
+                                Some(25),
+                            )
+                        },
+                        GamePanelState::ReadyToPlay => (
+                            "Launch",
+                            DownloadButtonStyle::Launch(ButtonState::Enabled),
+                            true,
+                            None,
+                        ),
+                        GamePanelState::Offline(true) => (
+                            "Play Offline",
+                            DownloadButtonStyle::Launch(ButtonState::Enabled),
+                            true,
+                            None,
+                        ),
+                        GamePanelState::Offline(false) => (
+                            "Try Again",
+                            DownloadButtonStyle::Update(ButtonState::Enabled),
+                            true,
+                            None,
+                        ),
+                        GamePanelState::Downloading { state, .. }
+                            if *state == DownloadState::Starting =>
+                        {
+                            (
+                                "Starting...",
+                                DownloadButtonStyle::Update(ButtonState::Disabled),
+                                false,
+                                None,
+                            )
+                        },
+                        GamePanelState::Retry => (
+                            "Retry",
+                            DownloadButtonStyle::Update(ButtonState::Enabled),
+                            true,
+                            None,
+                        ),
+                        GamePanelState::Installing => (
+                            "Installing...",
+                            DownloadButtonStyle::Launch(ButtonState::Disabled),
+                            false,
+                            None,
+                        ),
+                        GamePanelState::QueryingForUpdates(_) => (
+                            "Loading...",
                             DownloadButtonStyle::Update(ButtonState::Disabled),
                             false,
-                        )
-                    },
-                    GamePanelState::Retry => (
-                        "Retry",
-                        DownloadButtonStyle::Update(ButtonState::Enabled),
-                        true,
-                    ),
-                    GamePanelState::Installing => (
-                        "Installing...",
-                        DownloadButtonStyle::Launch(ButtonState::Disabled),
-                        false,
-                    ),
-                    GamePanelState::QueryingForUpdates(_) => (
-                        "Loading...",
-                        DownloadButtonStyle::Update(ButtonState::Disabled),
-                        false,
-                    ),
-                    GamePanelState::Playing(_) => (
-                        "Playing",
-                        DownloadButtonStyle::Launch(ButtonState::Disabled),
-                        false,
-                    ),
-                    GamePanelState::UpdateAvailable(_) => (
-                        "Update",
-                        DownloadButtonStyle::Update(ButtonState::Enabled),
-                        true,
-                    ),
-                    _ => unreachable!(),
-                };
+                            None,
+                        ),
+                        GamePanelState::Playing(_) => (
+                            "Playing",
+                            DownloadButtonStyle::Launch(ButtonState::Disabled),
+                            false,
+                            None,
+                        ),
+                        GamePanelState::UpdateAvailable(_) => (
+                            "Update",
+                            DownloadButtonStyle::Update(ButtonState::Enabled),
+                            true,
+                            None,
+                        ),
+                        _ => unreachable!(),
+                    };
 
-                let mut button = button(
+                let mut launch_button = button(
                     text(button_text)
                         .font(POPPINS_BOLD_FONT)
-                        .size(45)
+                        .size(custom_font_size.unwrap_or(45))
                         .horizontal_alignment(Horizontal::Center)
                         .vertical_alignment(Vertical::Center)
                         .width(Length::Fill),
                 )
                 .style(button_style)
-                .width(Length::Fill)
+                .width(Length::FillPortion(3))
                 .height(Length::Units(75));
 
                 if enabled {
-                    button = button.on_press(DefaultViewMessage::GamePanel(
-                        GamePanelMessage::PlayPressed,
-                    ));
+                    launch_button = launch_button.on_press(
+                        DefaultViewMessage::GamePanel(GamePanelMessage::PlayPressed),
+                    );
                 }
 
-                container(button)
-                    .width(Length::Fill)
-                    .align_y(Vertical::Center)
-                    .into()
+                let server_browser_button = button(
+                    text("Server Browser")
+                        .font(POPPINS_MEDIUM_FONT)
+                        .size(22)
+                        .horizontal_alignment(Horizontal::Center)
+                        .vertical_alignment(Vertical::Center),
+                )
+                .width(Length::FillPortion(1))
+                .height(Length::Units(75))
+                .style(ServerBrowserButtonStyle)
+                .on_press(DefaultViewMessage::Interaction(
+                    Interaction::ToggleServerBrowser,
+                ));
+
+                container(
+                    row()
+                        .push(launch_button)
+                        .push(server_browser_button)
+                        .spacing(10),
+                )
+                .width(Length::Fill)
+                .align_y(Vertical::Center)
+                .into()
             },
         }
     }

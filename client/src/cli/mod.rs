@@ -87,7 +87,7 @@ async fn process_arguments(
 
     match action {
         Action::Update => update(profile, true).await?,
-        Action::Start => start(profile).await?,
+        Action::Start => start(profile, None).await?,
         Action::Run => {
             if let Err(e) = update(profile, false).await {
                 tracing::error!(
@@ -95,7 +95,7 @@ async fn process_arguments(
                     "Couldn't update the game, starting installed version."
                 );
             }
-            start(profile).await?
+            start(profile, None).await?
         },
         #[cfg(windows)]
         Action::Upgrade => {
@@ -159,14 +159,18 @@ async fn download(profile: Profile) -> Result<()> {
     Ok(())
 }
 
-async fn start(profile: &mut Profile) -> Result<()> {
+async fn start(profile: &mut Profile, game_server_address: Option<String>) -> Result<()> {
     if !profile.installed() {
         tracing::info!("Profile is not installed. Install it via `airshipper update`");
         return Ok(());
     }
 
     tracing::info!("Starting...");
-    let mut stream = crate::io::stream_process(&mut Profile::start(profile))?.boxed();
+    let mut stream = crate::io::stream_process(&mut Profile::start(
+        profile,
+        game_server_address.as_deref(),
+    ))?
+    .boxed();
 
     while let Some(progress) = stream.next().await {
         match progress {
