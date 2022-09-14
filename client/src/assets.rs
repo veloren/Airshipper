@@ -12,12 +12,32 @@ pub const DOWNLOAD_ICON: &[u8] = include_bytes!("../assets/icons/download.png");
 pub const FOLDER_ICON: &[u8] = include_bytes!("../assets/icons/folder.png");
 pub const UP_RIGHT_ARROW_ICON: &[u8] =
     include_bytes!("../assets/icons/up_right_arrow.png");
+pub const STAR_ICON: &[u8] = include_bytes!("../assets/icons/star.png");
+
+pub const PING1_ICON: &[u8] = include_bytes!("../assets/icons/ping1.png");
+pub const PING2_ICON: &[u8] = include_bytes!("../assets/icons/ping2.png");
+pub const PING3_ICON: &[u8] = include_bytes!("../assets/icons/ping3.png");
+pub const PING4_ICON: &[u8] = include_bytes!("../assets/icons/ping4.png");
+pub const PING_ERROR_ICON: &[u8] = include_bytes!("../assets/icons/ping_error.png");
+pub const PING_NONE_ICON: &[u8] = include_bytes!("../assets/icons/ping_none.png");
+pub const GLOBE_ICON: &[u8] = include_bytes!("../assets/icons/globe.png");
+pub const KEY_ICON: &[u8] = include_bytes!("../assets/icons/key.png");
 
 // Fonts
 // POPPINS_FONT_BYTES is a slice not a Font as it's used as the default application font
 pub const POPPINS_FONT_BYTES: &[u8] =
     include_bytes!("../assets/fonts/Poppins-Regular.ttf");
 
+// GoNotoCurrent is a unified font that contains glyphs for most languages used around the
+// world so is used in widgets that display user provided text such as those within the
+// server browser panel.
+// https://github.com/satbyy/go-noto-universal
+pub const NOTO_SANS_UNIFIED_FONT: Font = Font::External {
+    name: "Noto Sans Unified",
+    bytes: include_bytes!("../assets/fonts/GoNotoCurrent.ttf"),
+};
+
+// Poppins is the font used throughout the rest of the Airshipper client
 pub const POPPINS_BOLD_FONT: Font = Font::External {
     name: "Poppins Bold",
     bytes: include_bytes!("../assets/fonts/Poppins-Bold.ttf"),

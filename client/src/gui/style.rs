@@ -9,11 +9,12 @@ use iced::{
 // Colors
 pub const LIGHT_GREY: Color = Color::from_rgb(0.93, 0.93, 0.93);
 pub const MEDIUM_GREY: Color = Color::from_rgb(0.7, 0.7, 0.7);
+pub const EXTRA_MEDIUM_GREY: Color = Color::from_rgb(0.21, 0.21, 0.21);
+pub const VERY_DARK_GREY: Color = Color::from_rgb(0.1, 0.1, 0.1);
 const DARKER_SEA_GREEN: Color = Color::from_rgb(0.08, 0.61, 0.65);
 const SLATE: Color = Color::from_rgb(0.35, 0.43, 0.46);
 const TRANSPARENT_WHITE: Color = Color::from_rgba(1.0, 1.0, 1.0, 0.1);
 pub const DARK_WHITE: Color = Color::from_rgb(0.9, 0.9, 0.9);
-pub const VERY_DARK_GREY: Color = Color::from_rgb(0.1, 0.1, 0.1);
 const BACKGROUND_BLUE: Color = Color::from_rgb(0.14, 0.21, 0.41);
 const LIME_GREEN: Color = Color::from_rgb(0.41, 0.64, 0.26);
 const CORNFLOWER_BLUE: Color = Color::from_rgb(0.19, 0.4, 0.85);
@@ -21,9 +22,8 @@ const BLOG_POST_BACKGROUND_BLUE: Color = Color::from_rgb(0.24, 0.33, 0.58);
 pub const LILAC: Color = Color::from_rgb(0.62, 0.66, 0.79);
 const NAVY_BLUE: Color = Color::from_rgb(0.07, 0.09, 0.15);
 const LIGHT_NAVY_BLUE: Color = Color::from_rgb(0.12, 0.14, 0.20);
-const BRIGHT_ORANGE: Color = Color::from_rgb(0.94, 0.40, 0.24);
-#[cfg(windows)]
-const TOMATO_RED: Color = Color::from_rgb(0.91, 0.31, 0.31);
+pub const BRIGHT_ORANGE: Color = Color::from_rgb(0.94, 0.40, 0.24);
+pub const TOMATO_RED: Color = Color::from_rgb(0.91, 0.31, 0.31);
 
 //
 // Generic Widget Styles
@@ -211,6 +211,19 @@ impl container::StyleSheet for AnnouncementStyle {
     }
 }
 
+pub struct WarningContainerStyle;
+impl container::StyleSheet for WarningContainerStyle {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(VERY_DARK_GREY)),
+            border_color: TOMATO_RED,
+            border_width: 2.0,
+            text_color: Some(Color::WHITE),
+            ..container::Style::default()
+        }
+    }
+}
+
 pub struct BlogPostContainerStyle;
 impl container::StyleSheet for BlogPostContainerStyle {
     fn style(&self) -> container::Style {
@@ -321,6 +334,93 @@ fn disabled_download_button_style() -> Style {
         shadow_offset: Vector::new(1.0, 1.0),
         text_color: LIGHT_GREY,
         border_radius: 4.0,
+        ..button::Style::default()
+    }
+}
+
+pub struct ServerBrowserButtonStyle;
+impl button::StyleSheet for ServerBrowserButtonStyle {
+    fn active(&self) -> Style {
+        Style {
+            background: Some(Background::Color(CORNFLOWER_BLUE)),
+            text_color: Color::WHITE,
+            border_radius: 4.0,
+            ..button::Style::default()
+        }
+    }
+}
+
+pub struct ColumnHeadingButtonStyle;
+impl button::StyleSheet for ColumnHeadingButtonStyle {
+    fn active(&self) -> Style {
+        Style {
+            text_color: Color::WHITE,
+            ..button::Style::default()
+        }
+    }
+}
+
+pub struct ColumnHeadingContainerStyle;
+impl container::StyleSheet for ColumnHeadingContainerStyle {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(EXTRA_MEDIUM_GREY)),
+            ..container::Style::default()
+        }
+    }
+}
+
+pub enum ServerListEntryButtonStyle {
+    Selected,
+    NotSelected,
+}
+
+impl button::StyleSheet for ServerListEntryButtonStyle {
+    fn active(&self) -> Style {
+        match self {
+            Self::Selected => server_list_entry_selected_style_active(),
+            Self::NotSelected => server_list_entry_not_selected_style_active(),
+        }
+    }
+
+    fn hovered(&self) -> Style {
+        match self {
+            Self::Selected => server_list_entry_selected_style_hovered(),
+            Self::NotSelected => server_list_entry_not_selected_style_hovered(),
+        }
+    }
+}
+
+fn server_list_entry_selected_style_active() -> Style {
+    Style {
+        background: Some(Background::Color(NAVY_BLUE)),
+        text_color: Color::WHITE,
+        ..button::Style::default()
+    }
+}
+
+fn server_list_entry_selected_style_hovered() -> Style {
+    Style {
+        background: Some(Background::Color(NAVY_BLUE)),
+        text_color: Color::WHITE,
+        shadow_offset: Vector::new(0.0, 0.0),
+        ..button::Style::default()
+    }
+}
+
+fn server_list_entry_not_selected_style_active() -> Style {
+    Style {
+        background: Some(Background::Color(VERY_DARK_GREY)),
+        text_color: Color::WHITE,
+        ..button::Style::default()
+    }
+}
+
+fn server_list_entry_not_selected_style_hovered() -> Style {
+    Style {
+        background: Some(Background::Color(VERY_DARK_GREY)),
+        text_color: Color::WHITE,
+        shadow_offset: Vector::new(0.0, 0.0),
         ..button::Style::default()
     }
 }
