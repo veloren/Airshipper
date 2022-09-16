@@ -95,6 +95,12 @@ unittests:
       - LICENSE
     expire_in: 1 week
 
+.tmacos-aarch64:
+  extends:
+    - .tmacos
+  before_script:
+    - export RUST_TARGET="aarch64-apple-darwin"
+
 # e.g. post merge and scheduled builds
 .tmacos-master-cache:
     cache:
@@ -122,11 +128,17 @@ windows:
     - .release
   tags: ["veloren/*", "build", "publish", "trusted"]
 
-macos:
+macos-x86_64:
   extends:
     - .tmacos
     - .release
     - .tmacos-master-cache
+  tags: ["veloren/*:macos", "build", "publish", "trusted"]
+
+macos-aarch64:
+  extends:
+    - .tmacos-aarch64
+    - .release
   tags: ["veloren/*:macos", "build", "publish", "trusted"]
 
 # if NOT release or master, allow optional builds
@@ -142,9 +154,16 @@ opt-windows:
     - .optional-release
   tags: ["veloren/*", "build"]
 
-opt-macos:
+opt-macos-x86_64:
   extends:
     - .tmacos
     - .optional-release
-    - .tmacos-mr-cache
+    - .optional-release
+
+  tags: ["veloren/*:macos", "build"]
+
+opt-macos-aarch64:
+  extends:
+    - .tmacos-aarch64
+    - .optional-release
   tags: ["veloren/*:macos", "build"]

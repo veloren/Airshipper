@@ -105,7 +105,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v1
         with:
-          name: airshipper-windows
+          name: airshipper-windows-x86_64
           path: target/wix/airshipper-windows.msi
 
   linux:
@@ -177,7 +177,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v1
         with:
-          name: airshipper-linux
+          name: airshipper-linux-x86_64
           path: target/release/airshipper
 
   macos:
@@ -238,5 +238,67 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v1
         with:
-          name: airshipper-macos
+          name: airshipper-macos-x86_64
           path: target/release/airshipper
+
+  macos-aarch64:
+    runs-on: [macos-latest]
+    steps:
+      # Checkout
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      # Github Actions is counted torwards lfs bandwidth quota (1 GB/month on free account)
+      # Therefore we must cache them to be as efficient as possible.
+      # Source: https://github.com/actions/checkout/issues/165
+
+      # Store a list of all lfs files
+      - name: Create LFS file list
+        run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
+
+      # Restore lfs files if cache valid
+      - name: Restore LFS cache
+        uses: actions/cache@v2
+        id: lfs-cache
+        with:
+          path: .git/lfs
+          key: ${{ runner.os }}-lfs-${{ hashFiles('.lfs-assets-id') }}-v1
+
+      # Pull lfs files incase cache is invalid
+      - name: Git LFS Pull
+        run: git lfs pull
+
+      # Cache
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
+
+      # Toolchain Version
+      - name: Aquire Toolchain Version
+        id: tool
+        shell: pwsh
+        run: echo "::set-output name=rust_toolchain::$(cat rust-toolchain)"
+
+      # Toolchain
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ steps.tool.outputs.rust_toolchain }}
+          target: aarch64-apple-darwin
+          override: true
+
+      # Build
+      - name: Build
+        run: cargo build --bin airshipper --target aarch64-apple-darwin --release --all-features
+
+      # Upload artifact
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: airshipper-macos-aarch64
+          path: target/aarch64-apple-darwin/release/airshipper
