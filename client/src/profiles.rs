@@ -286,27 +286,78 @@ async fn set_permissions(files: Vec<&std::path::PathBuf>) -> Result<()> {
 }
 
 fn parse_env_vars(env_vars: &str) -> (Vec<(&str, &str)>, Vec<String>) {
+    let env_vars = env_vars.trim();
     let mut errors = Vec::new();
-    let vars = env_vars
-        .split(',')
-        .filter_map(|var| {
-            if let Some((key, value)) = var.split_once('=') {
-                let key = key.trim();
-                let value = value.trim();
-                if key.chars().count() == 0 {
-                    errors.push(format!("Invalid variable '{}'", key))
-                }
-                Some((key, value))
-            } else {
-                if var.chars().count() == 0 {
-                    errors.push("Unnecessary ',' in variable list".to_string());
-                } else {
-                    errors.push(format!("Variable '{}' has no corresponding value", var));
-                }
-                None
-            }
-        })
-        .collect();
 
+    let vars = if env_vars.is_empty() {
+        Vec::new()
+    } else {
+        env_vars
+            .split(',')
+            .filter_map(|var| {
+                let var = var.trim();
+                if let Some((key, value)) = var.split_once('=') {
+                    let key = key.trim();
+                    let value = value.trim();
+                    if key.chars().count() == 0 {
+                        errors.push(format!("Invalid variable '{}'", key))
+                    }
+                    Some((key, value))
+                } else {
+                    if var.chars().count() == 0 {
+                        errors.push("Unnecessary ',' in variable list".to_string());
+                    } else {
+                        errors.push(format!(
+                            "Variable '{}' has no corresponding value",
+                            var
+                        ));
+                    }
+                    None
+                }
+            })
+            .collect()
+    };
     (vars, errors)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_empty_config() {
+        let (vars, errors) = parse_env_vars("");
+        assert_eq!(vars, Vec::new());
+        assert!(errors.is_empty());
+    }
+
+    #[test]
+    fn test_normal_config() {
+        let (vars, errors) =
+            parse_env_vars("       FOO=foo, BAR= bar,BAZ = baz, BAK = bak  ");
+        assert_eq!(vars, vec![
+            ("FOO", "foo"),
+            ("BAR", "bar"),
+            ("BAZ", "baz"),
+            ("BAK", "bak")
+        ]);
+        assert!(errors.is_empty());
+    }
+
+    #[test]
+    fn test_bad_config() {
+        let (vars, errors) =
+            parse_env_vars("      FOO=foo,,BAR= bar,    = baz, BAK =   , EMM ");
+        assert_eq!(vars, vec![
+            ("FOO", "foo"),
+            ("BAR", "bar"),
+            ("", "baz"),
+            ("BAK", "")
+        ]);
+        assert_eq!(errors, vec![
+            "Unnecessary ',' in variable list".to_string(),
+            "Invalid variable ''".to_string(),
+            "Variable 'EMM' has no corresponding value".to_string()
+        ]);
+    }
 }
