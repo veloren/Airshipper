@@ -2,18 +2,19 @@ use crate::{
     assets::{
         GLOBE_ICON, KEY_ICON, NOTO_SANS_UNIFIED_FONT, PING1_ICON, PING2_ICON, PING3_ICON,
         PING4_ICON, PING_ERROR_ICON, PING_NONE_ICON, POPPINS_BOLD_FONT,
-        POPPINS_MEDIUM_FONT, STAR_ICON,
+        POPPINS_MEDIUM_FONT, STAR_ICON, UP_RIGHT_ARROW_ICON,
     },
     consts,
-    consts::OFFICIAL_SERVER_LIST,
+    consts::{GITLAB_SERVER_BROWSER_URL, OFFICIAL_SERVER_LIST},
     gui::{
         components::GamePanelMessage,
         style::{
             ChangelogHeaderStyle, ColumnHeadingButtonStyle, ColumnHeadingContainerStyle,
-            DarkContainerStyle, RuleStyle, ServerListEntryButtonStyle, TooltipStyle,
-            WarningContainerStyle, BRIGHT_ORANGE, DARK_WHITE, TOMATO_RED,
+            DarkContainerStyle, GitlabServerBrowserButtonStyle, RuleStyle,
+            ServerListEntryButtonStyle, TooltipStyle, WarningContainerStyle,
+            BRIGHT_ORANGE, DARK_WHITE, TOMATO_RED,
         },
-        views::default::DefaultViewMessage,
+        views::default::{DefaultViewMessage, Interaction},
     },
     net,
     ping::PingResult,
@@ -27,7 +28,7 @@ use iced::{
         button, column, container, horizontal_rule, image, row, scrollable, text,
         tooltip, widget::Image, Element,
     },
-    Alignment, Length, Padding, Text,
+    Alignment, Color, Length, Padding, Text,
 };
 use iced_native::{image::Handle, widget::tooltip::Position, Command};
 use std::{cmp::min, sync::Arc};
@@ -118,6 +119,34 @@ impl ServerBrowserPanelComponent {
                         .height(Length::Fill)
                         .align_y(Vertical::Center)
                         .padding(Padding::from([1, 0, 0, 8])),
+                    )
+                    .push(
+                        container(
+                            button(
+                                row()
+                                    .push(
+                                        text("Get your server listed here")
+                                            .color(Color::WHITE)
+                                            .size(14),
+                                    )
+                                    .push(image(Handle::from_memory(
+                                        UP_RIGHT_ARROW_ICON.to_vec(),
+                                    )))
+                                    .spacing(5)
+                                    .align_items(Alignment::Center),
+                            )
+                            .on_press(DefaultViewMessage::Interaction(
+                                Interaction::OpenURL(
+                                    GITLAB_SERVER_BROWSER_URL.to_string(),
+                                ),
+                            ))
+                            .padding(Padding::from([2, 10, 2, 10]))
+                            .height(Length::Units(20))
+                            .style(GitlabServerBrowserButtonStyle),
+                        )
+                        .height(Length::Fill)
+                        .align_y(Vertical::Center)
+                        .padding(Padding::from([1, 10, 0, 8])),
                     ),
             )),
         );

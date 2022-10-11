@@ -246,6 +246,17 @@ impl button::StyleSheet for GitlabChangelogButtonStyle {
     }
 }
 
+pub struct GitlabServerBrowserButtonStyle;
+impl button::StyleSheet for GitlabServerBrowserButtonStyle {
+    fn active(&self) -> Style {
+        Style {
+            background: Some(Background::Color(LIME_GREEN)),
+            border_radius: 25.0,
+            ..button::Style::default()
+        }
+    }
+}
+
 pub struct AirshipperDownloadButtonStyle;
 impl button::StyleSheet for AirshipperDownloadButtonStyle {
     fn active(&self) -> Style {
