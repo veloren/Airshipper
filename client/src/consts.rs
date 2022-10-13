@@ -37,7 +37,7 @@ pub const NEWS_URL: &str = "https://veloren.net/rss.xml";
 pub const COMMUNITY_SHOWCASE_URL: &str = "https://veloren.net/community-showcase/rss.xml";
 
 pub const GITLAB_MERGED_MR_URL: &str =
-    "https://gitlab.com/veloren/veloren/-/merge_requests?scope=all&state=merged";
+    "https://gitlab.com/veloren/veloren/-/merge_requests?scope=all&sort=merged_at_desc&state=merged";
 
 pub const AIRSHIPPER_RELEASE_URL: &str = "https://github.com/veloren/Airshipper/releases";
 
