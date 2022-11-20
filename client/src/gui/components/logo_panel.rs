@@ -3,30 +3,26 @@ use crate::{
         BOOK_ICON, CHAT_ICON, HEART_ICON, UP_RIGHT_ARROW_ICON, USER_ICON, VELOREN_LOGO,
     },
     gui::{
-        style::TransparentButtonStyle,
+        style::{button::ButtonStyle, AirshipperTheme},
         views::default::{DefaultViewMessage, Interaction},
     },
 };
 use iced::{
     alignment::Vertical,
-    pure::{
-        button, column, container, row, text,
-        widget::{image::Handle, Container, Image},
-        Element,
-    },
-    Alignment, Color, Length, Padding,
+    widget::{button, column, container, image::Handle, row, text, Container, Image},
+    Alignment, Element, Length, Padding, Renderer,
 };
 
 #[derive(Clone, Default, Debug)]
 pub struct LogoPanelComponent {}
 
 impl LogoPanelComponent {
-    pub fn view(&self) -> Element<DefaultViewMessage> {
-        let col = column()
+    pub fn view(&self) -> Element<DefaultViewMessage, AirshipperTheme> {
+        let col = column![]
             .push(Image::new(Handle::from_memory(VELOREN_LOGO.to_vec())))
             .push(
                 container(
-                    column()
+                    column![]
                         .push(link_widget(
                             BOOK_ICON,
                             "https://book.veloren.net/",
@@ -63,7 +59,7 @@ fn link_widget<'a>(
 ) -> Element<'a, DefaultViewMessage> {
     container(
         button(
-            row()
+            row![]
                 .align_items(Alignment::Center)
                 .push(
                     container(
@@ -73,10 +69,7 @@ fn link_widget<'a>(
                     )
                     .align_y(Vertical::Center),
                 )
-                .push(
-                    container(text(link_text).color(Color::WHITE))
-                        .align_y(Vertical::Center),
-                )
+                .push(container(text(link_text)).align_y(Vertical::Center))
                 .push(
                     container(Image::new(Handle::from_memory(
                         UP_RIGHT_ARROW_ICON.to_vec(),
@@ -88,7 +81,7 @@ fn link_widget<'a>(
         .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
             url.to_string(),
         )))
-        .style(TransparentButtonStyle),
+        .style(ButtonStyle::Transparent),
     )
     .height(Length::Shrink)
     .into()

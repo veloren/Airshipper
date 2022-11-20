@@ -2,8 +2,7 @@ use crate::{
     io::{self, ProcessUpdate},
     profiles::Profile,
 };
-use iced::{futures, Subscription};
-use iced_native::subscription::Recipe;
+use iced::{futures, subscription::Recipe, Subscription};
 
 pub fn stream(
     profile: Profile,

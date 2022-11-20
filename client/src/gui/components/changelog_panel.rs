@@ -8,8 +8,8 @@ use crate::{
     consts::GITLAB_MERGED_MR_URL,
     gui::{
         style::{
-            ChangelogHeaderStyle, DarkContainerStyle, GitlabChangelogButtonStyle,
-            RuleStyle, DARK_WHITE,
+            button::ButtonStyle, container::ContainerStyle, text::TextStyle,
+            AirshipperTheme,
         },
         views::{
             default::{DefaultViewMessage, Interaction},
@@ -20,10 +20,12 @@ use crate::{
 };
 use iced::{
     alignment::Vertical,
-    pure::{button, column, container, image, row, scrollable, text, Element},
-    Alignment, Color, Image, Length, Padding, Rule,
+    widget::{
+        button, column, container, image, image::Handle, row, scrollable, text, Image,
+        Rule, Text,
+    },
+    Alignment, Command, Element, Length, Padding, Renderer,
 };
-use iced_native::{image::Handle, widget::Text, Command};
 use pulldown_cmark::{Event, Options, Parser, Tag};
 use serde::{Deserialize, Serialize};
 use tracing::debug;
@@ -235,17 +237,17 @@ impl ChangelogPanelComponent {
         }
     }
 
-    pub fn view(&self) -> Element<DefaultViewMessage> {
-        let mut changelog = column().spacing(10);
+    pub fn view(&self) -> Element<DefaultViewMessage, AirshipperTheme> {
+        let mut changelog = column![].spacing(10);
 
         for version in &mut self.versions.iter().take(self.display_count as usize) {
             changelog = changelog.push(version.view());
         }
 
-        let top_row = row().height(Length::Units(50)).push(
-            column().push(
+        let top_row = row![].height(Length::Units(50)).push(
+            column![].push(
                 container(
-                    row()
+                    row![]
                         .push(
                             container(Image::new(Handle::from_memory(
                                 CHANGELOG_ICON.to_vec(),
@@ -258,7 +260,7 @@ impl ChangelogPanelComponent {
                         .push(
                             container(
                                 Text::new("Latest Patch Notes")
-                                    .color(DARK_WHITE)
+                                    .style(TextStyle::Dark)
                                     .font(POPPINS_MEDIUM_FONT),
                             )
                             .width(Length::Fill)
@@ -269,12 +271,8 @@ impl ChangelogPanelComponent {
                         .push(
                             container(
                                 button(
-                                    row()
-                                        .push(
-                                            text("Recent Changes")
-                                                .color(Color::WHITE)
-                                                .size(14),
-                                        )
+                                    row![]
+                                        .push(text("Recent Changes").size(14))
                                         .push(image(Handle::from_memory(
                                             UP_RIGHT_ARROW_ICON.to_vec(),
                                         )))
@@ -288,7 +286,7 @@ impl ChangelogPanelComponent {
                                 ))
                                 .padding(Padding::from([2, 10, 2, 10]))
                                 .height(Length::Units(20))
-                                .style(GitlabChangelogButtonStyle),
+                                .style(ButtonStyle::Gitlab),
                             )
                             .padding(Padding::from([0, 20, 0, 0]))
                             .height(Length::Fill)
@@ -301,14 +299,14 @@ impl ChangelogPanelComponent {
             ),
         );
 
-        let col = column()
+        let col = column![]
             .push(
                 container(top_row)
                     .width(Length::Fill)
-                    .style(ChangelogHeaderStyle),
+                    .style(ContainerStyle::ChangelogHeader),
             )
             .push(
-                column().push(
+                column![].push(
                     container(
                         scrollable(changelog)
                             .on_scroll(|pos| {
@@ -320,7 +318,7 @@ impl ChangelogPanelComponent {
                     )
                     .height(Length::Fill)
                     .width(Length::Fill)
-                    .style(DarkContainerStyle),
+                    .style(ContainerStyle::Dark),
                 ),
             );
 
@@ -347,13 +345,13 @@ impl ChangelogVersion {
             },
         };
 
-        let mut version = column().spacing(10).push(
-            column()
+        let mut version = column![].spacing(10).push(
+            column![]
                 .push(
                     container(text(version_string).font(POPPINS_BOLD_FONT).size(28))
                         .padding(Padding::from([20, 0, 6, 33])),
                 )
-                .push(Rule::horizontal(8).style(RuleStyle)),
+                .push(Rule::horizontal(8)),
         );
 
         for note in &self.notes {
@@ -361,12 +359,12 @@ impl ChangelogVersion {
         }
 
         for (section_name, section_lines) in &self.sections {
-            let mut section_col = column().push(text(section_name).size(23));
+            let mut section_col = column![].push(text(section_name).size(23));
 
             for line in section_lines {
                 section_col = section_col.push(
                     container(
-                        row()
+                        row![]
                             .push(text(" •  ").font(POPPINS_LIGHT_FONT).size(17))
                             .push(text(line).font(POPPINS_LIGHT_FONT).size(17)),
                     )

@@ -7,18 +7,17 @@ use crate::{
             RssPost,
         },
         style::{
-            BlogPostContainerStyle, LoadingBlogPostContainerStyle,
-            TransparentButtonStyle, LILAC,
+            button::ButtonStyle, container::ContainerStyle, text::TextStyle,
+            AirshipperTheme,
         },
         views::default::{DefaultViewMessage, Interaction},
     },
 };
 use iced::{
     alignment::{Horizontal, Vertical},
-    pure::{button, column, container, image, scrollable, text, Element},
-    ContentFit, Length,
+    widget::{button, column, container, image, image::Handle, scrollable, text},
+    Alignment, Command, ContentFit, Element, Length, Renderer,
 };
-use iced_native::{image::Handle, Alignment, Command};
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
@@ -82,8 +81,8 @@ impl NewsPanelComponent {
         }
     }
 
-    pub(crate) fn view(&self) -> Element<DefaultViewMessage> {
-        let mut news = column().spacing(20).padding(20);
+    pub(crate) fn view(&self) -> Element<DefaultViewMessage, AirshipperTheme> {
+        let mut news = column![].spacing(20).padding(20);
 
         for post in &self.posts {
             news = news.push(post.view());
@@ -117,11 +116,11 @@ impl NewsPost {
                     .width(Length::Fill)
                     .height(Length::Fill),
             )
-            .style(LoadingBlogPostContainerStyle)
+            .style(ContainerStyle::LoadingBlogPost)
         };
 
         button(
-            column()
+            column![]
                 .push(
                     image_container
                         .width(Length::Units(211))
@@ -129,14 +128,14 @@ impl NewsPost {
                 )
                 .push(
                     container(
-                        column()
+                        column![]
                             .spacing(2)
-                            .push(text("Development").size(16).color(LILAC))
+                            .push(text("Development").size(16).style(TextStyle::Lilac))
                             .push(text(&post.title).size(20).font(POPPINS_LIGHT_FONT))
                             .push(text(&post.description).size(14)),
                     )
                     .width(Length::Fill)
-                    .style(BlogPostContainerStyle)
+                    .style(ContainerStyle::BlogPost)
                     .padding(8),
                 )
                 .align_items(Alignment::Center),
@@ -145,7 +144,7 @@ impl NewsPost {
             post.button_url.clone(),
         )))
         .padding(0)
-        .style(TransparentButtonStyle)
+        .style(ButtonStyle::Transparent)
         .into()
     }
 }

@@ -6,19 +6,15 @@ use crate::{
             RssFeedComponent, RssFeedComponentMessage, RssFeedData, RssFeedUpdateStatus,
             RssPost,
         },
-        style::{
-            LoadingBlogPostContainerStyle, NextPrevTextButtonStyle,
-            TransparentButtonStyle,
-        },
+        style::{button::ButtonStyle, container::ContainerStyle, AirshipperTheme},
         views::default::{DefaultViewMessage, Interaction},
     },
 };
 use iced::{
     alignment::{Horizontal, Vertical},
-    pure::{button, column, container, row, text, Element},
-    ContentFit, Length, Padding,
+    widget::{button, column, container, image::Handle, row, text, Image},
+    Command, ContentFit, Element, Length, Padding, Renderer,
 };
-use iced_native::{image::Handle, widget::Image, Command};
 use rand::{prelude::SliceRandom, thread_rng};
 use serde::{Deserialize, Serialize};
 use std::cmp::{max, min};
@@ -118,14 +114,14 @@ impl CommunityShowcaseComponent {
         }
     }
 
-    pub fn view(&self) -> Element<DefaultViewMessage> {
+    pub fn view(&self) -> Element<DefaultViewMessage, AirshipperTheme> {
         let current_post = if let Some(post) = self.posts.get(self.offset) {
             container(post.view()).width(Length::Fill)
         } else {
             container(text("Nothing to show"))
         };
 
-        let mut prev_button = button("<< Prev").style(NextPrevTextButtonStyle);
+        let mut prev_button = button("<< Prev").style(ButtonStyle::NextPrev);
         if self.offset > 0 {
             prev_button =
                 prev_button.on_press(DefaultViewMessage::CommunityShowcasePanel(
@@ -135,7 +131,7 @@ impl CommunityShowcaseComponent {
                 ));
         }
 
-        let mut next_button = button("Next >>").style(NextPrevTextButtonStyle);
+        let mut next_button = button("Next >>").style(ButtonStyle::NextPrev);
         if self.offset < max(self.posts.len(), 1) - 1 {
             next_button =
                 next_button.on_press(DefaultViewMessage::CommunityShowcasePanel(
@@ -145,12 +141,12 @@ impl CommunityShowcaseComponent {
                 ));
         }
 
-        column()
+        column![]
             .push(heading_with_rule("Community Showcase"))
             .push(
                 container(
-                    column().push(current_post).push(
-                        row()
+                    column![].push(current_post).push(
+                        row![]
                             .push(prev_button)
                             .width(Length::Shrink)
                             .push(container(" ").width(Length::Fill))
@@ -171,7 +167,7 @@ pub struct CommunityPost {
 }
 
 impl CommunityPost {
-    pub(crate) fn view(&self) -> Element<DefaultViewMessage> {
+    pub(crate) fn view(&self) -> Element<DefaultViewMessage, AirshipperTheme> {
         let post = &self.rss_post;
 
         // TODO: Tooltip with post description once Iced supports tooltip layering
@@ -187,12 +183,12 @@ impl CommunityPost {
             container(text("Loading..."))
                 .align_x(Horizontal::Center)
                 .align_y(Vertical::Center)
-                .style(LoadingBlogPostContainerStyle)
+                .style(ContainerStyle::LoadingBlogPost)
                 .height(Length::Units(180))
                 .width(Length::Fill)
         };
         button(image_container)
-            .style(TransparentButtonStyle)
+            .style(ButtonStyle::Transparent)
             .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
                 post.button_url.clone(),
             )))

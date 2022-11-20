@@ -1,43 +1,8 @@
-use iced::{
-    button,
-    button::Style,
-    container, pick_list, progress_bar,
-    pure::widget::{rule, text_input},
-    Background, Color, Vector,
-};
-
-// Colors
-pub const LIGHT_GREY: Color = Color::from_rgb(0.93, 0.93, 0.93);
-pub const MEDIUM_GREY: Color = Color::from_rgb(0.7, 0.7, 0.7);
-pub const EXTRA_MEDIUM_GREY: Color = Color::from_rgb(0.21, 0.21, 0.21);
-pub const VERY_DARK_GREY: Color = Color::from_rgb(0.1, 0.1, 0.1);
-const DARKER_SEA_GREEN: Color = Color::from_rgb(0.08, 0.61, 0.65);
-const SLATE: Color = Color::from_rgb(0.35, 0.43, 0.46);
-const TRANSPARENT_WHITE: Color = Color::from_rgba(1.0, 1.0, 1.0, 0.1);
-pub const DARK_WHITE: Color = Color::from_rgb(0.9, 0.9, 0.9);
-const BACKGROUND_BLUE: Color = Color::from_rgb(0.14, 0.21, 0.41);
-const LIME_GREEN: Color = Color::from_rgb(0.41, 0.64, 0.26);
-const CORNFLOWER_BLUE: Color = Color::from_rgb(0.19, 0.4, 0.85);
-const BLOG_POST_BACKGROUND_BLUE: Color = Color::from_rgb(0.24, 0.33, 0.58);
-pub const LILAC: Color = Color::from_rgb(0.62, 0.66, 0.79);
-const NAVY_BLUE: Color = Color::from_rgb(0.07, 0.09, 0.15);
-const LIGHT_NAVY_BLUE: Color = Color::from_rgb(0.12, 0.14, 0.20);
-pub const BRIGHT_ORANGE: Color = Color::from_rgb(0.94, 0.40, 0.24);
-pub const TOMATO_RED: Color = Color::from_rgb(0.91, 0.31, 0.31);
-
+/*
 //
 // Generic Widget Styles
 //
-pub struct RuleStyle;
-impl rule::StyleSheet for RuleStyle {
-    fn style(&self) -> rule::Style {
-        rule::Style {
-            width: 1,
-            color: Color::WHITE,
-            ..rule::Style::default()
-        }
-    }
-}
+
 
 pub struct ProgressBarStyle;
 impl progress_bar::StyleSheet for ProgressBarStyle {
@@ -50,18 +15,7 @@ impl progress_bar::StyleSheet for ProgressBarStyle {
     }
 }
 
-pub struct TooltipStyle;
-impl container::StyleSheet for TooltipStyle {
-    fn style(&self) -> container::Style {
-        container::Style {
-            text_color: Some(LIGHT_GREY),
-            background: Some(Background::Color(NAVY_BLUE)),
-            border_color: MEDIUM_GREY,
-            border_width: 1.0,
-            ..container::Style::default()
-        }
-    }
-}
+
 
 pub struct TextInputStyle;
 impl text_input::StyleSheet for TextInputStyle {
@@ -200,16 +154,7 @@ impl container::StyleSheet for DarkContainerStyle {
 }
 
 // Used by AnnouncementPanel
-pub struct AnnouncementStyle;
-impl container::StyleSheet for AnnouncementStyle {
-    fn style(&self) -> container::Style {
-        container::Style {
-            background: Some(Background::Color(BRIGHT_ORANGE)),
-            text_color: Some(Color::WHITE),
-            ..container::Style::default()
-        }
-    }
-}
+
 
 pub struct WarningContainerStyle;
 impl container::StyleSheet for WarningContainerStyle {
@@ -235,27 +180,7 @@ impl container::StyleSheet for BlogPostContainerStyle {
     }
 }
 
-pub struct GitlabChangelogButtonStyle;
-impl button::StyleSheet for GitlabChangelogButtonStyle {
-    fn active(&self) -> Style {
-        Style {
-            background: Some(Background::Color(LIME_GREEN)),
-            border_radius: 25.0,
-            ..button::Style::default()
-        }
-    }
-}
 
-pub struct GitlabServerBrowserButtonStyle;
-impl button::StyleSheet for GitlabServerBrowserButtonStyle {
-    fn active(&self) -> Style {
-        Style {
-            background: Some(Background::Color(LIME_GREEN)),
-            border_radius: 25.0,
-            ..button::Style::default()
-        }
-    }
-}
 
 pub struct AirshipperDownloadButtonStyle;
 impl button::StyleSheet for AirshipperDownloadButtonStyle {
@@ -381,57 +306,5 @@ impl container::StyleSheet for ColumnHeadingContainerStyle {
     }
 }
 
-pub enum ServerListEntryButtonStyle {
-    Selected,
-    NotSelected,
-}
 
-impl button::StyleSheet for ServerListEntryButtonStyle {
-    fn active(&self) -> Style {
-        match self {
-            Self::Selected => server_list_entry_selected_style_active(),
-            Self::NotSelected => server_list_entry_not_selected_style_active(),
-        }
-    }
-
-    fn hovered(&self) -> Style {
-        match self {
-            Self::Selected => server_list_entry_selected_style_hovered(),
-            Self::NotSelected => server_list_entry_not_selected_style_hovered(),
-        }
-    }
-}
-
-fn server_list_entry_selected_style_active() -> Style {
-    Style {
-        background: Some(Background::Color(NAVY_BLUE)),
-        text_color: Color::WHITE,
-        ..button::Style::default()
-    }
-}
-
-fn server_list_entry_selected_style_hovered() -> Style {
-    Style {
-        background: Some(Background::Color(NAVY_BLUE)),
-        text_color: Color::WHITE,
-        shadow_offset: Vector::new(0.0, 0.0),
-        ..button::Style::default()
-    }
-}
-
-fn server_list_entry_not_selected_style_active() -> Style {
-    Style {
-        background: Some(Background::Color(VERY_DARK_GREY)),
-        text_color: Color::WHITE,
-        ..button::Style::default()
-    }
-}
-
-fn server_list_entry_not_selected_style_hovered() -> Style {
-    Style {
-        background: Some(Background::Color(VERY_DARK_GREY)),
-        text_color: Color::WHITE,
-        shadow_offset: Vector::new(0.0, 0.0),
-        ..button::Style::default()
-    }
-}
+*/

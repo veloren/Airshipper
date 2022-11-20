@@ -4,8 +4,7 @@ use crate::{
     gui::{
         components::GamePanelMessage,
         custom_widgets::heading_with_rule,
-        style,
-        style::{TextInputStyle, TransparentButtonStyle, LIGHT_GREY},
+        style::{button::ButtonStyle, text::TextStyle, AirshipperTheme},
         views::{default::DefaultViewMessage, Action},
     },
     profiles,
@@ -14,13 +13,12 @@ use crate::{
 };
 use iced::{
     alignment::Horizontal,
-    pure::{
-        button, column, container, image, pick_list, row, text, text_input, tooltip,
-        Element,
+    widget::{
+        button, column, container, image, image::Handle, pick_list, row, text,
+        text_input, tooltip, tooltip::Position,
     },
-    Alignment, Length, Padding,
+    Alignment, Command, Element, Length, Padding, Renderer,
 };
-use iced_native::{image::Handle, widget::tooltip::Position, Command};
 use tracing::debug;
 
 #[derive(Clone, Debug)]
@@ -121,14 +119,17 @@ impl SettingsPanelComponent {
         }
     }
 
-    pub fn view(&self, active_profile: &Profile) -> Element<DefaultViewMessage> {
+    pub fn view(
+        &self,
+        active_profile: &Profile,
+    ) -> Element<DefaultViewMessage, AirshipperTheme> {
         const PICK_LIST_PADDING: u16 = 7;
         const FONT_SIZE: u16 = 18;
 
         let graphics_mode = tooltip(
-            column()
+            column![]
                 .spacing(5)
-                .push(text("GRAPHICS MODE").size(15).color(LIGHT_GREY))
+                .push(text("GRAPHICS MODE").size(15).style(TextStyle::LightGrey))
                 .push(
                     container(
                         pick_list(
@@ -141,7 +142,6 @@ impl SettingsPanelComponent {
                             },
                         )
                         .text_size(FONT_SIZE)
-                        .style(style::ServerPickList)
                         .padding(PICK_LIST_PADDING),
                     )
                     .height(Length::Units(30))
@@ -152,16 +152,15 @@ impl SettingsPanelComponent {
             Position::Top,
         )
         .size(FONT_SIZE)
-        .style(style::TooltipStyle)
         .gap(5);
 
         let log_level = tooltip(
-            column()
+            column![]
                 .spacing(5)
                 .push(
-                    row()
+                    row![]
                         .spacing(5)
-                        .push(text("LOG LEVEL").size(15).color(LIGHT_GREY))
+                        .push(text("LOG LEVEL").size(15).style(TextStyle::LightGrey))
                         .push(
                             container(
                                 button(image(Handle::from_memory(FOLDER_ICON.to_vec())))
@@ -169,7 +168,7 @@ impl SettingsPanelComponent {
                                         SettingsPanelMessage::OpenLogsPressed,
                                     ))
                                     .padding(Padding::new(0))
-                                    .style(TransparentButtonStyle),
+                                    .style(ButtonStyle::Transparent),
                             )
                             .align_x(Horizontal::Right),
                         )
@@ -187,7 +186,6 @@ impl SettingsPanelComponent {
                             },
                         )
                         .text_size(FONT_SIZE)
-                        .style(style::ServerPickList)
                         .padding(PICK_LIST_PADDING),
                     )
                     .height(Length::Units(30))
@@ -197,13 +195,12 @@ impl SettingsPanelComponent {
             Position::Left,
         )
         .size(FONT_SIZE)
-        .style(style::TooltipStyle)
         .gap(5);
 
         let server_picker = tooltip(
-            column()
+            column![]
                 .spacing(5)
-                .push(text("SERVER").size(15).color(LIGHT_GREY))
+                .push(text("SERVER").size(15).style(TextStyle::LightGrey))
                 .push(
                     container(
                         pick_list(profiles::SERVERS, Some(active_profile.server), |x| {
@@ -212,7 +209,6 @@ impl SettingsPanelComponent {
                             )
                         })
                         .text_size(FONT_SIZE)
-                        .style(style::ServerPickList)
                         .padding(PICK_LIST_PADDING),
                     )
                     .height(Length::Units(30))
@@ -222,13 +218,16 @@ impl SettingsPanelComponent {
             Position::Top,
         )
         .size(FONT_SIZE)
-        .style(style::TooltipStyle)
         .gap(5);
 
         let env_vars = tooltip(
-            column()
+            column![]
                 .spacing(5)
-                .push(text("ENVIRONMENT VARIABLES").size(15).color(LIGHT_GREY))
+                .push(
+                    text("ENVIRONMENT VARIABLES")
+                        .size(15)
+                        .style(TextStyle::LightGrey),
+                )
                 .push(
                     container(
                         text_input(
@@ -241,8 +240,7 @@ impl SettingsPanelComponent {
                             },
                         )
                         .padding(PICK_LIST_PADDING)
-                        .size(FONT_SIZE)
-                        .style(TextInputStyle),
+                        .size(FONT_SIZE),
                     )
                     .height(Length::Units(50))
                     .width(Length::Units(190)),
@@ -251,13 +249,12 @@ impl SettingsPanelComponent {
             Position::Top,
         )
         .size(FONT_SIZE)
-        .style(style::TooltipStyle)
         .gap(5);
 
         let channel_picker = tooltip(
-            column()
+            column![]
                 .spacing(5)
-                .push(text("CHANNEL").size(15).color(LIGHT_GREY))
+                .push(text("CHANNEL").size(15).style(TextStyle::LightGrey))
                 .push(
                     container(
                         pick_list(
@@ -270,7 +267,6 @@ impl SettingsPanelComponent {
                             },
                         )
                         .text_size(FONT_SIZE)
-                        .style(style::ServerPickList)
                         .padding(PICK_LIST_PADDING),
                     )
                     .height(Length::Units(30))
@@ -280,11 +276,10 @@ impl SettingsPanelComponent {
             Position::Top,
         )
         .size(FONT_SIZE)
-        .style(style::TooltipStyle)
         .gap(5);
 
         let first_row = container(
-            row()
+            row![]
                 .spacing(10)
                 .align_items(Alignment::End)
                 .push(graphics_mode)
@@ -292,11 +287,12 @@ impl SettingsPanelComponent {
                 .push(server_picker),
         );
 
-        let second_row = container(row().spacing(10).push(env_vars).push(channel_picker));
+        let second_row =
+            container(row![].spacing(10).push(env_vars).push(channel_picker));
 
-        let col = column().spacing(10).push(first_row).push(second_row);
+        let col = column![].spacing(10).push(first_row).push(second_row);
 
-        column()
+        column![]
             .push(heading_with_rule("Settings"))
             .push(
                 container(col)

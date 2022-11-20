@@ -1,11 +1,15 @@
 //! Display an update dialog (windows only) to ask whether to update airshipper
 
 use super::{Action, View};
-use crate::gui::{style, style::ButtonState};
+use crate::gui::style::{
+    button::{ButtonState, ButtonStyle, DownloadButtonStyle},
+    container::ContainerStyle,
+    AirshipperTheme,
+};
 use iced::{
     alignment::{Horizontal, Vertical},
-    pure::{button, column, container, row, text, Element},
-    Alignment, Command, Length,
+    widget::{button, column, container, row, text},
+    Alignment, Command, Element, Length, Renderer,
 };
 use self_update::update::Release;
 
@@ -37,14 +41,14 @@ pub enum UpdateViewMessage {
 }
 
 impl UpdateView {
-    pub fn view(&self) -> Element<UpdateViewMessage> {
+    pub fn view(&self) -> Element<UpdateViewMessage, AirshipperTheme> {
         // Contains everything
-        let content = column()
+        let content = column![]
             .align_items(Alignment::Center)
             .spacing(10)
             .push(text(&self.message))
             .push(
-                row()
+                row![]
                     .align_items(Alignment::Center)
                     .spacing(100)
                     .padding(10)
@@ -56,7 +60,7 @@ impl UpdateView {
                                 .vertical_alignment(Vertical::Center),
                         )
                         .on_press(UpdateViewMessage::SkipPressed)
-                        .style(style::DownloadButtonStyle::Skip)
+                        .style(ButtonStyle::Download(DownloadButtonStyle::Skip))
                         .width(Length::Units(100))
                         .padding(7),
                     )
@@ -69,7 +73,9 @@ impl UpdateView {
                                 .vertical_alignment(Vertical::Center),
                         )
                         .on_press(UpdateViewMessage::UpdatePressed)
-                        .style(style::DownloadButtonStyle::Update(ButtonState::Enabled))
+                        .style(ButtonStyle::Download(DownloadButtonStyle::Update(
+                            ButtonState::Enabled,
+                        )))
                         .width(Length::Units(100))
                         .padding(7),
                     ),
@@ -78,7 +84,7 @@ impl UpdateView {
         container(content)
             .width(Length::Fill)
             .height(Length::Fill)
-            .style(style::DarkContainerStyle)
+            .style(ContainerStyle::Dark)
             .center_x()
             .center_y()
             .into()

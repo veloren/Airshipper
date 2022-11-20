@@ -5,8 +5,8 @@ use crate::{
     profiles::Profile,
 };
 use iced::{
-    pure::{column, container, row, Element},
-    Command, Length,
+    widget::{column, container, row},
+    Command, Element, Length, Renderer,
 };
 
 use crate::gui::{
@@ -17,9 +17,9 @@ use crate::gui::{
         ServerBrowserPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
     },
     rss_feed::RssFeedComponentMessage::UpdateRssFeed,
-    style::SidePanelStyle,
 };
 
+use crate::gui::style::{container::ContainerStyle, AirshipperTheme};
 #[cfg(windows)]
 use crate::gui::Result;
 
@@ -79,7 +79,10 @@ impl DefaultView {
             .map(DefaultViewMessage::GamePanel)
     }
 
-    pub fn view(&self, active_profile: &Profile) -> Element<DefaultViewMessage> {
+    pub fn view(
+        &self,
+        active_profile: &Profile,
+    ) -> Element<DefaultViewMessage, AirshipperTheme> {
         let Self {
             changelog_panel_component,
             announcement_panel_component,
@@ -99,7 +102,7 @@ impl DefaultView {
         };
 
         let left = container(
-            column()
+            column![]
                 .push(container(logo_panel_component.view()).height(Length::Fill))
                 .push(container(left_middle_contents).height(Length::Shrink))
                 .push(
@@ -109,13 +112,13 @@ impl DefaultView {
         )
         .height(Length::Fill)
         .width(Length::Units(347))
-        .style(SidePanelStyle);
+        .style(ContainerStyle::SidePanel);
 
-        let mut main_row = row().push(left);
+        let mut main_row = row![].push(left);
 
         if !self.show_server_browser {
             let middle = container(
-                column()
+                column![]
                     .push(
                         container(announcement_panel_component.view())
                             .height(Length::Shrink),
@@ -129,7 +132,7 @@ impl DefaultView {
             let right = container(news_panel_component.view())
                 .height(Length::Fill)
                 .width(Length::Units(237))
-                .style(SidePanelStyle);
+                .style(ContainerStyle::SidePanel);
 
             main_row = main_row.push(middle).push(right);
         } else {

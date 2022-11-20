@@ -1,5 +1,5 @@
 use crate::net;
-use iced::{futures, Subscription};
+use iced::{futures, subscription, Subscription};
 use std::path::{Path, PathBuf};
 
 pub fn file(url: &str, download_path: &Path) -> iced::Subscription<net::Progress> {
@@ -8,7 +8,7 @@ pub fn file(url: &str, download_path: &Path) -> iced::Subscription<net::Progress
 
 pub struct Download(String, PathBuf);
 
-impl<H, I> iced_native::subscription::Recipe<H, I> for Download
+impl<H, I> subscription::Recipe<H, I> for Download
 where
     H: std::hash::Hasher,
 {
