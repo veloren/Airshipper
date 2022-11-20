@@ -39,6 +39,12 @@ impl From<String> for ClientError {
     }
 }
 
+impl From<rustyline::error::ReadlineError> for ClientError {
+    fn from(_: rustyline::error::ReadlineError) -> Self {
+        Self::ReadlineError
+    }
+}
+
 macro_rules! impl_from {
     ($trait:ty, $variant:expr) => {
         impl From<$trait> for ClientError {
@@ -57,7 +63,6 @@ impl_from!(opener::OpenError, ClientError::OpenerError);
 impl_from!(zip::result::ZipError, ClientError::ArchiveError);
 impl_from!(url::ParseError, ClientError::UrlParseError);
 impl_from!(iced::Error, ClientError::IcedError);
-impl_from!(rustyline::error::ReadlineError, ClientError::ReadlineError);
 #[cfg(windows)]
 impl_from!(self_update::errors::Error, ClientError::UpdateError);
 #[cfg(windows)]
