@@ -1,4 +1,8 @@
-use crate::{fs, gui, io, logger, net, profiles::Profile, Result};
+use crate::{
+    fs, gui, io, logger, net,
+    profiles::{parse_env_vars, Profile, WGPU_BACKENDS},
+    Result,
+};
 use parse::Action;
 mod parse;
 use iced::futures::stream::StreamExt;
@@ -97,6 +101,7 @@ async fn process_arguments(
             }
             start(profile, None).await?
         },
+        Action::Config => config(profile).await?,
         #[cfg(windows)]
         Action::Upgrade => {
             tokio::task::block_in_place(upgrade)?;
@@ -182,6 +187,102 @@ async fn start(profile: &mut Profile, game_server_address: Option<String>) -> Re
         }
     }
     Ok(())
+}
+
+async fn config(profile: &mut Profile) -> Result<()> {
+    use colored::Colorize;
+
+    let mut editor = rustyline::Editor::<()>::new()?;
+
+    'main: loop {
+        println!("===== Current configuration =====");
+        let options = [
+            ("Environment variables", profile.env_vars.to_string()),
+            ("Graphics backend", profile.wgpu_backend.to_string()),
+        ];
+        for (idx, (k, v)) in options.iter().enumerate() {
+            println!("- ({}) {k} = {v}", (idx + 1).to_string().blue());
+        }
+        println!("Which setting do you want to change? (use 'q' to quit)");
+
+        loop {
+            match editor
+                .readline(&format!("{} > ", format!("1-{}", options.len()).blue()))?
+                .trim()
+            {
+                "1" => {
+                    println!(
+                        "What should the environment variables be? (use 'q' to quit)"
+                    );
+                    println!(
+                        "{}",
+                        "Hint: Environment variables should be defined as key-value \
+                         pairs, separated by commands.\nExample: FOO=BAR,BAZ=BIZ"
+                            .dimmed()
+                    );
+                    loop {
+                        let input = editor
+                            .readline_with_initial("> ", (&profile.env_vars, ""))?;
+                        if input.trim() == "q" {
+                            break;
+                        } else {
+                            let (_, errs) = parse_env_vars(&input);
+                            if !errs.is_empty() {
+                                println!(
+                                    "{}: Invalid environment variables:",
+                                    "ERROR".red()
+                                );
+                                for e in errs {
+                                    println!("- {e}");
+                                }
+                            } else {
+                                profile.env_vars = input.clone();
+                                println!(
+                                    "{}: Environment variables have been set to \
+                                     '{input}'.",
+                                    "OK".green()
+                                );
+                                continue 'main;
+                            }
+                        }
+                    }
+                },
+                "2" => {
+                    println!(
+                        "Which graphics backend do you want to use? (use 'q' to quit)"
+                    );
+                    for (idx, backend) in WGPU_BACKENDS.iter().enumerate() {
+                        println!("- ({}) {}", (idx + 1).to_string().blue(), backend);
+                    }
+                    loop {
+                        let input = editor.readline(&format!(
+                            "{} > ",
+                            format!("1-{}", WGPU_BACKENDS.len()).blue()
+                        ))?;
+                        if input.trim() == "q" {
+                            break;
+                        } else if let Some(backend) = input
+                            .parse::<usize>()
+                            .ok()
+                            .and_then(|n| n.checked_sub(1))
+                            .and_then(|idx| WGPU_BACKENDS.get(idx))
+                        {
+                            profile.wgpu_backend = *backend;
+                            println!(
+                                "{}: The graphics backend has been set to '{backend}'.",
+                                "OK".green()
+                            );
+                            continue 'main;
+                        } else {
+                            println!("{}: Invalid option '{input}'", "ERROR".red());
+                        }
+                    }
+                },
+                "q" => break 'main Ok(()),
+                input => println!("{}: Invalid option '{input}'.", "ERROR".red()),
+            }
+        }
+    }
 }
 
 #[cfg(windows)]
