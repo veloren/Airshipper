@@ -1,4 +1,8 @@
-use crate::{fs, gui, io, logger, net, profiles::Profile, Result};
+use crate::{
+    fs, gui, io, logger, net,
+    profiles::{parse_env_vars, Profile, WGPU_BACKENDS},
+    Result,
+};
 use parse::Action;
 mod parse;
 use iced::futures::stream::StreamExt;
@@ -97,6 +101,7 @@ async fn process_arguments(
             }
             start(profile, None).await?
         },
+        Action::Config => config(profile).await?,
         #[cfg(windows)]
         Action::Upgrade => {
             tokio::task::block_in_place(upgrade)?;
@@ -182,6 +187,66 @@ async fn start(profile: &mut Profile, game_server_address: Option<String>) -> Re
         }
     }
     Ok(())
+}
+
+async fn config(profile: &mut Profile) -> Result<()> {
+    let mut editor = rustyline::Editor::<()>::new()?;
+    loop {
+        println!(
+            "Current profile details: \n- (1) Environment variables: {} \n- (2) \
+             Graphics backend: {}",
+            profile.env_vars, profile.wgpu_backend
+        );
+        println!("Which one do you wish to edit (use 'q' to quit)?");
+
+        match editor.readline("> ")?.trim() {
+            "1" => loop {
+                println!("Enter new environment variable list (use 'q' to quit):");
+                let input =
+                    editor.readline_with_initial("> ", (&profile.env_vars, ""))?;
+                if input.trim() == "q" {
+                    break;
+                } else {
+                    let (_, errs) = parse_env_vars(&input);
+                    if !errs.is_empty() {
+                        println!("Error: Environment variables are invalid:");
+                        for e in errs {
+                            println!("- {e}");
+                        }
+                    } else {
+                        profile.env_vars = input.clone();
+                        println!("Set environment variables to '{input}'.");
+                        break;
+                    }
+                }
+            },
+            "2" => loop {
+                println!(
+                    "Choose the graphics backend you wish to use (use 'q' to quit):"
+                );
+                for (idx, backend) in WGPU_BACKENDS.iter().enumerate() {
+                    println!("- ({}) {}", idx + 1, backend);
+                }
+                let input = editor.readline("> ")?;
+                if let Some(backend) = input
+                    .parse::<usize>()
+                    .ok()
+                    .and_then(|n| n.checked_sub(1))
+                    .and_then(|idx| WGPU_BACKENDS.get(idx))
+                {
+                    profile.wgpu_backend = *backend;
+                    println!("Set graphics backend to '{backend}'.");
+                    break;
+                } else if input.trim() == "q" {
+                    break;
+                } else {
+                    println!("Error: Unrecognised input '{input}'.");
+                }
+            },
+            "q" => break Ok(()),
+            input => println!("Error: Unrecognised input '{input}'."),
+        }
+    }
 }
 
 #[cfg(windows)]

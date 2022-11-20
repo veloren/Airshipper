@@ -285,7 +285,7 @@ async fn set_permissions(files: Vec<&std::path::PathBuf>) -> Result<()> {
     Ok(())
 }
 
-fn parse_env_vars(env_vars: &str) -> (Vec<(&str, &str)>, Vec<String>) {
+pub fn parse_env_vars(env_vars: &str) -> (Vec<(&str, &str)>, Vec<String>) {
     let env_vars = env_vars.trim();
     let mut errors = Vec::new();
 
