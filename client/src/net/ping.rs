@@ -1,3 +1,4 @@
+use super::DEFAULT_GAME_PORT;
 use std::{net::IpAddr, str::FromStr, sync::Arc, time::Duration};
 use surge_ping::{PingIdentifier, PingSequence};
 use tokio::net;
@@ -25,7 +26,13 @@ pub async fn ping(
             );
 
             // The server address is not an IP address, so attempt to resolve it via DNS
-            match net::lookup_host(format!("{}:14004", server_address.clone())).await {
+            match net::lookup_host(format!(
+                "{}:{}",
+                server_address.clone(),
+                DEFAULT_GAME_PORT
+            ))
+            .await
+            {
                 Ok(mut addr_iter) => {
                     let result = addr_iter.next().map(|x| x.ip());
 
