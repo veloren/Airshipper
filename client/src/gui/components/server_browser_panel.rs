@@ -503,7 +503,13 @@ impl ServerBrowserPanelComponent {
             ServerBrowserPanelMessage::SelectServerEntry(index) => {
                 self.selected_index = index;
                 let selected_server = index.and_then(|index| {
-                    self.servers.get(index).map(|x| x.server.address.clone())
+                    self.servers.get(index).map(|x| {
+                        if x.server.port == net::DEFAULT_GAME_PORT {
+                            x.server.address.clone()
+                        } else {
+                            format!("{}:{}", x.server.address, x.server.port)
+                        }
+                    })
                 });
 
                 Some(Command::perform(async {}, move |()| {
