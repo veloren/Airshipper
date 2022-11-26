@@ -210,7 +210,7 @@ impl Profile {
 
         let (env_vars, env_var_errors) = parse_env_vars(&profile.env_vars);
         for err in env_var_errors {
-            tracing::error!("Environment variable error: {}", err);
+            tracing::warn!("Environment variable error: {}", err);
         }
         for (var, value) in env_vars {
             envs.insert(var, OsString::from(value));
