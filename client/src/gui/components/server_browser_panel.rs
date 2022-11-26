@@ -337,8 +337,8 @@ impl ServerBrowserPanelComponent {
                         text(
                             "Server pings not available - please re-run Airshipper with \
                              elevated privileges. On Linux the required permissions can \
-                             be granted via the command setcap cap_net_raw \
-                             /path/to/airshipper",
+                             be granted via the command \"setcap cap_net_raw=pe \
+                             /path/to/airshipper\"",
                         )
                         .horizontal_alignment(Horizontal::Center),
                     )
