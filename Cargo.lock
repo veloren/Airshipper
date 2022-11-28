@@ -4696,9 +4696,9 @@ checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
 name = "veloren-serverbrowser-api"
-version = "0.2.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3974631142a04d38d765a52cd625d01b2b5632a8e50e9b22509f1c6f14ab01f8"
+checksum = "b25e966b27a95a55d4903c4646dc55ffdf59f23bef7e27978b97fa92fd64ca27"
 dependencies = [
  "country-parser",
  "serde",

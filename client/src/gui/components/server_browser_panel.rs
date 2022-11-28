@@ -384,9 +384,11 @@ impl ServerBrowserPanelComponent {
                                                         .font(NOTO_SANS_UNIFIED_FONT),
                                                 )
                                                 .push(
-                                                    text(&server.address)
-                                                        .font(NOTO_SANS_UNIFIED_FONT)
-                                                        .color(BRIGHT_ORANGE),
+                                                    text(&display_gameserver_address(
+                                                        server,
+                                                    ))
+                                                    .font(NOTO_SANS_UNIFIED_FONT)
+                                                    .color(BRIGHT_ORANGE),
                                                 ),
                                         )
                                         .push(
@@ -503,13 +505,9 @@ impl ServerBrowserPanelComponent {
             ServerBrowserPanelMessage::SelectServerEntry(index) => {
                 self.selected_index = index;
                 let selected_server = index.and_then(|index| {
-                    self.servers.get(index).map(|x| {
-                        if x.server.port == net::DEFAULT_GAME_PORT {
-                            x.server.address.clone()
-                        } else {
-                            format!("{}:{}", x.server.address, x.server.port)
-                        }
-                    })
+                    self.servers
+                        .get(index)
+                        .map(|x| display_gameserver_address(&x.server))
                 });
 
                 Some(Command::perform(async {}, move |()| {
@@ -549,6 +547,14 @@ impl ServerBrowserPanelComponent {
                     .map_or("".to_owned(), |country| country.short_name.clone())
             }),
         }
+    }
+}
+
+fn display_gameserver_address(gameserver: &GameServer) -> String {
+    if gameserver.port == net::DEFAULT_GAME_PORT {
+        gameserver.address.clone()
+    } else {
+        format!("{}:{}", gameserver.address, gameserver.port)
     }
 }
 
