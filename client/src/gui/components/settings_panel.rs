@@ -4,8 +4,9 @@ use crate::{
     gui::{
         components::GamePanelMessage,
         custom_widgets::heading_with_rule,
-        style::{button::ButtonStyle, text::TextStyle, AirshipperTheme},
+        style::{button::ButtonStyle, text::TextStyle},
         views::{default::DefaultViewMessage, Action},
+        widget::*,
     },
     profiles,
     profiles::Profile,
@@ -17,7 +18,7 @@ use iced::{
         button, column, container, image, image::Handle, pick_list, row, text,
         text_input, tooltip, tooltip::Position,
     },
-    Alignment, Command, Element, Length, Padding, Renderer,
+    Alignment, Command, Length, Padding,
 };
 use tracing::debug;
 
@@ -119,10 +120,7 @@ impl SettingsPanelComponent {
         }
     }
 
-    pub fn view(
-        &self,
-        active_profile: &Profile,
-    ) -> Element<DefaultViewMessage, AirshipperTheme> {
+    pub fn view(&self, active_profile: &Profile) -> Element<DefaultViewMessage> {
         const PICK_LIST_PADDING: u16 = 7;
         const FONT_SIZE: u16 = 18;
 

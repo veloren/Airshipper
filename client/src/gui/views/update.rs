@@ -1,15 +1,17 @@
 //! Display an update dialog (windows only) to ask whether to update airshipper
 
 use super::{Action, View};
-use crate::gui::style::{
-    button::{ButtonState, ButtonStyle, DownloadButtonStyle},
-    container::ContainerStyle,
-    AirshipperTheme,
+use crate::gui::{
+    style::{
+        button::{ButtonState, ButtonStyle, DownloadButtonStyle},
+        container::ContainerStyle,
+    },
+    widget::*,
 };
 use iced::{
     alignment::{Horizontal, Vertical},
     widget::{button, column, container, row, text},
-    Alignment, Command, Element, Length, Renderer,
+    Alignment, Command, Length,
 };
 use self_update::update::Release;
 
@@ -41,7 +43,7 @@ pub enum UpdateViewMessage {
 }
 
 impl UpdateView {
-    pub fn view(&self) -> Element<UpdateViewMessage, AirshipperTheme> {
+    pub fn view(&self) -> Element<UpdateViewMessage> {
         // Contains everything
         let content = column![]
             .align_items(Alignment::Center)

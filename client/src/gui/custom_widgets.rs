@@ -1,12 +1,10 @@
-use crate::{assets::POPPINS_BOLD_FONT, gui::style::AirshipperTheme};
+use crate::{assets::POPPINS_BOLD_FONT, gui::widget::*};
 use iced::{
     widget::{container, horizontal_rule, row, text},
-    Alignment, Element, Length, Padding,
+    Alignment, Length, Padding,
 };
 
-pub(crate) fn heading_with_rule<'a, T: 'a>(
-    heading_text: &'a str,
-) -> Element<T, AirshipperTheme> {
+pub(crate) fn heading_with_rule<'a, T: 'a>(heading_text: &'a str) -> Element<T> {
     container(
         row![]
             .align_items(Alignment::Center)

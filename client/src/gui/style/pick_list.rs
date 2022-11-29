@@ -1,5 +1,6 @@
 use crate::gui::style::{AirshipperTheme, NAVY_BLUE, VERY_DARK_GREY};
 use iced::{
+    widget,
     widget::{
         pick_list,
         pick_list::{Appearance, StyleSheet},

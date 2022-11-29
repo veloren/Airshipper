@@ -6,17 +6,15 @@ use crate::{
             RssFeedComponent, RssFeedComponentMessage, RssFeedData, RssFeedUpdateStatus,
             RssPost,
         },
-        style::{
-            button::ButtonStyle, container::ContainerStyle, text::TextStyle,
-            AirshipperTheme,
-        },
+        style::{button::ButtonStyle, container::ContainerStyle, text::TextStyle},
         views::default::{DefaultViewMessage, Interaction},
+        widget::*,
     },
 };
 use iced::{
     alignment::{Horizontal, Vertical},
     widget::{button, column, container, image, image::Handle, scrollable, text},
-    Alignment, Command, ContentFit, Element, Length, Renderer,
+    Alignment, Command, ContentFit, Length,
 };
 use serde::{Deserialize, Serialize};
 
@@ -81,7 +79,7 @@ impl NewsPanelComponent {
         }
     }
 
-    pub(crate) fn view(&self) -> Element<DefaultViewMessage, AirshipperTheme> {
+    pub(crate) fn view(&self) -> Element<DefaultViewMessage> {
         let mut news = column![].spacing(20).padding(20);
 
         for post in &self.posts {

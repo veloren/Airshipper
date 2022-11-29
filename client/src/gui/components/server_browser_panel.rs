@@ -12,9 +12,9 @@ use crate::{
             button::{ButtonStyle, ServerListEntryButtonState},
             container::ContainerStyle,
             text::TextStyle,
-            AirshipperTheme,
         },
         views::default::{DefaultViewMessage, Interaction},
+        widget::*,
     },
     net,
     ping::PingResult,
@@ -28,7 +28,7 @@ use iced::{
         button, column, container, horizontal_rule, image, image::Handle, row,
         scrollable, text, tooltip, tooltip::Position, Image,
     },
-    Alignment, Command, Element, Length, Padding, Renderer,
+    Alignment, Command, Length, Padding,
 };
 use std::{cmp::min, sync::Arc};
 use tracing::debug;
@@ -97,7 +97,7 @@ impl ServerBrowserPanelComponent {
         }))
     }
 
-    pub fn view(&self) -> Element<DefaultViewMessage, AirshipperTheme> {
+    pub fn view(&self) -> Element<DefaultViewMessage> {
         let top_row = row![].height(Length::Units(50)).push(
             column![].push(container(
                 row![]

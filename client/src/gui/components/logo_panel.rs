@@ -3,21 +3,22 @@ use crate::{
         BOOK_ICON, CHAT_ICON, HEART_ICON, UP_RIGHT_ARROW_ICON, USER_ICON, VELOREN_LOGO,
     },
     gui::{
-        style::{button::ButtonStyle, AirshipperTheme},
+        style::button::ButtonStyle,
         views::default::{DefaultViewMessage, Interaction},
+        widget::*,
     },
 };
 use iced::{
     alignment::Vertical,
-    widget::{button, column, container, image::Handle, row, text, Container, Image},
-    Alignment, Element, Length, Padding, Renderer,
+    widget::{button, column, container, image::Handle, row, text, Image},
+    Alignment, Length, Padding,
 };
 
 #[derive(Clone, Default, Debug)]
 pub struct LogoPanelComponent {}
 
 impl LogoPanelComponent {
-    pub fn view(&self) -> Element<DefaultViewMessage, AirshipperTheme> {
+    pub fn view(&self) -> Element<DefaultViewMessage> {
         let col = column![]
             .push(Image::new(Handle::from_memory(VELOREN_LOGO.to_vec())))
             .push(

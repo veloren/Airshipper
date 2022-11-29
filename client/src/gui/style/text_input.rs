@@ -19,7 +19,7 @@ impl Default for TextInputStyle {
 impl text_input::StyleSheet for AirshipperTheme {
     type Style = TextInputStyle;
 
-    fn active(&self, style: &Self::Style) -> Appearance {
+    fn active(&self, _: &Self::Style) -> Appearance {
         Appearance {
             background: Background::Color(NAVY_BLUE),
             border_width: 0.0,
@@ -32,15 +32,15 @@ impl text_input::StyleSheet for AirshipperTheme {
         self.active(style)
     }
 
-    fn placeholder_color(&self, style: &Self::Style) -> Color {
+    fn placeholder_color(&self, _: &Self::Style) -> Color {
         MEDIUM_GREY
     }
 
-    fn value_color(&self, style: &Self::Style) -> Color {
+    fn value_color(&self, _: &Self::Style) -> Color {
         LIGHT_GREY
     }
 
-    fn selection_color(&self, style: &Self::Style) -> Color {
+    fn selection_color(&self, _: &Self::Style) -> Color {
         CORNFLOWER_BLUE
     }
 }

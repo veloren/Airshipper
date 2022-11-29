@@ -1,25 +1,27 @@
-use super::Action;
 use crate::{
     channels::Channels,
-    gui::components::{ChangelogPanelComponent, LogoPanelComponent, NewsPanelComponent},
+    gui::{
+        components::{
+            AnnouncementPanelComponent, AnnouncementPanelMessage,
+            ChangelogPanelComponent, ChangelogPanelMessage, CommunityShowcaseComponent,
+            CommunityShowcasePanelMessage, GamePanelComponent, GamePanelMessage,
+            LogoPanelComponent, NewsPanelComponent, NewsPanelMessage,
+            ServerBrowserPanelComponent, ServerBrowserPanelMessage,
+            SettingsPanelComponent, SettingsPanelMessage,
+        },
+        rss_feed::RssFeedComponentMessage::UpdateRssFeed,
+        style::container::ContainerStyle,
+        views::Action,
+        widget::*,
+    },
     profiles::Profile,
 };
+
 use iced::{
     widget::{column, container, row},
-    Command, Element, Length, Renderer,
+    Command, Length,
 };
 
-use crate::gui::{
-    components::{
-        AnnouncementPanelComponent, AnnouncementPanelMessage, ChangelogPanelMessage,
-        CommunityShowcaseComponent, CommunityShowcasePanelMessage, GamePanelComponent,
-        GamePanelMessage, NewsPanelMessage, ServerBrowserPanelComponent,
-        ServerBrowserPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
-    },
-    rss_feed::RssFeedComponentMessage::UpdateRssFeed,
-};
-
-use crate::gui::style::{container::ContainerStyle, AirshipperTheme};
 #[cfg(windows)]
 use crate::gui::Result;
 
@@ -79,10 +81,7 @@ impl DefaultView {
             .map(DefaultViewMessage::GamePanel)
     }
 
-    pub fn view(
-        &self,
-        active_profile: &Profile,
-    ) -> Element<DefaultViewMessage, AirshipperTheme> {
+    pub fn view(&self, active_profile: &Profile) -> Element<DefaultViewMessage> {
         let Self {
             changelog_panel_component,
             announcement_panel_component,

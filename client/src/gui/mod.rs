@@ -5,9 +5,16 @@ mod rss_feed;
 mod style;
 mod subscriptions;
 mod views;
+mod widget;
 
-use crate::{cli::CmdLine, fs, gui::style::AirshipperTheme, profiles::Profile, Result};
-use iced::{Application, Command, Element, Renderer, Settings, Subscription};
+use crate::{
+    cli::CmdLine,
+    fs,
+    gui::{style::AirshipperTheme, widget::*},
+    profiles::Profile,
+    Result,
+};
+use iced::{Application, Command, Settings, Subscription};
 use ron::ser::PrettyConfig;
 use tokio::{fs::File, io::AsyncWriteExt};
 #[cfg(windows)]
@@ -222,7 +229,7 @@ impl Application for Airshipper {
         Command::none()
     }
 
-    fn view(&self) -> Element<Self::Message, Self::Theme> {
+    fn view(&self) -> Element<Self::Message> {
         let Self {
             view, default_view, ..
         } = self;

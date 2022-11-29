@@ -1,6 +1,6 @@
 use crate::gui::style::{
-    AirshipperTheme, BACKGROUND_BLUE, BLOG_POST_BACKGROUND_BLUE, BRIGHT_ORANGE,
-    DARK_WHITE, TOMATO_RED, VERY_DARK_GREY,
+    tooltip::TooltipStyle, AirshipperTheme, BACKGROUND_BLUE, BLOG_POST_BACKGROUND_BLUE,
+    BRIGHT_ORANGE, DARK_WHITE, TOMATO_RED, VERY_DARK_GREY,
 };
 use iced::{
     widget::{container, container::Appearance},
@@ -25,13 +25,19 @@ impl Default for ContainerStyle {
     }
 }
 
+impl From<TooltipStyle> for ContainerStyle {
+    fn from(_: TooltipStyle) -> Self {
+        ContainerStyle::Default
+    }
+}
+
 impl container::StyleSheet for AirshipperTheme {
     type Style = ContainerStyle;
 
     fn appearance(&self, style: &Self::Style) -> Appearance {
         match style {
             ContainerStyle::Default => Appearance::default(),
-            ContainerStyle::Announcement => dark_container_style(),
+            ContainerStyle::Announcement => announcement_container_style(),
             ContainerStyle::Dark => dark_container_style(),
             ContainerStyle::LoadingBlogPost => loading_blogpost_container_style(),
             ContainerStyle::BlogPost => blogpost_container_style(),

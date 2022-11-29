@@ -2,14 +2,12 @@ use crate::{
     assets::{POPPINS_MEDIUM_FONT, UP_RIGHT_ARROW_ICON},
     consts::{AIRSHIPPER_RELEASE_URL, SUPPORTED_SERVER_API_VERSION},
     gui::{
-        style::{
-            button::ButtonStyle, container::ContainerStyle, text::TextStyle,
-            AirshipperTheme,
-        },
+        style::{button::ButtonStyle, container::ContainerStyle, text::TextStyle},
         views::{
             default::{DefaultViewMessage, Interaction},
             Action,
         },
+        widget::*,
     },
     net,
     profiles::Profile,
@@ -17,8 +15,8 @@ use crate::{
 };
 use iced::{
     alignment::Vertical,
-    widget::{button, column, container, image, image::Handle, row, text, Text},
-    Alignment, Command, Element, Length, Padding, Renderer,
+    widget::{button, column, container, image, image::Handle, row, text},
+    Alignment, Command, Length, Padding,
 };
 use serde::{Deserialize, Serialize};
 use tracing::debug;
@@ -103,7 +101,7 @@ impl AnnouncementPanelComponent {
         }
     }
 
-    pub fn view(&self) -> Element<DefaultViewMessage, AirshipperTheme> {
+    pub fn view(&self) -> Element<DefaultViewMessage> {
         let update = SUPPORTED_SERVER_API_VERSION != self.api_version;
         let rowtext = match (update, &self.announcement_message) {
             (false, None) => {
@@ -124,7 +122,7 @@ impl AnnouncementPanelComponent {
 
         let mut content_row = row![
             container(
-                Text::new(&rowtext)
+                Text::new(rowtext)
                     .style(TextStyle::Dark)
                     .font(POPPINS_MEDIUM_FONT),
             )

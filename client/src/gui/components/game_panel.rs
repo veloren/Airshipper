@@ -1,6 +1,19 @@
 use crate::{
-    assets::{DOWNLOAD_ICON, POPPINS_BOLD_FONT},
-    gui::{custom_widgets::heading_with_rule, subscriptions},
+    assets::{DOWNLOAD_ICON, POPPINS_BOLD_FONT, POPPINS_MEDIUM_FONT, SETTINGS_ICON},
+    gui::{
+        custom_widgets::heading_with_rule,
+        style::{
+            button::{ButtonState, ButtonStyle, DownloadButtonStyle},
+            text::TextStyle,
+            tooltip::TooltipStyle,
+        },
+        subscriptions,
+        views::{
+            default::{DefaultViewMessage, Interaction, Interaction::SettingsPressed},
+            Action,
+        },
+        widget::*,
+    },
     io::ProcessUpdate,
     net::Progress,
     profiles::Profile,
@@ -12,25 +25,10 @@ use iced::{
         button, column, container, image, image::Handle, progress_bar, row, text,
         tooltip, tooltip::Position, Image,
     },
-    Alignment, Color, Command, Element, Length, Padding, Renderer,
+    Alignment, Command, Length, Padding,
 };
 use std::{path::PathBuf, time::Duration};
 
-use crate::{
-    assets::{POPPINS_MEDIUM_FONT, SETTINGS_ICON},
-    gui::{
-        style::{
-            button::{ButtonState, ButtonStyle, DownloadButtonStyle},
-            text::TextStyle,
-            tooltip::TooltipStyle,
-            AirshipperTheme,
-        },
-        views::{
-            default::{DefaultViewMessage, Interaction, Interaction::SettingsPressed},
-            Action,
-        },
-    },
-};
 use lazy_static::lazy_static;
 use regex::Regex;
 use tracing::debug;
@@ -369,10 +367,7 @@ impl GamePanelComponent {
         command
     }
 
-    pub fn view(
-        &self,
-        active_profile: &Profile,
-    ) -> Element<DefaultViewMessage, AirshipperTheme> {
+    pub fn view(&self, active_profile: &Profile) -> Element<DefaultViewMessage> {
         // TODO: Improve this with actual game version / date (requires changes to
         // Airshipper Server)
         let mut version_string = "Pre-Alpha".to_owned();
@@ -463,7 +458,6 @@ impl GamePanelComponent {
                     .push(
                         text(progress_text)
                             .horizontal_alignment(Horizontal::Right)
-                            .color(Color::WHITE)
                             .size(17),
                     )
                     .spacing(5)
@@ -493,7 +487,7 @@ impl GamePanelComponent {
                                 .push(
                                     text(remaining_text).font(POPPINS_BOLD_FONT).size(17),
                                 )
-                                .push(text("left").color(Color::WHITE).size(17))
+                                .push(text("left").size(17))
                                 .spacing(2)
                                 .width(Length::Shrink),
                         );

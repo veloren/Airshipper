@@ -2,9 +2,11 @@ use iced::{application, application::Appearance, Color};
 
 pub mod button;
 pub mod container;
+pub mod menu;
 pub mod pick_list;
 pub mod progress_bar;
 pub mod rule;
+pub mod scrollable;
 pub mod text;
 pub mod text_input;
 pub mod tooltip;
@@ -49,7 +51,7 @@ impl Default for AirshipperTheme {
 impl application::StyleSheet for AirshipperTheme {
     type Style = AirshipperThemeStyle;
 
-    fn appearance(&self, style: &Self::Style) -> Appearance {
+    fn appearance(&self, _: &Self::Style) -> Appearance {
         Appearance {
             background_color: Color::BLACK,
             text_color: Color::WHITE,

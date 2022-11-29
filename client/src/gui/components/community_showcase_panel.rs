@@ -6,14 +6,15 @@ use crate::{
             RssFeedComponent, RssFeedComponentMessage, RssFeedData, RssFeedUpdateStatus,
             RssPost,
         },
-        style::{button::ButtonStyle, container::ContainerStyle, AirshipperTheme},
+        style::{button::ButtonStyle, container::ContainerStyle},
         views::default::{DefaultViewMessage, Interaction},
+        widget::*,
     },
 };
 use iced::{
     alignment::{Horizontal, Vertical},
     widget::{button, column, container, image::Handle, row, text, Image},
-    Command, ContentFit, Element, Length, Padding, Renderer,
+    Command, ContentFit, Length, Padding,
 };
 use rand::{prelude::SliceRandom, thread_rng};
 use serde::{Deserialize, Serialize};
@@ -114,7 +115,7 @@ impl CommunityShowcaseComponent {
         }
     }
 
-    pub fn view(&self) -> Element<DefaultViewMessage, AirshipperTheme> {
+    pub fn view(&self) -> Element<DefaultViewMessage> {
         let current_post = if let Some(post) = self.posts.get(self.offset) {
             container(post.view()).width(Length::Fill)
         } else {
@@ -167,7 +168,7 @@ pub struct CommunityPost {
 }
 
 impl CommunityPost {
-    pub(crate) fn view(&self) -> Element<DefaultViewMessage, AirshipperTheme> {
+    pub(crate) fn view(&self) -> Element<DefaultViewMessage> {
         let post = &self.rss_post;
 
         // TODO: Tooltip with post description once Iced supports tooltip layering

@@ -7,14 +7,12 @@ use crate::{
     consts,
     consts::GITLAB_MERGED_MR_URL,
     gui::{
-        style::{
-            button::ButtonStyle, container::ContainerStyle, text::TextStyle,
-            AirshipperTheme,
-        },
+        style::{button::ButtonStyle, container::ContainerStyle, text::TextStyle},
         views::{
             default::{DefaultViewMessage, Interaction},
             Action,
         },
+        widget::*,
     },
     net, Result,
 };
@@ -22,9 +20,8 @@ use iced::{
     alignment::Vertical,
     widget::{
         button, column, container, image, image::Handle, row, scrollable, text, Image,
-        Rule, Text,
     },
-    Alignment, Command, Element, Length, Padding, Renderer,
+    Alignment, Command, Length, Padding,
 };
 use pulldown_cmark::{Event, Options, Parser, Tag};
 use serde::{Deserialize, Serialize};
@@ -237,7 +234,7 @@ impl ChangelogPanelComponent {
         }
     }
 
-    pub fn view(&self) -> Element<DefaultViewMessage, AirshipperTheme> {
+    pub fn view(&self) -> Element<DefaultViewMessage> {
         let mut changelog = column![].spacing(10);
 
         for version in &mut self.versions.iter().take(self.display_count as usize) {
