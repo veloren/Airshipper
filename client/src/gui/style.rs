@@ -26,6 +26,7 @@ pub const DARK_WHITE: Color = Color::from_rgb(0.9, 0.9, 0.9);
 const BACKGROUND_BLUE: Color = Color::from_rgb(0.14, 0.21, 0.41);
 const LIME_GREEN: Color = Color::from_rgb(0.41, 0.64, 0.26);
 const DISCORD_BLURPLE: Color = rgb8(88, 101, 242);
+const MASTODON_PURPLE: Color = rgb8(99, 100, 255);
 const REDDIT_ORANGE: Color = rgb8(255, 69, 0);
 const YOUTUBE_RED: Color = rgb8(255, 0, 0);
 const CORNFLOWER_BLUE: Color = Color::from_rgb(0.19, 0.4, 0.85);
@@ -262,6 +263,17 @@ impl button::StyleSheet for DiscordBrowserButtonStyle {
     fn active(&self) -> Style {
         Style {
             background: Some(Background::Color(DISCORD_BLURPLE)),
+            border_radius: 25.0,
+            ..button::Style::default()
+        }
+    }
+}
+
+pub struct MastodonBrowserButtonStyle;
+impl button::StyleSheet for MastodonBrowserButtonStyle {
+    fn active(&self) -> Style {
+        Style {
+            background: Some(Background::Color(MASTODON_PURPLE)),
             border_radius: 25.0,
             ..button::Style::default()
         }

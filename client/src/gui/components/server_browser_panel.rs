@@ -454,6 +454,9 @@ impl ServerBrowserPanelComponent {
                                             {
                                                 button.style(YoutubeBrowserButtonStyle)
                                             },
+                                            "mastodon" => {
+                                                button.style(MastodonBrowserButtonStyle)
+                                            },
                                             _ => button.style(ExtraBrowserStyle),
                                         };
                                         extras = extras.push(button);
