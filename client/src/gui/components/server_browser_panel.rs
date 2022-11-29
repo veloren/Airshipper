@@ -11,8 +11,9 @@ use crate::{
         style::{
             ChangelogHeaderStyle, ColumnHeadingButtonStyle, ColumnHeadingContainerStyle,
             DarkContainerStyle, DiscordBrowserButtonStyle, ExtraBrowserStyle,
-            GitlabServerBrowserButtonStyle, RuleStyle, ServerListEntryButtonStyle,
-            TooltipStyle, WarningContainerStyle, BRIGHT_ORANGE, DARK_WHITE, TOMATO_RED,
+            GitlabServerBrowserButtonStyle, RedditBrowserButtonStyle, RuleStyle,
+            ServerListEntryButtonStyle, TooltipStyle, WarningContainerStyle,
+            YoutubeBrowserButtonStyle, BRIGHT_ORANGE, DARK_WHITE, TOMATO_RED,
         },
         views::default::{DefaultViewMessage, Interaction},
     },
@@ -369,6 +370,16 @@ impl ServerBrowserPanelComponent {
                 url::Host::Domain(String::from("discord.gg")),
                 443,
             );
+            let reddit_origin = url::Origin::Tuple(
+                "https".to_string(),
+                url::Host::Domain(String::from("reddit.com")),
+                443,
+            );
+            let youtube_origin = url::Origin::Tuple(
+                "https".to_string(),
+                url::Host::Domain(String::from("youtube.com")),
+                443,
+            );
 
             if let Some(server) = selected_server {
                 col = col
@@ -428,6 +439,20 @@ impl ServerBrowserPanelComponent {
                                                     .unwrap_or(false) =>
                                             {
                                                 button.style(DiscordBrowserButtonStyle)
+                                            },
+                                            "reddit"
+                                                if Url::parse(&c)
+                                                    .map(|u| u.origin() == reddit_origin)
+                                                    .unwrap_or(false) =>
+                                            {
+                                                button.style(RedditBrowserButtonStyle)
+                                            },
+                                            "youtube"
+                                                if Url::parse(&c)
+                                                    .map(|u| u.origin() == youtube_origin)
+                                                    .unwrap_or(false) =>
+                                            {
+                                                button.style(YoutubeBrowserButtonStyle)
                                             },
                                             _ => button.style(ExtraBrowserStyle),
                                         };
