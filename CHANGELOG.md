@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Fixed
 
+
+## [0.10.0] - 2022-11-29
+
+## Added
+- Server Browser now can show discord/youtube/reddit/website/email information
+
+## Fixed
+- Server Browser can now connect to servers with non-default port
+
 ## [0.9.0] - 2022-09-16
 
 ## Added
@@ -160,7 +169,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added GUI
 
-[unreleased]: https://github.com/veloren/Airshipper/compare/v0.9.0...master
+[unreleased]: https://github.com/veloren/Airshipper/compare/v0.10.0...master
 [0.2.0]: https://github.com/veloren/Airshipper/releases/tag/v0.2.0
 [0.2.1]: https://github.com/veloren/Airshipper/releases/tag/v0.2.1
 [0.3.0]: https://github.com/veloren/Airshipper/releases/tag/v0.3.0
@@ -174,3 +183,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.7.0]: https://github.com/veloren/Airshipper/releases/tag/v0.7.0
 [0.8.0]: https://github.com/veloren/Airshipper/releases/tag/v0.8.0
 [0.9.0]: https://github.com/veloren/Airshipper/releases/tag/v0.9.0
+[0.10.0]: https://github.com/veloren/Airshipper/releases/tag/v0.10.0
