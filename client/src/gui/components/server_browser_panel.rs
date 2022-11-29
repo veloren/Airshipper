@@ -11,9 +11,10 @@ use crate::{
         style::{
             ChangelogHeaderStyle, ColumnHeadingButtonStyle, ColumnHeadingContainerStyle,
             DarkContainerStyle, DiscordBrowserButtonStyle, ExtraBrowserStyle,
-            GitlabServerBrowserButtonStyle, RedditBrowserButtonStyle, RuleStyle,
-            ServerListEntryButtonStyle, TooltipStyle, WarningContainerStyle,
-            YoutubeBrowserButtonStyle, BRIGHT_ORANGE, DARK_WHITE, TOMATO_RED,
+            GitlabServerBrowserButtonStyle, MastodonBrowserButtonStyle,
+            RedditBrowserButtonStyle, RuleStyle, ServerListEntryButtonStyle,
+            TooltipStyle, WarningContainerStyle, YoutubeBrowserButtonStyle,
+            BRIGHT_ORANGE, DARK_WHITE, TOMATO_RED,
         },
         views::default::{DefaultViewMessage, Interaction},
     },
