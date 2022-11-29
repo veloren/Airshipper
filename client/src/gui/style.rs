@@ -17,6 +17,7 @@ const TRANSPARENT_WHITE: Color = Color::from_rgba(1.0, 1.0, 1.0, 0.1);
 pub const DARK_WHITE: Color = Color::from_rgb(0.9, 0.9, 0.9);
 const BACKGROUND_BLUE: Color = Color::from_rgb(0.14, 0.21, 0.41);
 const LIME_GREEN: Color = Color::from_rgb(0.41, 0.64, 0.26);
+const DISCORD_BLURPLE: Color = Color::from_rgb(0.345, 0.396, 0.949);
 const CORNFLOWER_BLUE: Color = Color::from_rgb(0.19, 0.4, 0.85);
 const BLOG_POST_BACKGROUND_BLUE: Color = Color::from_rgb(0.24, 0.33, 0.58);
 pub const LILAC: Color = Color::from_rgb(0.62, 0.66, 0.79);
@@ -242,6 +243,37 @@ impl button::StyleSheet for GitlabChangelogButtonStyle {
             background: Some(Background::Color(LIME_GREEN)),
             border_radius: 25.0,
             ..button::Style::default()
+        }
+    }
+}
+
+pub struct DiscordBrowserButtonStyle;
+impl button::StyleSheet for DiscordBrowserButtonStyle {
+    fn active(&self) -> Style {
+        Style {
+            background: Some(Background::Color(DISCORD_BLURPLE)),
+            border_radius: 25.0,
+            ..button::Style::default()
+        }
+    }
+}
+
+pub struct ExtraBrowserStyle;
+impl button::StyleSheet for ExtraBrowserStyle {
+    fn active(&self) -> Style {
+        Style {
+            background: Some(Background::Color(LIME_GREEN)),
+            border_radius: 25.0,
+            ..button::Style::default()
+        }
+    }
+}
+impl container::StyleSheet for ExtraBrowserStyle {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(LIME_GREEN)),
+            border_radius: 25.0,
+            ..container::Style::default()
         }
     }
 }
