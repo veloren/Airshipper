@@ -6,6 +6,14 @@ use iced::{
     Background, Color, Vector,
 };
 
+const fn rgb8(red: u8, green: u8, blue: u8) -> Color {
+    Color::from_rgb(
+        red as f32 / 255.0,
+        green as f32 / 255.0,
+        blue as f32 / 255.0,
+    )
+}
+
 // Colors
 pub const LIGHT_GREY: Color = Color::from_rgb(0.93, 0.93, 0.93);
 pub const MEDIUM_GREY: Color = Color::from_rgb(0.7, 0.7, 0.7);
@@ -17,6 +25,9 @@ const TRANSPARENT_WHITE: Color = Color::from_rgba(1.0, 1.0, 1.0, 0.1);
 pub const DARK_WHITE: Color = Color::from_rgb(0.9, 0.9, 0.9);
 const BACKGROUND_BLUE: Color = Color::from_rgb(0.14, 0.21, 0.41);
 const LIME_GREEN: Color = Color::from_rgb(0.41, 0.64, 0.26);
+const DISCORD_BLURPLE: Color = rgb8(88, 101, 242);
+const REDDIT_ORANGE: Color = rgb8(255, 69, 0);
+const YOUTUBE_RED: Color = rgb8(255, 0, 0);
 const CORNFLOWER_BLUE: Color = Color::from_rgb(0.19, 0.4, 0.85);
 const BLOG_POST_BACKGROUND_BLUE: Color = Color::from_rgb(0.24, 0.33, 0.58);
 pub const LILAC: Color = Color::from_rgb(0.62, 0.66, 0.79);
@@ -242,6 +253,59 @@ impl button::StyleSheet for GitlabChangelogButtonStyle {
             background: Some(Background::Color(LIME_GREEN)),
             border_radius: 25.0,
             ..button::Style::default()
+        }
+    }
+}
+
+pub struct DiscordBrowserButtonStyle;
+impl button::StyleSheet for DiscordBrowserButtonStyle {
+    fn active(&self) -> Style {
+        Style {
+            background: Some(Background::Color(DISCORD_BLURPLE)),
+            border_radius: 25.0,
+            ..button::Style::default()
+        }
+    }
+}
+
+pub struct RedditBrowserButtonStyle;
+impl button::StyleSheet for RedditBrowserButtonStyle {
+    fn active(&self) -> Style {
+        Style {
+            background: Some(Background::Color(REDDIT_ORANGE)),
+            border_radius: 25.0,
+            ..button::Style::default()
+        }
+    }
+}
+
+pub struct YoutubeBrowserButtonStyle;
+impl button::StyleSheet for YoutubeBrowserButtonStyle {
+    fn active(&self) -> Style {
+        Style {
+            background: Some(Background::Color(YOUTUBE_RED)),
+            border_radius: 25.0,
+            ..button::Style::default()
+        }
+    }
+}
+
+pub struct ExtraBrowserStyle;
+impl button::StyleSheet for ExtraBrowserStyle {
+    fn active(&self) -> Style {
+        Style {
+            background: Some(Background::Color(LIME_GREEN)),
+            border_radius: 25.0,
+            ..button::Style::default()
+        }
+    }
+}
+impl container::StyleSheet for ExtraBrowserStyle {
+    fn style(&self) -> container::Style {
+        container::Style {
+            background: Some(Background::Color(LIME_GREEN)),
+            border_radius: 25.0,
+            ..container::Style::default()
         }
     }
 }

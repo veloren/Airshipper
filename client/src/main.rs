@@ -1,5 +1,6 @@
 #![feature(async_closure)]
 #![feature(let_chains)]
+#![feature(const_fn_floating_point_arithmetic)]
 mod assets;
 mod channels;
 mod cli;
