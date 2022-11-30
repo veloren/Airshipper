@@ -238,7 +238,7 @@ impl ChangelogPanelComponent {
     pub fn view(&self) -> Element<DefaultViewMessage> {
         let mut changelog = column().spacing(10);
 
-        for version in &mut self.versions.iter().take(self.display_count as usize) {
+        for version in &mut self.versions.iter().take(self.display_count) {
             changelog = changelog.push(version.view());
         }
 

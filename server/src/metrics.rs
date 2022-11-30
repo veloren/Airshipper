@@ -11,6 +11,7 @@ pub struct Metrics {
 }
 
 impl Metrics {
+    #[allow(clippy::result_large_err)]
     pub fn new() -> Result<Self> {
         let registry = Registry::new();
 
@@ -73,6 +74,7 @@ impl Metrics {
     }
 
     /// Returns statistics
+    #[allow(clippy::result_large_err)]
     pub fn gather(&self) -> Result<String> {
         let mut buffer = vec![];
         let encoder = TextEncoder::new();
