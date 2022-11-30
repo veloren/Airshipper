@@ -7,7 +7,7 @@ use parse::Action;
 mod parse;
 use iced::futures::stream::StreamExt;
 
-use crate::{profiles::LogLevel, BASE_PATH};
+use crate::{error::ClientError, profiles::LogLevel, BASE_PATH};
 use gui::Airshipper;
 pub use parse::CmdLine;
 use tracing::level_filters::LevelFilter;
@@ -61,7 +61,7 @@ pub fn process() -> Result<()> {
         );
     }
 
-    if let Err(e) = rt.block_on(async {
+    rt.block_on(async {
         let mut state = Airshipper::load(cmd.clone()).await;
 
         // handle arguments
@@ -71,10 +71,8 @@ pub fn process() -> Result<()> {
         // Save state
         state.save_mut().await?;
 
-        Ok(())
-    }) {
-        return Err(e);
-    }
+        Ok::<(), ClientError>(())
+    })?;
     Ok(())
 }
 

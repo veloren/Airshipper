@@ -475,7 +475,7 @@ impl ServerBrowserPanelComponent {
                                                 .font(NOTO_SANS_UNIFIED_FONT),
                                         )
                                         .push(
-                                            text(&display_gameserver_address(server))
+                                            text(display_gameserver_address(server))
                                                 .font(NOTO_SANS_UNIFIED_FONT)
                                                 .color(BRIGHT_ORANGE),
                                         ),
