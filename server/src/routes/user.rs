@@ -40,4 +40,6 @@ pub fn robots() -> &'static str {
 }
 
 #[get("/favicon.ico")]
-pub fn favicon() {}
+pub fn favicon() -> &'static str {
+    ""
+}
