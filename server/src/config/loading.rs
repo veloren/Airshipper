@@ -136,7 +136,7 @@ impl Config {
             }
         };
 
-        let file = match fs::File::open(&path) {
+        let file = match fs::File::open(path) {
             Ok(file) => file,
             Err(e) => {
                 error!(?e, "Config File does not exist!",);

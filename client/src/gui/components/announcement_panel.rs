@@ -122,7 +122,7 @@ impl AnnouncementPanelComponent {
 
         let mut content_row = row().push(
             container(
-                Text::new(&rowtext)
+                Text::new(rowtext)
                     .color(DARK_WHITE)
                     .font(POPPINS_MEDIUM_FONT),
             )
