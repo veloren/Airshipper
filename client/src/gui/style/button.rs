@@ -77,20 +77,32 @@ impl button::StyleSheet for AirshipperTheme {
             ButtonStyle::Transparent => transparent_button_style(),
             ButtonStyle::Settings => settings_button_style_active(),
             ButtonStyle::ColumnHeading => column_heading_button_style(),
-            ButtonStyle::ServerBrowser => server_browser_button_style(),
+            ButtonStyle::ServerBrowser => server_browser_button_style_active(),
         }
     }
 
     fn hovered(&self, style: &Self::Style) -> Appearance {
         match style {
+            ButtonStyle::Download(download_button_style) => match download_button_style {
+                DownloadButtonStyle::Launch(ButtonState::Enabled) => {
+                    hovered_download_button_style(LIME_GREEN)
+                },
+                DownloadButtonStyle::Update(ButtonState::Enabled) => {
+                    hovered_download_button_style(CORNFLOWER_BLUE)
+                },
+                #[cfg(windows)]
+                DownloadButtonStyle::Skip => hovered_download_button_style(TOMATO_RED),
+                _ => self.active(style),
+            },
             ButtonStyle::ServerListEntry(ServerListEntryButtonState::Selected) => {
                 server_list_entry_selected_style_hovered()
             },
             ButtonStyle::ServerListEntry(ServerListEntryButtonState::NotSelected) => {
                 server_list_entry_not_selected_style_hovered()
             },
+            ButtonStyle::ServerBrowser => server_browser_button_style_hovered(),
             ButtonStyle::Settings => settings_button_style_hovered(),
-            _ => Appearance::default(), // TODO: probably not correct
+            _ => self.active(style), // Fallback to no hover style
         }
     }
 }
@@ -114,6 +126,20 @@ fn download_button_appearance() -> Appearance {
 fn active_download_button_style(background_color: Color) -> Appearance {
     Appearance {
         background: Some(Background::Color(background_color)),
+        text_color: Color::WHITE,
+        border_radius: 4.0,
+        ..Appearance::default()
+    }
+}
+
+fn hovered_download_button_style(background_color: Color) -> Appearance {
+    Appearance {
+        background: Some(Background::Color(Color::from_rgba(
+            background_color.r * 1.1,
+            background_color.g * 1.1,
+            background_color.b * 1.1,
+            background_color.a,
+        ))),
         text_color: Color::WHITE,
         border_radius: 4.0,
         ..Appearance::default()
@@ -198,6 +224,7 @@ fn settings_button_style_active() -> Appearance {
 fn settings_button_style_hovered() -> Appearance {
     Appearance {
         background: Some(Background::Color(TRANSPARENT_WHITE)),
+        border_radius: 10.0,
         ..Appearance::default()
     }
 }
@@ -209,11 +236,23 @@ fn column_heading_button_style() -> Appearance {
     }
 }
 
-fn server_browser_button_style() -> Appearance {
+fn server_browser_button_style_active() -> Appearance {
     Appearance {
         background: Some(Background::Color(CORNFLOWER_BLUE)),
         text_color: Color::WHITE,
         border_radius: 4.0,
         ..Appearance::default()
+    }
+}
+
+fn server_browser_button_style_hovered() -> Appearance {
+    Appearance {
+        background: Some(Background::Color(Color::from_rgba(
+            CORNFLOWER_BLUE.r * 1.1,
+            CORNFLOWER_BLUE.g * 1.1,
+            CORNFLOWER_BLUE.b * 1.1,
+            CORNFLOWER_BLUE.a,
+        ))),
+        ..server_browser_button_style_active()
     }
 }

@@ -29,6 +29,8 @@ const NAVY_BLUE: Color = Color::from_rgb(0.07, 0.09, 0.15);
 const LIGHT_NAVY_BLUE: Color = Color::from_rgb(0.12, 0.14, 0.20);
 pub const BRIGHT_ORANGE: Color = Color::from_rgb(0.94, 0.40, 0.24);
 pub const TOMATO_RED: Color = Color::from_rgb(0.91, 0.31, 0.31);
+pub const ALMOST_BLACK: Color = Color::from_rgba(0.00, 0.00, 0.00, 0.7);
+pub const ALMOST_BLACK2: Color = Color::from_rgba(0.05, 0.05, 0.05, 0.25);
 
 pub struct AirshipperTheme {}
 
