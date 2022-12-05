@@ -57,7 +57,7 @@ impl FsStorage {
         let mut root_folder = PathBuf::from(crate::config::LOCAL_STORAGE_PATH);
         root_folder.push(PROFILE_FOLDER);
         root_folder
-            .join(&filename)
+            .join(filename)
             .display()
             .to_string()
             .replace('\\', "/")

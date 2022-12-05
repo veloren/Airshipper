@@ -115,14 +115,6 @@ fn airshipper_download_button_appearance() -> Appearance {
     }
 }
 
-fn download_button_appearance() -> Appearance {
-    Appearance {
-        background: Some(Background::Color(VERY_DARK_GREY)),
-        border_radius: 25.0,
-        ..Appearance::default()
-    }
-}
-
 fn active_download_button_style(background_color: Color) -> Appearance {
     Appearance {
         background: Some(Background::Color(background_color)),
@@ -183,7 +175,12 @@ fn server_list_entry_not_selected_style_active() -> Appearance {
 
 fn server_list_entry_not_selected_style_hovered() -> Appearance {
     Appearance {
-        background: Some(Background::Color(VERY_DARK_GREY)),
+        background: Some(Background::Color(Color::from_rgba(
+            VERY_DARK_GREY.r * 1.2,
+            VERY_DARK_GREY.g * 1.2,
+            VERY_DARK_GREY.b * 1.2,
+            VERY_DARK_GREY.a,
+        ))),
         text_color: Color::WHITE,
         shadow_offset: Vector::new(0.0, 0.0),
         ..Appearance::default()

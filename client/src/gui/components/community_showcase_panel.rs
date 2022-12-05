@@ -64,10 +64,7 @@ impl RssFeedComponent for CommunityShowcaseComponent {
         Command::perform(RssFeedData::fetch_image(url.to_owned()), move |img| {
             DefaultViewMessage::CommunityShowcasePanel(
                 CommunityShowcasePanelMessage::RssUpdate(
-                    RssFeedComponentMessage::ImageFetched {
-                        url: url.to_owned(),
-                        result: img,
-                    },
+                    RssFeedComponentMessage::ImageFetched { url, result: img },
                 ),
             )
         })

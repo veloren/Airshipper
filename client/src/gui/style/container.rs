@@ -1,6 +1,6 @@
 use crate::gui::style::{
-    tooltip::TooltipStyle, AirshipperTheme, BACKGROUND_BLUE, BLOG_POST_BACKGROUND_BLUE,
-    BRIGHT_ORANGE, DARK_WHITE, TOMATO_RED, VERY_DARK_GREY,
+    AirshipperTheme, BACKGROUND_BLUE, BLOG_POST_BACKGROUND_BLUE, BRIGHT_ORANGE,
+    DARK_WHITE, LIGHT_GREY, MEDIUM_GREY, NAVY_BLUE, TOMATO_RED, VERY_DARK_GREY,
 };
 use iced::{
     widget::{container, container::Appearance},
@@ -17,16 +17,11 @@ pub enum ContainerStyle {
     ColumnHeading,
     ChangelogHeader,
     Warning,
+    Tooltip,
 }
 
 impl Default for ContainerStyle {
     fn default() -> Self {
-        ContainerStyle::Default
-    }
-}
-
-impl From<TooltipStyle> for ContainerStyle {
-    fn from(_: TooltipStyle) -> Self {
         ContainerStyle::Default
     }
 }
@@ -45,6 +40,7 @@ impl container::StyleSheet for AirshipperTheme {
             ContainerStyle::ColumnHeading => column_heading_container_style(),
             ContainerStyle::ChangelogHeader => changelog_header_container_style(),
             ContainerStyle::Warning => warning_container_style(),
+            ContainerStyle::Tooltip => tooltip_container_style(),
         }
     }
 }
@@ -111,6 +107,16 @@ fn warning_container_style() -> Appearance {
         border_color: TOMATO_RED,
         border_width: 2.0,
         text_color: Some(Color::WHITE),
+        ..Appearance::default()
+    }
+}
+
+fn tooltip_container_style() -> Appearance {
+    Appearance {
+        text_color: Some(LIGHT_GREY),
+        background: Some(Background::Color(NAVY_BLUE)),
+        border_color: MEDIUM_GREY,
+        border_width: 1.0,
         ..Appearance::default()
     }
 }

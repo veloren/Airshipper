@@ -191,7 +191,7 @@ impl ChangelogPanelComponent {
                         "Changelog version different (Local: {} Remote: {}), fetching...",
                         version, remote_version
                     );
-                    return Ok(Some(Self::fetch(channel).await?));
+                    Ok(Some(Self::fetch(channel).await?))
                 } else {
                     debug!("Changelog up-to-date.");
                     Ok(None)

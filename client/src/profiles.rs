@@ -226,7 +226,7 @@ impl Profile {
 
         // If a server is selected in the server browser pass it through to Voxygen
         if let Some(game_server_address) = game_server_address {
-            cmd.args(&["--server", game_server_address]);
+            cmd.args(["--server", game_server_address]);
         }
 
         cmd

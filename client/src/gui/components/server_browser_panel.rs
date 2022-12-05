@@ -227,6 +227,7 @@ impl ServerBrowserPanelComponent {
                          this server unless you trust the owner.",
                         Position::Right,
                     )
+                    .style(ContainerStyle::Tooltip)
                     .gap(5),
                 );
             }
@@ -240,6 +241,7 @@ impl ServerBrowserPanelComponent {
                         "This is an official server operated by the Veloren project",
                         Position::Right,
                     )
+                    .style(ContainerStyle::Tooltip)
                     .gap(5),
                 );
             }
@@ -501,9 +503,7 @@ impl ServerBrowserPanelComponent {
 
                 Some(Command::perform(async {}, move |()| {
                     DefaultViewMessage::GamePanel(
-                        GamePanelMessage::ServerBrowserServerChanged(
-                            selected_server.clone(),
-                        ),
+                        GamePanelMessage::ServerBrowserServerChanged(selected_server),
                     )
                 }))
             },

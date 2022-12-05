@@ -5,7 +5,6 @@ use crate::{
         style::{
             button::{ButtonState, ButtonStyle, DownloadButtonStyle},
             text::TextStyle,
-            tooltip::TooltipStyle,
         },
         subscriptions,
         views::{
@@ -29,6 +28,7 @@ use iced::{
 };
 use std::{path::PathBuf, time::Duration};
 
+use crate::gui::style::container::ContainerStyle;
 use lazy_static::lazy_static;
 use regex::Regex;
 use tracing::debug;
@@ -47,7 +47,7 @@ pub enum GamePanelMessage {
     ServerBrowserServerChanged(Option<String>),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DownloadState {
     Starting,
     InProgress,
@@ -405,7 +405,7 @@ impl GamePanelComponent {
                                 Position::Left,
                             )
                             .size(18)
-                            .style(TooltipStyle::Default)
+                            .style(ContainerStyle::Tooltip)
                             .gap(5),
                         ),
                 )

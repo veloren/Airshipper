@@ -57,6 +57,7 @@ pub fn process() -> Result<()> {
         );
     }
 
+    #[allow(clippy::question_mark)]
     if let Err(e) = rt.block_on(async {
         let mut state = Airshipper::load(cmd.clone()).await;
 

@@ -52,10 +52,7 @@ impl RssFeedComponent for NewsPanelComponent {
         // RssComponent so could be better encapsulated within the RssFeedComponent trait.
         Command::perform(RssFeedData::fetch_image(url.to_owned()), move |img| {
             DefaultViewMessage::NewsPanel(NewsPanelMessage::RssUpdate(
-                RssFeedComponentMessage::ImageFetched {
-                    url: url.to_owned(),
-                    result: img,
-                },
+                RssFeedComponentMessage::ImageFetched { url, result: img },
             ))
         })
     }

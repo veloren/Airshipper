@@ -158,6 +158,7 @@ pub(crate) fn download(url: String, location: PathBuf) -> impl Stream<Item = Pro
                 // We do not let the stream die, as it would start a
                 // new download repeatedly if the user is not careful
                 // in case of errors.
+                #[allow(clippy::let_unit_value)]
                 let _: () = futures::future::pending().await;
                 None
             },

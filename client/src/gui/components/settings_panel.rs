@@ -4,7 +4,7 @@ use crate::{
     gui::{
         components::GamePanelMessage,
         custom_widgets::heading_with_rule,
-        style::{button::ButtonStyle, text::TextStyle},
+        style::{button::ButtonStyle, container::ContainerStyle, text::TextStyle},
         views::{default::DefaultViewMessage, Action},
         widget::*,
     },
@@ -149,6 +149,7 @@ impl SettingsPanelComponent {
              are experiencing issues",
             Position::Top,
         )
+        .style(ContainerStyle::Tooltip)
         .size(FONT_SIZE)
         .gap(5);
 
@@ -192,6 +193,7 @@ impl SettingsPanelComponent {
             "Changes the amount of information that the game outputs to its log file",
             Position::Left,
         )
+        .style(ContainerStyle::Tooltip)
         .size(FONT_SIZE)
         .gap(5);
 
@@ -215,6 +217,7 @@ impl SettingsPanelComponent {
             "The download server used for game downloads",
             Position::Top,
         )
+        .style(ContainerStyle::Tooltip)
         .size(FONT_SIZE)
         .gap(5);
 
@@ -246,6 +249,7 @@ impl SettingsPanelComponent {
             "Environment variables set when running Voxygen",
             Position::Top,
         )
+        .style(ContainerStyle::Tooltip)
         .size(FONT_SIZE)
         .gap(5);
 
@@ -273,6 +277,7 @@ impl SettingsPanelComponent {
             "The download channel used for game downloads",
             Position::Top,
         )
+        .style(ContainerStyle::Tooltip)
         .size(FONT_SIZE)
         .gap(5);
 
