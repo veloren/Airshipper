@@ -28,11 +28,14 @@ maintenance = { status = "actively-developed" }
 bundled = ["openssl-sys"]
 
 [dependencies]
-veloren-serverbrowser-api = "0.2.0"
+veloren-serverbrowser-api = "0.3.1"
 
 # Cli
 clap = { version = "3.1.18", features = ["cargo", "derive"] }
 indicatif = "0.16"
+rustyline = "10.0"
+colored = "2.0"
+
 # UI
 # TODO: Switch back from git version when iced 0.6 is released
 iced = { git = "https://github.com/iced-rs/iced/", rev ="28f0beee52f258af6bbaf8a0d9867863d7513c9b", default-features = false, features = ["glow", "tokio", "image", "debug"] }

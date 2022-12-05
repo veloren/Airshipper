@@ -29,8 +29,8 @@ pub enum ServerError {
     UrlParseError(#[from] url::ParseError),
 }
 
-#[allow(clippy::extra_unused_lifetimes)]
-impl<'r, 'o> Responder<'r, 'static> for ServerError {
+#[allow(clippy::needless_lifetimes)]
+impl<'r> Responder<'r, 'static> for ServerError {
     fn respond_to(self, req: &'r Request<'_>) -> response::Result<'static> {
         let mut resp = Response::build();
 

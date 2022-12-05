@@ -210,7 +210,7 @@ impl Profile {
 
         let (env_vars, env_var_errors) = parse_env_vars(&profile.env_vars);
         for err in env_var_errors {
-            tracing::error!("Environment variable error: {}", err);
+            tracing::warn!("Environment variable error: {}", err);
         }
         for (var, value) in env_vars {
             envs.insert(var, OsString::from(value));
@@ -285,7 +285,7 @@ async fn set_permissions(files: Vec<&std::path::PathBuf>) -> Result<()> {
     Ok(())
 }
 
-fn parse_env_vars(env_vars: &str) -> (Vec<(&str, &str)>, Vec<String>) {
+pub fn parse_env_vars(env_vars: &str) -> (Vec<(&str, &str)>, Vec<String>) {
     let env_vars = env_vars.trim();
     let mut errors = Vec::new();
 

@@ -19,6 +19,8 @@ pub enum ClientError {
     ArchiveError,
     #[display(fmt = "Error parsing url.")]
     UrlParseError,
+    #[display(fmt = "Error reading input.")]
+    ReadlineError,
 
     #[cfg(windows)]
     #[display(fmt = "FATAL: Failed to update airshipper!")]
@@ -34,6 +36,12 @@ pub enum ClientError {
 impl From<String> for ClientError {
     fn from(err: String) -> Self {
         Self::Custom(err)
+    }
+}
+
+impl From<rustyline::error::ReadlineError> for ClientError {
+    fn from(_: rustyline::error::ReadlineError) -> Self {
+        Self::ReadlineError
     }
 }
 

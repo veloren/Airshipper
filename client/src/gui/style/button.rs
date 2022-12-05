@@ -1,6 +1,7 @@
 use crate::gui::style::{
-    AirshipperTheme, CORNFLOWER_BLUE, DARK_WHITE, LIGHT_GREY, LIME_GREEN, NAVY_BLUE,
-    SLATE, TOMATO_RED, TRANSPARENT_WHITE, VERY_DARK_GREY,
+    AirshipperTheme, CORNFLOWER_BLUE, DARK_WHITE, DISCORD_BLURPLE, LIGHT_GREY,
+    LIME_GREEN, MASTODON_PURPLE, NAVY_BLUE, REDDIT_ORANGE, SLATE, TOMATO_RED,
+    TRANSPARENT_WHITE, VERY_DARK_GREY, YOUTUBE_RED,
 };
 use iced::{
     widget::{button, button::Appearance},
@@ -12,7 +13,7 @@ pub enum ButtonStyle {
     Download(DownloadButtonStyle),
     AirshipperDownload,
     ServerListEntry(ServerListEntryButtonState),
-    Gitlab,
+    Browser(BrowserButtonStyle),
     NextPrev,
     Transparent,
     Settings,
@@ -26,6 +27,16 @@ pub enum DownloadButtonStyle {
     Update(ButtonState),
     #[cfg(windows)]
     Skip,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum BrowserButtonStyle {
+    Gitlab,
+    Discord,
+    Mastodon,
+    Reddit,
+    Youtube,
+    Extra,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -72,7 +83,7 @@ impl button::StyleSheet for AirshipperTheme {
             ButtonStyle::ServerListEntry(ServerListEntryButtonState::NotSelected) => {
                 server_list_entry_not_selected_style_active()
             },
-            ButtonStyle::Gitlab => gitlab_button_style(),
+            ButtonStyle::Browser(style) => browser_button_style(*style),
             ButtonStyle::NextPrev => next_prev_button_style(),
             ButtonStyle::Transparent => transparent_button_style(),
             ButtonStyle::Settings => settings_button_style_active(),
@@ -187,9 +198,18 @@ fn server_list_entry_not_selected_style_hovered() -> Appearance {
     }
 }
 
-fn gitlab_button_style() -> Appearance {
+fn browser_button_style(style: BrowserButtonStyle) -> Appearance {
+    let color = match style {
+        BrowserButtonStyle::Discord => DISCORD_BLURPLE,
+        BrowserButtonStyle::Gitlab => LIME_GREEN,
+        BrowserButtonStyle::Extra => LIME_GREEN,
+        BrowserButtonStyle::Youtube => YOUTUBE_RED,
+        BrowserButtonStyle::Mastodon => MASTODON_PURPLE,
+        BrowserButtonStyle::Reddit => REDDIT_ORANGE,
+    };
+
     Appearance {
-        background: Some(Background::Color(LIME_GREEN)),
+        background: Some(Background::Color(color)),
         border_radius: 25.0,
         ..Appearance::default()
     }

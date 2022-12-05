@@ -9,7 +9,7 @@ use crate::{
     gui::{
         components::GamePanelMessage,
         style::{
-            button::{ButtonStyle, ServerListEntryButtonState},
+            button::{BrowserButtonStyle, ButtonStyle, ServerListEntryButtonState},
             container::ContainerStyle,
             text::TextStyle,
         },
@@ -32,7 +32,8 @@ use iced::{
 };
 use std::{cmp::min, sync::Arc};
 use tracing::debug;
-use veloren_serverbrowser_api::GameServer;
+use url::Url;
+use veloren_serverbrowser_api::{FieldContent, GameServer};
 
 #[derive(Debug, Clone)]
 pub struct ServerBrowserEntry {
@@ -137,7 +138,7 @@ impl ServerBrowserPanelComponent {
                             ))
                             .padding(Padding::from([2, 10, 2, 10]))
                             .height(Length::Units(20))
-                            .style(ButtonStyle::Gitlab),
+                            .style(ButtonStyle::Browser(BrowserButtonStyle::Gitlab)),
                         )
                         .height(Length::Fill)
                         .align_y(Vertical::Center)
@@ -332,8 +333,8 @@ impl ServerBrowserPanelComponent {
                         text(
                             "Server pings not available - please re-run Airshipper with \
                              elevated privileges. On Linux the required permissions can \
-                             be granted via the command setcap cap_net_raw \
-                             /path/to/airshipper",
+                             be granted via the command \"setcap cap_net_raw=pe \
+                             /path/to/airshipper\"",
                         )
                         .horizontal_alignment(Horizontal::Center),
                     )
@@ -358,6 +359,22 @@ impl ServerBrowserPanelComponent {
                 .selected_index
                 .and_then(|x| self.servers.get(x).map(|y| &y.server));
 
+            let discord_origin = url::Origin::Tuple(
+                "https".to_string(),
+                url::Host::Domain(String::from("discord.gg")),
+                443,
+            );
+            let reddit_origin = url::Origin::Tuple(
+                "https".to_string(),
+                url::Host::Domain(String::from("reddit.com")),
+                443,
+            );
+            let youtube_origin = url::Origin::Tuple(
+                "https".to_string(),
+                url::Host::Domain(String::from("youtube.com")),
+                443,
+            );
+
             if let Some(server) = selected_server {
                 col = col
                     .push(
@@ -366,35 +383,108 @@ impl ServerBrowserPanelComponent {
                             .padding(Padding::from([5, 0])),
                     )
                     .push(
-                        container(scrollable(
-                            column![].push(
-                                row![].push(
-                                    column![]
-                                        .spacing(5)
-                                        .push(
+                        container(scrollable(column![].push(row![].push({
+                            let mut fields =
+                                server.extra.clone().into_iter().collect::<Vec<_>>();
+                            fields.sort_by(|a, b| a.0.cmp(&b.0));
+                            let mut extras = row![].spacing(10);
+                            for (id, field) in fields {
+                                // TODO: Recognise common IDs, give them a custom icon
+                                match field.content {
+                                    FieldContent::Text(c) => {
+                                        let container = match id.as_str() {
+                                            "email" => container(
+                                                text(format!("Email: {}", c)).size(14),
+                                            )
+                                            .padding(Padding::from([2, 10, 2, 10]))
+                                            .style(ContainerStyle::ExtraBrowser),
+                                            _ => container(
+                                                text(format!("{}: {}", field.name, c))
+                                                    .size(14),
+                                            )
+                                            .padding(Padding::from([2, 10, 2, 10]))
+                                            .style(ContainerStyle::ExtraBrowser),
+                                        };
+                                        extras = extras.push(container);
+                                    },
+                                    FieldContent::Url(c) => {
+                                        let mut button = button(
                                             row![]
-                                                .spacing(10)
-                                                .push(
-                                                    text(&server.name)
-                                                        .font(NOTO_SANS_UNIFIED_FONT),
+                                                .push(text(field.name).size(14))
+                                                .push(image(Handle::from_memory(
+                                                    UP_RIGHT_ARROW_ICON.to_vec(),
+                                                )))
+                                                .spacing(5)
+                                                .align_items(Alignment::Center),
+                                        )
+                                        .on_press(DefaultViewMessage::Interaction(
+                                            Interaction::OpenURL(c.clone()),
+                                        ))
+                                        .padding(Padding::from([2, 10, 2, 10]))
+                                        .height(Length::Units(20));
+                                        let button_style = match id.as_str() {
+                                            "discord"
+                                                if Url::parse(&c)
+                                                    .map(|u| u.origin() == discord_origin)
+                                                    .unwrap_or(false) =>
+                                            {
+                                                ButtonStyle::Browser(
+                                                    BrowserButtonStyle::Discord,
                                                 )
-                                                .push(
-                                                    text(&server.address)
-                                                        .font(NOTO_SANS_UNIFIED_FONT)
-                                                        .style(TextStyle::BrightOrange),
-                                                ),
-                                        )
+                                            },
+                                            "reddit"
+                                                if Url::parse(&c)
+                                                    .map(|u| u.origin() == reddit_origin)
+                                                    .unwrap_or(false) =>
+                                            {
+                                                ButtonStyle::Browser(
+                                                    BrowserButtonStyle::Reddit,
+                                                )
+                                            },
+                                            "youtube"
+                                                if Url::parse(&c)
+                                                    .map(|u| u.origin() == youtube_origin)
+                                                    .unwrap_or(false) =>
+                                            {
+                                                ButtonStyle::Browser(
+                                                    BrowserButtonStyle::Youtube,
+                                                )
+                                            },
+                                            "mastodon" => ButtonStyle::Browser(
+                                                BrowserButtonStyle::Mastodon,
+                                            ),
+                                            _ => ButtonStyle::Browser(
+                                                BrowserButtonStyle::Extra,
+                                            ),
+                                        };
+                                        button = button.style(button_style);
+                                        extras = extras.push(button);
+                                    },
+                                    _ => {},
+                                };
+                            }
+                            column![]
+                                .spacing(5)
+                                .push(
+                                    row![]
+                                        .spacing(10)
                                         .push(
-                                            text("Description: ")
+                                            text(&server.name)
                                                 .font(NOTO_SANS_UNIFIED_FONT),
                                         )
                                         .push(
-                                            text(&server.description)
-                                                .font(NOTO_SANS_UNIFIED_FONT),
+                                            text(display_gameserver_address(server))
+                                                .font(NOTO_SANS_UNIFIED_FONT)
+                                                .style(TextStyle::BrightOrange),
                                         ),
-                                ),
-                            ),
-                        ))
+                                )
+                                .push(text("Description: ").font(NOTO_SANS_UNIFIED_FONT))
+                                .push(
+                                    text(&server.description)
+                                        .font(NOTO_SANS_UNIFIED_FONT),
+                                )
+                                .push(extras)
+                        }))))
                         .height(Length::Units(128)),
                     );
             }
@@ -498,7 +588,9 @@ impl ServerBrowserPanelComponent {
             ServerBrowserPanelMessage::SelectServerEntry(index) => {
                 self.selected_index = index;
                 let selected_server = index.and_then(|index| {
-                    self.servers.get(index).map(|x| x.server.address.clone())
+                    self.servers
+                        .get(index)
+                        .map(|x| display_gameserver_address(&x.server))
                 });
 
                 Some(Command::perform(async {}, move |()| {
@@ -536,6 +628,14 @@ impl ServerBrowserPanelComponent {
                     .map_or("".to_owned(), |country| country.short_name.clone())
             }),
         }
+    }
+}
+
+fn display_gameserver_address(gameserver: &GameServer) -> String {
+    if gameserver.port == net::DEFAULT_GAME_PORT {
+        gameserver.address.clone()
+    } else {
+        format!("{}:{}", gameserver.address, gameserver.port)
     }
 }
 

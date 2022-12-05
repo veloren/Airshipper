@@ -7,7 +7,11 @@ use crate::{
     consts,
     consts::GITLAB_MERGED_MR_URL,
     gui::{
-        style::{button::ButtonStyle, container::ContainerStyle, text::TextStyle},
+        style::{
+            button::{BrowserButtonStyle, ButtonStyle},
+            container::ContainerStyle,
+            text::TextStyle,
+        },
         views::{
             default::{DefaultViewMessage, Interaction},
             Action,
@@ -237,7 +241,7 @@ impl ChangelogPanelComponent {
     pub fn view(&self) -> Element<DefaultViewMessage> {
         let mut changelog = column![].spacing(10);
 
-        for version in &mut self.versions.iter().take(self.display_count as usize) {
+        for version in &mut self.versions.iter().take(self.display_count) {
             changelog = changelog.push(version.view());
         }
 
@@ -283,7 +287,7 @@ impl ChangelogPanelComponent {
                                 ))
                                 .padding(Padding::from([2, 10, 2, 10]))
                                 .height(Length::Units(20))
-                                .style(ButtonStyle::Gitlab),
+                                .style(ButtonStyle::Browser(BrowserButtonStyle::Gitlab)),
                             )
                             .padding(Padding::from([0, 20, 0, 0]))
                             .height(Length::Fill)

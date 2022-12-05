@@ -27,6 +27,8 @@ pub enum Action {
     Update,
     /// Update and start the game.
     Run,
+    /// Use the CLI to configure profiles.
+    Config,
     /// Update the Launcher if possible.
     #[cfg(windows)]
     Upgrade,

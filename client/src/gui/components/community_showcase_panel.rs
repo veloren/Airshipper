@@ -103,7 +103,7 @@ impl CommunityShowcaseComponent {
                         self.offset = min(self.offset + 1, self.posts.len() - 1);
                     },
                     PostOffsetChange::Decrement => {
-                        self.offset = min(max(self.offset - 1, 0), self.posts.len() - 1)
+                        self.offset = (self.offset - 1).clamp(0, self.posts.len() - 1)
                     },
                 };
 

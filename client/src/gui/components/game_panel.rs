@@ -94,7 +94,7 @@ impl GamePanelComponent {
                 url, download_path, ..
             } => subscriptions::download::file(url, download_path)
                 .map(GamePanelMessage::DownloadProgress),
-            &GamePanelState::Playing(ref profile) => subscriptions::process::stream(
+            GamePanelState::Playing(profile) => subscriptions::process::stream(
                 profile.clone(),
                 self.selected_server_browser_address.clone(),
             )
@@ -438,7 +438,7 @@ impl GamePanelComponent {
                     .unwrap_or(&Progress::Started)
                 {
                     Progress::Advanced(progress_data) => (
-                        progress_data.percent_complete as f32,
+                        progress_data.percent_complete,
                         progress_data.total_bytes,
                         progress_data.downloaded_bytes,
                         progress_data.bytes_per_sec,

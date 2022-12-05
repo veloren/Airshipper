@@ -1,6 +1,5 @@
 pub mod components;
 mod custom_widgets;
-mod oldstyle;
 mod rss_feed;
 mod style;
 mod subscriptions;
