@@ -58,48 +58,44 @@
   in
     inputs.nci.lib.makeOutputs {
       root = ./.;
-      disableVendoredCrateOverrides = true;
-      defaultOutputs = {
-        app = "airshipper";
-        package = "airshipper";
+      config = common: {
+        outputs.defaults = {
+          app = "airshipper";
+          package = "airshipper";
+        };
+        runtimeLibs = [
+          "vulkan-loader"
+          "wayland"
+          "wayland-protocols"
+          "libxkbcommon"
+          "xorg.libX11"
+          "xorg.libXrandr"
+          "xorg.libXi"
+          "xorg.libXcursor"
+        ];
       };
-      overrides.crates = common: _: let
+      pkgConfig = common: let
         inherit (common) pkgs;
         addOpenssl = prev: {
           buildInputs = ncl.addBuildInputs prev [pkgs.openssl];
           nativeBuildInputs = ncl.addNativeBuildInputs prev [pkgs.pkg-config];
         };
       in {
-        airshipper = prev: {
-          src = cleanedSrc;
+        airshipper.overrides = {
+          cleaned-src = {src = cleanedSrc;};
         };
-        airshipper-server-deps = addOpenssl;
-        airshipper-server = prev:
-          ncl.computeOverridesResult prev [
-            addOpenssl
-            (prev: {
-              src = cleanedSrc;
-            })
-          ];
-      };
-      perCrateOverrides = {
-        airshipper.packageMetadata = prev: {
-          runtimeLibs = [
-            "vulkan-loader"
-            "wayland"
-            "wayland-protocols"
-            "libxkbcommon"
-            "xorg.libX11"
-            "xorg.libXrandr"
-            "xorg.libXi"
-            "xorg.libXcursor"
-          ];
+        airshipper-server.depsOverrides = {
+          add-openssl.overrideAttrs = addOpenssl;
         };
-        airshipper.wrapper = common: _: old: let
-          patcher = makePatcher common.pkgs;
+        airshipper-server.overrides = {
+          add-openssl.overrideAttrs = addOpenssl;
+          cleaned-src = {src = cleanedSrc;};
+        };
+        airshipper.wrapper = _: old: let
+          patcher = makePatcher pkgs;
         in
-          common.internal.nci-pkgs.utils.wrapDerivation old
-          {nativeBuildInputs = [common.pkgs.makeWrapper];}
+          common.internal.pkgsSet.utils.wrapDerivation old
+          {nativeBuildInputs = [pkgs.makeWrapper];}
           ''
             rm -rf $out/bin
             mkdir -p $out/bin
