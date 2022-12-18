@@ -39,8 +39,8 @@
 
     makePatcher = pkgs: let
       runtimeLibs = with pkgs; (
-        [libxkbcommon udev alsa-lib stdenv.cc.cc.lib]
-        ++ (with xorg; [libxcb libX11])
+        [libxkbcommon udev alsa-lib stdenv.cc.cc.lib libGL vulkan-loader]
+        ++ (with xorg; [libxcb libX11 libXrandr libXi libXcursor])
       );
     in
       pkgs.writeShellScript "patch" ''
