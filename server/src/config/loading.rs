@@ -51,6 +51,13 @@ pub struct GithubReleaseConfig {
     pub github_release: String,
 }
 
+/// Webhooks are executed by airshipper when a update happened
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Webhook {
+    /// Url to trigger
+    pub url: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Channel {
     /// public name under which this channel is known for.
@@ -64,6 +71,8 @@ pub struct Channel {
     /// A list of Filters, the first Filter that matches determines the respective
     /// Platform that is used
     pub build_map: Vec<PlatformMapper>,
+    /// A list of Webhooks to execute once a update was triggered on a channel
+    pub webhooks: Vec<Webhook>,
 }
 
 impl Platform {
@@ -112,6 +121,7 @@ impl Default for Config {
                     arch: "x86_64".to_owned(),
                 },
             }],
+            webhooks: vec![],
         };
         Self {
             channels: vec![channel],

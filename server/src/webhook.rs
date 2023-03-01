@@ -1,10 +1,11 @@
 use crate::{
-    config::{self, GithubReleaseConfig},
+    config::{self, GithubReleaseConfig, Webhook},
     models::Artifact,
     FsStorage, Result,
     ServerError::OctocrabError,
 };
 use octocrab::{models::repos::Release, GitHubError, Octocrab};
+use rocket::http::Status;
 use serde::Deserialize;
 use url::Url;
 
@@ -39,6 +40,16 @@ pub async fn process(
     }
     if let Err(e) = crate::prune::prune(&mut db).await {
         tracing::error!(?e, "Pruning failed");
+    }
+    match reqwest::Client::builder().build() {
+        Ok(client) => {
+            for webhook in &channel.webhooks {
+                if let Err(e) = execute_custom_webhook(&client, webhook).await {
+                    tracing::error!(?e, ?webhook, "Executing Webhook failed");
+                }
+            }
+        },
+        Err(e) => tracing::error!(?e, "Failed to create reqwuest client"),
     }
 }
 
@@ -189,4 +200,17 @@ async fn get_github_release(
     };
 
     repo_result
+}
+
+/// Execute Custom Webhook
+async fn execute_custom_webhook(
+    client: &reqwest::Client,
+    webhook: &Webhook,
+) -> Result<()> {
+    let code = client.get(&webhook.url).send().await?.status();
+    if code.is_success() {
+        Ok(())
+    } else {
+        Err(crate::ServerError::Status(Status { code: code.into() }))
+    }
 }
