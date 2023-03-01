@@ -1,4 +1,4 @@
-pub use crate::config::loading::{GithubReleaseConfig, Platform};
+pub use crate::config::loading::{GithubReleaseConfig, Platform, Webhook};
 use regex::Regex;
 use rocket::{serde::json::Value, Rocket};
 use std::collections::HashMap;
@@ -50,6 +50,7 @@ pub struct Channel {
     pub github_release_config: Option<GithubReleaseConfig>,
     pub channel_filters: Vec<AndFilter>,
     pub build_map: Vec<PlatformMapper>,
+    pub webhooks: Vec<Webhook>,
 }
 
 impl std::fmt::Debug for Filter {
@@ -225,6 +226,7 @@ impl Channel {
             github_release_config: channel.github_release_config,
             channel_filters,
             build_map,
+            webhooks: channel.webhooks,
         })
     }
 }
