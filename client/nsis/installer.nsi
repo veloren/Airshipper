@@ -65,7 +65,7 @@ InstallDir "${INSTALL_DIR}"
 Function UninstallMSI
     # $R0 should contain the GUID of the application
     StrCmp $R0 "" UninstallMSI_nomsi
-    MessageBox MB_YESNOCANCEL|MB_ICONQUESTION  "A previous version of Airshipper was found. It is recommended that you uninstall it first.$\n$\n\Do you wish to do that now?" IDNO UninstallMSI_nomsi IDYES UninstallMSI_yesmsi
+    MessageBox MB_YESNOCANCEL|MB_ICONQUESTION  "A previous version of Airshipper was found. It is recommended that you uninstall it first.$\n$\nDo you wish to do that now?" IDNO UninstallMSI_nomsi IDYES UninstallMSI_yesmsi
     Abort
     UninstallMSI_yesmsi:
         MessageBox MB_OK $R0
