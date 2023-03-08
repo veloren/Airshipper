@@ -9,14 +9,12 @@ use crate::{
     gui::{
         components::GamePanelMessage,
         style::{
-            ChangelogHeaderStyle, ColumnHeadingButtonStyle, ColumnHeadingContainerStyle,
-            DarkContainerStyle, DiscordBrowserButtonStyle, ExtraBrowserStyle,
-            GitlabServerBrowserButtonStyle, MastodonBrowserButtonStyle,
-            RedditBrowserButtonStyle, RuleStyle, ServerListEntryButtonStyle,
-            TooltipStyle, WarningContainerStyle, YoutubeBrowserButtonStyle,
-            BRIGHT_ORANGE, DARK_WHITE, TOMATO_RED,
+            button::{BrowserButtonStyle, ButtonStyle, ServerListEntryButtonState},
+            container::ContainerStyle,
+            text::TextStyle,
         },
         views::default::{DefaultViewMessage, Interaction},
+        widget::*,
     },
     net,
     ping::PingResult,
@@ -26,13 +24,12 @@ use crate::{
 use consts::OFFICIAL_AUTH_SERVER;
 use iced::{
     alignment::{Horizontal, Vertical},
-    pure::{
-        button, column, container, horizontal_rule, image, row, scrollable, text,
-        tooltip, widget::Image, Element,
+    widget::{
+        button, column, container, horizontal_rule, image, image::Handle, row,
+        scrollable, text, tooltip, tooltip::Position, Image,
     },
-    Alignment, Color, Length, Padding, Text,
+    Alignment, Command, Length, Padding,
 };
-use iced_native::{image::Handle, widget::tooltip::Position, Command};
 use std::{cmp::min, sync::Arc};
 use tracing::debug;
 use url::Url;
@@ -102,9 +99,9 @@ impl ServerBrowserPanelComponent {
     }
 
     pub fn view(&self) -> Element<DefaultViewMessage> {
-        let top_row = row().height(Length::Units(50)).push(
-            column().push(container(
-                row()
+        let top_row = row![].height(Length::Fixed(50.0)).push(
+            column![].push(container(
+                row![]
                     .push(
                         container(Image::new(Handle::from_memory(GLOBE_ICON.to_vec())))
                             .height(Length::Fill)
@@ -114,8 +111,8 @@ impl ServerBrowserPanelComponent {
                     )
                     .push(
                         container(
-                            Text::new("Server Browser")
-                                .color(DARK_WHITE)
+                            text("Server Browser")
+                                .style(TextStyle::Dark)
                                 .font(POPPINS_MEDIUM_FONT),
                         )
                         .width(Length::Fill)
@@ -126,12 +123,8 @@ impl ServerBrowserPanelComponent {
                     .push(
                         container(
                             button(
-                                row()
-                                    .push(
-                                        text("Get your server listed here")
-                                            .color(Color::WHITE)
-                                            .size(14),
-                                    )
+                                row![]
+                                    .push(text("Get your server listed here").size(14))
                                     .push(image(Handle::from_memory(
                                         UP_RIGHT_ARROW_ICON.to_vec(),
                                     )))
@@ -144,8 +137,8 @@ impl ServerBrowserPanelComponent {
                                 ),
                             ))
                             .padding(Padding::from([2, 10, 2, 10]))
-                            .height(Length::Units(20))
-                            .style(GitlabServerBrowserButtonStyle),
+                            .height(Length::Fixed(20.0))
+                            .style(ButtonStyle::Browser(BrowserButtonStyle::Gitlab)),
                         )
                         .height(Length::Fill)
                         .align_y(Vertical::Center)
@@ -161,7 +154,7 @@ impl ServerBrowserPanelComponent {
                     .vertical_alignment(Vertical::Center),
             )
             .padding(0)
-            .style(ColumnHeadingButtonStyle);
+            .style(ButtonStyle::ColumnHeading);
             if let Some(order) = sort_order {
                 button = button.on_press(DefaultViewMessage::ServerBrowserPanel(
                     ServerBrowserPanelMessage::SortServers(order),
@@ -170,13 +163,13 @@ impl ServerBrowserPanelComponent {
             button
         };
 
-        const ICON_COLUMN_WIDTH: u16 = 35;
+        const ICON_COLUMN_WIDTH: f32 = 35.0;
         let column_headings = container(
-            row()
+            row![]
                 .width(Length::Fill)
-                .height(Length::Units(30))
+                .height(Length::Fixed(30.0))
                 // Spacer heading for icons column
-                .push(heading_button("", None).width(Length::Units(ICON_COLUMN_WIDTH)))
+                .push(heading_button("", None).width(Length::Fixed(ICON_COLUMN_WIDTH)))
                 .push(
                     heading_button("Server", Some(ServerSortOrder::ServerName))
                         .width(Length::FillPortion(3)),
@@ -190,11 +183,11 @@ impl ServerBrowserPanelComponent {
                         .width(Length::FillPortion(1)),
                 ),
         )
-        .style(ColumnHeadingContainerStyle)
+        .style(ContainerStyle::ColumnHeading)
         .padding(Padding::from([0, 8]))
         .width(Length::Fill);
 
-        let mut server_list = column();
+        let mut server_list = column![];
 
         let column_cell = |content: &str| {
             text(content)
@@ -217,7 +210,7 @@ impl ServerBrowserPanelComponent {
                 }
             };
 
-            let mut status_icons = row()
+            let mut status_icons = row![]
                 .spacing(5)
                 .height(Length::Fill)
                 .align_items(Alignment::Center);
@@ -229,14 +222,14 @@ impl ServerBrowserPanelComponent {
                 status_icons = status_icons.push(
                     tooltip(
                         image(Handle::from_memory(KEY_ICON.to_vec()))
-                            .height(Length::Units(16))
-                            .width(Length::Units(16)),
+                            .height(Length::Fixed(16.0))
+                            .width(Length::Fixed(16.0)),
                         "This server is using a custom auth server. Do not log into \
                          this server unless you trust the owner.",
                         Position::Right,
                     )
-                    .gap(5)
-                    .style(TooltipStyle),
+                    .style(ContainerStyle::Tooltip)
+                    .gap(5),
                 );
             }
 
@@ -244,13 +237,13 @@ impl ServerBrowserPanelComponent {
                 status_icons = status_icons.push(
                     tooltip(
                         image(Handle::from_memory(STAR_ICON.to_vec()))
-                            .height(Length::Units(16))
-                            .width(Length::Units(16)),
+                            .height(Length::Fixed(16.0))
+                            .width(Length::Fixed(16.0)),
                         "This is an official server operated by the Veloren project",
                         Position::Right,
                     )
-                    .gap(5)
-                    .style(TooltipStyle),
+                    .style(ContainerStyle::Tooltip)
+                    .gap(5),
                 );
             }
 
@@ -260,13 +253,13 @@ impl ServerBrowserPanelComponent {
                 "Error"
             };
 
-            let row = row()
+            let row = row![]
                 .width(Length::Fill)
                 .align_items(Alignment::Center)
                 .push(
                     container(status_icons)
                         .padding(Padding::from([0, 8]))
-                        .width(Length::Units(ICON_COLUMN_WIDTH))
+                        .width(Length::Fixed(ICON_COLUMN_WIDTH))
                         .align_x(Horizontal::Right),
                 )
                 .push(
@@ -294,7 +287,7 @@ impl ServerBrowserPanelComponent {
                     .width(Length::FillPortion(2)),
                 )
                 .push(
-                    row()
+                    row![]
                         .spacing(5)
                         .push(
                             container(ping_icon)
@@ -311,26 +304,26 @@ impl ServerBrowserPanelComponent {
                 .padding(0);
 
             let row_style = if let Some(selected_index) = self.selected_index && selected_index == i {
-                ServerListEntryButtonStyle::Selected
+                ButtonStyle::ServerListEntry(ServerListEntryButtonState::Selected)
             } else {
-                ServerListEntryButtonStyle::NotSelected
+                ButtonStyle::ServerListEntry(ServerListEntryButtonState::NotSelected)
             };
             let select_row_button = button(container(row).padding(Padding::from([0, 8])))
                 .on_press(DefaultViewMessage::ServerBrowserPanel(
                     ServerBrowserPanelMessage::SelectServerEntry(Some(i)),
                 ))
                 .style(row_style)
-                .height(Length::Units(30))
+                .height(Length::Fixed(30.0))
                 .padding(0);
 
             server_list = server_list.push(select_row_button);
         }
 
-        let mut col = column().push(
+        let mut col = column![].push(
             container(top_row)
                 .width(Length::Fill)
                 .height(Length::Shrink)
-                .style(ChangelogHeaderStyle),
+                .style(ContainerStyle::ChangelogHeader),
         );
 
         if !self.raw_socket_support {
@@ -345,7 +338,7 @@ impl ServerBrowserPanelComponent {
                         )
                         .horizontal_alignment(Horizontal::Center),
                     )
-                    .style(WarningContainerStyle)
+                    .style(ContainerStyle::Warning)
                     .padding(10)
                     .width(Length::Fill)
                     .height(Length::Shrink),
@@ -385,16 +378,16 @@ impl ServerBrowserPanelComponent {
             if let Some(server) = selected_server {
                 col = col
                     .push(
-                        container(horizontal_rule(8).style(RuleStyle))
+                        container(horizontal_rule(8))
                             .width(Length::Fill)
                             .padding(Padding::from([5, 0])),
                     )
                     .push(
-                        container(scrollable(column().push(row().push({
+                        container(scrollable(column![].push(row![].push({
                             let mut fields =
                                 server.extra.clone().into_iter().collect::<Vec<_>>();
                             fields.sort_by(|a, b| a.0.cmp(&b.0));
-                            let mut extras = row().spacing(10);
+                            let mut extras = row![].spacing(10);
                             for (id, field) in fields {
                                 // TODO: Recognise common IDs, give them a custom icon
                                 match field.content {
@@ -404,24 +397,20 @@ impl ServerBrowserPanelComponent {
                                                 text(format!("Email: {}", c)).size(14),
                                             )
                                             .padding(Padding::from([2, 10, 2, 10]))
-                                            .style(ExtraBrowserStyle),
+                                            .style(ContainerStyle::ExtraBrowser),
                                             _ => container(
                                                 text(format!("{}: {}", field.name, c))
                                                     .size(14),
                                             )
                                             .padding(Padding::from([2, 10, 2, 10]))
-                                            .style(ExtraBrowserStyle),
+                                            .style(ContainerStyle::ExtraBrowser),
                                         };
                                         extras = extras.push(container);
                                     },
                                     FieldContent::Url(c) => {
                                         let mut button = button(
-                                            row()
-                                                .push(
-                                                    text(field.name)
-                                                        .color(Color::WHITE)
-                                                        .size(14),
-                                                )
+                                            row![]
+                                                .push(text(field.name).size(14))
                                                 .push(image(Handle::from_memory(
                                                     UP_RIGHT_ARROW_ICON.to_vec(),
                                                 )))
@@ -432,43 +421,52 @@ impl ServerBrowserPanelComponent {
                                             Interaction::OpenURL(c.clone()),
                                         ))
                                         .padding(Padding::from([2, 10, 2, 10]))
-                                        .height(Length::Units(20));
-                                        button = match id.as_str() {
+                                        .height(Length::Fixed(20.0));
+                                        let button_style = match id.as_str() {
                                             "discord"
                                                 if Url::parse(&c)
                                                     .map(|u| u.origin() == discord_origin)
                                                     .unwrap_or(false) =>
                                             {
-                                                button.style(DiscordBrowserButtonStyle)
+                                                ButtonStyle::Browser(
+                                                    BrowserButtonStyle::Discord,
+                                                )
                                             },
                                             "reddit"
                                                 if Url::parse(&c)
                                                     .map(|u| u.origin() == reddit_origin)
                                                     .unwrap_or(false) =>
                                             {
-                                                button.style(RedditBrowserButtonStyle)
+                                                ButtonStyle::Browser(
+                                                    BrowserButtonStyle::Reddit,
+                                                )
                                             },
                                             "youtube"
                                                 if Url::parse(&c)
                                                     .map(|u| u.origin() == youtube_origin)
                                                     .unwrap_or(false) =>
                                             {
-                                                button.style(YoutubeBrowserButtonStyle)
+                                                ButtonStyle::Browser(
+                                                    BrowserButtonStyle::Youtube,
+                                                )
                                             },
-                                            "mastodon" => {
-                                                button.style(MastodonBrowserButtonStyle)
-                                            },
-                                            _ => button.style(ExtraBrowserStyle),
+                                            "mastodon" => ButtonStyle::Browser(
+                                                BrowserButtonStyle::Mastodon,
+                                            ),
+                                            _ => ButtonStyle::Browser(
+                                                BrowserButtonStyle::Extra,
+                                            ),
                                         };
+                                        button = button.style(button_style);
                                         extras = extras.push(button);
                                     },
                                     _ => {},
                                 };
                             }
-                            column()
+                            column![]
                                 .spacing(5)
                                 .push(
-                                    row()
+                                    row![]
                                         .spacing(10)
                                         .push(
                                             text(&server.name)
@@ -477,7 +475,7 @@ impl ServerBrowserPanelComponent {
                                         .push(
                                             text(display_gameserver_address(server))
                                                 .font(NOTO_SANS_UNIFIED_FONT)
-                                                .color(BRIGHT_ORANGE),
+                                                .style(TextStyle::BrightOrange),
                                         ),
                                 )
                                 .push(text("Description: ").font(NOTO_SANS_UNIFIED_FONT))
@@ -487,7 +485,7 @@ impl ServerBrowserPanelComponent {
                                 )
                                 .push(extras)
                         }))))
-                        .height(Length::Units(128)),
+                        .height(Length::Fixed(128.0)),
                     );
             }
         } else {
@@ -495,7 +493,7 @@ impl ServerBrowserPanelComponent {
                 container(
                     text("Error fetching server list")
                         .size(20)
-                        .color(TOMATO_RED),
+                        .style(TextStyle::TomatoRed),
                 )
                 .padding(20)
                 .align_x(Horizontal::Center),
@@ -506,7 +504,7 @@ impl ServerBrowserPanelComponent {
             .height(Length::Fill)
             .width(Length::Fill)
             .padding(8)
-            .style(DarkContainerStyle);
+            .style(ContainerStyle::Dark);
         server_browser_container.into()
     }
 
@@ -597,9 +595,7 @@ impl ServerBrowserPanelComponent {
 
                 Some(Command::perform(async {}, move |()| {
                     DefaultViewMessage::GamePanel(
-                        GamePanelMessage::ServerBrowserServerChanged(
-                            selected_server.clone(),
-                        ),
+                        GamePanelMessage::ServerBrowserServerChanged(selected_server),
                     )
                 }))
             },

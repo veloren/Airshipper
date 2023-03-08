@@ -6,19 +6,16 @@ use crate::{
             RssFeedComponent, RssFeedComponentMessage, RssFeedData, RssFeedUpdateStatus,
             RssPost,
         },
-        style::{
-            LoadingBlogPostContainerStyle, NextPrevTextButtonStyle,
-            TransparentButtonStyle,
-        },
+        style::{button::ButtonStyle, container::ContainerStyle},
         views::default::{DefaultViewMessage, Interaction},
+        widget::*,
     },
 };
 use iced::{
     alignment::{Horizontal, Vertical},
-    pure::{button, column, container, row, text, Element},
-    ContentFit, Length, Padding,
+    widget::{button, column, container, image::Handle, row, text, Image},
+    Command, ContentFit, Length, Padding,
 };
-use iced_native::{image::Handle, widget::Image, Command};
 use rand::{prelude::SliceRandom, thread_rng};
 use serde::{Deserialize, Serialize};
 use std::cmp::{max, min};
@@ -67,10 +64,7 @@ impl RssFeedComponent for CommunityShowcaseComponent {
         Command::perform(RssFeedData::fetch_image(url.to_owned()), move |img| {
             DefaultViewMessage::CommunityShowcasePanel(
                 CommunityShowcasePanelMessage::RssUpdate(
-                    RssFeedComponentMessage::ImageFetched {
-                        url: url.to_owned(),
-                        result: img,
-                    },
+                    RssFeedComponentMessage::ImageFetched { url, result: img },
                 ),
             )
         })
@@ -125,7 +119,7 @@ impl CommunityShowcaseComponent {
             container(text("Nothing to show"))
         };
 
-        let mut prev_button = button("<< Prev").style(NextPrevTextButtonStyle);
+        let mut prev_button = button("<< Prev").style(ButtonStyle::NextPrev);
         if self.offset > 0 {
             prev_button =
                 prev_button.on_press(DefaultViewMessage::CommunityShowcasePanel(
@@ -135,7 +129,7 @@ impl CommunityShowcaseComponent {
                 ));
         }
 
-        let mut next_button = button("Next >>").style(NextPrevTextButtonStyle);
+        let mut next_button = button("Next >>").style(ButtonStyle::NextPrev);
         if self.offset < max(self.posts.len(), 1) - 1 {
             next_button =
                 next_button.on_press(DefaultViewMessage::CommunityShowcasePanel(
@@ -145,12 +139,12 @@ impl CommunityShowcaseComponent {
                 ));
         }
 
-        column()
+        column![]
             .push(heading_with_rule("Community Showcase"))
             .push(
                 container(
-                    column().push(current_post).push(
-                        row()
+                    column![].push(current_post).push(
+                        row![]
                             .push(prev_button)
                             .width(Length::Shrink)
                             .push(container(" ").width(Length::Fill))
@@ -182,17 +176,17 @@ impl CommunityPost {
                 Image::new(Handle::from_memory(bytes.clone()))
                     .content_fit(ContentFit::Cover),
             )
-            .height(Length::Units(180))
+            .height(Length::Fixed(180.0))
         } else {
             container(text("Loading..."))
                 .align_x(Horizontal::Center)
                 .align_y(Vertical::Center)
-                .style(LoadingBlogPostContainerStyle)
-                .height(Length::Units(180))
+                .style(ContainerStyle::LoadingBlogPost)
+                .height(Length::Fixed(180.0))
                 .width(Length::Fill)
         };
         button(image_container)
-            .style(TransparentButtonStyle)
+            .style(ButtonStyle::Transparent)
             .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
                 post.button_url.clone(),
             )))

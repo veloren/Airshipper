@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Added
 
 ## Changed
+- Updated iced to 0.8.0 
 
 ## Fixed
 
@@ -63,11 +64,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.0] - 2021-07-13
 
 ## Added
-- add troubleshooting guide 
+- add troubleshooting guide
 - create server image tagged with branch or tag automatically
 
 ## Changed
-- serve veloren locally (removes s3 support) #147 
+- serve veloren locally (removes s3 support) #147
 
 ## Fixed
 - Gitlab Pipeline Event model

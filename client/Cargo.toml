@@ -37,9 +37,7 @@ rustyline = "10.0"
 colored = "2.0"
 
 # UI
-iced = { version = "0.4.2", default-features = false, features = ["wgpu", "tokio", "image", "pure", "debug"] }
-iced_native = "0.5.0"
-iced_lazy = "0.1.0"
+iced = { version = "0.8.0", features = ["tokio", "image", "debug"] }
 
 # Logging
 tracing = { version = "0.1.21", features = ["log"] }

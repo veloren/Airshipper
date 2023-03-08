@@ -6,19 +6,16 @@ use crate::{
             RssFeedComponent, RssFeedComponentMessage, RssFeedData, RssFeedUpdateStatus,
             RssPost,
         },
-        style::{
-            BlogPostContainerStyle, LoadingBlogPostContainerStyle,
-            TransparentButtonStyle, LILAC,
-        },
+        style::{button::ButtonStyle, container::ContainerStyle, text::TextStyle},
         views::default::{DefaultViewMessage, Interaction},
+        widget::*,
     },
 };
 use iced::{
     alignment::{Horizontal, Vertical},
-    pure::{button, column, container, image, scrollable, text, Element},
-    ContentFit, Length,
+    widget::{button, column, container, image, image::Handle, scrollable, text},
+    Alignment, Command, ContentFit, Length,
 };
-use iced_native::{image::Handle, Alignment, Command};
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
@@ -55,10 +52,7 @@ impl RssFeedComponent for NewsPanelComponent {
         // RssComponent so could be better encapsulated within the RssFeedComponent trait.
         Command::perform(RssFeedData::fetch_image(url.to_owned()), move |img| {
             DefaultViewMessage::NewsPanel(NewsPanelMessage::RssUpdate(
-                RssFeedComponentMessage::ImageFetched {
-                    url: url.to_owned(),
-                    result: img,
-                },
+                RssFeedComponentMessage::ImageFetched { url, result: img },
             ))
         })
     }
@@ -83,7 +77,7 @@ impl NewsPanelComponent {
     }
 
     pub(crate) fn view(&self) -> Element<DefaultViewMessage> {
-        let mut news = column().spacing(20).padding(20);
+        let mut news = column![].spacing(20).padding(20);
 
         for post in &self.posts {
             news = news.push(post.view());
@@ -117,26 +111,26 @@ impl NewsPost {
                     .width(Length::Fill)
                     .height(Length::Fill),
             )
-            .style(LoadingBlogPostContainerStyle)
+            .style(ContainerStyle::LoadingBlogPost)
         };
 
         button(
-            column()
+            column![]
                 .push(
                     image_container
-                        .width(Length::Units(211))
-                        .height(Length::Units(119)),
+                        .width(Length::Fixed(211.0))
+                        .height(Length::Fixed(119.0)),
                 )
                 .push(
                     container(
-                        column()
+                        column![]
                             .spacing(2)
-                            .push(text("Development").size(16).color(LILAC))
+                            .push(text("Development").size(16).style(TextStyle::Lilac))
                             .push(text(&post.title).size(20).font(POPPINS_LIGHT_FONT))
                             .push(text(&post.description).size(14)),
                     )
                     .width(Length::Fill)
-                    .style(BlogPostContainerStyle)
+                    .style(ContainerStyle::BlogPost)
                     .padding(8),
                 )
                 .align_items(Alignment::Center),
@@ -145,7 +139,7 @@ impl NewsPost {
             post.button_url.clone(),
         )))
         .padding(0)
-        .style(TransparentButtonStyle)
+        .style(ButtonStyle::Transparent)
         .into()
     }
 }

@@ -1,23 +1,25 @@
-use super::Action;
 use crate::{
     channels::Channels,
-    gui::components::{ChangelogPanelComponent, LogoPanelComponent, NewsPanelComponent},
+    gui::{
+        components::{
+            AnnouncementPanelComponent, AnnouncementPanelMessage,
+            ChangelogPanelComponent, ChangelogPanelMessage, CommunityShowcaseComponent,
+            CommunityShowcasePanelMessage, GamePanelComponent, GamePanelMessage,
+            LogoPanelComponent, NewsPanelComponent, NewsPanelMessage,
+            ServerBrowserPanelComponent, ServerBrowserPanelMessage,
+            SettingsPanelComponent, SettingsPanelMessage,
+        },
+        rss_feed::RssFeedComponentMessage::UpdateRssFeed,
+        style::container::ContainerStyle,
+        views::Action,
+        widget::*,
+    },
     profiles::Profile,
 };
-use iced::{
-    pure::{column, container, row, Element},
-    Command, Length,
-};
 
-use crate::gui::{
-    components::{
-        AnnouncementPanelComponent, AnnouncementPanelMessage, ChangelogPanelMessage,
-        CommunityShowcaseComponent, CommunityShowcasePanelMessage, GamePanelComponent,
-        GamePanelMessage, NewsPanelMessage, ServerBrowserPanelComponent,
-        ServerBrowserPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
-    },
-    rss_feed::RssFeedComponentMessage::UpdateRssFeed,
-    style::SidePanelStyle,
+use iced::{
+    widget::{column, container, row},
+    Command, Length,
 };
 
 #[cfg(windows)]
@@ -99,7 +101,7 @@ impl DefaultView {
         };
 
         let left = container(
-            column()
+            column![]
                 .push(container(logo_panel_component.view()).height(Length::Fill))
                 .push(container(left_middle_contents).height(Length::Shrink))
                 .push(
@@ -108,14 +110,14 @@ impl DefaultView {
                 ),
         )
         .height(Length::Fill)
-        .width(Length::Units(347))
-        .style(SidePanelStyle);
+        .width(Length::Fixed(347.0))
+        .style(ContainerStyle::SidePanel);
 
-        let mut main_row = row().push(left);
+        let mut main_row = row![].push(left);
 
         if !self.show_server_browser {
             let middle = container(
-                column()
+                column![]
                     .push(
                         container(announcement_panel_component.view())
                             .height(Length::Shrink),
@@ -128,8 +130,8 @@ impl DefaultView {
             .width(Length::Fill);
             let right = container(news_panel_component.view())
                 .height(Length::Fill)
-                .width(Length::Units(237))
-                .style(SidePanelStyle);
+                .width(Length::Fixed(237.0))
+                .style(ContainerStyle::SidePanel);
 
             main_row = main_row.push(middle).push(right);
         } else {
