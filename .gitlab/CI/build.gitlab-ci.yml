@@ -47,32 +47,15 @@ unittests:
     expire_in: 1 week
 
 .twindows:
-  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/release-windows-x86_64:${CACHE_IMAGE_TAG}
+  image: registry.gitlab.com/xvar/veloren/base/windows-x86_64:5684f572
   script:
-    - cargo install cargo-wix --version 0.3.0
-    - update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
-    - update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
-    - ln -s /dockercache/target target
-    - rm -r target/release/incremental/veloren_* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
+    #- update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
+    #- update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
     - cargo build --target=x86_64-pc-windows-gnu --release -p airshipper --all-features
-    - cargo build --target=x86_64-pc-windows-gnu --release -p airshipper-server --all-features
-    # skip windows installer for now on gitlab
-    #- cargo wix client/Cargo.toml -o ./target/wix/ --nocapture --no-build
-    #- cp -r target/wix/airshipper-*-x86_64.msi $CI_PROJECT_DIR/airshipper-windows.msi
-    - cp -r target/x86_64-pc-windows-gnu/release/airshipper.exe $CI_PROJECT_DIR
-    - cp -r target/x86_64-pc-windows-gnu/release/airshipper-server.exe $CI_PROJECT_DIR
-    - cp /usr/lib/gcc/x86_64-w64-mingw32/7.3-posix/libgcc_s_seh-1.dll $CI_PROJECT_DIR
-    - cp /usr/lib/gcc/x86_64-w64-mingw32/7.3-posix/libstdc++-6.dll $CI_PROJECT_DIR
-    - cp /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $CI_PROJECT_DIR
+    - makensis client/nsis/installer.nsi
   artifacts:
     paths:
-      #- airshipper-windows.msi
-      - airshipper.exe
-      - airshipper-server.exe
-      - LICENSE
-      - libgcc_s_seh-1.dll
-      - libstdc++-6.dll
-      - libwinpthread-1.dll
+      - client/nsis/airshipper-windows.exe
     expire_in: 1 week
 
 .tmacos:
@@ -157,7 +140,6 @@ opt-windows:
 opt-macos-x86_64:
   extends:
     - .tmacos
-    - .optional-release
     - .optional-release
 
   tags: ["veloren/*:macos", "build"]

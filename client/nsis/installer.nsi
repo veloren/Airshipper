@@ -91,7 +91,7 @@ Section -MainProgram
 	SetOutPath "$INSTDIR"
 
 	# Currently the Airshipper installer only installs airshipper.exe
-	File /r "..\..\target\debug\airshipper.exe"
+	File /r "..\..\target\x86_64-pc-windows-gnu\release\airshipper.exe"
 SectionEnd
 
 Section -Icons_Reg
