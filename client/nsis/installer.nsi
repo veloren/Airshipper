@@ -89,7 +89,9 @@ Section -MainProgram
 
 	SetOverwrite ifnewer
 	SetOutPath "$INSTDIR"
-	File /r "install_dir\\"
+
+	# Currently the Airshipper installer only installs airshipper.exe
+	File /r "..\..\target\debug\airshipper.exe"
 SectionEnd
 
 Section -Icons_Reg
