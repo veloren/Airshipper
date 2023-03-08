@@ -49,4 +49,3 @@ include:
   - local: .gitlab/CI/release.yml
   - local: .gitlab/CI/check.gitlab-ci.yml
   - local: .gitlab/CI/build.gitlab-ci.yml
-  - local: .gitlab/CI/publish.gitlab-ci.yml

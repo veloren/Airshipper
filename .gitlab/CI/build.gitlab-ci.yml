@@ -31,10 +31,8 @@ unittests:
 
 #linux, windows, macos builds here as template
 .tlinux:
-  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/release-linux-x86_64:${CACHE_IMAGE_TAG}
+  image: registry.gitlab.com/veloren/veloren-docker-ci/base/linux-x86_64:${CACHE_IMAGE_TAG}
   script:
-    - ln -s /dockercache/target target
-    - rm -r target/release/incremental/veloren_* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
     - cargo build --release -p airshipper --all-features
     - cargo build --release -p airshipper-server --all-features
     - cp -r target/release/airshipper $CI_PROJECT_DIR
@@ -47,10 +45,8 @@ unittests:
     expire_in: 1 week
 
 .twindows:
-  image: registry.gitlab.com/xvar/veloren/base/windows-x86_64:5684f572
+  image: registry.gitlab.com/xvar/veloren/base/windows-x86_64:480e70bc
   script:
-    #- update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
-    #- update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
     - cargo build --target=x86_64-pc-windows-gnu --release -p airshipper --all-features
     - makensis client/nsis/installer.nsi
   artifacts:
