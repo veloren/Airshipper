@@ -4,12 +4,16 @@ mod rss_feed;
 mod style;
 mod subscriptions;
 mod views;
+mod widget;
 
-use crate::{cli::CmdLine, fs, profiles::Profile, Result};
-use iced::{
-    pure::{Application, Element},
-    Command, Settings, Subscription,
+use crate::{
+    cli::CmdLine,
+    fs,
+    gui::{style::AirshipperTheme, widget::*},
+    profiles::Profile,
+    Result,
 };
+use iced::{Application, Command, Settings, Subscription};
 use ron::ser::PrettyConfig;
 use tokio::{fs::File, io::AsyncWriteExt};
 #[cfg(windows)]
@@ -131,6 +135,7 @@ pub enum Message {
 impl Application for Airshipper {
     type Executor = iced::executor::Default;
     type Message = Message;
+    type Theme = AirshipperTheme;
     type Flags = CmdLine;
 
     fn new(flags: CmdLine) -> (Self, Command<Message>) {
@@ -145,17 +150,6 @@ impl Application for Airshipper {
 
     fn title(&self) -> String {
         format!("Airshipper v{}", env!("CARGO_PKG_VERSION"))
-    }
-
-    fn subscription(&self) -> Subscription<Message> {
-        match self.view {
-            View::Default => self
-                .default_view
-                .subscription()
-                .map(Message::DefaultViewMessage),
-            #[cfg(windows)]
-            View::Update => iced::Subscription::none(),
-        }
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
@@ -234,7 +228,7 @@ impl Application for Airshipper {
         Command::none()
     }
 
-    fn view(&self) -> Element<Message> {
+    fn view(&self) -> Element<Self::Message> {
         let Self {
             view, default_view, ..
         } = self;
@@ -245,6 +239,21 @@ impl Application for Airshipper {
                 .map(Message::DefaultViewMessage),
             #[cfg(windows)]
             View::Update => self.update_view.view().map(Message::UpdateViewMessage),
+        }
+    }
+
+    fn theme(&self) -> Self::Theme {
+        AirshipperTheme {}
+    }
+
+    fn subscription(&self) -> Subscription<Message> {
+        match self.view {
+            View::Default => self
+                .default_view
+                .subscription()
+                .map(Message::DefaultViewMessage),
+            #[cfg(windows)]
+            View::Update => iced::Subscription::none(),
         }
     }
 }
@@ -268,12 +277,12 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
         },
         flags: cmd,
         default_font: Some(crate::assets::POPPINS_FONT_BYTES),
-        default_text_size: 20,
+        default_text_size: 20.0,
         // https://github.com/hecrj/iced/issues/537
         antialiasing: false,
         exit_on_close_request: true,
         id: Some("airshipper".to_string()),
         text_multithreading: false,
-        try_opengles_first: false, // Only used with glow backend
+        try_opengles_first: true, // Only used with glow backend
     }
 }

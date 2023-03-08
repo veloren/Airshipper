@@ -4,7 +4,7 @@ use crate::{
     net, ClientError, Result,
 };
 use futures_util::future::join_all;
-use iced_native::Command;
+use iced::Command;
 use rss::Channel;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, warn};

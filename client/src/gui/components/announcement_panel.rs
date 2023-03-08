@@ -2,11 +2,12 @@ use crate::{
     assets::{POPPINS_MEDIUM_FONT, UP_RIGHT_ARROW_ICON},
     consts::{AIRSHIPPER_RELEASE_URL, SUPPORTED_SERVER_API_VERSION},
     gui::{
-        style::{AirshipperDownloadButtonStyle, AnnouncementStyle, DARK_WHITE},
+        style::{button::ButtonStyle, container::ContainerStyle, text::TextStyle},
         views::{
             default::{DefaultViewMessage, Interaction},
             Action,
         },
+        widget::*,
     },
     net,
     profiles::Profile,
@@ -14,10 +15,9 @@ use crate::{
 };
 use iced::{
     alignment::Vertical,
-    pure::{button, column, container, image, row, text, Element},
-    Alignment, Color, Length, Padding,
+    widget::{button, column, container, image, image::Handle, row, text},
+    Alignment, Command, Length, Padding,
 };
-use iced_native::{image::Handle, widget::Text, Command};
 use serde::{Deserialize, Serialize};
 use tracing::debug;
 
@@ -120,37 +120,34 @@ impl AnnouncementPanelComponent {
             },
         };
 
-        let mut content_row = row().push(
+        let mut content_row = row![
             container(
                 Text::new(rowtext)
-                    .color(DARK_WHITE)
+                    .style(TextStyle::Dark)
                     .font(POPPINS_MEDIUM_FONT),
             )
             .width(Length::Fill)
             .height(Length::Fill)
             .align_y(Vertical::Center)
             .padding(Padding::from([1, 0, 0, 16])),
-        );
+        ];
         if update {
             content_row = content_row.push(
                 container(
                     button(
-                        row()
-                            .push(
-                                text("Download Airshipper").color(Color::WHITE).size(14),
-                            )
-                            .push(image(Handle::from_memory(
-                                UP_RIGHT_ARROW_ICON.to_vec(),
-                            )))
-                            .spacing(5)
-                            .align_items(Alignment::Center),
+                        row![
+                            text("Download Airshipper").size(14),
+                            image(Handle::from_memory(UP_RIGHT_ARROW_ICON.to_vec(),))
+                        ]
+                        .spacing(5)
+                        .align_items(Alignment::Center),
                     )
                     .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
                         AIRSHIPPER_RELEASE_URL.to_string(),
                     )))
                     .padding(Padding::from([2, 10, 2, 12]))
-                    .height(Length::Units(20))
-                    .style(AirshipperDownloadButtonStyle),
+                    .height(Length::Fixed(20.0))
+                    .style(ButtonStyle::AirshipperDownload),
                 )
                 .padding(Padding::from([0, 20, 0, 0]))
                 .height(Length::Fill)
@@ -159,15 +156,15 @@ impl AnnouncementPanelComponent {
             );
         }
 
-        let top_row =
-            row().height(Length::Units(50)).push(column().push(
-                container(content_row.height(Length::Fill)).align_y(Vertical::Center),
-            ));
+        let top_row = row![column![
+            container(content_row.height(Length::Fill)).align_y(Vertical::Center),
+        ]]
+        .height(Length::Fixed(50.0));
 
-        let col = column().push(
+        let col = column![].push(
             container(top_row)
                 .width(Length::Fill)
-                .style(AnnouncementStyle),
+                .style(ContainerStyle::Announcement),
         );
 
         let announcement_container = container(col);

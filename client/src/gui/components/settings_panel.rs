@@ -4,9 +4,9 @@ use crate::{
     gui::{
         components::GamePanelMessage,
         custom_widgets::heading_with_rule,
-        style,
-        style::{TextInputStyle, TransparentButtonStyle, LIGHT_GREY},
+        style::{button::ButtonStyle, container::ContainerStyle, text::TextStyle},
         views::{default::DefaultViewMessage, Action},
+        widget::*,
     },
     profiles,
     profiles::Profile,
@@ -14,13 +14,12 @@ use crate::{
 };
 use iced::{
     alignment::Horizontal,
-    pure::{
-        button, column, container, image, pick_list, row, text, text_input, tooltip,
-        Element,
+    widget::{
+        button, column, container, image, image::Handle, pick_list, row, text,
+        text_input, tooltip, tooltip::Position,
     },
-    Alignment, Length, Padding,
+    Alignment, Command, Length, Padding,
 };
-use iced_native::{image::Handle, widget::tooltip::Position, Command};
 use tracing::debug;
 
 #[derive(Clone, Debug)]
@@ -126,9 +125,9 @@ impl SettingsPanelComponent {
         const FONT_SIZE: u16 = 18;
 
         let graphics_mode = tooltip(
-            column()
+            column![]
                 .spacing(5)
-                .push(text("GRAPHICS MODE").size(15).color(LIGHT_GREY))
+                .push(text("GRAPHICS MODE").size(15).style(TextStyle::LightGrey))
                 .push(
                     container(
                         pick_list(
@@ -141,35 +140,34 @@ impl SettingsPanelComponent {
                             },
                         )
                         .text_size(FONT_SIZE)
-                        .style(style::ServerPickList)
                         .padding(PICK_LIST_PADDING),
                     )
-                    .height(Length::Units(30))
-                    .width(Length::Units(100)),
+                    .height(Length::Fixed(30.0))
+                    .width(Length::Fixed(100.0)),
                 ),
             "The rendering backend that the game will use. \nLeave on Auto unless you \
              are experiencing issues",
             Position::Top,
         )
+        .style(ContainerStyle::Tooltip)
         .size(FONT_SIZE)
-        .style(style::TooltipStyle)
         .gap(5);
 
         let log_level = tooltip(
-            column()
+            column![]
                 .spacing(5)
                 .push(
-                    row()
+                    row![]
                         .spacing(5)
-                        .push(text("LOG LEVEL").size(15).color(LIGHT_GREY))
+                        .push(text("LOG LEVEL").size(15).style(TextStyle::LightGrey))
                         .push(
                             container(
                                 button(image(Handle::from_memory(FOLDER_ICON.to_vec())))
                                     .on_press(DefaultViewMessage::SettingsPanel(
                                         SettingsPanelMessage::OpenLogsPressed,
                                     ))
-                                    .padding(Padding::new(0))
-                                    .style(TransparentButtonStyle),
+                                    .padding(Padding::new(0.0))
+                                    .style(ButtonStyle::Transparent),
                             )
                             .align_x(Horizontal::Right),
                         )
@@ -187,23 +185,22 @@ impl SettingsPanelComponent {
                             },
                         )
                         .text_size(FONT_SIZE)
-                        .style(style::ServerPickList)
                         .padding(PICK_LIST_PADDING),
                     )
-                    .height(Length::Units(30))
-                    .width(Length::Units(80)),
+                    .height(Length::Fixed(30.0))
+                    .width(Length::Fixed(80.0)),
                 ),
             "Changes the amount of information that the game outputs to its log file",
             Position::Left,
         )
+        .style(ContainerStyle::Tooltip)
         .size(FONT_SIZE)
-        .style(style::TooltipStyle)
         .gap(5);
 
         let server_picker = tooltip(
-            column()
+            column![]
                 .spacing(5)
-                .push(text("SERVER").size(15).color(LIGHT_GREY))
+                .push(text("SERVER").size(15).style(TextStyle::LightGrey))
                 .push(
                     container(
                         pick_list(profiles::SERVERS, Some(active_profile.server), |x| {
@@ -212,23 +209,26 @@ impl SettingsPanelComponent {
                             )
                         })
                         .text_size(FONT_SIZE)
-                        .style(style::ServerPickList)
                         .padding(PICK_LIST_PADDING),
                     )
-                    .height(Length::Units(30))
-                    .width(Length::Units(120)),
+                    .height(Length::Fixed(30.0))
+                    .width(Length::Fixed(120.0)),
                 ),
             "The download server used for game downloads",
             Position::Top,
         )
+        .style(ContainerStyle::Tooltip)
         .size(FONT_SIZE)
-        .style(style::TooltipStyle)
         .gap(5);
 
         let env_vars = tooltip(
-            column()
+            column![]
                 .spacing(5)
-                .push(text("ENVIRONMENT VARIABLES").size(15).color(LIGHT_GREY))
+                .push(
+                    text("ENVIRONMENT VARIABLES")
+                        .size(15)
+                        .style(TextStyle::LightGrey),
+                )
                 .push(
                     container(
                         text_input(
@@ -241,23 +241,22 @@ impl SettingsPanelComponent {
                             },
                         )
                         .padding(PICK_LIST_PADDING)
-                        .size(FONT_SIZE)
-                        .style(TextInputStyle),
+                        .size(FONT_SIZE),
                     )
-                    .height(Length::Units(50))
-                    .width(Length::Units(190)),
+                    .height(Length::Fixed(50.0))
+                    .width(Length::Fixed(190.0)),
                 ),
             "Environment variables set when running Voxygen",
             Position::Top,
         )
+        .style(ContainerStyle::Tooltip)
         .size(FONT_SIZE)
-        .style(style::TooltipStyle)
         .gap(5);
 
         let channel_picker = tooltip(
-            column()
+            column![]
                 .spacing(5)
-                .push(text("CHANNEL").size(15).color(LIGHT_GREY))
+                .push(text("CHANNEL").size(15).style(TextStyle::LightGrey))
                 .push(
                     container(
                         pick_list(
@@ -270,21 +269,20 @@ impl SettingsPanelComponent {
                             },
                         )
                         .text_size(FONT_SIZE)
-                        .style(style::ServerPickList)
                         .padding(PICK_LIST_PADDING),
                     )
-                    .height(Length::Units(30))
-                    .width(Length::Units(120)),
+                    .height(Length::Fixed(30.0))
+                    .width(Length::Fixed(120.0)),
                 ),
             "The download channel used for game downloads",
             Position::Top,
         )
+        .style(ContainerStyle::Tooltip)
         .size(FONT_SIZE)
-        .style(style::TooltipStyle)
         .gap(5);
 
         let first_row = container(
-            row()
+            row![]
                 .spacing(10)
                 .align_items(Alignment::End)
                 .push(graphics_mode)
@@ -292,11 +290,12 @@ impl SettingsPanelComponent {
                 .push(server_picker),
         );
 
-        let second_row = container(row().spacing(10).push(env_vars).push(channel_picker));
+        let second_row =
+            container(row![].spacing(10).push(env_vars).push(channel_picker));
 
-        let col = column().spacing(10).push(first_row).push(second_row);
+        let col = column![].spacing(10).push(first_row).push(second_row);
 
-        column()
+        column![]
             .push(heading_with_rule("Settings"))
             .push(
                 container(col)

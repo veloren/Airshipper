@@ -181,7 +181,7 @@ async fn get_github_release(
         .get_by_tag(&github_release_config.github_release)
         .await;
 
-    let repo_result = match repo_get_result {
+    match repo_get_result {
         Ok(release) => Ok(release),
         Err(octocrab::Error::GitHub {
             source: GitHubError { message, .. },
@@ -197,9 +197,7 @@ async fn get_github_release(
             .await
             .map_err(OctocrabError),
         err => err.map_err(OctocrabError),
-    };
-
-    repo_result
+    }
 }
 
 /// Execute Custom Webhook
