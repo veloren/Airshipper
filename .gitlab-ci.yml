@@ -2,10 +2,11 @@ stages:
   - check
   - build
   - publish
+  - deploy
 
 variables:
   GIT_CLEAN_FLAGS: -f
-  CACHE_IMAGE_TAG: db647600
+  CACHE_IMAGE_TAG: dd42f4f
 
 default:
   # https://docs.gitlab.com/ee/ci/pipelines/settings.html#auto-cancel-pending-pipelines
