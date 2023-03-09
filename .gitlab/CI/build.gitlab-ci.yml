@@ -15,8 +15,8 @@ unittests:
   script:
     - cargo build --release -p airshipper --all-features
     - cargo build --release -p airshipper-server --all-features
-    - mv -r target/release/airshipper $CI_PROJECT_DIR
-    - mv -r target/release/airshipper-server $CI_PROJECT_DIR
+    - mv target/release/airshipper $CI_PROJECT_DIR
+    - mv target/release/airshipper-server $CI_PROJECT_DIR
   artifacts:
     paths:
       - airshipper
@@ -46,8 +46,8 @@ unittests:
     - export MACOSX_DEPLOYMENT_TARGET="10.13"
     - cargo build --release -p airshipper --all-features
     - cargo build --release -p airshipper-server --all-features
-    - mv -r target/release/airshipper $CI_PROJECT_DIR
-    - mv -r target/release/airshipper-server $CI_PROJECT_DIR
+    - mv target/release/airshipper $CI_PROJECT_DIR
+    - mv target/release/airshipper-server $CI_PROJECT_DIR
   artifacts:
     paths:
       - airshipper
@@ -59,42 +59,64 @@ unittests:
   extends:
     - .tmacos
   before_script:
+    - source $HOME/.cargo/env
     - export RUST_TARGET="aarch64-apple-darwin"
 
 # Build after merge to master
-linux:
+linux-x86_64:
   extends:
     - .tlinux
   stage: build
-  only:
-    - master
-  tags: ["veloren/*", "build", "publish", "trusted"]
-
-windows:
-  extends:
-    - .twindows
-  stage: build
-  only:
-    - master
+#  only:
+#    - master
+  after_script:
+    - echo LINUX_X86_64_JOB_ID=$CI_JOB_ID >> linux_x86_64_job_id.env
+  artifacts:
+    reports:
+      dotenv: linux_x86_64_job_id.env
   tags: ["veloren/*", "build", "publish", "trusted"]
 
 macos-x86_64:
   extends:
     - .tmacos
   stage: build
-  only:
-    - master
+  #  only:
+  #    - master
+  after_script:
+    - echo MACOS_X86_64_JOB_ID=$CI_JOB_ID >> macos_x86_64_job_id.env
+  artifacts:
+    reports:
+      dotenv: macos_x86_64_job_id.env
   tags: ["veloren/*:macos", "build", "publish", "trusted"]
 
 macos-aarch64:
   extends:
     - .tmacos-aarch64
   stage: build
-  only:
-    - master
+  #  only:
+  #    - master
+  after_script:
+    - echo MACOS_AARCH64_JOB_ID=$CI_JOB_ID >> macos_aarch64_job_id.env
+  artifacts:
+    reports:
+      dotenv: macos_aarch64_job_id.env
   tags: ["veloren/*:macos", "build", "publish", "trusted"]
 
-# Optional builds
+windows-x86_64:
+  extends:
+    - .twindows
+  stage: build
+  #  only:
+  #    - master
+  after_script:
+    - echo WINDOWS_JOB_ID=$CI_JOB_ID >> windows_job_id.env
+  artifacts:
+    reports:
+      dotenv: windows_job_id.env
+  tags: ["veloren/*", "build", "publish", "trusted"]
+
+# Optional builds - these are in the check stage even though they're builds to allow building
+# the output even if code quality checks fail
 .non-master-optional:
   stage: check
   except:
@@ -102,15 +124,9 @@ macos-aarch64:
   when: manual
   allow_failure: true
 
-opt-linux:
+opt-linux-x86_64:
   extends:
     - .tlinux
-    - .non-master-optional
-  tags: ["veloren/*", "build"]
-
-opt-windows:
-  extends:
-    - .twindows
     - .non-master-optional
   tags: ["veloren/*", "build"]
 
@@ -125,3 +141,9 @@ opt-macos-aarch64:
     - .tmacos-aarch64
     - .non-master-optional
   tags: ["veloren/*:macos", "build"]
+
+opt-windows-x86_64:
+  extends:
+    - .twindows
+    - .non-master-optional
+  tags: ["veloren/*", "build"]
