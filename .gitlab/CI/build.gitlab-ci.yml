@@ -3,7 +3,7 @@ unittests:
   except:
     - master
   image: registry.gitlab.com/veloren/veloren-docker-ci/base/linux-x86_64:${CACHE_IMAGE_TAG}
-  tags: ["veloren/*", "check"]
+  tags: ["saas-linux-large-amd64"]
   variables:
     GIT_DEPTH: 9999999999999
   script:
