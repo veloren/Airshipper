@@ -15,14 +15,17 @@ unittests:
   script:
     - cargo build --release -p airshipper --all-features
     - cargo build --release -p airshipper-server --all-features
-    - mv -r target/release/airshipper $CI_PROJECT_DIR
-    - mv -r target/release/airshipper-server $CI_PROJECT_DIR
+    - mv target/release/airshipper $CI_PROJECT_DIR
+    - mv target/release/airshipper-server $CI_PROJECT_DIR
+    - echo LINUX_JOB_ID=$CI_JOB_ID >> linux_job_id.env
   artifacts:
     paths:
       - airshipper
       - airshipper-server
       - LICENSE
     expire_in: 1 week
+    reports:
+      dotenv: linux_job_id.env
 
 .twindows:
   image: registry.gitlab.com/xvar/veloren/base/windows-x86_64:480e70bc
@@ -30,10 +33,13 @@ unittests:
     - cargo build --target=x86_64-pc-windows-gnu --release -p airshipper --all-features
     - makensis client/nsis/installer.nsi
     - mv client/nsis/airshipper-windows.exe $CI_PROJECT_DIR
+    - echo WINDOWS_JOB_ID=$CI_JOB_ID >> windows_job_id.env
   artifacts:
     paths:
       - airshipper-windows.exe
     expire_in: 1 week
+    reports:
+        dotenv: windows_job_id.env
 
 .tmacos:
   tags: ["veloren-macos"]
@@ -94,7 +100,8 @@ macos-aarch64:
     - master
   tags: ["veloren/*:macos", "build", "publish", "trusted"]
 
-# Optional builds
+# Optional builds - these are in the check stage even though they're builds to allow building
+# the output even if code quality checks fail
 .non-master-optional:
   stage: check
   except:

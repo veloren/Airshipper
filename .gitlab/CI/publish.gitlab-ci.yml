@@ -18,3 +18,29 @@ docker:
     - export container=docker
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}" > /kaniko/.docker/config.json
     - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/server/Dockerfile --destination "${CI_REGISTRY_IMAGE}/server:${CI_COMMIT_REF_NAME}"
+
+release_job:
+  stage: build
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  before_script:
+    - echo "x"
+  dependencies:
+    - opt-linux
+    - opt-windows
+  #rules:
+  #  - if: $CI_COMMIT_TAG                 # Run this job when a tag is created
+  script:
+    - echo "LINUX_JOB_ID=$LINUX_JOB_ID"
+    - echo "WINDOWS_JOB_ID=$WINDOWS_JOB_ID"
+  release:
+    name: 'Airshipper $CI_COMMIT_SHORT_SHA'
+    description: 'Airshipper CI release'
+    tag_name: '$CI_COMMIT_SHORT_SHA'
+    assets:
+      links:
+        - name: 'Linux (x86_64) Client'
+          url: 'https://gitlab.com/veloren/airshipper/-/jobs/${LINUX_JOB_ID}/artifacts/file/airshipper'
+        - name: 'Linux (x86_64) Server'
+          url: 'https://gitlab.com/veloren/airshipper/-/jobs/${LINUX_JOB_ID}/artifacts/file/airshipper-server'
+        - name: 'Windows (x86_64) Client'
+          url: 'https://gitlab.com/veloren/airshipper/-/jobs/${WINDOWS_JOB_ID}/artifacts/file/airshipper-windows.exe'
