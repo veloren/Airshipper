@@ -1,6 +1,7 @@
 code-quality:
-  extends: .recompile-branch
   stage: check
+  except:
+    - master
   image: registry.gitlab.com/veloren/veloren-docker-ci/cache/quality:${CACHE_IMAGE_TAG}
   tags: ["veloren/*", "check"]
   script:

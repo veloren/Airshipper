@@ -1,0 +1,20 @@
+# Publishes airshipper server to the gitlab container registry
+# https://gitlab.com/veloren/airshipper/container_registry
+docker:
+  stage: publish
+  only:
+    - master
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  tags: ["veloren/*", "publish", "trusted"]
+  dependencies:
+    - linux
+  before_script:
+    - ls "$CI_PROJECT_DIR/server/"
+  script:
+    # Help kaniko identify that it is running in a container.
+    # avoids this issue: https://github.com/GoogleContainerTools/kaniko/issues/1542
+    - export container=docker
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/server/Dockerfile --destination "${CI_REGISTRY_IMAGE}/server:${CI_COMMIT_REF_NAME}"

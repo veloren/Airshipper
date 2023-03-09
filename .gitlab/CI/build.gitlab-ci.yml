@@ -1,33 +1,13 @@
 unittests:
-  extends: .recompile-branch
   stage: build
-  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/quality:${CACHE_IMAGE_TAG}
+  except:
+    - master
+  image: registry.gitlab.com/veloren/veloren-docker-ci/base/linux-x86_64:${CACHE_IMAGE_TAG}
   tags: ["veloren/*", "check"]
   variables:
     GIT_DEPTH: 9999999999999
   script:
-    - ln -s /dockercache/target target
-    - rm -r target/debug/incremental/veloren_* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
-    - rm -r target/debug/incremental* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
     - cargo test --all-features
-  retry:
-    max: 2
-
-# Coverage is needed on master for the README.md badge to work
-# tmp remove simd as it doesnt work with tarpaulin: https://github.com/rust-lang/rust/issues/77529
-#coverage:
-#  extends: .publish
-#  stage: build
-#  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/tarpaulin:${CACHE_IMAGE_TAG}
-#  script:
-#    - ln -s /dockercache/target target
-#    - rm -r target/debug/incremental/veloren_* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
-#    - find ./* -name "Cargo.toml" -exec sed -i 's/, "simd"]/]/g' {} \;
-#    - find ./* -name "Cargo.toml" -exec sed -i 's/"simd"]/]/g' {} \;
-#    - sed -i 's/vek /#vek /g' ./Cargo.toml;
-#    - cargo tarpaulin -v -- --test-threads=2
-#  retry:
-#    max: 2
 
 #linux, windows, macos builds here as template
 .tlinux:
@@ -35,8 +15,8 @@ unittests:
   script:
     - cargo build --release -p airshipper --all-features
     - cargo build --release -p airshipper-server --all-features
-    - cp -r target/release/airshipper $CI_PROJECT_DIR
-    - cp -r target/release/airshipper-server $CI_PROJECT_DIR
+    - mv -r target/release/airshipper $CI_PROJECT_DIR
+    - mv -r target/release/airshipper-server $CI_PROJECT_DIR
   artifacts:
     paths:
       - airshipper
@@ -49,9 +29,10 @@ unittests:
   script:
     - cargo build --target=x86_64-pc-windows-gnu --release -p airshipper --all-features
     - makensis client/nsis/installer.nsi
+    - mv client/nsis/airshipper-windows.exe $CI_PROJECT_DIR
   artifacts:
     paths:
-      - client/nsis/airshipper-windows.exe
+      - airshipper-windows.exe
     expire_in: 1 week
 
 .tmacos:
@@ -65,8 +46,8 @@ unittests:
     - export MACOSX_DEPLOYMENT_TARGET="10.13"
     - cargo build --release -p airshipper --all-features
     - cargo build --release -p airshipper-server --all-features
-    - cp -r target/release/airshipper $CI_PROJECT_DIR
-    - cp -r target/release/airshipper-server $CI_PROJECT_DIR
+    - mv -r target/release/airshipper $CI_PROJECT_DIR
+    - mv -r target/release/airshipper-server $CI_PROJECT_DIR
   artifacts:
     paths:
       - airshipper
@@ -80,68 +61,67 @@ unittests:
   before_script:
     - export RUST_TARGET="aarch64-apple-darwin"
 
-# e.g. post merge and scheduled builds
-.tmacos-master-cache:
-    cache:
-      key: "macos-master-cache"
-      paths:
-        - target/
-
-# e.g. optional builds from MRs
-.tmacos-mr-cache:
-    cache:
-      key: "macos-mr-cache"
-      paths:
-        - target/
-
-# build on release or master
+# Build after merge to master
 linux:
   extends:
     - .tlinux
-    - .release
+  stage: build
+  only:
+    - master
   tags: ["veloren/*", "build", "publish", "trusted"]
 
 windows:
   extends:
     - .twindows
-    - .release
+  stage: build
+  only:
+    - master
   tags: ["veloren/*", "build", "publish", "trusted"]
 
 macos-x86_64:
   extends:
     - .tmacos
-    - .release
-    - .tmacos-master-cache
+  stage: build
+  only:
+    - master
   tags: ["veloren/*:macos", "build", "publish", "trusted"]
 
 macos-aarch64:
   extends:
     - .tmacos-aarch64
-    - .release
+  stage: build
+  only:
+    - master
   tags: ["veloren/*:macos", "build", "publish", "trusted"]
 
-# if NOT release or master, allow optional builds
+# Optional builds
+.non-master-optional:
+  stage: check
+  except:
+    - master
+  when: manual
+  allow_failure: true
+
 opt-linux:
   extends:
     - .tlinux
-    - .optional-release
+    - .non-master-optional
   tags: ["veloren/*", "build"]
 
 opt-windows:
   extends:
     - .twindows
-    - .optional-release
+    - .non-master-optional
   tags: ["veloren/*", "build"]
 
 opt-macos-x86_64:
   extends:
     - .tmacos
-    - .optional-release
-
+    - .non-master-optional
   tags: ["veloren/*:macos", "build"]
 
 opt-macos-aarch64:
   extends:
     - .tmacos-aarch64
-    - .optional-release
+    - .non-master-optional
   tags: ["veloren/*:macos", "build"]
