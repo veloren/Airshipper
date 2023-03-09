@@ -30,6 +30,7 @@ VIAddVersionKey "FileDescription"  "${DESCRIPTION}"
 VIAddVersionKey "FileVersion"  "${VERSION}"
 
 SetCompressor /SOLID Lzma
+Unicode true
 Name "${APP_NAME}"
 Caption "${APP_NAME}"
 OutFile "${INSTALLER_NAME}"
