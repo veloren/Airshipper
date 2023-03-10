@@ -7,4 +7,5 @@ code-quality:
   script:
     - cargo clippy --all-targets --locked --all-features -- -D warnings
     - cargo fmt --all -- --check
+    - cargo test --all-features
   allow_failure: true # TODO: Remove
