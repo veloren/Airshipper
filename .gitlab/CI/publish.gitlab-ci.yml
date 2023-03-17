@@ -1,27 +1,17 @@
-# Publishes veloren-server-cli to the gitlab container registry
-# https://gitlab.com/veloren/veloren/container_registry
-.publish:
-  stage: publish
-  rules:
-    - if: $CI_PIPELINE_SOURCE != "schedule" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: on_success
-    - when: never
-
-.publish-nightly:
-  stage: publish
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: on_success
-    - when: never
-
+# Publishes airshipper server to the gitlab container registry
+# https://gitlab.com/veloren/airshipper/container_registry
+# Currently this will trigger an update of production since it
+# is configured to monitor this registry for changes.
 docker:
-  extends: .publish
+  extends: .tmastertag
+  stage: deploy
+  environment: production
   image:
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
   tags: ["veloren/*", "publish", "trusted"]
   dependencies:
-    - linux
+    - linux-x86_64
   before_script:
     - ls "$CI_PROJECT_DIR/server/"
   script:
@@ -31,15 +21,37 @@ docker:
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}" > /kaniko/.docker/config.json
     - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/server/Dockerfile --destination "${CI_REGISTRY_IMAGE}/server:${CI_COMMIT_REF_NAME}"
 
-pages:
-  extends: .publish
-  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/quality:${CACHE_IMAGE_TAG}
-  tags: ["veloren/*", "publish"]
-  artifacts:
-    paths:
-      - public
+gitlab_release:
+  extends: .tmastertag
+  stage: publish
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  tags: ["veloren/*", "publish", "trusted"]
+  before_script:
+    - echo "" # Override before_script in .gitlab-ci.yml
+  dependencies:
+    - linux-x86_64
+    - macos-x86_64
+    - macos-aarch64
+    - windows-x86_64
   script:
-    - rm -rf public
-    - mkdir -p public
-    - cargo doc --no-deps --document-private-items
-    - mv target/doc/* public
+    # These are exported by earlier jobs via reports/dotenv
+    - echo "LINUX_X86_64_JOB_ID=$LINUX_X86_64_JOB_ID"
+    - echo "MACOS_X86_64_JOB_ID=MACOS_X86_64_JOB_ID"
+    - echo "MACOS_AARCH64_JOB_ID=MACOS_AARCH64_JOB_ID"
+    - echo "WINDOWS_JOB_ID=$WINDOWS_JOB_ID"
+  release:
+    name: 'Airshipper $CI_COMMIT_TAG'
+    description: 'Airshipper release $CI_COMMIT_TAG'
+    tag_name: '$CI_COMMIT_TAG'
+    assets:
+      links:
+        - name: 'Linux (x86_64) Client'
+          url: 'https://gitlab.com/veloren/airshipper/-/jobs/${LINUX_X86_64_JOB_ID}/artifacts/file/airshipper'
+        - name: 'Linux (x86_64) Server'
+          url: 'https://gitlab.com/veloren/airshipper/-/jobs/${LINUX_X86_64_JOB_ID}/artifacts/file/airshipper-server'
+        - name: 'MacOS (x86_64) Client'
+          url: 'https://gitlab.com/veloren/airshipper/-/jobs/${MACOS_X86_64_JOB_ID}/artifacts/file/airshipper'
+        - name: 'MacOS (aarch64) Client'
+          url: 'https://gitlab.com/veloren/airshipper/-/jobs/${MACOS_AARCH64_JOB_ID}/artifacts/file/airshipper'
+        - name: 'Windows (x86_64) Client'
+          url: 'https://gitlab.com/veloren/airshipper/-/jobs/${WINDOWS_JOB_ID}/artifacts/file/airshipper-windows.exe'

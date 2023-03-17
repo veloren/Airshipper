@@ -2,17 +2,11 @@ stages:
   - check
   - build
   - publish
+  - deploy
 
 variables:
-  # Note: this is deprecated!
-  # https://docs.gitlab.com/ee/ci/yaml/#git-strategy
-  # However in gitlab web ui it's set to fetch so it should be fine ¯\_(ツ)_/¯
-  GIT_STRATEGY: fetch
-  # Note: this is deprecated!
-  # https://docs.gitlab.com/ee/ci/yaml/#shallow-cloning
-  GIT_DEPTH: 3
   GIT_CLEAN_FLAGS: -f
-  CACHE_IMAGE_TAG: db647600
+  CACHE_IMAGE_TAG: a85ea458
 
 default:
   # https://docs.gitlab.com/ee/ci/pipelines/settings.html#auto-cancel-pending-pipelines
@@ -34,19 +28,19 @@ before_script:
   - cargo --version
   - export DISABLE_GIT_LFS_CHECK=true
   - export RUSTFLAGS="-D warnings"
-  - export SHADERC_LIB_DIR=/shaderc/combined/
-  - rm -rf target || echo "it seems that sometimes OLD data is left over"
 
-# 8866215 is the user that is used to sync data to the collaboration repos
 workflow:
   rules:
     - if: $CI_MERGE_REQUEST_IID
     - if: $CI_COMMIT_TAG
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $GITLAB_USER_ID != "8866215"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# For release builds that should only run when a commit on master is tagged
+.tmastertag:
+  rules:
+    - if: $CI_COMMIT_TAG != null && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 include:
-  - local: .gitlab/CI/recompile.yml
-  - local: .gitlab/CI/release.yml
   - local: .gitlab/CI/check.gitlab-ci.yml
   - local: .gitlab/CI/build.gitlab-ci.yml
   - local: .gitlab/CI/publish.gitlab-ci.yml

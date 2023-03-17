@@ -1,44 +1,11 @@
-unittests:
-  extends: .recompile-branch
-  stage: build
-  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/quality:${CACHE_IMAGE_TAG}
-  tags: ["veloren/*", "check"]
-  variables:
-    GIT_DEPTH: 9999999999999
-  script:
-    - ln -s /dockercache/target target
-    - rm -r target/debug/incremental/veloren_* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
-    - rm -r target/debug/incremental* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
-    - cargo test --all-features
-  retry:
-    max: 2
-
-# Coverage is needed on master for the README.md badge to work
-# tmp remove simd as it doesnt work with tarpaulin: https://github.com/rust-lang/rust/issues/77529
-#coverage:
-#  extends: .publish
-#  stage: build
-#  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/tarpaulin:${CACHE_IMAGE_TAG}
-#  script:
-#    - ln -s /dockercache/target target
-#    - rm -r target/debug/incremental/veloren_* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
-#    - find ./* -name "Cargo.toml" -exec sed -i 's/, "simd"]/]/g' {} \;
-#    - find ./* -name "Cargo.toml" -exec sed -i 's/"simd"]/]/g' {} \;
-#    - sed -i 's/vek /#vek /g' ./Cargo.toml;
-#    - cargo tarpaulin -v -- --test-threads=2
-#  retry:
-#    max: 2
-
 #linux, windows, macos builds here as template
 .tlinux:
-  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/release-linux-x86_64:${CACHE_IMAGE_TAG}
+  image: registry.gitlab.com/veloren/veloren-docker-ci/base/linux-x86_64:${CACHE_IMAGE_TAG}
   script:
-    - ln -s /dockercache/target target
-    - rm -r target/release/incremental/veloren_* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
     - cargo build --release -p airshipper --all-features
     - cargo build --release -p airshipper-server --all-features
-    - cp -r target/release/airshipper $CI_PROJECT_DIR
-    - cp -r target/release/airshipper-server $CI_PROJECT_DIR
+    - mv target/release/airshipper $CI_PROJECT_DIR
+    - mv target/release/airshipper-server $CI_PROJECT_DIR
   artifacts:
     paths:
       - airshipper
@@ -47,32 +14,16 @@ unittests:
     expire_in: 1 week
 
 .twindows:
-  image: registry.gitlab.com/veloren/veloren-docker-ci/cache/release-windows-x86_64:${CACHE_IMAGE_TAG}
+  image: registry.gitlab.com/veloren/veloren-docker-ci/base/windows-x86_64:${CACHE_IMAGE_TAG}
   script:
-    - cargo install cargo-wix --version 0.3.0
-    - update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
-    - update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
-    - ln -s /dockercache/target target
-    - rm -r target/release/incremental/veloren_* || echo "all good" # TMP FIX FOR 2021-03-22-nightly
     - cargo build --target=x86_64-pc-windows-gnu --release -p airshipper --all-features
-    - cargo build --target=x86_64-pc-windows-gnu --release -p airshipper-server --all-features
-    # skip windows installer for now on gitlab
-    #- cargo wix client/Cargo.toml -o ./target/wix/ --nocapture --no-build
-    #- cp -r target/wix/airshipper-*-x86_64.msi $CI_PROJECT_DIR/airshipper-windows.msi
-    - cp -r target/x86_64-pc-windows-gnu/release/airshipper.exe $CI_PROJECT_DIR
-    - cp -r target/x86_64-pc-windows-gnu/release/airshipper-server.exe $CI_PROJECT_DIR
-    - cp /usr/lib/gcc/x86_64-w64-mingw32/7.3-posix/libgcc_s_seh-1.dll $CI_PROJECT_DIR
-    - cp /usr/lib/gcc/x86_64-w64-mingw32/7.3-posix/libstdc++-6.dll $CI_PROJECT_DIR
-    - cp /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $CI_PROJECT_DIR
+    - chmod +x client/nsis/update_installer_version.sh
+    - bash client/nsis/update_installer_version.sh
+    - makensis client/nsis/installer.nsi
+    - mv client/nsis/airshipper-windows.exe $CI_PROJECT_DIR
   artifacts:
     paths:
-      #- airshipper-windows.msi
-      - airshipper.exe
-      - airshipper-server.exe
-      - LICENSE
-      - libgcc_s_seh-1.dll
-      - libstdc++-6.dll
-      - libwinpthread-1.dll
+      - airshipper-windows.exe
     expire_in: 1 week
 
 .tmacos:
@@ -86,8 +37,8 @@ unittests:
     - export MACOSX_DEPLOYMENT_TARGET="10.13"
     - cargo build --release -p airshipper --all-features
     - cargo build --release -p airshipper-server --all-features
-    - cp -r target/release/airshipper $CI_PROJECT_DIR
-    - cp -r target/release/airshipper-server $CI_PROJECT_DIR
+    - mv target/release/airshipper $CI_PROJECT_DIR
+    - mv target/release/airshipper-server $CI_PROJECT_DIR
   artifacts:
     paths:
       - airshipper
@@ -99,71 +50,88 @@ unittests:
   extends:
     - .tmacos
   before_script:
+    - source $HOME/.cargo/env
     - export RUST_TARGET="aarch64-apple-darwin"
 
-# e.g. post merge and scheduled builds
-.tmacos-master-cache:
-    cache:
-      key: "macos-master-cache"
-      paths:
-        - target/
-
-# e.g. optional builds from MRs
-.tmacos-mr-cache:
-    cache:
-      key: "macos-mr-cache"
-      paths:
-        - target/
-
-# build on release or master
-linux:
+# Builds for release - all of these export their $CI_JOB_ID to a report artifact that
+# is used by the gitlab_release step to include their artifacts in the resulting release
+linux-x86_64:
   extends:
+    - .tmastertag
     - .tlinux
-    - .release
-  tags: ["veloren/*", "build", "publish", "trusted"]
-
-windows:
-  extends:
-    - .twindows
-    - .release
+  stage: build
+  after_script:
+    - echo LINUX_X86_64_JOB_ID=$CI_JOB_ID >> linux_x86_64_job_id.env
+  artifacts:
+    reports:
+      dotenv: linux_x86_64_job_id.env
   tags: ["veloren/*", "build", "publish", "trusted"]
 
 macos-x86_64:
   extends:
+    - .tmastertag
     - .tmacos
-    - .release
-    - .tmacos-master-cache
+  stage: build
+  after_script:
+    - echo MACOS_X86_64_JOB_ID=$CI_JOB_ID >> macos_x86_64_job_id.env
+  artifacts:
+    reports:
+      dotenv: macos_x86_64_job_id.env
   tags: ["veloren/*:macos", "build", "publish", "trusted"]
 
 macos-aarch64:
   extends:
+    - .tmastertag
     - .tmacos-aarch64
-    - .release
+  stage: build
+  after_script:
+    - echo MACOS_AARCH64_JOB_ID=$CI_JOB_ID >> macos_aarch64_job_id.env
+  artifacts:
+    reports:
+      dotenv: macos_aarch64_job_id.env
   tags: ["veloren/*:macos", "build", "publish", "trusted"]
 
-# if NOT release or master, allow optional builds
-opt-linux:
+windows-x86_64:
+  extends:
+    - .tmastertag
+    - .twindows
+  stage: build
+  after_script:
+    - echo WINDOWS_JOB_ID=$CI_JOB_ID >> windows_job_id.env
+  artifacts:
+    reports:
+      dotenv: windows_job_id.env
+  tags: ["veloren/*", "build", "publish", "trusted"]
+
+# Optional builds - these are in the check stage even though they're builds to allow building
+# the output even if code quality checks fail
+.tnon-master-optional:
+  stage: check
+  except:
+    - master
+  when: manual
+  allow_failure: true
+
+opt-linux-x86_64:
   extends:
     - .tlinux
-    - .optional-release
-  tags: ["veloren/*", "build"]
-
-opt-windows:
-  extends:
-    - .twindows
-    - .optional-release
+    - .tnon-master-optional
   tags: ["veloren/*", "build"]
 
 opt-macos-x86_64:
   extends:
     - .tmacos
-    - .optional-release
-    - .optional-release
-
+    - .tnon-master-optional
   tags: ["veloren/*:macos", "build"]
 
 opt-macos-aarch64:
   extends:
     - .tmacos-aarch64
-    - .optional-release
+    - .tnon-master-optional
   tags: ["veloren/*:macos", "build"]
+
+opt-windows-x86_64:
+  extends:
+    - .twindows
+    - .tnon-master-optional
+  tags: ["veloren/*", "build"]

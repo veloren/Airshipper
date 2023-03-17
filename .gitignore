@@ -20,3 +20,4 @@ airshipper.ron
 *.log
 data/
 /.vscode
+*.exe
