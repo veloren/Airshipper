@@ -57,9 +57,11 @@
 # is used by the gitlab_release step to include their artifacts in the resulting release
 linux-x86_64:
   extends:
-    - .tmastertag
     - .tlinux
   stage: build
+  # linux-x86_64 doesn't use .tmastertag as airshipper server is deployed on every merge to master
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   after_script:
     - echo LINUX_X86_64_JOB_ID=$CI_JOB_ID >> linux_x86_64_job_id.env
   artifacts:
