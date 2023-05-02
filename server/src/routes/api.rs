@@ -11,7 +11,7 @@ pub struct Version {
     version: u32,
 }
 
-// List all channels that are supported for a specific platform
+/// List the supported version of this REST-API
 #[get("/api/version")]
 pub async fn api_version(_db: crate::DbConnection) -> Json<Version> {
     Json(Version {
@@ -25,7 +25,7 @@ pub struct Announcement {
     last_change: chrono::DateTime<chrono::Utc>,
 }
 
-// List all channels that are supported for a specific platform
+/// Public Service Announcement to be displayed in Airshipper
 #[get("/announcement")]
 pub async fn announcement(_db: crate::DbConnection) -> Json<Announcement> {
     Json(Announcement {
@@ -34,7 +34,7 @@ pub async fn announcement(_db: crate::DbConnection) -> Json<Announcement> {
     })
 }
 
-// List all channels that are supported for a specific platform
+/// List all channels that are supported for a specific platform
 #[get("/channels/<os>/<arch>")]
 pub async fn channels(
     _db: crate::DbConnection,
