@@ -7,14 +7,10 @@ use iced::{
     Background, Color,
 };
 
+#[derive(Default)]
 pub enum ScrollableStyle {
+    #[default]
     Default,
-}
-
-impl Default for ScrollableStyle {
-    fn default() -> Self {
-        ScrollableStyle::Default
-    }
 }
 
 impl scrollable::StyleSheet for AirshipperTheme {
