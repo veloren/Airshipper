@@ -3,19 +3,14 @@ use crate::gui::style::{
 };
 use iced::{overlay, overlay::menu::Appearance, Background, Color};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub enum MenuStyle {
+    #[default]
     Default,
 }
 
 impl From<PickListStyle> for MenuStyle {
     fn from(_: PickListStyle) -> Self {
-        MenuStyle::Default
-    }
-}
-
-impl Default for MenuStyle {
-    fn default() -> Self {
         MenuStyle::Default
     }
 }

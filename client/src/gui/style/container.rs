@@ -8,7 +8,9 @@ use iced::{
     Background, Color,
 };
 
+#[derive(Default)]
 pub enum ContainerStyle {
+    #[default]
     Default,
     Dark,
     Announcement,
@@ -20,12 +22,6 @@ pub enum ContainerStyle {
     Warning,
     Tooltip,
     ExtraBrowser,
-}
-
-impl Default for ContainerStyle {
-    fn default() -> Self {
-        ContainerStyle::Default
-    }
 }
 
 impl container::StyleSheet for AirshipperTheme {

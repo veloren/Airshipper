@@ -75,18 +75,21 @@ pub enum Server {
 pub static SERVERS: &[Server] = &[Server::Production, Server::Staging, Server::Test];
 
 #[derive(
-    Debug, derive_more::Display, Clone, Copy, PartialEq, Eq, Serialize, Deserialize,
+    Debug,
+    Default,
+    derive_more::Display,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
 )]
 pub enum LogLevel {
+    #[default]
     Default,
     Debug,
     Trace,
-}
-
-impl Default for LogLevel {
-    fn default() -> Self {
-        LogLevel::Default
-    }
 }
 
 pub static LOG_LEVELS: &[LogLevel] =

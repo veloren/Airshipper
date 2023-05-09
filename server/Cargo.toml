@@ -15,17 +15,17 @@ app = true
 bundled = ["openssl-sys"]
 
 [dependencies]
-tokio-util = { version = "0.6.7", features = ["codec"] }
-tokio = { version = "1.7.1", features = ["fs", "rt-multi-thread"] }
+tokio-util = { version = "0.7.8", features = ["codec"] }
+tokio = { version = "1.20", features = ["fs", "rt-multi-thread"] }
 # logging
-termcolor = "1.1"
+termcolor = "1.2"
 tracing = { version = "0.1.21", features = ["log"] }
 tracing-appender = "0.2.0"
 tracing-subscriber = { version = "0.3.7", default-features = false, features = ["env-filter", "fmt", "time", "ansi", "smallvec", "tracing-log"]}
 tracing-log = "0.1.1"
 # config handling
-ron = "0.7"
-regex = "1.5"
+ron = "0.8"
+regex = "1.8"
 
 # Webserver
 rocket = { version = "0.5.0-rc.2", features = ["json"] }

@@ -46,14 +46,10 @@ const YOUTUBE_RED: Color = rgb8(255, 0, 0);
 #[derive(Default)]
 pub struct AirshipperTheme {}
 
+#[derive(Default)]
 pub enum AirshipperThemeStyle {
+    #[default]
     Default,
-}
-
-impl Default for AirshipperThemeStyle {
-    fn default() -> Self {
-        AirshipperThemeStyle::Default
-    }
 }
 
 impl application::StyleSheet for AirshipperTheme {
