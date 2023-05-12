@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: {{ include "airshipper.deploymentKind" . }}
+metadata:
+  name: {{ include "airshipper.deployment" . }}
+  labels:
+    {{- include "airshipper.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  {{if .Values.persistence.enabled }}serviceName: {{ include "airshipper.Service" . }}{{ end }}
+  selector:
+    matchLabels:
+      {{- include "airshipper.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "http"
+        {{ if and .Values.persistence.enabled .Values.persistence.backup }}backup.velero.io/backup-volumes: "saves,static-builds"{{ end }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: "airshipper"
+        loki: "airshipper"
+        {{- include "airshipper.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "airshipper.serviceAccount" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: "airshipper"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: RUST_LOG
+              value: "hyper=info,h2=info,airshipper_server=trace,trace"
+            - name: RUST_BACKTRACE
+              value: "full"
+            - name: ROCKET_ENV
+              value: "production"
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            periodSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            periodSeconds: 10
+            failureThreshold: 5
+          volumeMounts:
+            {{if .Values.persistence.enabled -}}
+            - name: data
+              mountPath: /opt/data
+            {{- end }}
+            - name: settings
+              mountPath: /opt/config/config.ron
+              subPath: "config.ron"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: settings
+          configMap:
+            name: {{ include "airshipper.configMapSettings" . }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{if .Values.persistence.enabled -}}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: {{ .Values.persistence.storageClass }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size }}
+  {{- end }}
