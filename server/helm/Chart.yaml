@@ -1,0 +1,7 @@
+apiVersion: v2
+name: airshipper
+description: veloren airshipper launcher and distribution server
+
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
