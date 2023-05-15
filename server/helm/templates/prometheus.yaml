@@ -11,7 +11,7 @@ spec:
       {{- include "airshipper.selectorLabels" . | nindent 6 }}
   endpoints:
     - port: http
-    path: "/metrics"
+      path: "/metrics"
   namespaceSelector:
     matchNames: ["default"]
 {{- end }}
