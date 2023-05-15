@@ -64,6 +64,10 @@
 {{- (printf "%s-ingresssecret" (include "airshipper.fullname" .)) }}
 {{- end }}
 
+{{- define "airshipper.serviceMonitor" -}}
+{{- (printf "%s-serviceMonitor" (include "airshipper.fullname" .)) }}
+{{- end }}
+
 {{/* Common labels */}}
 {{- define "airshipper.labels" -}}
 {{ include "airshipper.selectorLabels" . }}

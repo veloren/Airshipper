@@ -40,7 +40,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: RUST_LOG
-              value: "hyper=info,h2=info,airshipper_server=trace,trace"
+              value: "hyper=info,h2=info,airshipper_server=trace,rocket::server=warn,mio=debug,trace"
             - name: RUST_BACKTRACE
               value: "full"
             - name: ROCKET_ENV

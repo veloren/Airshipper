@@ -17,6 +17,8 @@ persistence:
   backup: false #not worth it usually
   storageClass: "local-storage"
   size: 1Gi
+prometheus:
+  enabled: false
 
 replicaCount: 1
 podAnnotations: {}
