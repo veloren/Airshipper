@@ -1,0 +1,17 @@
+{{- if .Values.prometheus.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "airshipper.serviceMonitor" . }}
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      {{- include "airshipper.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: http
+    path: "/metrics"
+  namespaceSelector:
+    matchNames: ["default"]
+{{- end }}
