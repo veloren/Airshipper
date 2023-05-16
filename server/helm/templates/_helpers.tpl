@@ -65,7 +65,7 @@
 {{- end }}
 
 {{- define "airshipper.serviceMonitor" -}}
-{{- (printf "%s-serviceMonitor" (include "airshipper.fullname" .)) }}
+{{- (printf "%s-servicemonitor" (include "airshipper.fullname" .)) }}
 {{- end }}
 
 {{/* Common labels */}}
