@@ -42,6 +42,7 @@ const DISCORD_BLURPLE: Color = rgb8(88, 101, 242);
 const MASTODON_PURPLE: Color = rgb8(99, 100, 255);
 const REDDIT_ORANGE: Color = rgb8(255, 69, 0);
 const YOUTUBE_RED: Color = rgb8(255, 0, 0);
+const TWITCH_PURPLE: Color = rgb8(100, 65, 165);
 
 #[derive(Default)]
 pub struct AirshipperTheme {}

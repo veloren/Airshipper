@@ -453,6 +453,9 @@ impl ServerBrowserPanelComponent {
                                             "mastodon" => ButtonStyle::Browser(
                                                 BrowserButtonStyle::Mastodon,
                                             ),
+                                            "twitch" => ButtonStyle::Browser(
+                                                BrowserButtonStyle::Twitch,
+                                            ),
                                             _ => ButtonStyle::Browser(
                                                 BrowserButtonStyle::Extra,
                                             ),

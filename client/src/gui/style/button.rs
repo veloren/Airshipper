@@ -3,7 +3,7 @@ use crate::gui::style::TOMATO_RED;
 use crate::gui::style::{
     AirshipperTheme, CORNFLOWER_BLUE, DARK_WHITE, DISCORD_BLURPLE, LIGHT_GREY,
     LIME_GREEN, MASTODON_PURPLE, NAVY_BLUE, REDDIT_ORANGE, SLATE, TRANSPARENT_WHITE,
-    VERY_DARK_GREY, YOUTUBE_RED,
+    TWITCH_PURPLE, VERY_DARK_GREY, YOUTUBE_RED,
 };
 use iced::{
     widget::{button, button::Appearance},
@@ -38,6 +38,7 @@ pub enum BrowserButtonStyle {
     Mastodon,
     Reddit,
     Youtube,
+    Twitch,
     Extra,
 }
 
@@ -199,6 +200,7 @@ fn browser_button_style_to_color(style: BrowserButtonStyle) -> Color {
         BrowserButtonStyle::Youtube => YOUTUBE_RED,
         BrowserButtonStyle::Mastodon => MASTODON_PURPLE,
         BrowserButtonStyle::Reddit => REDDIT_ORANGE,
+        BrowserButtonStyle::Twitch => TWITCH_PURPLE,
     }
 }
 
