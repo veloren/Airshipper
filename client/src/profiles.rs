@@ -43,7 +43,7 @@ impl Default for Profile {
 )]
 pub enum WgpuBackend {
     Auto,
-    DX11,
+    OpenGl,
     DX12,
     Metal,
     Vulkan,
@@ -52,13 +52,13 @@ pub enum WgpuBackend {
 #[cfg(target_os = "windows")]
 pub static WGPU_BACKENDS: &[WgpuBackend] = &[
     WgpuBackend::Auto,
-    WgpuBackend::DX11,
+    WgpuBackend::OpenGl,
     WgpuBackend::DX12,
     WgpuBackend::Vulkan,
 ];
 
 #[cfg(target_os = "linux")]
-pub static WGPU_BACKENDS: &[WgpuBackend] = &[WgpuBackend::Auto, WgpuBackend::Vulkan];
+pub static WGPU_BACKENDS: &[WgpuBackend] = &[WgpuBackend::Auto, WgpuBackend::OpenGl, WgpuBackend::Vulkan];
 
 #[cfg(target_os = "macos")]
 pub static WGPU_BACKENDS: &[WgpuBackend] = &[WgpuBackend::Auto, WgpuBackend::Metal];
@@ -199,7 +199,7 @@ impl Profile {
 
         if profile.wgpu_backend != WgpuBackend::Auto {
             let wgpu_backend = match profile.wgpu_backend {
-                WgpuBackend::DX11 => "dx11",
+                WgpuBackend::OpenGl => "gl",
                 WgpuBackend::DX12 => "dx12",
                 WgpuBackend::Metal => "metal",
                 WgpuBackend::Vulkan => "vulkan",
