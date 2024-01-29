@@ -96,7 +96,7 @@ pub async fn query_wgpu_backends(process_path: &Path) -> Vec<WgpuBackend> {
             .chain(std::iter::once(WgpuBackend::Auto))
             .collect()
     } else {
-        WGPU_BACKENDS.into_iter().copied().collect()
+        WGPU_BACKENDS.to_vec()
     }
 }
 
