@@ -9,7 +9,7 @@ use std::{
     process::Stdio,
 };
 use tokio::process::Command;
-use tracing::{error, warn};
+use tracing::error;
 
 // TODO: Support multiple profiles and manage them here.
 
@@ -92,7 +92,7 @@ pub async fn query_wgpu_backends(process_path: &Path) -> Vec<WgpuBackend> {
                     "opengl" => WgpuBackend::OpenGl,
                     "metal" => WgpuBackend::Metal,
                     other => {
-                        warn!(?other, "Invalid output detected");
+                        error!(?other, "Invalid list-wgpu-backends output detected");
                         return None;
                     },
                 })
