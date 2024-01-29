@@ -316,6 +316,16 @@ impl Profile {
     pub fn installed(&self) -> bool {
         self.voxygen_path().exists() && self.version.is_some()
     }
+
+    pub fn reload_wgpu_backends(&mut self) {
+        if self.installed() {
+            self.supported_wgpu_backends = iced::futures::executor::block_on(
+                query_wgpu_backends(&self.voxygen_path()),
+            );
+        } else {
+            self.supported_wgpu_backends = Vec::new();
+        }
+    }
 }
 
 /// Tries to set executable permissions on linux
