@@ -10,7 +10,7 @@ use crate::{
     cli::CmdLine,
     fs,
     gui::{style::AirshipperTheme, widget::*},
-    profiles::Profile,
+    profiles::{query_wgpu_backends, Profile},
     Result,
 };
 use iced::{Application, Command, Settings, Subscription};
@@ -72,6 +72,11 @@ impl Airshipper {
                             // Rust type inference magic
                             let mut state: Airshipper = state;
                             state.cmd = flags;
+                            state.active_profile.supported_wgpu_backends =
+                                iced::futures::executor::block_on(query_wgpu_backends(
+                                    &state.active_profile.voxygen_path(),
+                                ));
+
                             state
                         },
                         Err(e) => {
@@ -176,6 +181,10 @@ impl Application for Airshipper {
                         },
                         Action::UpdateProfile(profile) => {
                             self.active_profile = profile.clone();
+                            self.active_profile.supported_wgpu_backends =
+                                iced::futures::executor::block_on(query_wgpu_backends(
+                                    &self.active_profile.voxygen_path(),
+                                ));
                             return Command::perform(
                                 Self::save(self.clone()),
                                 Message::Saved,

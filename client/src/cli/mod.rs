@@ -1,6 +1,6 @@
 use crate::{
     fs, gui, io, logger, net,
-    profiles::{parse_env_vars, Profile, WGPU_BACKENDS},
+    profiles::{parse_env_vars, Profile},
     Result,
 };
 use parse::Action;
@@ -249,13 +249,15 @@ async fn config(profile: &mut Profile) -> Result<()> {
                     println!(
                         "Which graphics backend do you want to use? (use 'q' to quit)"
                     );
-                    for (idx, backend) in WGPU_BACKENDS.iter().enumerate() {
+                    for (idx, backend) in
+                        profile.supported_wgpu_backends.iter().enumerate()
+                    {
                         println!("- ({}) {}", (idx + 1).to_string().blue(), backend);
                     }
                     loop {
                         let input = editor.readline(&format!(
                             "{} > ",
-                            format!("1-{}", WGPU_BACKENDS.len()).blue()
+                            format!("1-{}", profile.supported_wgpu_backends.len()).blue()
                         ))?;
                         if input.trim() == "q" {
                             break;
@@ -263,9 +265,10 @@ async fn config(profile: &mut Profile) -> Result<()> {
                             .parse::<usize>()
                             .ok()
                             .and_then(|n| n.checked_sub(1))
-                            .and_then(|idx| WGPU_BACKENDS.get(idx))
+                            .and_then(|idx| profile.supported_wgpu_backends.get(idx))
+                            .copied()
                         {
-                            profile.wgpu_backend = *backend;
+                            profile.wgpu_backend = backend;
                             println!(
                                 "{}: The graphics backend has been set to '{backend}'.",
                                 "OK".green()

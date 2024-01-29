@@ -81,7 +81,10 @@ impl DefaultView {
             .map(DefaultViewMessage::GamePanel)
     }
 
-    pub fn view(&self, active_profile: &Profile) -> Element<DefaultViewMessage> {
+    pub fn view<'a>(
+        &'a self,
+        active_profile: &'a Profile,
+    ) -> Element<'a, DefaultViewMessage> {
         let Self {
             changelog_panel_component,
             announcement_panel_component,
