@@ -9,6 +9,7 @@ use std::{
     process::Stdio,
 };
 use tokio::process::Command;
+use tracing::{error, warn};
 
 // TODO: Support multiple profiles and manage them here.
 
@@ -74,7 +75,7 @@ static WGPU_BACKENDS: &[WgpuBackend] = &[WgpuBackend::Auto, WgpuBackend::Metal];
 
 pub async fn query_wgpu_backends(process_path: &Path) -> Vec<WgpuBackend> {
     if let Some(res) = Command::new(process_path)
-        .arg("list-backends")
+        .arg("list-wgpu-backends")
         .stdout(Stdio::piped())
         .output()
         .await
@@ -88,14 +89,18 @@ pub async fn query_wgpu_backends(process_path: &Path) -> Vec<WgpuBackend> {
                     "vulkan" => WgpuBackend::Vulkan,
                     "dx11" => WgpuBackend::DX11,
                     "dx12" => WgpuBackend::DX12,
-                    "gl" => WgpuBackend::OpenGl,
+                    "opengl" => WgpuBackend::OpenGl,
                     "metal" => WgpuBackend::Metal,
-                    _ => return None,
+                    other => {
+                        warn!(?other, "Invalid output detected");
+                        return None;
+                    },
                 })
             })
             .chain(std::iter::once(WgpuBackend::Auto))
             .collect()
     } else {
+        error!("failed to query WGPU Backends, falling back to defaults");
         WGPU_BACKENDS.to_vec()
     }
 }
