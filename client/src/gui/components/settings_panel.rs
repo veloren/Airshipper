@@ -120,7 +120,10 @@ impl SettingsPanelComponent {
         }
     }
 
-    pub fn view(&self, active_profile: &Profile) -> Element<DefaultViewMessage> {
+    pub fn view<'a>(
+        &self,
+        active_profile: &'a Profile,
+    ) -> Element<'a, DefaultViewMessage> {
         const PICK_LIST_PADDING: u16 = 7;
         const FONT_SIZE: u16 = 18;
 
@@ -131,7 +134,7 @@ impl SettingsPanelComponent {
                 .push(
                     container(
                         pick_list(
-                            profiles::WGPU_BACKENDS,
+                            &active_profile.supported_wgpu_backends,
                             Some(active_profile.wgpu_backend),
                             |x| {
                                 DefaultViewMessage::SettingsPanel(

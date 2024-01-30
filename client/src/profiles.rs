@@ -2,8 +2,14 @@
 use crate::nix;
 use crate::{channels::Channel, consts, fs, net, Result};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, ffi::OsString, path::PathBuf};
+use std::{
+    collections::HashMap,
+    ffi::OsString,
+    path::{Path, PathBuf},
+    process::Stdio,
+};
 use tokio::process::Command;
+use tracing::error;
 
 // TODO: Support multiple profiles and manage them here.
 
@@ -25,6 +31,9 @@ pub struct Profile {
     pub wgpu_backend: WgpuBackend,
     pub log_level: LogLevel,
     pub env_vars: String,
+
+    #[serde(skip)]
+    pub supported_wgpu_backends: Vec<WgpuBackend>,
 }
 
 const DEFAULT_PROFILE_NAME: &str = "default";
@@ -43,6 +52,7 @@ impl Default for Profile {
 )]
 pub enum WgpuBackend {
     Auto,
+    OpenGl,
     DX11,
     DX12,
     Metal,
@@ -50,7 +60,7 @@ pub enum WgpuBackend {
 }
 
 #[cfg(target_os = "windows")]
-pub static WGPU_BACKENDS: &[WgpuBackend] = &[
+static WGPU_BACKENDS: &[WgpuBackend] = &[
     WgpuBackend::Auto,
     WgpuBackend::DX11,
     WgpuBackend::DX12,
@@ -58,10 +68,42 @@ pub static WGPU_BACKENDS: &[WgpuBackend] = &[
 ];
 
 #[cfg(target_os = "linux")]
-pub static WGPU_BACKENDS: &[WgpuBackend] = &[WgpuBackend::Auto, WgpuBackend::Vulkan];
+static WGPU_BACKENDS: &[WgpuBackend] = &[WgpuBackend::Auto, WgpuBackend::Vulkan];
 
 #[cfg(target_os = "macos")]
-pub static WGPU_BACKENDS: &[WgpuBackend] = &[WgpuBackend::Auto, WgpuBackend::Metal];
+static WGPU_BACKENDS: &[WgpuBackend] = &[WgpuBackend::Auto, WgpuBackend::Metal];
+
+pub async fn query_wgpu_backends(process_path: &Path) -> Vec<WgpuBackend> {
+    if let Some(res) = Command::new(process_path)
+        .arg("list-wgpu-backends")
+        .stdout(Stdio::piped())
+        .output()
+        .await
+        .ok()
+        .filter(|res| res.status.success())
+    {
+        let res = String::from_utf8_lossy(&res.stdout);
+        res.lines()
+            .filter_map(|backend| {
+                Some(match backend {
+                    "vulkan" => WgpuBackend::Vulkan,
+                    "dx11" => WgpuBackend::DX11,
+                    "dx12" => WgpuBackend::DX12,
+                    "opengl" => WgpuBackend::OpenGl,
+                    "metal" => WgpuBackend::Metal,
+                    other => {
+                        error!(?other, "Invalid list-wgpu-backends output detected");
+                        return None;
+                    },
+                })
+            })
+            .chain(std::iter::once(WgpuBackend::Auto))
+            .collect()
+    } else {
+        error!("failed to query WGPU Backends, falling back to defaults");
+        WGPU_BACKENDS.to_vec()
+    }
+}
 
 #[derive(
     Debug, derive_more::Display, Clone, Copy, Serialize, Deserialize, PartialEq, Eq,
@@ -116,6 +158,7 @@ impl Profile {
             wgpu_backend: WgpuBackend::Auto,
             log_level: LogLevel::Default,
             env_vars: String::new(),
+            supported_wgpu_backends: Vec::new(),
         }
     }
 
@@ -125,7 +168,7 @@ impl Profile {
 
     /// Returns path to voxygen binary.
     /// e.g. <base>/profiles/default/veloren-voxygen.exe
-    fn voxygen_path(&self) -> PathBuf {
+    pub fn voxygen_path(&self) -> PathBuf {
         self.directory().join(consts::VOXYGEN_FILE)
     }
 
@@ -199,6 +242,7 @@ impl Profile {
 
         if profile.wgpu_backend != WgpuBackend::Auto {
             let wgpu_backend = match profile.wgpu_backend {
+                WgpuBackend::OpenGl => "gl",
                 WgpuBackend::DX11 => "dx11",
                 WgpuBackend::DX12 => "dx12",
                 WgpuBackend::Metal => "metal",
@@ -271,6 +315,16 @@ impl Profile {
     /// Returns whether the profile is ready to be started
     pub fn installed(&self) -> bool {
         self.voxygen_path().exists() && self.version.is_some()
+    }
+
+    pub fn reload_wgpu_backends(&mut self) {
+        if self.installed() {
+            self.supported_wgpu_backends = iced::futures::executor::block_on(
+                query_wgpu_backends(&self.voxygen_path()),
+            );
+        } else {
+            self.supported_wgpu_backends = Vec::new();
+        }
     }
 }
 

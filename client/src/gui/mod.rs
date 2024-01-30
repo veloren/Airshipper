@@ -72,6 +72,9 @@ impl Airshipper {
                             // Rust type inference magic
                             let mut state: Airshipper = state;
                             state.cmd = flags;
+
+                            state.active_profile.reload_wgpu_backends();
+
                             state
                         },
                         Err(e) => {
@@ -176,6 +179,8 @@ impl Application for Airshipper {
                         },
                         Action::UpdateProfile(profile) => {
                             self.active_profile = profile.clone();
+                            self.active_profile.reload_wgpu_backends();
+
                             return Command::perform(
                                 Self::save(self.clone()),
                                 Message::Saved,
