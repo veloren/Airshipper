@@ -322,6 +322,19 @@ impl Profile {
             self.supported_wgpu_backends = iced::futures::executor::block_on(
                 query_wgpu_backends(&self.voxygen_path()),
             );
+            let supported = |backend| self.supported_wgpu_backends.contains(&backend);
+            // Update selected backend if it isn't available.
+            if self.wgpu_backend != WgpuBackend::Auto && !supported(self.wgpu_backend) {
+                self.wgpu_backend = match self.wgpu_backend {
+                    WgpuBackend::DX11 if supported(WgpuBackend::OpenGl) => {
+                        WgpuBackend::OpenGl
+                    },
+                    WgpuBackend::OpenGl if supported(WgpuBackend::DX11) => {
+                        WgpuBackend::DX11
+                    },
+                    _ => WgpuBackend::Auto,
+                };
+            }
         } else {
             self.supported_wgpu_backends = Vec::new();
         }
