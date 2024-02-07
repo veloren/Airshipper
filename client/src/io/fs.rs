@@ -67,7 +67,7 @@ pub fn log_path_file() -> (&'static Path, &'static str) {
 pub fn unzip(profile: &Profile) -> Result<()> {
     tracing::info!("Unzipping to {:?}", profile.directory());
     let mut zip_file =
-        std::fs::File::open(&profile.directory().join(consts::DOWNLOAD_FILE))?;
+        std::fs::File::open(profile.directory().join(consts::DOWNLOAD_FILE))?;
 
     let mut archive = zip::ZipArchive::new(&mut zip_file)?;
 

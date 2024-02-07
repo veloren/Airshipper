@@ -10,7 +10,6 @@ use std::sync::Arc;
 use tracing::*;
 
 #[tracing::instrument(skip(_secret, _event, metrics, payload, db))]
-
 #[post("/", format = "json", data = "<payload>")]
 pub async fn post_pipeline_update(
     _secret: GitlabSecret,
