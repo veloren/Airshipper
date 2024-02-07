@@ -143,8 +143,10 @@ impl ChangelogPanelComponent {
 
                             // section done
                             // save if not empty
-                            if section_name.is_some() && !section_lines.is_empty() {
-                                sections.push((section_name.unwrap(), section_lines));
+                            if let Some(section_name) = section_name
+                                && !section_lines.is_empty()
+                            {
+                                sections.push((section_name, section_lines));
                             }
                         },
                         // paragraph without section aka note

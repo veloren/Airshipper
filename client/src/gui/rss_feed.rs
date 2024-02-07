@@ -89,7 +89,7 @@ pub trait RssFeedComponent {
             },
             RssFeedComponentMessage::ImageFetched { result, url } => {
                 if let Ok(bytes) = result {
-                    if let Some(mut post) = self
+                    if let Some(post) = self
                         .posts_mut()
                         .iter_mut()
                         .filter(|post| post.image_url.is_some())
@@ -250,8 +250,11 @@ impl RssPost {
                     .lines()
                     .take(3)
                     .filter(|x| !x.contains("[banner]"))
-                    .map(|x| format!("{}\n", x))
-                    .collect::<String>();
+                    .fold(String::new(), |mut output, b| {
+                        use std::fmt::Write;
+                        let _ = writeln!(output, "{b}");
+                        output
+                    });
                 strip_markdown::strip_markdown(&stripped_html)
             },
             None => "No description found.".into(),
@@ -272,10 +275,12 @@ impl From<&rss::Item> for RssPost {
         // If the RSS item has an enclosure (attached media), check if it's a jpg or png
         // and if it is store the URL against the post for display in the RSS
         // feed.
-        if let Some(enclosure) = &item.enclosure && matches!(enclosure.mime_type.as_str(), "image/jpg" | "image/png") {
+        if let Some(enclosure) = &item.enclosure
+            && matches!(enclosure.mime_type.as_str(), "image/jpg" | "image/png")
+        {
             let mut url = enclosure.url.clone();
 
-            // If the image is hosted by the discord CDN, use its ability to provide a 
+            // If the image is hosted by the discord CDN, use its ability to provide a
             // resized image to save bandwidth
             if url.starts_with("https://media.discordapp.net") {
                 url = format!("{}?width=320&height=240", url);

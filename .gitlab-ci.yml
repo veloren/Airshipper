@@ -6,7 +6,7 @@ stages:
 
 variables:
   GIT_CLEAN_FLAGS: -f
-  CACHE_IMAGE_TAG: d74ceb0a
+  CACHE_IMAGE_TAG: 23a6c908
 
 default:
   # https://docs.gitlab.com/ee/ci/pipelines/settings.html#auto-cancel-pending-pipelines
