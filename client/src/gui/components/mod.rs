@@ -16,6 +16,6 @@ pub use game_panel::{GamePanelComponent, GamePanelMessage};
 pub use logo_panel::LogoPanelComponent;
 pub use news_panel::{NewsPanelComponent, NewsPanelMessage};
 pub use server_browser_panel::{
-    ServerBrowserEntry, ServerBrowserPanelComponent, ServerBrowserPanelMessage,
+    ServerBrowserPanelComponent, ServerBrowserPanelMessage,
 };
 pub use settings_panel::{SettingsPanelComponent, SettingsPanelMessage};

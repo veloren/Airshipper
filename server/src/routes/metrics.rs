@@ -1,3 +1,4 @@
+#![allow(unused_imports)]
 use crate::{metrics::Metrics, Result};
 use rocket::*;
 use std::sync::Arc;

@@ -1,3 +1,4 @@
+#![allow(unused_imports)]
 use crate::{
     config::{Platform, API_VERSION},
     metrics::Metrics,

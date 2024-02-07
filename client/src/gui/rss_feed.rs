@@ -89,7 +89,7 @@ pub trait RssFeedComponent {
             },
             RssFeedComponentMessage::ImageFetched { result, url } => {
                 if let Ok(bytes) = result {
-                    if let Some(mut post) = self
+                    if let Some(post) = self
                         .posts_mut()
                         .iter_mut()
                         .filter(|post| post.image_url.is_some())
