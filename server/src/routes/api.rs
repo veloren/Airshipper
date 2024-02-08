@@ -29,9 +29,14 @@ pub struct Announcement {
 /// Public Service Announcement to be displayed in Airshipper
 #[get("/announcement")]
 pub async fn announcement(_db: crate::DbConnection) -> Json<Announcement> {
+    use chrono::TimeZone;
     Json(Announcement {
-        message: None,
-        last_change: chrono::Utc::now(),
+        message: Some(
+            "Try switching the graphics mode to Auto or OpenGL, in case you experience \
+             issues starting Veloren on Windows."
+                .to_string(),
+        ),
+        last_change: chrono::Utc.with_ymd_and_hms(2024, 2, 8, 8, 0, 0).unwrap(),
     })
 }
 
