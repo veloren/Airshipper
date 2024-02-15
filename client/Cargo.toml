@@ -6,6 +6,7 @@ authors = ["Songtronix <contact@songtronix.com>"]
 edition = "2018"
 publish = true
 default-run = "airshipper"
+exclude = ["assets/fonts/GoNotoCurrent.ttf"]
 
 license = "GPL-3.0"
 homepage = "https://www.veloren.net"
@@ -26,6 +27,7 @@ maintenance = { status = "actively-developed" }
 # Windows cannot bundle ssl by default and as such this feature exists
 # to bundle ssl in CI.
 bundled = ["openssl-sys"]
+bundled_font = []
 
 [dependencies]
 veloren-serverbrowser-api = "0.3.1"
