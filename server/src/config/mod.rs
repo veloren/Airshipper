@@ -315,7 +315,7 @@ mod tests {
             commit: Commit {
                 id: "d4c98e877501d80af663efa7601b5d36007f5593".to_owned(),
                 message: "Merge branch 'xMAC94x/linux-aarch64' into 'master'\n\nadd linux-aarch64 on master builds to be consistent\n\nSee merge request veloren/veloren!3250".to_owned(),
-                timestamp: chrono::DateTime::from_utc(chrono::NaiveDate::from_ymd_opt(2022, 3, 3).unwrap().and_hms_opt(16, 37, 53).unwrap(), chrono::Utc),
+                timestamp: chrono::DateTime::from_naive_utc_and_offset(chrono::NaiveDate::from_ymd_opt(2022, 3, 3).unwrap().and_hms_opt(16, 37, 53).unwrap(), chrono::Utc),
                 url: "https://gitlab.com/veloren/veloren/-/commit/d4c98e877501d80af663efa7601b5d36007f5593".to_owned(),
                 author: Author {
                     name: "Marcel".to_owned(),

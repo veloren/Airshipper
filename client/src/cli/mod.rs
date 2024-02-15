@@ -138,6 +138,7 @@ async fn download(profile: Profile) -> Result<()> {
     let progress_bar = ProgressBar::new(0).with_style(
         ProgressStyle::default_bar()
             .template("[{elapsed_precise}] [{bar:40.green/white}] {msg} [{eta}]")
+            .unwrap()
             .progress_chars("=>-"),
     );
     progress_bar.set_length(100);
@@ -190,7 +191,7 @@ async fn start(profile: &mut Profile, game_server_address: Option<String>) -> Re
 async fn config(profile: &mut Profile) -> Result<()> {
     use colored::Colorize;
 
-    let mut editor = rustyline::Editor::<()>::new()?;
+    let mut editor = rustyline::DefaultEditor::new()?;
 
     'main: loop {
         println!("===== Current configuration =====");
