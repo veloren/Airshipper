@@ -4,7 +4,7 @@ description = "Provides automatic updates for the voxel RPG Veloren."
 version = "0.11.0"
 authors = ["Songtronix <contact@songtronix.com>"]
 edition = "2018"
-publish = false
+publish = true
 default-run = "airshipper"
 
 license = "GPL-3.0"
