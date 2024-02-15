@@ -82,7 +82,7 @@ chrono = { version = "0.4.22", features = ["serde"] }
 country-parser = "0.1.1"
 
 # bundle all the things!
-openssl-sys = { version = "*", features = ["vendored"], optional = true }
+openssl-sys = { version = "0.9", features = ["vendored"], optional = true }
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", features = ["shellapi", "winuser"] }
