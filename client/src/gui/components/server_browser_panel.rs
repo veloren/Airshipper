@@ -1,8 +1,8 @@
 use crate::{
     assets::{
-        GLOBE_ICON, KEY_ICON, NOTO_SANS_UNIFIED_FONT, PING1_ICON, PING2_ICON, PING3_ICON,
-        PING4_ICON, PING_ERROR_ICON, PING_NONE_ICON, POPPINS_BOLD_FONT,
-        POPPINS_MEDIUM_FONT, STAR_ICON, UP_RIGHT_ARROW_ICON,
+        GLOBE_ICON, KEY_ICON, PING1_ICON, PING2_ICON, PING3_ICON, PING4_ICON,
+        PING_ERROR_ICON, PING_NONE_ICON, POPPINS_BOLD_FONT, POPPINS_MEDIUM_FONT,
+        STAR_ICON, UNIVERSAL_FONT, UP_RIGHT_ARROW_ICON,
     },
     consts,
     consts::{GITLAB_SERVER_BROWSER_URL, OFFICIAL_SERVER_LIST},
@@ -192,7 +192,7 @@ impl ServerBrowserPanelComponent {
         let column_cell = |content: &str| {
             text(content)
                 .width(Length::FillPortion(3))
-                .font(NOTO_SANS_UNIFIED_FONT)
+                .font(UNIVERSAL_FONT)
                 .height(Length::Fill)
                 .vertical_alignment(Vertical::Center)
         };
@@ -473,21 +473,15 @@ impl ServerBrowserPanelComponent {
                                 .push(
                                     row![]
                                         .spacing(10)
-                                        .push(
-                                            text(&server.name)
-                                                .font(NOTO_SANS_UNIFIED_FONT),
-                                        )
+                                        .push(text(&server.name).font(UNIVERSAL_FONT))
                                         .push(
                                             text(display_gameserver_address(server))
-                                                .font(NOTO_SANS_UNIFIED_FONT)
+                                                .font(UNIVERSAL_FONT)
                                                 .style(TextStyle::BrightOrange),
                                         ),
                                 )
-                                .push(text("Description: ").font(NOTO_SANS_UNIFIED_FONT))
-                                .push(
-                                    text(&server.description)
-                                        .font(NOTO_SANS_UNIFIED_FONT),
-                                )
+                                .push(text("Description: ").font(UNIVERSAL_FONT))
+                                .push(text(&server.description).font(UNIVERSAL_FONT))
                                 .push(extras)
                         }))))
                         .height(Length::Fixed(128.0)),

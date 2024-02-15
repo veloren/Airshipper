@@ -28,11 +28,13 @@ pub const KEY_ICON: &[u8] = include_bytes!("../assets/icons/key.png");
 pub const POPPINS_FONT_BYTES: &[u8] =
     include_bytes!("../assets/fonts/Poppins-Regular.ttf");
 
-// GoNotoCurrent is a unified font that contains glyphs for most languages used around the
-// world so is used in widgets that display user provided text such as those within the
-// server browser panel.
-// https://github.com/satbyy/go-noto-universal
-pub const NOTO_SANS_UNIFIED_FONT: Font = Font::External {
+/// A font to be used for text that can be used to display user provided text such as
+/// those within the server browser panel.
+#[cfg(not(feature = "bundled_font"))]
+pub const UNIVERSAL_FONT: Font = Font::Default;
+
+#[cfg(feature = "bundled_font")]
+pub const UNIVERSAL_FONT: Font = Font::External {
     name: "Noto Sans Unified",
     bytes: include_bytes!("../assets/fonts/GoNotoCurrent.ttf"),
 };
