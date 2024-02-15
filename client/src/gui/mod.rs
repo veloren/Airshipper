@@ -265,7 +265,6 @@ impl Application for Airshipper {
 
 fn settings(cmd: CmdLine) -> Settings<CmdLine> {
     use iced::window::{Icon, Settings as Window};
-    use image::GenericImageView;
     let icon = image::load_from_memory(crate::assets::VELOREN_ICON).unwrap();
 
     Settings {

@@ -34,8 +34,8 @@ veloren-serverbrowser-api = "0.3.1"
 
 # Cli
 clap = { version = "3.1.18", features = ["cargo", "derive"] }
-indicatif = "0.16"
-rustyline = "10.0"
+indicatif = "0.17"
+rustyline = "13"
 colored = "2.0"
 
 # UI
@@ -47,25 +47,25 @@ tracing-futures = "0.2.4"
 tracing-subscriber = { version = "0.3.7", default-features = false, features = ["env-filter", "fmt", "time", "ansi", "smallvec", "tracing-log"]}
 termcolor = "1.1.3"
 tracing-appender = "0.2.0"
-tracing-log = "0.1.1"
+tracing-log = "0.2.0"
 regex = "1.5"
 # Networking
 reqwest = { version = "0.11.4", default-features = false, features = ["rustls-tls", "json"] }
-surge-ping = "0.7.2"
-socket2 = "0.4.7"
+surge-ping = "0.8.0"
+socket2 = "0.5.5"
 
 # Parsing
 pulldown-cmark = "0.8.0"
 strip_markdown = "0.2.0"
-html2text = "0.2.1"
+html2text = "0.12.0"
 serde = "1.0.116"
 semver = "1"
-rss = "1.10"
-ron = "0.6.2"
-zip = "0.5.8"
+rss = "2.0.7"
+ron = "0.8.1"
+zip = "0.6.6"
 url = "2.2.2"
 # Other
-image = { version = "0.23.14", default-features = false, features = ["ico"] }
+image = { version = "0.24.8", default-features = false, features = ["ico"] }
 tokio = { version = "1.7.1", features = ["macros", "io-util", "process", "fs", "rt-multi-thread", "net"] }
 tokio-stream = { version = "0.1.6", features = ["io-util"] }
 futures-util = "0.3.15"
@@ -74,7 +74,7 @@ find_folder = "0.3.0"
 lazy_static = "1.4.0"
 thiserror = "1.0.20"
 bytesize = "1.0.1"
-opener = "0.5"
+opener = "0.6.1"
 dirs = { package = "dirs-next", version = "2.0.0" }
 md5 = "0.7.0"
 rand = "0.8.5"
@@ -86,7 +86,7 @@ openssl-sys = { version = "*", features = ["vendored"], optional = true }
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", features = ["shellapi", "winuser"] }
-self_update = { version = "0.27.0", features = ["archive-zip"] }
+self_update = { version = "0.39.0", features = ["archive-zip"] }
 
 [build-dependencies]
 winresource = "0.1.15"
