@@ -57,3 +57,49 @@ gitlab_release:
           url: 'https://gitlab.com/veloren/airshipper/-/jobs/${MACOS_AARCH64_JOB_ID}/artifacts/file/airshipper'
         - name: 'Windows (x86_64) Client'
           url: 'https://gitlab.com/veloren/airshipper/-/jobs/${WINDOWS_JOB_ID}/artifacts/file/airshipper-windows.exe'
+
+# Generates flatpak files and pushes them to https://github.com/flathub/net.veloren.airshipper
+flatpak:
+  stage: publish
+  environment: production
+  # Deploy the server on every merge to master and a tag is pushed to master
+  rules:
+    - if: ($CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_TAG != null)
+  image:
+    name: debian:bookworm-slim
+    entrypoint: [""]
+  tags: ["veloren/*", "publish", "trusted"]
+  before_script:
+    - echo "" # Override before_script in .gitlab-ci.yml
+  script:
+    - apt-get update
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y flatpak-builder python3 python3-yaml python3-toml python3-aiohttp jq yq curl git
+    - flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+    - rm -r net.veloren.airshipper || echo ""
+    - rm -r flatpak-builder-tools || echo ""
+    - git clone "https://${VELOREN_BOT_ACCESS_TOKEN}@github.com/flathub/net.veloren.airshipper.git"
+    - git clone https://github.com/flatpak/flatpak-builder-tools.git
+    - export RUST_TOOLCHAIN=$(cat rust-toolchain | tail -c 11)
+    - cd net.veloren.airshipper
+    - export RUST_AARCH64="https://static.rust-lang.org/dist/${RUST_TOOLCHAIN}/rust-nightly-aarch64-unknown-linux-gnu.tar.xz"
+    - export RUST_X64="https://static.rust-lang.org/dist/${RUST_TOOLCHAIN}/rust-nightly-x86_64-unknown-linux-gnu.tar.xz"
+    - export RUST_AARCH64_SHA256=$(curl -sL ${RUST_AARCH64} | sha256sum)
+    - export RUST_X64_SHA256=$(curl -sL ${RUST_X64} | sha256sum)
+    - export AIRSHIPPER_SOURCE="https://gitlab.com/veloren/airshipper/-/archive/${CI_COMMIT_TAG}/airshipper-${CI_COMMIT_TAG}.tar.gz"
+    - export AIRSHIPPER_SOURCE_SHA256=$(curl -sL ${AIRSHIPPER_SOURCE} | sha256sum)
+    - yq -i -Y ".modules[0].sources[0].url = \"${RUST_AARCH64}\"" net.veloren.airshipper.yaml
+    - yq -i -Y ".modules[0].sources[0].sha256 = \"${RUST_AARCH64_SHA256}\"" net.veloren.airshipper.yaml
+    - yq -i -Y ".modules[0].sources[1].url = \"${RUST_X64}\"" net.veloren.airshipper.yaml
+    - yq -i -Y ".modules[0].sources[1].sha256 = \"${RUST_X64_SHA256}\"" net.veloren.airshipper.yaml
+    - yq -i -Y ".modules[1].sources[0].url = \"${AIRSHIPPER_SOURCE}\"" net.veloren.airshipper.yaml
+    - yq -i -Y ".modules[1].sources[0].sha256 = \"${AIRSHIPPER_SOURCE_SHA256}\"" net.veloren.airshipper.yaml
+    - ../flatpak-builder-tools/cargo/flatpak-cargo-generator.py --output generated-sources.json ../Cargo.lock
+    - git status
+    - git diff net.veloren.airshipper.yaml | cat
+    - git config user.email "veloren-bot@veloren.net"
+    - git config user.name "veloren-bot"
+    - git add net.veloren.airshipper.yaml generated-sources.json
+    - git branch -D "veloren-bot/update_version" || echo ""
+    - git checkout -b "veloren-bot/update_version"
+    - git commit -m "updating new airshipper version"
+    - git push --set-upstream origin "veloren-bot/update_version"
