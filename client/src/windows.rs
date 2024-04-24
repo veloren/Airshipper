@@ -31,8 +31,8 @@ pub fn query() -> Result<Option<Release>> {
         if Version::parse(&latest_release.version)?
             > Version::parse(env!("CARGO_PKG_VERSION"))?
             && latest_release
-                .asset_for("windows")
-                .or_else(|| latest_release.asset_for(".msi"))
+                .asset_for("windows",None)
+                .or_else(|| latest_release.asset_for(".msi",None))
                 .is_some()
         {
             tracing::debug!("Found new Airshipper release: {}", &latest_release.version);
@@ -54,8 +54,8 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
         .expect("failed to create cache directory!");
 
     let asset = latest_release
-        .asset_for("windows")
-        .or_else(|| latest_release.asset_for(".msi"));
+        .asset_for("windows",None)
+        .or_else(|| latest_release.asset_for(".msi",None));
 
     // Check Github release provides artifact for current platform
     if let Some(asset) = asset {
