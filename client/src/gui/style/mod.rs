@@ -1,4 +1,5 @@
 use iced::{application, application::Appearance, Color};
+use lazy_static::lazy_static;
 
 pub mod button;
 pub mod container;
@@ -30,7 +31,7 @@ pub const TOMATO_RED: Color = Color::from_rgb(0.91, 0.31, 0.31);
 pub const ALMOST_BLACK: Color = Color::from_rgba(0.00, 0.00, 0.00, 0.7);
 pub const ALMOST_BLACK2: Color = Color::from_rgba(0.05, 0.05, 0.05, 0.25);
 
-const fn rgb8(red: u8, green: u8, blue: u8) -> Color {
+fn rgb8(red: u8, green: u8, blue: u8) -> Color {
     Color::from_rgb(
         red as f32 / 255.0,
         green as f32 / 255.0,
@@ -38,11 +39,13 @@ const fn rgb8(red: u8, green: u8, blue: u8) -> Color {
     )
 }
 
-const DISCORD_BLURPLE: Color = rgb8(88, 101, 242);
-const MASTODON_PURPLE: Color = rgb8(99, 100, 255);
-const REDDIT_ORANGE: Color = rgb8(255, 69, 0);
-const YOUTUBE_RED: Color = rgb8(255, 0, 0);
-const TWITCH_PURPLE: Color = rgb8(100, 65, 165);
+lazy_static! {
+    static ref DISCORD_BLURPLE: Color = rgb8(88, 101, 242);
+    static ref MASTODON_PURPLE: Color = rgb8(99, 100, 255);
+    static ref REDDIT_ORANGE: Color = rgb8(255, 69, 0);
+    static ref YOUTUBE_RED: Color = rgb8(255, 0, 0);
+    static ref TWITCH_PURPLE: Color = rgb8(100, 65, 165);
+}
 
 #[derive(Default)]
 pub struct AirshipperTheme {}

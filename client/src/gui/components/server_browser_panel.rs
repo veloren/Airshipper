@@ -303,8 +303,9 @@ impl ServerBrowserPanelComponent {
                 )
                 .padding(0);
 
-            let row_style = if let Some(selected_index) = self.selected_index
-                && selected_index == i
+            let row_style = if self
+                .selected_index
+                .is_some_and(|selected_index| selected_index == i)
             {
                 ButtonStyle::ServerListEntry(ServerListEntryButtonState::Selected)
             } else {

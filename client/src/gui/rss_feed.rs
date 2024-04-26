@@ -119,7 +119,7 @@ impl RssFeedData {
         feed_url: &str,
         local_version: String,
     ) -> RssFeedUpdateStatus {
-        let fetch = async move |local_version: String| -> Result<RssFeedUpdateStatus> {
+        let fetch = move |local_version: String| async move {
             match net::query_etag(feed_url).await? {
                 Some(remote_version) => {
                     if local_version != remote_version {
@@ -169,7 +169,7 @@ impl RssFeedData {
             // TODO: Currently we want 15 blog posts and 15 community showcase posts - if this is ever not the case 
             // then this number will need parameterising.
             .take(15)
-            .map(async move |item| {
+            .map(move |item| async move {
                 let mut post = RssPost::from(item);
                 if let Some(url) = &post.image_url {
                     if let Ok(bytes) = RssFeedData::fetch_image(url.to_owned()).await {
@@ -275,9 +275,9 @@ impl From<&rss::Item> for RssPost {
         // If the RSS item has an enclosure (attached media), check if it's a jpg or png
         // and if it is store the URL against the post for display in the RSS
         // feed.
-        if let Some(enclosure) = &item.enclosure
-            && matches!(enclosure.mime_type.as_str(), "image/jpg" | "image/png")
-        {
+        if let Some(enclosure) = item.enclosure.as_ref().filter(|enclosure| {
+            matches!(enclosure.mime_type.as_str(), "image/jpg" | "image/png")
+        }) {
             let mut url = enclosure.url.clone();
 
             // If the image is hosted by the discord CDN, use its ability to provide a
