@@ -4,7 +4,11 @@ use crate::{
     io::{self, ProcessUpdate},
     profiles::Profile,
 };
-use iced::{advanced::{subscription::Recipe, Hasher}, futures, Subscription, Event, event::Status};
+use iced::{
+    advanced::{subscription::Recipe, Hasher},
+    event::Status,
+    futures, Event, Subscription,
+};
 
 pub fn stream(
     profile: Profile,

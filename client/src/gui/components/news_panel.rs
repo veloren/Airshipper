@@ -125,9 +125,9 @@ impl NewsPost {
                     container(
                         column![]
                             .spacing(2)
-                            .push(text("Development").size(16).style(TextStyle::Lilac))
-                            .push(text(&post.title).size(20).font(POPPINS_LIGHT_FONT))
-                            .push(text(&post.description).size(14)),
+                            .push(text("Development").size(14).style(TextStyle::Lilac))
+                            .push(text(&post.title).size(16).font(POPPINS_LIGHT_FONT))
+                            .push(text(&post.description).size(12)),
                     )
                     .width(Length::Fill)
                     .style(ContainerStyle::BlogPost)

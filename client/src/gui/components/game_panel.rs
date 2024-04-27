@@ -339,7 +339,7 @@ impl GamePanelComponent {
                         .height(Length::Fixed(30.0))
                         .push(
                             container(
-                                text(version_string).size(15).style(TextStyle::LightGrey),
+                                text(version_string).size(12).style(TextStyle::LightGrey),
                             )
                             .align_y(Vertical::Bottom)
                             .width(Length::Fill)
@@ -497,7 +497,7 @@ impl GamePanelComponent {
                                     ButtonState::Enabled,
                                 )),
                                 true,
-                                Some(25),
+                                Some(18),
                             )
                         },
                         GamePanelState::ReadyToPlay => (
@@ -566,13 +566,13 @@ impl GamePanelComponent {
                 let mut launch_button = button(
                     text(button_text)
                         .font(POPPINS_BOLD_FONT)
-                        .size(custom_font_size.unwrap_or(45))
+                        .size(custom_font_size.unwrap_or(25))
                         .horizontal_alignment(Horizontal::Center)
                         .vertical_alignment(Vertical::Center)
                         .width(Length::Fill),
                 )
                 .style(button_style)
-                .width(Length::FillPortion(3))
+                .width(Length::FillPortion(2))
                 .height(Length::Fixed(75.0));
 
                 if enabled {
@@ -584,7 +584,7 @@ impl GamePanelComponent {
                 let server_browser_button = button(
                     text("Server Browser")
                         .font(POPPINS_MEDIUM_FONT)
-                        .size(22)
+                        .size(14)
                         .horizontal_alignment(Horizontal::Center)
                         .vertical_alignment(Vertical::Center),
                 )

@@ -133,12 +133,12 @@ impl SettingsPanelComponent {
         active_profile: &'a Profile,
     ) -> Element<'a, DefaultViewMessage> {
         const PICK_LIST_PADDING: u16 = 7;
-        const FONT_SIZE: u16 = 18;
+        const FONT_SIZE: u16 = 12;
 
         let graphics_mode = tooltip(
             column![]
                 .spacing(5)
-                .push(text("GRAPHICS MODE").size(15).style(TextStyle::LightGrey))
+                .push(text("GRAPHICS MODE").size(10).style(TextStyle::LightGrey))
                 .push(
                     container(
                         pick_list(
@@ -151,11 +151,12 @@ impl SettingsPanelComponent {
                             },
                         )
                         .text_size(FONT_SIZE)
-                        .padding(PICK_LIST_PADDING),
+                        .padding(PICK_LIST_PADDING)
+                        .width(Length::Fill),
                     )
-                    .height(Length::Fixed(30.0))
-                    .width(Length::Fixed(100.0)),
-                ),
+                    .height(Length::Fixed(30.0)),
+                )
+                .width(Length::FillPortion(1)),
             "The rendering backend that the game will use. \nLeave on Auto unless you \
              are experiencing issues",
             Position::Top,
@@ -169,7 +170,7 @@ impl SettingsPanelComponent {
                 .push(
                     row![]
                         .spacing(5)
-                        .push(text("LOG LEVEL").size(15).style(TextStyle::LightGrey))
+                        .push(text("LOG LEVEL").size(10).style(TextStyle::LightGrey))
                         .push(
                             container(
                                 button(image(Handle::from_memory(FOLDER_ICON.to_vec())))
@@ -195,13 +196,14 @@ impl SettingsPanelComponent {
                             },
                         )
                         .text_size(FONT_SIZE)
-                        .padding(PICK_LIST_PADDING),
+                        .padding(PICK_LIST_PADDING)
+                        .width(Length::Fill),
                     )
-                    .height(Length::Fixed(30.0))
-                    .width(Length::Fixed(80.0)),
-                ),
+                    .height(Length::Fixed(30.0)),
+                )
+                .width(Length::FillPortion(1)),
             "Changes the amount of information that the game outputs to its log file",
-            Position::Left,
+            Position::Top,
         )
         .style(ContainerStyle::Tooltip)
         .gap(5);
@@ -209,7 +211,7 @@ impl SettingsPanelComponent {
         let server_picker = tooltip(
             column![]
                 .spacing(5)
-                .push(text("SERVER").size(15).style(TextStyle::LightGrey))
+                .push(text("SERVER").size(10).style(TextStyle::LightGrey))
                 .push(
                     container(
                         pick_list(profiles::SERVERS, Some(active_profile.server), |x| {
@@ -218,11 +220,12 @@ impl SettingsPanelComponent {
                             )
                         })
                         .text_size(FONT_SIZE)
-                        .padding(PICK_LIST_PADDING),
+                        .padding(PICK_LIST_PADDING)
+                        .width(Length::Fill),
                     )
-                    .height(Length::Fixed(30.0))
-                    .width(Length::Fixed(120.0)),
-                ),
+                    .height(Length::Fixed(30.0)),
+                )
+                .width(Length::FillPortion(1)),
             "The download server used for game downloads",
             Position::Top,
         )
@@ -283,7 +286,7 @@ impl SettingsPanelComponent {
                         .spacing(5)
                         .push(
                             text("ENVIRONMENT VARIABLES")
-                                .size(15)
+                                .size(10)
                                 .style(TextStyle::LightGrey),
                         )
                         .push(help_link_button(help_link)),
@@ -297,11 +300,12 @@ impl SettingsPanelComponent {
                                 )
                             })
                             .padding(PICK_LIST_PADDING)
-                            .size(FONT_SIZE),
+                            .size(FONT_SIZE)
+                            .width(Length::Fill),
                     )
-                    .height(Length::Fixed(50.0))
-                    .width(Length::Fixed(190.0)),
-                ),
+                    .height(Length::Fixed(50.0)),
+                )
+                .width(Length::FillPortion(2)),
             "Environment variables set when running Voxygen",
             Position::Top,
         )
@@ -311,7 +315,7 @@ impl SettingsPanelComponent {
         let channel_picker = tooltip(
             column![]
                 .spacing(5)
-                .push(text("CHANNEL").size(15).style(TextStyle::LightGrey))
+                .push(text("CHANNEL").size(10).style(TextStyle::LightGrey))
                 .push(
                     container(
                         pick_list(
@@ -323,12 +327,13 @@ impl SettingsPanelComponent {
                                 )
                             },
                         )
+                        .width(Length::Fill)
                         .text_size(FONT_SIZE)
                         .padding(PICK_LIST_PADDING),
                     )
-                    .height(Length::Fixed(30.0))
-                    .width(Length::Fixed(120.0)),
-                ),
+                    .height(Length::Fixed(30.0)),
+                )
+                .width(Length::FillPortion(1)),
             "The download channel used for game downloads",
             Position::Top,
         )
@@ -337,15 +342,14 @@ impl SettingsPanelComponent {
 
         let first_row = container(
             row![]
-                .spacing(10)
+                .spacing(5)
                 .align_items(Alignment::End)
                 .push(graphics_mode)
                 .push(log_level)
                 .push(server_picker),
         );
 
-        let second_row =
-            container(row![].spacing(10).push(env_vars).push(channel_picker));
+        let second_row = container(row![].spacing(5).push(env_vars).push(channel_picker));
 
         let third_row = container(
             row![]
@@ -355,7 +359,7 @@ impl SettingsPanelComponent {
         );
 
         let col = column![]
-            .spacing(10)
+            .spacing(5)
             .push(first_row)
             .push(second_row)
             .push(third_row);

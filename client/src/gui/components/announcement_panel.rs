@@ -105,7 +105,7 @@ impl AnnouncementPanelComponent {
         let update = SUPPORTED_SERVER_API_VERSION != self.api_version;
         let rowtext = match (update, &self.announcement_message) {
             (false, None) => {
-                return container("").into();
+                return row![].into();
             },
             (true, None) => {
                 "Airshipper is outdated, please update to the latest release!".to_string()
@@ -123,6 +123,7 @@ impl AnnouncementPanelComponent {
         let mut content_row = row![
             container(
                 Text::new(rowtext)
+                    .size(10)
                     .style(TextStyle::Dark)
                     .font(POPPINS_MEDIUM_FONT),
             )

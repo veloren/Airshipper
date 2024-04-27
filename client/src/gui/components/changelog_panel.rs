@@ -21,7 +21,7 @@ use crate::{
     net, Result,
 };
 use iced::{
-    alignment::Vertical,
+    alignment::{Horizontal, Vertical},
     widget::{
         button, column, container, image, image::Handle, row, scrollable, text, Image,
     },
@@ -247,85 +247,77 @@ impl ChangelogPanelComponent {
             changelog = changelog.push(version.view());
         }
 
-        let top_row = row![].height(Length::Fixed(50.0)).push(
-            column![].push(
-                container(
-                    row![]
-                        .push(
-                            container(Image::new(Handle::from_memory(
-                                CHANGELOG_ICON.to_vec(),
-                            )))
-                            .height(Length::Fill)
-                            .width(Length::Shrink)
-                            .align_y(Vertical::Center)
-                            .padding(Padding::from([0, 0, 0, 12])),
-                        )
-                        .push(
-                            container(
-                                Text::new("Latest Patch Notes")
-                                    .style(TextStyle::Dark)
-                                    .font(POPPINS_MEDIUM_FONT),
-                            )
-                            .width(Length::Fill)
-                            .height(Length::Fill)
-                            .align_y(Vertical::Center)
-                            .padding(Padding::from([1, 0, 0, 8])),
-                        )
-                        .push(
-                            container(
-                                button(
-                                    row![]
-                                        .push(text("Recent Changes").size(14))
-                                        .push(image(Handle::from_memory(
-                                            UP_RIGHT_ARROW_ICON.to_vec(),
-                                        )))
-                                        .spacing(5)
-                                        .align_items(Alignment::Center),
-                                )
-                                .on_press(DefaultViewMessage::Interaction(
-                                    Interaction::OpenURL(
-                                        GITLAB_MERGED_MR_URL.to_string(),
-                                    ),
-                                ))
-                                .padding(Padding::from([2, 10, 2, 10]))
-                                .height(Length::Fixed(20.0))
-                                .style(ButtonStyle::Browser(BrowserButtonStyle::Gitlab)),
-                            )
-                            .padding(Padding::from([0, 20, 0, 0]))
-                            .height(Length::Fill)
-                            .align_y(Vertical::Center)
-                            .width(Length::Shrink),
-                        )
-                        .height(Length::Fill),
+        let top_row = container(
+            row![]
+                .push(
+                    container(Image::new(Handle::from_memory(CHANGELOG_ICON.to_vec())))
+                        .height(Length::Fill)
+                        .width(Length::Shrink)
+                        .align_y(Vertical::Center),
                 )
-                .align_y(Vertical::Center),
-            ),
-        );
-
-        let col = column![]
-            .push(
-                container(top_row)
-                    .width(Length::Fill)
-                    .style(ContainerStyle::ChangelogHeader),
-            )
-            .push(
-                column![].push(
+                .push(
                     container(
-                        scrollable(changelog)
-                            .on_scroll(|pos| {
-                                DefaultViewMessage::ChangelogPanel(
-                                    ChangelogPanelMessage::ScrollPositionChanged(
-                                        pos.absolute_offset().y,
-                                    ),
+                        Text::new("Latest Patch Notes")
+                            .style(TextStyle::Dark)
+                            .size(14)
+                            .font(POPPINS_MEDIUM_FONT),
+                    )
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .align_y(Vertical::Center),
+                )
+                .push(
+                    container(
+                        button(
+                            row![]
+                                .push(
+                                    Text::new("Recent Changes")
+                                        .style(TextStyle::LightGrey)
+                                        .size(10)
+                                        .font(POPPINS_MEDIUM_FONT)
+                                        .horizontal_alignment(Horizontal::Center),
                                 )
-                            })
-                            .height(Length::Fill),
+                                .push(image(Handle::from_memory(
+                                    UP_RIGHT_ARROW_ICON.to_vec(),
+                                )))
+                                .spacing(5)
+                                .align_items(Alignment::Center),
+                        )
+                        .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
+                            GITLAB_MERGED_MR_URL.to_string(),
+                        )))
+                        .style(ButtonStyle::Browser(BrowserButtonStyle::Gitlab)),
                     )
                     .height(Length::Fill)
-                    .width(Length::Fill)
-                    .style(ContainerStyle::Dark),
-                ),
-            );
+                    .align_y(Vertical::Center)
+                    .width(Length::Shrink),
+                )
+                .width(Length::Fill)
+                .height(Length::Fill),
+        )
+        .align_y(Vertical::Center)
+        .padding(10)
+        .height(Length::Fixed(50.0))
+        .style(ContainerStyle::ChangelogHeader);
+
+        let col = column![].push(top_row).push(
+            column![].push(
+                container(
+                    scrollable(changelog)
+                        .on_scroll(|pos| {
+                            DefaultViewMessage::ChangelogPanel(
+                                ChangelogPanelMessage::ScrollPositionChanged(
+                                    pos.absolute_offset().y,
+                                ),
+                            )
+                        })
+                        .height(Length::Fill),
+                )
+                .height(Length::Fill)
+                .width(Length::Fill)
+                .style(ContainerStyle::Dark),
+            ),
+        );
 
         let changelog_container = container(col);
         changelog_container.into()
@@ -353,25 +345,25 @@ impl ChangelogVersion {
         let mut version = column![].spacing(10).push(
             column![]
                 .push(
-                    container(text(version_string).font(POPPINS_BOLD_FONT).size(28))
+                    container(text(version_string).font(POPPINS_BOLD_FONT).size(22))
                         .padding(Padding::from([20, 0, 6, 33])),
                 )
                 .push(Rule::horizontal(8)),
         );
 
         for note in &self.notes {
-            version = version.push(text(note).size(18));
+            version = version.push(text(note).size(14));
         }
 
         for (section_name, section_lines) in &self.sections {
-            let mut section_col = column![].push(text(section_name).size(23));
+            let mut section_col = column![].push(text(section_name).size(16));
 
             for line in section_lines {
                 section_col = section_col.push(
                     container(
                         row![]
-                            .push(text(" •  ").font(POPPINS_LIGHT_FONT).size(17))
-                            .push(text(line).font(POPPINS_LIGHT_FONT).size(17)),
+                            .push(text(" •  ").font(POPPINS_LIGHT_FONT).size(12))
+                            .push(text(line).font(POPPINS_LIGHT_FONT).size(12)),
                     )
                     .padding(Padding::from([1, 0, 1, 10])),
                 );

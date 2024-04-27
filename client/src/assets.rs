@@ -1,4 +1,4 @@
-use iced::Font;
+use iced::{font::Weight, Font};
 
 pub const VELOREN_LOGO: &[u8] = include_bytes!("../assets/images/veloren-logo.png");
 pub const VELOREN_ICON: &[u8] = include_bytes!("../assets/icons/logo.ico");
@@ -36,12 +36,25 @@ pub const UNIVERSAL_FONT: Font = Font::DEFAULT;
 #[cfg(feature = "bundled_font")]
 pub const UNIVERSAL_FONT: Font = Font::with_name("Noto Sans Unified");
 #[cfg(feature = "bundled_font")]
-pub const UNIVERSAL_FONT_BYTES: &[u8] = include_bytes!("../assets/fonts/GoNotoCurrent.ttf");
+pub const UNIVERSAL_FONT_BYTES: &[u8] =
+    include_bytes!("../assets/fonts/GoNotoCurrent.ttf");
 
 // Poppins is the font used throughout the rest of the Airshipper client
-pub const POPPINS_BOLD_FONT: Font = Font::with_name("Poppins Bold");
-pub const POPPINS_BOLD_FONT_BYTES: &[u8] = include_bytes!("../assets/fonts/Poppins-Bold.ttf");
-pub const POPPINS_LIGHT_FONT: Font = Font::with_name("Poppins Light");
-pub const POPPINS_LIGHT_FONT_BYTES: &[u8] = include_bytes!("../assets/fonts/Poppins-Light.ttf");
-pub const POPPINS_MEDIUM_FONT: Font = Font::with_name("Poppins Medium");
-pub const POPPINS_MEDIUM_FONT_BYTES: &[u8] = include_bytes!("../assets/fonts/Poppins-Medium.ttf");
+pub const POPPINS_BOLD_FONT: Font = Font {
+    weight: Weight::Bold,
+    ..Font::with_name("Poppins")
+};
+pub const POPPINS_BOLD_FONT_BYTES: &[u8] =
+    include_bytes!("../assets/fonts/Poppins-Bold.ttf");
+pub const POPPINS_LIGHT_FONT: Font = Font {
+    weight: Weight::Light,
+    ..Font::with_name("Poppins")
+};
+pub const POPPINS_LIGHT_FONT_BYTES: &[u8] =
+    include_bytes!("../assets/fonts/Poppins-Light.ttf");
+pub const POPPINS_MEDIUM_FONT: Font = Font {
+    weight: Weight::Medium,
+    ..Font::with_name("Poppins")
+};
+pub const POPPINS_MEDIUM_FONT_BYTES: &[u8] =
+    include_bytes!("../assets/fonts/Poppins-Medium.ttf");

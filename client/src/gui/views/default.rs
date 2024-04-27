@@ -129,7 +129,7 @@ impl DefaultView {
                 ),
         )
         .height(Length::Fill)
-        .width(Length::Fixed(347.0))
+        .width(Length::Fixed(290.0))
         .style(ContainerStyle::SidePanel);
 
         let mut main_row = row![].push(left);

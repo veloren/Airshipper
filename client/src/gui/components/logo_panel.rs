@@ -10,7 +10,7 @@ use crate::{
 };
 use iced::{
     alignment::Vertical,
-    widget::{button, column, container, image::Handle, row, text, Image},
+    widget::{button, column, container, image::Handle, row, text, text::Shaping, Image},
     Alignment, Length, Padding,
 };
 
@@ -65,19 +65,22 @@ fn link_widget<'a>(
                 .push(
                     container(
                         Image::new(Handle::from_memory(image_bytes.to_vec()))
-                            .height(Length::Fixed(24.0))
-                            .width(Length::Fixed(24.0)),
+                            .height(Length::Fixed(16.0))
+                            .width(Length::Fixed(16.0)),
                     )
                     .align_y(Vertical::Center),
                 )
-                .push(container(text(link_text)).align_y(Vertical::Center))
+                .push(
+                    container(text(link_text).size(16).shaping(Shaping::Advanced))
+                        .align_y(Vertical::Center),
+                )
                 .push(
                     container(Image::new(Handle::from_memory(
                         UP_RIGHT_ARROW_ICON.to_vec(),
                     )))
                     .align_y(Vertical::Center),
                 )
-                .spacing(10),
+                .spacing(5),
         )
         .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
             url.to_string(),

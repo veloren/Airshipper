@@ -153,7 +153,7 @@ impl ServerBrowserPanelComponent {
                         container(
                             button(
                                 row![]
-                                    .push(text("Get your server listed here").size(14))
+                                    .push(text("Get your server listed here").size(10))
                                     .push(image(Handle::from_memory(
                                         UP_RIGHT_ARROW_ICON.to_vec(),
                                     )))
@@ -180,6 +180,7 @@ impl ServerBrowserPanelComponent {
             let mut button = button(
                 text(button_text)
                     .font(POPPINS_BOLD_FONT)
+                    .size(16)
                     .vertical_alignment(Vertical::Center),
             )
             .padding(0)
@@ -226,6 +227,7 @@ impl ServerBrowserPanelComponent {
                 .width(Length::FillPortion(3))
                 .font(UNIVERSAL_FONT)
                 .height(Length::Fill)
+                .size(14)
                 .vertical_alignment(Vertical::Center)
         };
 
@@ -444,7 +446,7 @@ impl ServerBrowserPanelComponent {
                                     FieldContent::Url(c) => {
                                         let mut button = button(
                                             row![]
-                                                .push(text(field.name).size(14))
+                                                .push(text(field.name).size(12))
                                                 .push(image(Handle::from_memory(
                                                     UP_RIGHT_ARROW_ICON.to_vec(),
                                                 )))
@@ -524,24 +526,29 @@ impl ServerBrowserPanelComponent {
                                         .spacing(10)
                                         .push(
                                             text(&server.server.name)
-                                                .font(UNIVERSAL_FONT),
+                                                .font(UNIVERSAL_FONT)
+                                                .size(14),
                                         )
                                         .push(
                                             text(display_gameserver_address(
                                                 &server.server,
                                             ))
+                                            .size(14)
                                             .font(UNIVERSAL_FONT)
                                             .style(TextStyle::BrightOrange),
                                         ),
                                 )
-                                .push(text("Description: ").font(UNIVERSAL_FONT))
+                                .push(text("Description: ").font(UNIVERSAL_FONT).size(14))
                                 .push(
-                                    text(&server.server.description).font(UNIVERSAL_FONT),
+                                    text(&server.server.description)
+                                        .font(UNIVERSAL_FONT)
+                                        .size(14),
                                 )
                                 .push(queried_info)
                                 .push(extras)
                         }).width(Length::Fill)))
-                        .height(Length::Fixed(160.0)),
+                        .height(Length::Fixed(160.0))
+                        .padding(10),
                     );
             }
         } else {
@@ -559,7 +566,6 @@ impl ServerBrowserPanelComponent {
         let server_browser_container = container(col)
             .height(Length::Fill)
             .width(Length::Fill)
-            .padding(8)
             .style(ContainerStyle::Dark);
         server_browser_container.into()
     }

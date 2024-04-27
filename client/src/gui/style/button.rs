@@ -7,7 +7,7 @@ use crate::gui::style::{
 };
 use iced::{
     widget::{button, button::Appearance},
-    Background, Color, Vector, Border,
+    Background, Border, Color, Vector,
 };
 
 #[derive(Debug, Clone, Copy)]

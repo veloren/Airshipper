@@ -10,7 +10,7 @@ pub(crate) fn heading_with_rule<'a, T: 'a>(heading_text: &'a str) -> Element<T> 
             .align_items(Alignment::Center)
             .push(container(horizontal_rule(8)).width(Length::Fixed(13.0)))
             .push(
-                container(text(heading_text).font(POPPINS_BOLD_FONT).size(20))
+                container(text(heading_text).font(POPPINS_BOLD_FONT).size(16))
                     .padding(Padding::from([0, 7])),
             )
             .push(container(horizontal_rule(8)).width(Length::Fill)),
