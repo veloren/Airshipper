@@ -4,7 +4,7 @@ use iced::{
         pick_list,
         pick_list::{Appearance, StyleSheet},
     },
-    Background, Color,
+    Background, Border, Color,
 };
 
 #[derive(Copy, Clone, Debug)]
@@ -29,10 +29,12 @@ impl pick_list::StyleSheet for AirshipperTheme {
             // icon_size: 0.5, TODO: This was removed in a recent version of iced - the
             // dropdown handle should be smaller but this no longer appears possible.
             // Custom widget required?
-            border_width: 0.0,
-            border_radius: 3.0,
+            border: Border {
+                width: 0.0,
+                radius: 3.0.into(),
+                color: Color::WHITE,
+            },
             handle_color: Color::WHITE,
-            border_color: Color::WHITE,
             placeholder_color: VERY_DARK_GREY,
         }
     }

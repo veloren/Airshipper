@@ -7,7 +7,7 @@ use crate::gui::style::{
 };
 use iced::{
     widget::{button, button::Appearance},
-    Background, Color, Vector,
+    Background, Color, Vector, Border,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -125,7 +125,7 @@ impl button::StyleSheet for AirshipperTheme {
 fn airshipper_download_button_appearance() -> Appearance {
     Appearance {
         background: Some(Background::Color(VERY_DARK_GREY)),
-        border_radius: 25.0,
+        border: Border::with_radius(25.0),
         ..Appearance::default()
     }
 }
@@ -134,7 +134,7 @@ fn active_download_button_style(background_color: Color) -> Appearance {
     Appearance {
         background: Some(Background::Color(background_color)),
         text_color: Color::WHITE,
-        border_radius: 4.0,
+        border: Border::with_radius(4.0),
         ..Appearance::default()
     }
 }
@@ -143,7 +143,7 @@ fn hovered_download_button_style(background_color: Color) -> Appearance {
     Appearance {
         background: Some(Background::Color(color_multiply(background_color, 1.1))),
         text_color: Color::WHITE,
-        border_radius: 4.0,
+        border: Border::with_radius(4.0),
         ..Appearance::default()
     }
 }
@@ -153,7 +153,7 @@ fn disabled_download_button_style() -> Appearance {
         background: Some(Background::Color(SLATE)),
         shadow_offset: Vector::new(1.0, 1.0),
         text_color: LIGHT_GREY,
-        border_radius: 4.0,
+        border: Border::with_radius(4.0),
         ..Appearance::default()
     }
 }
@@ -207,7 +207,7 @@ fn browser_button_style_to_color(style: BrowserButtonStyle) -> Color {
 fn browser_button_style_active(style: BrowserButtonStyle) -> Appearance {
     Appearance {
         background: Some(Background::Color(browser_button_style_to_color(style))),
-        border_radius: 25.0,
+        border: Border::with_radius(25.0),
         ..Appearance::default()
     }
 }
@@ -238,7 +238,7 @@ fn transparent_button_style() -> Appearance {
 fn settings_button_style_active() -> Appearance {
     Appearance {
         background: Some(Background::Color(Color::TRANSPARENT)),
-        border_radius: 10.0,
+        border: Border::with_radius(10.0),
         ..Appearance::default()
     }
 }
@@ -246,7 +246,7 @@ fn settings_button_style_active() -> Appearance {
 fn settings_button_style_hovered() -> Appearance {
     Appearance {
         background: Some(Background::Color(TRANSPARENT_WHITE)),
-        border_radius: 10.0,
+        border: Border::with_radius(10.0),
         ..Appearance::default()
     }
 }
@@ -262,7 +262,7 @@ fn server_browser_button_style_active() -> Appearance {
     Appearance {
         background: Some(Background::Color(CORNFLOWER_BLUE)),
         text_color: Color::WHITE,
-        border_radius: 4.0,
+        border: Border::with_radius(4.0),
         ..Appearance::default()
     }
 }

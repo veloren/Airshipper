@@ -360,7 +360,6 @@ impl GamePanelComponent {
                                 "Settings",
                                 Position::Left,
                             )
-                            .size(18)
                             .style(ContainerStyle::Tooltip)
                             .gap(5),
                         ),

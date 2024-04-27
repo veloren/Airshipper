@@ -6,14 +6,20 @@ mod subscriptions;
 mod views;
 mod widget;
 
+use std::borrow::Cow;
+
 use crate::{
+    assets::{
+        POPPINS_BOLD_FONT_BYTES, POPPINS_FONT_BYTES, POPPINS_LIGHT_FONT_BYTES,
+        POPPINS_MEDIUM_FONT_BYTES,
+    },
     cli::CmdLine,
     fs,
     gui::{style::AirshipperTheme, widget::*},
     profiles::Profile,
     Result,
 };
-use iced::{Application, Command, Settings, Subscription};
+use iced::{Application, Command, Settings, Size, Subscription};
 use ron::ser::PrettyConfig;
 use tokio::{fs::File, io::AsyncWriteExt};
 #[cfg(windows)]
@@ -265,29 +271,32 @@ impl Application for Airshipper {
 }
 
 fn settings(cmd: CmdLine) -> Settings<CmdLine> {
-    use iced::window::{Icon, Settings as Window};
+    use iced::window::{icon, Settings as Window};
     let icon = image::load_from_memory(crate::assets::VELOREN_ICON).unwrap();
 
     Settings {
         window: Window {
-            size: (1050, 720),
+            size: Size::new(1050.0, 720.0),
             resizable: true,
             decorations: true,
             icon: Some(
-                Icon::from_rgba(icon.to_rgba8().into_raw(), icon.width(), icon.height())
+                icon::from_rgba(icon.to_rgba8().into_raw(), icon.width(), icon.height())
                     .unwrap(),
             ),
-            min_size: Some((400, 250)),
+            min_size: Some(Size::new(400.0, 250.0)),
             ..Default::default()
         },
         flags: cmd,
-        default_font: Some(crate::assets::POPPINS_FONT_BYTES),
-        default_text_size: 20.0,
+        default_font: crate::assets::POPPINS_MEDIUM_FONT,
+        default_text_size: 20.0.into(),
         // https://github.com/hecrj/iced/issues/537
         antialiasing: false,
-        exit_on_close_request: true,
         id: Some("airshipper".to_string()),
-        text_multithreading: false,
-        try_opengles_first: true, // Only used with glow backend
+        fonts: vec![
+            Cow::Borrowed(POPPINS_FONT_BYTES),
+            Cow::Borrowed(POPPINS_BOLD_FONT_BYTES),
+            Cow::Borrowed(POPPINS_MEDIUM_FONT_BYTES),
+            Cow::Borrowed(POPPINS_LIGHT_FONT_BYTES),
+        ],
     }
 }

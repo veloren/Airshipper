@@ -142,7 +142,7 @@ impl SettingsPanelComponent {
                 .push(
                     container(
                         pick_list(
-                            &active_profile.supported_wgpu_backends,
+                            active_profile.supported_wgpu_backends.as_slice(),
                             Some(active_profile.wgpu_backend),
                             |x| {
                                 DefaultViewMessage::SettingsPanel(
@@ -161,7 +161,6 @@ impl SettingsPanelComponent {
             Position::Top,
         )
         .style(ContainerStyle::Tooltip)
-        .size(FONT_SIZE)
         .gap(5);
 
         let log_level = tooltip(
@@ -205,7 +204,6 @@ impl SettingsPanelComponent {
             Position::Left,
         )
         .style(ContainerStyle::Tooltip)
-        .size(FONT_SIZE)
         .gap(5);
 
         let server_picker = tooltip(
@@ -229,7 +227,6 @@ impl SettingsPanelComponent {
             Position::Top,
         )
         .style(ContainerStyle::Tooltip)
-        .size(FONT_SIZE)
         .gap(5);
 
         let help_link =
@@ -293,17 +290,14 @@ impl SettingsPanelComponent {
                 )
                 .push(
                     container(
-                        text_input(
-                            "FOO=foo, BAR=bar",
-                            &active_profile.env_vars,
-                            |vars| {
+                        text_input("FOO=foo, BAR=bar", &active_profile.env_vars)
+                            .on_input(|vars| {
                                 DefaultViewMessage::SettingsPanel(
                                     SettingsPanelMessage::EnvVarsChanged(vars),
                                 )
-                            },
-                        )
-                        .padding(PICK_LIST_PADDING)
-                        .size(FONT_SIZE),
+                            })
+                            .padding(PICK_LIST_PADDING)
+                            .size(FONT_SIZE),
                     )
                     .height(Length::Fixed(50.0))
                     .width(Length::Fixed(190.0)),
@@ -312,7 +306,6 @@ impl SettingsPanelComponent {
             Position::Top,
         )
         .style(ContainerStyle::Tooltip)
-        .size(FONT_SIZE)
         .gap(5);
 
         let channel_picker = tooltip(
@@ -340,7 +333,6 @@ impl SettingsPanelComponent {
             Position::Top,
         )
         .style(ContainerStyle::Tooltip)
-        .size(FONT_SIZE)
         .gap(5);
 
         let first_row = container(

@@ -3,7 +3,7 @@ use crate::gui::style::{
 };
 use iced::{
     widget::{text_input, text_input::Appearance},
-    Background, Color,
+    Background, Border, Color,
 };
 
 pub enum TextInputStyle {
@@ -22,9 +22,12 @@ impl text_input::StyleSheet for AirshipperTheme {
     fn active(&self, _: &Self::Style) -> Appearance {
         Appearance {
             background: Background::Color(NAVY_BLUE),
-            border_width: 0.0,
-            border_radius: 3.0,
-            border_color: DARK_WHITE,
+            border: Border {
+                color: DARK_WHITE,
+                width: 0.0,
+                radius: 3.0.into(),
+            },
+            icon_color: Default::default(),
         }
     }
 
@@ -42,5 +45,21 @@ impl text_input::StyleSheet for AirshipperTheme {
 
     fn selection_color(&self, _: &Self::Style) -> Color {
         CORNFLOWER_BLUE
+    }
+
+    fn disabled_color(&self, _style: &Self::Style) -> Color {
+        MEDIUM_GREY
+    }
+
+    fn disabled(&self, _style: &Self::Style) -> Appearance {
+        Appearance {
+            background: Background::Color(MEDIUM_GREY),
+            border: Border {
+                color: DARK_WHITE,
+                width: 0.0,
+                radius: 3.0.into(),
+            },
+            icon_color: Default::default(),
+        }
     }
 }

@@ -314,7 +314,9 @@ impl ChangelogPanelComponent {
                         scrollable(changelog)
                             .on_scroll(|pos| {
                                 DefaultViewMessage::ChangelogPanel(
-                                    ChangelogPanelMessage::ScrollPositionChanged(pos.y),
+                                    ChangelogPanelMessage::ScrollPositionChanged(
+                                        pos.absolute_offset().y,
+                                    ),
                                 )
                             })
                             .height(Length::Fill),
