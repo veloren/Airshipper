@@ -194,13 +194,13 @@ fn server_list_entry_not_selected_style_hovered() -> Appearance {
 
 fn browser_button_style_to_color(style: BrowserButtonStyle) -> Color {
     match style {
-        BrowserButtonStyle::Discord => DISCORD_BLURPLE,
+        BrowserButtonStyle::Discord => *DISCORD_BLURPLE,
         BrowserButtonStyle::Gitlab => LIME_GREEN,
         BrowserButtonStyle::Extra => LIME_GREEN,
-        BrowserButtonStyle::Youtube => YOUTUBE_RED,
-        BrowserButtonStyle::Mastodon => MASTODON_PURPLE,
-        BrowserButtonStyle::Reddit => REDDIT_ORANGE,
-        BrowserButtonStyle::Twitch => TWITCH_PURPLE,
+        BrowserButtonStyle::Youtube => *YOUTUBE_RED,
+        BrowserButtonStyle::Mastodon => *MASTODON_PURPLE,
+        BrowserButtonStyle::Reddit => *REDDIT_ORANGE,
+        BrowserButtonStyle::Twitch => *TWITCH_PURPLE,
     }
 }
 

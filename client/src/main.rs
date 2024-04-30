@@ -1,6 +1,3 @@
-#![feature(async_closure)]
-#![feature(let_chains)]
-#![feature(const_fn_floating_point_arithmetic)]
 mod assets;
 mod channels;
 mod cli;
@@ -26,9 +23,10 @@ pub type Result<T> = std::result::Result<T, ClientError>;
 fn main() {
     error::panic_hook();
 
-    if let Err(e) = cli::process()
-        // If we fail to read a line, the user probably cancelled an action
-        && !matches!(e, ClientError::ReadlineError)
+    // If we fail to read a line, the user probably cancelled an action
+    if let Some(e) = cli::process()
+        .err()
+        .filter(|e| !matches!(e, ClientError::ReadlineError))
     {
         tracing::error!("{}", e);
         tracing::info!("Press enter to exit...");
