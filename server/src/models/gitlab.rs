@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::Artifact;
 use crate::CONFIG;
 use chrono::{DateTime, Utc};
@@ -98,7 +100,7 @@ impl PipelineUpdate {
         #[derive(Debug, Deserialize)]
         struct Schedule {
             //id: u64,
-            variables: Vec<Variable>,
+            variables: HashMap<u64, Variable>,
             last_pipeline: LastPipeline,
         }
 
@@ -128,7 +130,7 @@ impl PipelineUpdate {
             tracing::trace!(?schedules, "Schedules");
             for schedule in schedules {
                 let id = schedule.id;
-                let mut details = client
+                let details = client
                     .get(format!(
                         "https://gitlab.com/api/v4/projects/{}/pipeline_schedules/{}",
                         crate::config::PROJECT_ID,
@@ -142,7 +144,7 @@ impl PipelineUpdate {
                 if details.last_pipeline.id == pipeline_id {
                     self.object_attributes
                         .variables
-                        .append(&mut details.variables);
+                        .extend(details.variables.into_values());
                 }
             }
         } else {
