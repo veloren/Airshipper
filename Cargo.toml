@@ -3,7 +3,7 @@ cargo-features = []
 [workspace]
 members = [
 	"client",
-	"server",
+	"server", "zippy",
 ]
 resolver = "2"
 
