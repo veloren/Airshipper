@@ -970,21 +970,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "crc"
-version = "3.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69e6e4d7b33a94f0991c26729976b10ebde1d34c3ee82408fb536164fa10d636"
-dependencies = [
- "crc-catalog",
-]
-
-[[package]]
-name = "crc-catalog"
-version = "2.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19d374276b40fb8bbdee95aef7c7fa6b5316ec764510eb64b8dd0e2ed0d7e7f5"
-
-[[package]]
 name = "crc32fast"
 version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5302,7 +5287,6 @@ dependencies = [
  "bytes",
  "libc",
  "mio 1.0.1",
- "parking_lot 0.12.3",
  "pin-project-lite",
  "signal-hook-registry",
  "socket2",
@@ -6570,14 +6554,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "zip_structs"
-version = "0.2.1"
+name = "zip-core"
+version = "0.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce824a6bfffe8942820fa36d24973b7c83a40896749a42e33de0abdd11750ee5"
+checksum = "00991fca14addbd45957e1b67249f146022088c1d34e786e525a39895c12bbe0"
 dependencies = [
- "byteorder",
- "bytesize",
- "thiserror",
+ "bytes",
 ]
 
 [[package]]
@@ -6586,10 +6568,12 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "clap 4.5.11",
- "crc",
+ "crc32fast",
+ "flate2",
  "reqwest 0.12.4",
+ "thiserror",
  "tokio",
- "zip_structs",
+ "zip-core",
 ]
 
 [[package]]

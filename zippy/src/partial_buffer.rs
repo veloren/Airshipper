@@ -34,7 +34,7 @@ impl PartialBuffer {
         let c: Vec<_> = self.content.iter().collect();
         let missing = request.missing(&c);
 
-        return Err(missing);
+        Err(missing)
     }
 
     pub fn store(&mut self, entry: Entry) {
@@ -55,7 +55,7 @@ impl PartialBuffer {
                 return true;
             }
         }
-        return false;
+        false
     }
 }
 
@@ -131,11 +131,7 @@ trait Boundary {
             size: self.one_after_last() - self.start(),
         };
         let mut missing = vec![own];
-        'outer: loop {
-            let m = match missing.pop() {
-                Some(m) => m,
-                None => break,
-            };
+        'outer: while let Some(m) = missing.pop() {
             println!("picked: {:?}", &m);
 
             for o in &others {
