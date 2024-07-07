@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use zip_core::{raw::CentralDirectoryHeader, structs::CompressionMethod};
+use zip_core::raw::CentralDirectoryHeader;
 
 use crate::local_directory::FileInformation;
 
@@ -54,18 +54,4 @@ pub fn compare_local_with_remote(
             },
         })
         .collect()
-}
-
-pub fn compression_method_supported(entries: &[CompareEntry]) -> bool {
-    !entries.iter().any(|e| {
-        let cm = match e {
-            CompareEntry::ExistsInRemote(remote) => remote.fixed.compression_method,
-            CompareEntry::DifferentCrc(remote, _) => remote.fixed.compression_method,
-            _ => return false,
-        };
-        !matches!(
-            CompressionMethod::try_from(cm),
-            Ok(CompressionMethod::Deflated | CompressionMethod::Stored)
-        )
-    })
 }

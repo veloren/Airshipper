@@ -1,5 +1,5 @@
 //! e.g. run cargo run -- ~/.local/share/airshipper/profiles/default https://github.com/veloren/veloren/releases/download/nightly/nightly-linux-x86_64-2024-06-09T16_04.zip
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use clap::Parser;
 use compare::CompareEntry;
@@ -12,6 +12,7 @@ mod local_directory;
 #[allow(dead_code)]
 mod partial_buffer;
 mod remote_zip;
+mod util;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -27,7 +28,7 @@ fn main() {
     let cli = Cli::parse();
     let runtime = Runtime::new().unwrap();
 
-    let mut localdir = LocalDirectory::new(cli.veloren_airshipper_dir);
+    let mut localdir = LocalDirectory::new(cli.veloren_airshipper_dir.clone());
 
     let client = reqwest::Client::builder()
         .http2_prior_knowledge()
@@ -67,7 +68,7 @@ fn main() {
             _ => (),
         }
     }
-    let supported_compression = compare::compression_method_supported(&comparison);
+    let supported_compression = util::compression_method_supported(&comparison);
 
     println!("Analysation complete:");
     println!("need to download: {} MBs", data_changed / 1000000);
@@ -81,5 +82,55 @@ fn main() {
     println!("new files:");
     for f in new_files {
         println!("new: {f}");
+    }
+
+    println!("patching files:");
+    runtime.block_on(download_all(
+        &cli.veloren_airshipper_dir,
+        &mut zip,
+        comparison,
+    ));
+    println!("files patched");
+}
+
+async fn download_all(
+    basedir: &Path,
+    zip: &mut RemoteZip,
+    comparison: Vec<CompareEntry>,
+) {
+    use tokio::{fs::File, io::AsyncWriteExt}; // for write_all()
+
+    let mut i = 0;
+    for e in comparison.iter() {
+        match e {
+            CompareEntry::DifferentCrc(remote, _) => {
+                let mut remote_data = zip.download(remote).await.unwrap();
+                let filename: PathBuf =
+                    std::str::from_utf8(&remote.file_name).unwrap().into();
+                let mut file_path = basedir.to_path_buf();
+                file_path.push(filename);
+
+                let mut file = File::create(file_path).await.unwrap();
+                println!("{i}: {:?}", std::str::from_utf8(&remote.file_name));
+                i += 1;
+                file.write_all_buf(&mut remote_data).await.unwrap();
+            },
+            CompareEntry::ExistsInRemote(remote) => {
+                let mut remote_data = zip.download(remote).await.unwrap();
+                let filename: PathBuf =
+                    std::str::from_utf8(&remote.file_name).unwrap().into();
+                let mut file_path = basedir.to_path_buf();
+                file_path.push(filename);
+
+                let mut file = File::create(file_path).await.unwrap();
+                println!("{i}: {:?}", std::str::from_utf8(&remote.file_name));
+                i += 1;
+                file.write_all_buf(&mut remote_data).await.unwrap();
+            },
+            CompareEntry::ExistsInLocal(local) => {
+                tokio::fs::remove_file(&local.path).await.unwrap();
+            },
+            _ => (),
+        }
     }
 }

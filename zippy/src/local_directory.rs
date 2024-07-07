@@ -18,6 +18,7 @@ pub enum LocalDirectoryError {
 #[derive(Clone, Debug)]
 pub struct FileInformation {
     pub path: PathBuf,
+    // with stripped prefix
     pub local_path: String,
     pub crc32: u32,
 }

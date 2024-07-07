@@ -206,7 +206,7 @@ mod tests {
 
     #[test]
     fn remove_from() {
-        let datas = vec![
+        let datas = [
             EntryDescription::new(2, 2),
             EntryDescription::new(5, 1),
             EntryDescription::new(6, 1),
