@@ -127,6 +127,7 @@ impl Airshipper {
 #[derive(Clone, Debug)]
 pub enum Message {
     Loaded(Airshipper), // Todo: put in Box<>
+    #[allow(dead_code)]
     Saved(Result<()>),
 
     // Views
