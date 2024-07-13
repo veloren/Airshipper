@@ -268,7 +268,7 @@ impl Profile {
         tracing::debug!("ENV: {:?}", envs);
 
         let mut cmd = Command::new(profile.voxygen_path());
-        cmd.current_dir(&profile.directory());
+        cmd.current_dir(profile.directory());
         cmd.envs(envs);
 
         // If a server is selected in the server browser pass it through to Voxygen
