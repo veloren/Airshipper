@@ -40,6 +40,7 @@ pub fn init(log_path_file: Option<(&Path, &str)>, level: LevelFilter) -> Vec<imp
         "tokio_util::codec=error",
         "trust_dns_resolver=info",
         "trust_dns_proto=info",
+        "mio=warn",
     ];
 
     for s in default_directives {

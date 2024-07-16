@@ -179,7 +179,7 @@ impl Profile {
     }
 
     /// Returns the download url for this profile
-    pub fn url(&self) -> String {
+    pub fn download_url(&self) -> String {
         format!(
             "{}/latest/{}/{}/{}",
             self.server.url(),
@@ -193,7 +193,7 @@ impl Profile {
         self.directory().join(consts::DOWNLOAD_FILE)
     }
 
-    fn version_url(&self) -> String {
+    pub(crate) fn version_url(&self) -> String {
         format!(
             "{}/version/{}/{}/{}",
             self.server.url(),

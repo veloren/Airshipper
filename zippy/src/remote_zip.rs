@@ -123,7 +123,7 @@ impl RemoteZip {
 
     async fn ensure_content_length(&mut self) -> Result<(), RemoteZipError> {
         if self.content_length.is_none() {
-            let document_size = self.client.get(self.url.clone()).send().await?;
+            let document_size = self.client.head(self.url.clone()).send().await?;
             self.content_length = document_size.content_length();
         }
         Ok(())

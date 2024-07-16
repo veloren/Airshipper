@@ -14,10 +14,19 @@ lazy_static::lazy_static! {
             .build()
             .expect("FATAL: Failed to build reqwest client!")
     };
+
+    pub static ref GITHUB_CLIENT: reqwest::Client = {
+        reqwest::Client::builder()
+            .user_agent(USER_AGENT)
+            .http2_prior_knowledge()
+            .use_rustls_tls()
+            .connect_timeout(std::time::Duration::from_secs(10))
+            .build()
+            .expect("FATAL: Failed to build reqwest client!")
+    };
 }
 
 /// Queries url for the etag header
-/// Note: Will default to `MISSING_ETAG` incase header isn't found
 pub(crate) async fn query_etag<U: IntoUrl>(url: U) -> Result<Option<String>> {
     Ok(WEB_CLIENT
         .head(url)

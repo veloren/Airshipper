@@ -9,8 +9,6 @@ use tokio::runtime::Runtime;
 
 mod compare;
 mod local_directory;
-#[allow(dead_code)]
-mod partial_buffer;
 mod remote_zip;
 mod util;
 

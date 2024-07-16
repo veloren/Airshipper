@@ -113,7 +113,7 @@ impl GamePanelComponent {
                 GamePanelState::UpdateAvailable(version) => (
                     Some(GamePanelState::Downloading {
                         download_path: active_profile.download_path(),
-                        url: active_profile.url(),
+                        url: active_profile.download_url(),
                         state: DownloadState::Starting,
                         version: version.to_owned(),
                     }),
@@ -331,7 +331,7 @@ impl GamePanelComponent {
                             // download rather than
                             // requiring the user to click Update again.
                             GamePanelState::Downloading {
-                                url: active_profile.url(),
+                                url: active_profile.download_url(),
                                 download_path: active_profile.download_path(),
                                 version,
                                 state: DownloadState::Starting,

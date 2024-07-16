@@ -69,11 +69,13 @@ dependencies = [
 name = "airshipper"
 version = "0.11.0"
 dependencies = [
+ "bytes",
  "bytesize",
  "chrono",
  "clap 3.2.25",
  "colored",
  "country-parser",
+ "crc32fast",
  "derive_more",
  "dirs-next",
  "find_folder",
@@ -113,6 +115,7 @@ dependencies = [
  "winapi",
  "winresource",
  "zip",
+ "zip-core",
 ]
 
 [[package]]

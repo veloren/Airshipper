@@ -10,6 +10,7 @@ mod net;
 #[cfg(unix)]
 mod nix;
 mod profiles;
+mod update;
 #[cfg(windows)]
 mod windows;
 

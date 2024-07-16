@@ -1,6 +1,7 @@
 use crate::{
-    fs, gui, io, logger, net,
+    fs, gui, io, logger,
     profiles::{parse_env_vars, Profile},
+    update::UpdateParameters,
     Result,
 };
 use parse::Action;
@@ -109,30 +110,7 @@ async fn process_arguments(
 }
 
 async fn update(profile: &mut Profile, do_not_ask: bool) -> Result<()> {
-    if let Some(version) = Profile::update(profile.clone()).await? {
-        if do_not_ask {
-            tracing::info!("Updating...");
-            download(profile.clone()).await?;
-            tracing::info!("Extracting...");
-            *profile = Profile::install(profile.clone(), version).await?;
-            tracing::info!("Done!");
-        } else {
-            tracing::info!("Update found, do you want to update? [Y/n]");
-            if confirm_action()? {
-                tracing::info!("Updating...");
-                download(profile.clone()).await?;
-                tracing::info!("Extracting...");
-                *profile = Profile::install(profile.clone(), version).await?;
-                tracing::info!("Done!");
-            }
-        }
-    } else {
-        tracing::info!("Profile already up-to-date.");
-    }
-    Ok(())
-}
-
-async fn download(profile: Profile) -> Result<()> {
+    use crate::update::{update, Progress};
     use indicatif::{ProgressBar, ProgressStyle};
 
     let progress_bar = ProgressBar::new(0).with_style(
@@ -143,21 +121,53 @@ async fn download(profile: Profile) -> Result<()> {
     );
     progress_bar.set_length(100);
 
-    let mut stream = crate::net::download(profile.url(), profile.download_path()).boxed();
+    let mut stream = update(UpdateParameters {
+        profile: profile.clone(),
+        force_complete_redownload: false,
+    })
+    .boxed();
 
     while let Some(progress) = stream.next().await {
         match progress {
-            net::Progress::Started => {},
-            net::Progress::Errored(e) => return Err(e.into()),
-            net::Progress::Finished => return Ok(()),
-            net::Progress::Advanced(progress_data) => {
-                progress_bar.set_position(progress_data.percent_complete as u64);
+            Progress::Evaluating => {
+                let next = if progress_bar.position() == 33 {
+                    66
+                } else {
+                    33
+                };
+
+                progress_bar.set_message("Evaluating Update");
+                progress_bar.set_position(next);
+            },
+            Progress::ReadyToDownload => {
+                if !do_not_ask {
+                    tracing::info!("Update found, do you want to update? [Y/n]");
+                    if !confirm_action()? {
+                        // No update for you :/
+                        tracing::info!("skipping update.");
+                        break;
+                    }
+                }
+            },
+            Progress::InProgress(progress_data) => {
+                let file_info = match progress_data.content.show() {
+                    "" => "".to_string(),
+                    s => format!(": {s}"),
+                };
+                progress_bar.set_position(progress_data.percent_complete());
+                let print = |x| match x {
+                    0..1_500 => format!("{} Byte", x),
+                    1_500..2_500_000 => format!("{} kB", x / 1_000),
+                    x => format!("{} MB", x / 1_000_000),
+                };
                 progress_bar.set_message(format!(
-                    "{} MB / {} MB",
-                    progress_data.downloaded_bytes / 1_000_000,
-                    progress_data.total_bytes / 1_000_000
+                    "{} / {} {file_info}",
+                    print(progress_data.downloaded_bytes),
+                    print(progress_data.total_bytes),
                 ));
             },
+            Progress::Sucessful => return Ok(()),
+            Progress::Errored(e) => return Err(ClientError::Custom(e.to_string())),
         }
     }
     Ok(())
