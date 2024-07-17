@@ -1,12 +1,24 @@
-use crate::{error::ClientError, profiles::Profile, GITHUB_CLIENT, WEB_CLIENT};
+use std::{convert::TryFrom, io::Read, time::Duration};
+
+use crate::{
+    consts::DOWNLOAD_FILE, error::ClientError, profiles::Profile, GITHUB_CLIENT,
+    WEB_CLIENT,
+};
 use afterburner::Afterburner;
+use bytes::{Buf, BytesMut};
 use compare::{prepare_local_with_remote, Compared};
 use download::{Download, DownloadContent, InternalProgressData, ProgressData, Storage};
+use flate2::read::DeflateDecoder;
 use futures_util::stream::Stream;
 use iced::futures;
 use local_directory::{FileInformation, LocalDirectory};
 use remote_zip::{gen_classsic, RemoteZipError};
-use zip_core::{raw::CentralDirectoryHeader, structs::CompressionMethod};
+use tokio::io::AsyncWriteExt;
+use zip_core::{
+    raw::{parse::Parse, CentralDirectoryHeader, LocalFileHeader},
+    structs::CompressionMethod,
+    Signature,
+};
 
 mod afterburner;
 mod compare;
@@ -30,6 +42,7 @@ pub enum Progress {
     /// If the consumer sees ReadyToDownload a download is necessary, but they can
     /// implement logic to avoid any download
     ReadyToDownload,
+    #[allow(clippy::enum_variant_names)]
     InProgress(ProgressData),
     Sucessful,
     Errored(UpdateError),
@@ -46,13 +59,14 @@ pub struct UpdateParameters {
 enum State {
     ToBeEvaluated(UpdateParameters),
     DownloadEndOfCentralDirectory(UpdateParameters, bool),
-    DownloadCentralDirectory(UpdateParameters, bool, Download),
+    DownloadCentralDirectory(UpdateParameters, bool, Download<()>),
     CrcLocalDirectory(
         UpdateParameters,
         LocalDirectory,
         Vec<CentralDirectoryHeader>,
     ),
-    DownloadingClassic(UpdateParameters, Download),
+    DownloadingClassic(UpdateParameters, Download<()>),
+    UnzipClassic(UpdateParameters),
     FilterMissingFiles(
         UpdateParameters,
         Vec<CentralDirectoryHeader>,
@@ -61,8 +75,15 @@ enum State {
     DownloadingPartially(
         UpdateParameters,
         Compared,
-        Download,
-        Afterburner,
+        Download<CentralDirectoryHeader>,
+        Vec<(BytesMut, CentralDirectoryHeader, LocalFileHeader)>,
+        Afterburner<CentralDirectoryHeader>,
+        InternalProgressData,
+    ),
+    UnzipPartial(
+        UpdateParameters,
+        Compared,
+        Vec<(BytesMut, CentralDirectoryHeader, LocalFileHeader)>,
         InternalProgressData,
     ),
     RemovingPartially(UpdateParameters, Compared),
@@ -79,11 +100,13 @@ pub(crate) fn update(params: UpdateParameters) -> impl Stream<Item = Progress> {
             },
             State::DownloadCentralDirectory(p, m, d) => evaluate_remote_cd(p, m, d).await,
             State::CrcLocalDirectory(p, ld, cds) => evaluate_local_dir(p, ld, cds).await,
-            State::DownloadingClassic(p, d) => downloading_classing(p, d).await,
+            State::DownloadingClassic(p, d) => downloading_classic(p, d).await,
+            State::UnzipClassic(p) => unzip_classic(p).await,
             State::FilterMissingFiles(p, cds, fi) => filter_missings(p, cds, fi).await,
-            State::DownloadingPartially(p, cp, d, a, pr) => {
-                downloading_partial(p, cp, d, a, pr).await
+            State::DownloadingPartially(p, cp, d, f, a, pr) => {
+                downloading_partial(p, cp, d, f, a, pr).await
             },
+            State::UnzipPartial(p, cp, f, pr) => unzip_partial(p, cp, f, pr).await,
             State::RemovingPartially(p, cp) => removing_partial(p, cp).await,
             State::Finished => Ok(None),
         };
@@ -179,14 +202,14 @@ async fn evaluate_remote_eocd(
 async fn evaluate_remote_cd(
     params: UpdateParameters,
     remote_matches_profile: bool,
-    download: Download,
+    download: Download<()>,
 ) -> Result<Option<(Progress, State)>, UpdateError> {
     let download = download
         .progress()
         .await
         .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
     match download {
-        Download::Finished(storage) => {
+        Download::Finished(storage, ()) => {
             //download CDs
             let bytes = match storage {
                 Storage::Memory(bytes) => bytes.freeze(),
@@ -207,11 +230,11 @@ async fn evaluate_remote_cd(
                 State::CrcLocalDirectory(params, local_directory, cds),
             )))
         },
-        Download::Progress(_, _, _) => Ok(Some((
+        Download::Progress(_, _, _, _) => Ok(Some((
             Progress::Evaluating,
             State::DownloadCentralDirectory(params, remote_matches_profile, download),
         ))),
-        Download::Start(_, _, _) => unreachable!(),
+        Download::Start(_, _, _, _) => unreachable!(),
     }
 }
 
@@ -239,22 +262,71 @@ async fn evaluate_local_dir(
 }
 
 // continues_downloading
-async fn downloading_classing(
+async fn downloading_classic(
     params: UpdateParameters,
-    download: Download,
+    download: Download<()>,
 ) -> Result<Option<(Progress, State)>, UpdateError> {
     let download = download
         .progress()
         .await
         .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
     match &download {
-        Download::Finished(_) => Ok(Some((Progress::Sucessful, State::Finished))),
-        Download::Progress(_, _, progress) => Ok(Some((
+        Download::Finished(_, ()) => Ok(Some((
+            Progress::InProgress(ProgressData::new(0, DownloadContent::FullZip)),
+            State::UnzipClassic(params),
+        ))),
+        Download::Progress(_, _, progress, _) => Ok(Some((
             Progress::InProgress(progress.progress.clone()),
             State::DownloadingClassic(params, download),
         ))),
-        Download::Start(_, _, _) => unreachable!(),
+        Download::Start(_, _, _, _) => unreachable!(),
     }
+}
+
+// continues_downloading
+async fn unzip_classic(
+    params: UpdateParameters,
+) -> Result<Option<(Progress, State)>, UpdateError> {
+    let dir = params.profile.directory();
+    tracing::info!("Unzipping to {:?}", &dir);
+    let mut zip_file = std::fs::File::open(dir.join(DOWNLOAD_FILE))
+        .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+
+    let mut archive = zip::ZipArchive::new(&mut zip_file)
+        .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+
+    // Delete all assets to ensure that no obsolete assets will remain.
+    let assets = params.profile.directory().join("assets");
+    if assets.exists() {
+        std::fs::remove_dir_all(assets)
+            .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+    }
+
+    for i in 1..archive.len() {
+        let mut file = archive
+            .by_index(i)
+            .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+        // TODO: Verify that `sanitized_name()` works correctly in this case.
+        #[allow(deprecated)]
+        let path = params.profile.directory().join(file.sanitized_name());
+
+        if file.is_dir() {
+            std::fs::create_dir_all(path)
+                .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+        } else {
+            let mut target = std::fs::OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(path)
+                .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+
+            std::io::copy(&mut file, &mut target)
+                .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+        }
+    }
+
+    Ok(Some((Progress::Sucessful, State::Finished)))
 }
 
 // compares if files are different and prepares next steps
@@ -267,7 +339,7 @@ async fn filter_missings(
     let mut compared = prepare_local_with_remote(cds, file_infos);
 
     tracing::debug!("need to download {} files", compared.needs_redownload.len());
-    tracing::debug!("need to delet {} files", compared.needs_deletion_total);
+    tracing::debug!("need to delete {} files", compared.needs_deletion_total);
     tracing::trace!("{} bytes clean", compared.clean_data_total);
 
     use std::convert::TryFrom;
@@ -283,7 +355,7 @@ async fn filter_missings(
         return fallback(&params, false);
     }
 
-    const MAX_FILES_FOR_PARTIAL_DOWNLOAD: usize = 350;
+    const MAX_FILES_FOR_PARTIAL_DOWNLOAD: usize = 100;
     if compared.needs_redownload.len() > MAX_FILES_FOR_PARTIAL_DOWNLOAD {
         tracing::info!(
             "to many files changed to make partial download efficient, falling back to \
@@ -292,27 +364,33 @@ async fn filter_missings(
         return fallback(&params, false);
     }
 
-    // create backup dir
-
-    let progress = ProgressData {
-        bytes_per_sec: 0,
-        downloaded_bytes: 0,
-        total_bytes: compared.needs_redownload_bytes,
-        content: DownloadContent::CentralDirectory,
-    };
-    let iprogress = InternalProgressData::new(progress);
-
     match remote_zip::next_partial(&params, &mut compared) {
-        Some(first_partially) => Ok(Some((
-            Progress::ReadyToDownload,
-            State::DownloadingPartially(
-                params,
-                compared,
-                first_partially,
-                Afterburner::default(),
-                iprogress,
-            ),
-        ))),
+        Some(first_partially) => {
+            let content = match &first_partially {
+                Download::Start(_, _, c, _) => c,
+                _ => unreachable!(),
+            };
+
+            let progress = ProgressData {
+                bytes_per_sec: 0,
+                downloaded_bytes: 0,
+                total_bytes: compared.needs_redownload_bytes,
+                content: content.clone(),
+            };
+            let iprogress = InternalProgressData::new(progress);
+
+            Ok(Some((
+                Progress::ReadyToDownload,
+                State::DownloadingPartially(
+                    params,
+                    compared,
+                    first_partially,
+                    vec![],
+                    Afterburner::default(),
+                    iprogress,
+                ),
+            )))
+        },
         None => Ok(Some((
             Progress::ReadyToDownload,
             State::RemovingPartially(params, compared),
@@ -324,8 +402,9 @@ async fn filter_missings(
 async fn downloading_partial(
     params: UpdateParameters,
     mut compared: Compared,
-    download: Download,
-    mut afterburner: Afterburner,
+    download: Download<CentralDirectoryHeader>,
+    mut finished: Vec<(BytesMut, CentralDirectoryHeader, LocalFileHeader)>,
+    mut afterburner: Afterburner<CentralDirectoryHeader>,
     mut progress: InternalProgressData,
 ) -> Result<Option<(Progress, State)>, UpdateError> {
     // we can max finish 1 download each fn call, so its okay to only add 1 download.
@@ -341,8 +420,8 @@ async fn downloading_partial(
         .await
         .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
 
-    match &download {
-        Download::Finished(_) => {
+    match download {
+        Download::Finished(s, r) => {
             progress.progress.downloaded_bytes = compared.needs_redownload_bytes
                 - compared
                     .needs_redownload
@@ -351,41 +430,70 @@ async fn downloading_partial(
                     .sum::<u64>();
             let pr = progress.progress.clone();
 
-            if let Some(download) = afterburner.next() {
+            let ndownload = afterburner.next();
+            if ndownload.is_none() && afterburner.len() > 0 {
+                // we are not completly finished yet, spin another dummy round for
+                // afterburner to do its job, the download will stay Finished
+                tokio::time::sleep(Duration::from_millis(5)).await;
+                return Ok(Some((
+                    Progress::InProgress(pr),
+                    State::DownloadingPartially(
+                        params,
+                        compared,
+                        Download::Finished(s, r),
+                        finished,
+                        afterburner,
+                        progress,
+                    ),
+                )));
+            }
+
+            let mut bytes = match s {
+                Storage::Memory(b) => b,
+                _ => unreachable!(),
+            };
+
+            let local_header = match LocalFileHeader::from_buf(&mut bytes) {
+                Ok(lh) => lh,
+                Err(_) => return fallback(&params, false),
+            };
+            if !local_header.is_valid_signature() {
+                return fallback(&params, false);
+            }
+            finished.push((bytes, r, local_header));
+
+            if let Some(ndownload) = ndownload {
                 let download =
-                    download.map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+                    ndownload.map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+
                 Ok(Some((
                     Progress::InProgress(pr),
                     State::DownloadingPartially(
                         params,
                         compared,
                         download,
+                        finished,
                         afterburner,
                         progress,
                     ),
-                )))
-            } else if afterburner.len() == 0 {
-                Ok(Some((
-                    Progress::InProgress(pr),
-                    State::RemovingPartially(params, compared),
                 )))
             } else {
-                // If we are finished, no download from afterburner is ready but some are
-                // in queue, we just do another dummy round without blocking waiting for
-                // the afterburner
+                let total = finished
+                    .iter()
+                    .map(|e| e.1.fixed.compressed_size as u64)
+                    .sum();
+                let progress = InternalProgressData::new(ProgressData::new(
+                    total,
+                    DownloadContent::CentralDirectory,
+                ));
+                tracing::info!("unzipping files");
                 Ok(Some((
                     Progress::InProgress(pr),
-                    State::DownloadingPartially(
-                        params,
-                        compared,
-                        download,
-                        afterburner,
-                        progress,
-                    ),
+                    State::UnzipPartial(params, compared, finished, progress),
                 )))
             }
         },
-        Download::Progress(_, _, p) => {
+        Download::Progress(_r, _s, p, _p) => {
             progress.progress.content = p.progress.content.clone();
             progress.progress.bytes_per_sec = p.progress.bytes_per_sec;
             Ok(Some((
@@ -393,13 +501,91 @@ async fn downloading_partial(
                 State::DownloadingPartially(
                     params,
                     compared,
-                    download,
+                    Download::Progress(_r, _s, p, _p),
+                    finished,
                     afterburner,
                     progress,
                 ),
             )))
         },
-        Download::Start(_, _, _) => unreachable!(),
+        Download::Start(_, _, _, _) => unreachable!(),
+    }
+}
+
+// downloads partial info
+async fn unzip_partial(
+    params: UpdateParameters,
+    compared: Compared,
+    mut finished: Vec<(BytesMut, CentralDirectoryHeader, LocalFileHeader)>,
+    mut progress: InternalProgressData,
+) -> Result<Option<(Progress, State)>, UpdateError> {
+    match finished.pop() {
+        Some((rbytes, remote, _)) => {
+            let remote_file_size = remote.fixed.compressed_size as usize;
+            if remote_file_size > rbytes.remaining() {
+                tracing::warn!(
+                    "Actually xMAC guessed wrong with the 1400 extra bytes, ping him \
+                     please"
+                );
+                return fallback(&params, false);
+            }
+
+            let filename = String::from_utf8_lossy(&remote.file_name);
+
+            let path = params.profile.directory().join(filename.to_string());
+            if !path.starts_with(params.profile.directory()) {
+                panic!(
+                    "{}",
+                    "Zip Escape Attack, it seems your zip is compromized and tries to \
+                     write outside rood, call the veloren team, path tried to write to: \
+                     {path:?}",
+                );
+            }
+
+            let parent = path.parent().unwrap();
+            tokio::fs::create_dir_all(parent)
+                .await
+                .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+
+            let file = tokio::spawn(tokio::fs::File::create(path));
+
+            let mut file_data = match CompressionMethod::try_from(remote.fixed.compression_method) {
+                Ok(CompressionMethod::Deflated) => {
+                    let compressed = rbytes.take(remote_file_size);
+                    let mut deflate_reader = DeflateDecoder::new(compressed.reader());
+                    let mut decompressed = Vec::with_capacity(remote_file_size);
+                    deflate_reader.read_to_end(&mut decompressed).unwrap();
+                    bytes::Bytes::copy_from_slice(&decompressed)
+                },
+                Ok(CompressionMethod::Stored) => rbytes
+                    .take(remote_file_size)
+                    .copy_to_bytes(remote_file_size),
+                _ => return fallback(&params, false), /* should not happen at this                                         * point */
+            };
+
+            let mut file = file
+                .await
+                .unwrap()
+                .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+            // TODO: evaluate splitting this up
+            file.write_all_buf(&mut file_data)
+                .await
+                .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+
+            progress.add_chunk(remote_file_size as u64);
+
+            Ok(Some((
+                Progress::InProgress(progress.progress.clone()),
+                State::UnzipPartial(params, compared, finished, progress),
+            )))
+        },
+        None => {
+            tracing::info!("deleting files that should be removed");
+            Ok(Some((
+                Progress::InProgress(progress.progress.clone()),
+                State::RemovingPartially(params, compared),
+            )))
+        },
     }
 }
 
@@ -410,6 +596,10 @@ async fn removing_partial(
 ) -> Result<Option<(Progress, State)>, UpdateError> {
     match compared.needs_deletion.pop() {
         Some(f) => {
+            tracing::debug!("deleting {:?}", &f.path);
+            tokio::fs::remove_file(&f.path)
+                .await
+                .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
             let progress = ProgressData {
                 bytes_per_sec: 0,
                 content: DownloadContent::SingleFile(f.local_path.clone()),
@@ -425,9 +615,3 @@ async fn removing_partial(
         None => Ok(Some((Progress::Sucessful, State::Finished))),
     }
 }
-
-/*
- - Download single zippy while compressing latest (assuming download takes longer than decompression, speedup)
- - after confirm, do a backup step, write changes to the clone repo, and mv directories later on.
-
-*/

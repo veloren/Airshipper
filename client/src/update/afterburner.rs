@@ -6,19 +6,19 @@ use tokio::sync::mpsc;
 
 use super::download::{Download, DownloadError};
 
-type AfterburnerItem = Result<Download, DownloadError>;
+type AfterburnerItem<T> = Result<Download<T>, DownloadError>;
 
 /// Downloads need quite some long time for the initial .get call, so doing them
 /// sequentially is slow.
 /// Slap an Afterburner on it.
 #[derive(Debug)]
-pub(super) struct Afterburner {
+pub(super) struct Afterburner<T> {
     in_queue: Arc<AtomicU32>,
-    receiver: mpsc::Receiver<AfterburnerItem>,
-    sender: mpsc::Sender<AfterburnerItem>,
+    receiver: mpsc::Receiver<AfterburnerItem<T>>,
+    sender: mpsc::Sender<AfterburnerItem<T>>,
 }
 
-impl Default for Afterburner {
+impl<T> Default for Afterburner<T> {
     fn default() -> Self {
         let (sender, receiver) = mpsc::channel(50);
         Self {
@@ -29,16 +29,16 @@ impl Default for Afterburner {
     }
 }
 
-impl Afterburner {
+impl<T: Send + 'static> Afterburner<T> {
     pub(super) fn len(&self) -> u32 {
         self.in_queue.load(Ordering::SeqCst)
     }
 
-    pub(super) fn next(&mut self) -> Option<AfterburnerItem> {
+    pub(super) fn next(&mut self) -> Option<AfterburnerItem<T>> {
         self.receiver.try_recv().ok()
     }
 
-    pub(super) async fn start(&self, d: Download) {
+    pub(super) async fn start(&self, d: Download<T>) {
         let in_queue = self.in_queue.clone();
         in_queue.fetch_add(1, Ordering::SeqCst);
         let sender = self.sender.clone();

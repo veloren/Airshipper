@@ -51,7 +51,10 @@ pub fn process() -> Result<()> {
     }
 
     // CLI
-    let rt = tokio::runtime::Runtime::new()?;
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .worker_threads(3)
+        .build()?;
 
     // let the user know incase airshipper can be updated.
     #[cfg(windows)]
@@ -73,8 +76,7 @@ pub fn process() -> Result<()> {
         state.save_mut().await?;
 
         Ok::<(), ClientError>(())
-    })?;
-    Ok(())
+    })
 }
 
 async fn process_arguments(

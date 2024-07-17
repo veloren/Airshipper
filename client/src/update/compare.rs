@@ -16,8 +16,7 @@ pub(super) struct Compared {
 fn extract<T, F: Fn(&T) -> bool>(input: &mut Vec<T>, f: F) -> Vec<T> {
     input.sort_by_key(&f); // [false, false, true]
     if let Some(id) = input.iter().position(f) {
-        let output = input.split_off(id);
-        return output;
+        input.split_off(id)
     } else {
         vec![]
     }
@@ -59,6 +58,16 @@ pub(super) fn prepare_local_with_remote(
         .iter()
         .map(|remote| remote.fixed.compressed_size as u64)
         .sum();
+
+    // keep everything in userdata
+
+    let needs_deletion: Vec<_> = needs_deletion
+        .into_iter()
+        .filter(|fi| {
+            !(fi.local_path.starts_with("userdata/") || &fi.local_path == "veloren.zip")
+        })
+        .collect();
+
     let needs_deletion_total = needs_deletion.len() as u64;
 
     //reorder based by range, so that we read from low to high, in the hope that its

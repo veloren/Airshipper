@@ -33,6 +33,7 @@ impl ProgressData {
         (self.downloaded_bytes as f32 * 100.0 / self.total_bytes as f32) as u64
     }
 
+    #[allow(dead_code)]
     pub(crate) fn remaining(&self) -> Duration {
         Duration::from_secs_f32(
             (self.total_bytes - self.downloaded_bytes) as f32
@@ -70,6 +71,7 @@ impl InternalProgressData {
                 (self.downloaded_since_last_check as f32 / since_last_check_f32) as u64;
             self.downloaded_since_last_check = 0;
             self.last_rate_check = current_time;
+            self.progress.bytes_per_sec = bytes_per_sec;
         }
     }
 }
@@ -92,17 +94,17 @@ pub(super) enum DownloadError {
 }
 
 #[derive(Debug)]
-pub(super) enum Download {
-    Start(RequestBuilder, Storage, DownloadContent),
-    Progress(reqwest::Response, Storage, InternalProgressData),
-    Finished(Storage),
+pub(super) enum Download<T> {
+    Start(RequestBuilder, Storage, DownloadContent, T),
+    Progress(reqwest::Response, Storage, InternalProgressData, T),
+    Finished(Storage, T),
 }
 
-impl Download {
+impl<T> Download<T> {
     /// downloads a single "thing" partially, so it can be showed in UI
     pub(super) async fn progress(self) -> Result<Self, DownloadError> {
         match self {
-            Download::Start(request, storage, content) => {
+            Download::Start(request, storage, content, c) => {
                 let response = request.send().await?;
 
                 if !response.status().is_success() {
@@ -117,9 +119,9 @@ impl Download {
                 let total = response.content_length().unwrap_or_default();
                 let progress =
                     InternalProgressData::new(ProgressData::new(total, content));
-                Ok(Self::Progress(response, storage, progress))
+                Ok(Self::Progress(response, storage, progress, c))
             },
-            Download::Progress(mut response, mut storage, mut progress) => {
+            Download::Progress(mut response, mut storage, mut progress, c) => {
                 match response.chunk().await? {
                     Some(chunk) => {
                         progress.add_chunk(chunk.len() as u64);
@@ -129,17 +131,17 @@ impl Download {
                             Storage::File(ref mut file) => file.write_all(&chunk).await?,
                             Storage::Memory(ref mut mem) => mem.put(chunk),
                         }
-                        Ok(Self::Progress(response, storage, progress))
+                        Ok(Self::Progress(response, storage, progress, c))
                     },
                     None => {
                         if let Storage::File(file) = &storage {
                             file.sync_all().await?;
                         }
-                        Ok(Self::Finished(storage))
+                        Ok(Self::Finished(storage, c))
                     },
                 }
             },
-            Download::Finished(storage) => Ok(Download::Finished(storage)),
+            Download::Finished(storage, c) => Ok(Download::Finished(storage, c)),
         }
     }
 }
@@ -147,7 +149,7 @@ impl Download {
 impl DownloadContent {
     pub fn show(&self) -> &str {
         match self {
-            DownloadContent::SingleFile(x) => &x,
+            DownloadContent::SingleFile(x) => x,
             _ => "",
         }
     }

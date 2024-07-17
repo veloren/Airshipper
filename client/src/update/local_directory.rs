@@ -19,7 +19,6 @@ pub(super) enum LocalDirectoryError {
 
 #[derive(Clone, Debug)]
 pub(super) struct FileInformation {
-    #[allow(dead_code)]
     pub path: PathBuf,
     // with stripped prefix
     pub local_path: String,

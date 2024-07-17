@@ -75,10 +75,11 @@ ron = "0.8.1"
 zip = "0.6.6"
 zip-core = "0.0.3"
 crc32fast = "1.4.2"
+flate2 = "1.0"
 url = "2.2.2"
 # Other
 image = { version = "0.24.8", default-features = false, features = ["ico"] }
-tokio = { version = "1.25", features = [
+tokio = { version = "1.38", features = [
     "macros",
     "io-util",
     "process",

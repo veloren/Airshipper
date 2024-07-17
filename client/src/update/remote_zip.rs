@@ -52,7 +52,7 @@ pub(super) async fn download_eocd(
     end_of_central_dir.ok_or(RemoteZipError::NoCentralDirectoryFound)
 }
 
-pub(super) fn download_cds(eocd: &EndOfCentralDirectory, url: &str) -> Download {
+pub(super) fn download_cds(eocd: &EndOfCentralDirectory, url: &str) -> Download<()> {
     let cd_start = eocd
         .fixed
         .offset_of_start_of_central_directory_with_respect_to_the_starting_disk_number;
@@ -65,7 +65,12 @@ pub(super) fn download_cds(eocd: &EndOfCentralDirectory, url: &str) -> Download 
     let request_builder = GITHUB_CLIENT.get(url).header(RANGE, range);
     let storage = Storage::Memory(bytes);
 
-    Download::Start(request_builder, storage, DownloadContent::CentralDirectory)
+    Download::Start(
+        request_builder,
+        storage,
+        DownloadContent::CentralDirectory,
+        (),
+    )
 }
 
 pub(super) fn extract_cds(mut cd_bytes: Bytes) -> Option<Vec<CentralDirectoryHeader>> {
@@ -84,14 +89,15 @@ pub(super) fn gen_classsic(params: UpdateParameters) -> State {
     let request_builder = GITHUB_CLIENT.get(params.profile.download_url());
     let storage = Storage::FileInfo(params.profile.download_path());
 
-    let download = Download::Start(request_builder, storage, DownloadContent::FullZip);
+    let download =
+        Download::Start(request_builder, storage, DownloadContent::FullZip, ());
     State::DownloadingClassic(params, download)
 }
 
 pub(super) fn next_partial(
     params: &UpdateParameters,
     compared: &mut Compared,
-) -> Option<Download> {
+) -> Option<Download<CentralDirectoryHeader>> {
     compared.needs_redownload.pop().map(|remote| {
         let remote_file_size = remote.fixed.compressed_size as usize;
 
@@ -114,12 +120,11 @@ pub(super) fn next_partial(
             .unwrap_or("<unknown>")
             .to_string();
 
-        let download = Download::Start(
+        Download::Start(
             request_builder,
             storage,
             DownloadContent::SingleFile(remote_file),
-        );
-
-        download
+            remote,
+        )
     })
 }
