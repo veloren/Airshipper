@@ -53,7 +53,7 @@ pub fn process() -> Result<()> {
     // CLI
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
-        .worker_threads(3)
+        .worker_threads(4)
         .build()?;
 
     // let the user know incase airshipper can be updated.
@@ -168,7 +168,8 @@ async fn update(profile: &mut Profile, do_not_ask: bool) -> Result<()> {
                     print(progress_data.total_bytes),
                 ));
             },
-            Progress::Sucessful => return Ok(()),
+            //TODO: store profile
+            Progress::Successful(_) => return Ok(()),
             Progress::Errored(e) => return Err(ClientError::Custom(e.to_string())),
         }
     }

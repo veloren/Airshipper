@@ -1,13 +1,16 @@
-use std::{convert::TryFrom, io::Read, time::Duration};
+use std::{convert::TryFrom, io::Read, os::unix::fs::PermissionsExt, time::Duration};
 
 use crate::{
-    consts::DOWNLOAD_FILE, error::ClientError, profiles::Profile, GITHUB_CLIENT,
-    WEB_CLIENT,
+    consts::{DOWNLOAD_FILE, SERVER_CLI_FILE, VOXYGEN_FILE},
+    error::ClientError,
+    nix,
+    profiles::Profile,
+    GITHUB_CLIENT, WEB_CLIENT,
 };
 use afterburner::Afterburner;
 use bytes::{Buf, BytesMut};
 use compare::{prepare_local_with_remote, Compared};
-use download::{Download, DownloadContent, InternalProgressData, ProgressData, Storage};
+use download::{Download, DownloadContent, InternalProgressData, ProgressData};
 use flate2::read::DeflateDecoder;
 use futures_util::stream::Stream;
 use iced::futures;
@@ -26,7 +29,9 @@ mod download;
 mod local_directory;
 mod remote_zip;
 
-#[derive(Debug, thiserror::Error)]
+pub use download::{download_stream, Storage};
+
+#[derive(Debug, Clone, thiserror::Error)]
 pub(crate) enum UpdateError {
     #[error("Failed to access Airshippers Server for download information: {0}")]
     FailedToAccessAirshipperServer(ClientError),
@@ -36,7 +41,7 @@ pub(crate) enum UpdateError {
     Custom(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Progress {
     Evaluating,
     /// If the consumer sees ReadyToDownload a download is necessary, but they can
@@ -44,7 +49,7 @@ pub enum Progress {
     ReadyToDownload,
     #[allow(clippy::enum_variant_names)]
     InProgress(ProgressData),
-    Sucessful,
+    Successful(Option<Profile>),
     Errored(UpdateError),
 }
 
@@ -56,7 +61,8 @@ pub struct UpdateParameters {
 }
 
 #[derive(Debug)]
-enum State {
+#[allow(private_interfaces)]
+pub(super) enum State {
     ToBeEvaluated(UpdateParameters),
     DownloadEndOfCentralDirectory(UpdateParameters, bool),
     DownloadCentralDirectory(UpdateParameters, bool, Download<()>),
@@ -87,13 +93,20 @@ enum State {
         InternalProgressData,
     ),
     RemovingPartially(UpdateParameters, Compared),
+    FinalCleanup(UpdateParameters),
     Finished,
 }
 
 pub(crate) fn update(params: UpdateParameters) -> impl Stream<Item = Progress> {
     tracing::debug!(?params, "start updating");
-    futures::stream::unfold(State::ToBeEvaluated(params), |old_state| async move {
-        let res = match old_state {
+    futures::stream::unfold(State::ToBeEvaluated(params), |old_state| {
+        old_state.progress()
+    })
+}
+
+impl State {
+    pub(crate) async fn progress(self) -> Option<(Progress, Self)> {
+        let res = match self {
             State::ToBeEvaluated(params) => evalute_remote_version(params).await,
             State::DownloadEndOfCentralDirectory(p, m) => {
                 evaluate_remote_eocd(p, m).await
@@ -108,18 +121,19 @@ pub(crate) fn update(params: UpdateParameters) -> impl Stream<Item = Progress> {
             },
             State::UnzipPartial(p, cp, f, pr) => unzip_partial(p, cp, f, pr).await,
             State::RemovingPartially(p, cp) => removing_partial(p, cp).await,
+            State::FinalCleanup(p) => final_cleanup(p).await,
             State::Finished => Ok(None),
         };
         match res {
             Ok(ok) => ok,
             Err(e) => Some((Progress::Errored(e), State::Finished)),
         }
-    })
+    }
 }
 
 // asks airshipper server for version and compares with profile
 async fn evalute_remote_version(
-    params: UpdateParameters,
+    mut params: UpdateParameters,
 ) -> Result<Option<(Progress, State)>, UpdateError> {
     tracing::debug!("evalute_remote_version");
     if params.force_complete_redownload {
@@ -138,7 +152,9 @@ async fn evalute_remote_version(
         .map_err(map_err)?;
 
     let remote_matches_profile =
-        Some(remote) != params.profile.version || !&params.profile.installed();
+        Some(remote.clone()) != params.profile.version || !&params.profile.installed();
+
+    params.profile.version = Some(remote);
 
     Ok(Some((
         Progress::Evaluating,
@@ -153,7 +169,10 @@ fn fallback(
     if remote_matches_profile {
         // If content_length is unavailable and profile matches, we assume
         // everything is fine
-        Ok(Some((Progress::Sucessful, State::Finished)))
+        Ok(Some((
+            Progress::Evaluating,
+            State::FinalCleanup(params.clone()),
+        )))
     } else {
         // if profiles dont match, we enforce classic download
         Ok(Some((
@@ -253,8 +272,8 @@ async fn evaluate_local_dir(
             Progress::Evaluating,
             State::FilterMissingFiles(params, cds, file_infos),
         ))),
-        LocalDirectory::Progress(_, _, _, _, _) => Ok(Some((
-            Progress::Evaluating,
+        LocalDirectory::Progress(_, _, _, _, ref progress) => Ok(Some((
+            Progress::InProgress(progress.progress.clone()),
             State::CrcLocalDirectory(params, local_dir, cds),
         ))),
         LocalDirectory::Start(_) => unreachable!(),
@@ -326,8 +345,16 @@ async fn unzip_classic(
         }
     }
 
-    Ok(Some((Progress::Sucessful, State::Finished)))
+    // Delete downloaded zip
+    tracing::trace!("Extracted files, deleting zip archive.");
+    tokio::fs::remove_file(params.profile.directory().join(DOWNLOAD_FILE))
+        .await
+        .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+
+    Ok(Some((Progress::Evaluating, State::FinalCleanup(params))))
 }
+
+const DOWNLOADS_IN_QUEUE_SPEEDUP: u32 = 5;
 
 // compares if files are different and prepares next steps
 async fn filter_missings(
@@ -364,6 +391,11 @@ async fn filter_missings(
         return fallback(&params, false);
     }
 
+    if compared.needs_redownload.is_empty() && compared.needs_deletion_total == 0 {
+        // already up to date
+        return Ok(Some((Progress::Evaluating, State::FinalCleanup(params))));
+    }
+
     match remote_zip::next_partial(&params, &mut compared) {
         Some(first_partially) => {
             let content = match &first_partially {
@@ -386,7 +418,7 @@ async fn filter_missings(
                     compared,
                     first_partially,
                     vec![],
-                    Afterburner::default(),
+                    Afterburner::new(DOWNLOADS_IN_QUEUE_SPEEDUP as usize),
                     iprogress,
                 ),
             )))
@@ -408,7 +440,6 @@ async fn downloading_partial(
     mut progress: InternalProgressData,
 ) -> Result<Option<(Progress, State)>, UpdateError> {
     // we can max finish 1 download each fn call, so its okay to only add 1 download.
-    const DOWNLOADS_IN_QUEUE_SPEEDUP: u32 = 5;
     if afterburner.len() < DOWNLOADS_IN_QUEUE_SPEEDUP {
         if let Some(next_partially) = remote_zip::next_partial(&params, &mut compared) {
             afterburner.start(next_partially).await
@@ -612,6 +643,44 @@ async fn removing_partial(
                 State::RemovingPartially(params, compared),
             )))
         },
-        None => Ok(Some((Progress::Sucessful, State::Finished))),
+        None => Ok(Some((Progress::Evaluating, State::FinalCleanup(params)))),
     }
+}
+
+// permissions, update params
+async fn final_cleanup(
+    params: UpdateParameters,
+) -> Result<Option<(Progress, State)>, UpdateError> {
+    #[cfg(unix)]
+    {
+        let profile_directory = params.profile.directory();
+
+        // Patch executable files if we are on NixOS
+        if nix::is_nixos().map_err(|e| UpdateError::Custom(format!("{:?}", e)))? {
+            nix::patch(&profile_directory)
+                .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+        } else {
+            let p = |path| async move {
+                let meta = tokio::fs::metadata(&path)
+                    .await
+                    .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+                let mut perm = meta.permissions();
+                perm.set_mode(0o755);
+                tokio::fs::set_permissions(&path, perm)
+                    .await
+                    .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+                Ok(())
+            };
+
+            let voxygen_file = profile_directory.join(VOXYGEN_FILE);
+            p(voxygen_file).await?;
+            let server_cli_file = profile_directory.join(SERVER_CLI_FILE);
+            p(server_cli_file).await?;
+        }
+    }
+
+    Ok(Some((
+        Progress::Successful(Some(params.profile)),
+        State::Finished,
+    )))
 }

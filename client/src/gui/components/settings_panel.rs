@@ -55,10 +55,8 @@ impl SettingsPanelComponent {
                         async { Action::UpdateProfile(profile2) },
                         DefaultViewMessage::Action,
                     ),
-                    Command::perform(Profile::update(profile), |update| {
-                        DefaultViewMessage::GamePanel(GamePanelMessage::GameUpdate(
-                            update,
-                        ))
+                    Command::perform(async {}, |_| {
+                        DefaultViewMessage::GamePanel(GamePanelMessage::PlayPressed)
                     }),
                 ]))
             },
@@ -72,10 +70,8 @@ impl SettingsPanelComponent {
                         async { Action::UpdateProfile(profile2) },
                         DefaultViewMessage::Action,
                     ),
-                    Command::perform(Profile::update(profile), |update| {
-                        DefaultViewMessage::GamePanel(GamePanelMessage::GameUpdate(
-                            update,
-                        ))
+                    Command::perform(async {}, |_| {
+                        DefaultViewMessage::GamePanel(GamePanelMessage::PlayPressed)
                     }),
                 ]))
             },

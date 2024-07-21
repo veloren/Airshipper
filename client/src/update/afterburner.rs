@@ -18,18 +18,16 @@ pub(super) struct Afterburner<T> {
     sender: mpsc::Sender<AfterburnerItem<T>>,
 }
 
-impl<T> Default for Afterburner<T> {
-    fn default() -> Self {
-        let (sender, receiver) = mpsc::channel(50);
+impl<T: Send + 'static> Afterburner<T> {
+    pub fn new(parallel: usize) -> Self {
+        let (sender, receiver) = mpsc::channel(parallel * 2);
         Self {
             in_queue: Arc::new(AtomicU32::new(0)),
             receiver,
             sender,
         }
     }
-}
 
-impl<T: Send + 'static> Afterburner<T> {
     pub(super) fn len(&self) -> u32 {
         self.in_queue.load(Ordering::SeqCst)
     }

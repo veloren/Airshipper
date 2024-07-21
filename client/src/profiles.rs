@@ -1,6 +1,4 @@
-#[cfg(unix)]
-use crate::nix;
-use crate::{channels::Channel, consts, fs, net, Result};
+use crate::{channels::Channel, consts, fs};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -279,39 +277,6 @@ impl Profile {
         cmd
     }
 
-    pub async fn update(profile: Profile) -> Result<Option<String>> {
-        let remote = net::query(&profile.version_url()).await?.text().await?;
-
-        if remote != profile.version.clone().unwrap_or_default() || !profile.installed() {
-            Ok(Some(remote))
-        } else {
-            Ok(None)
-        }
-    }
-
-    pub async fn install(mut profile: Profile, version: String) -> Result<Profile> {
-        tokio::task::block_in_place(|| fs::unzip(&profile))?;
-
-        #[cfg(unix)]
-        {
-            let profile_directory = profile.directory();
-
-            // Patch executable files if we are on NixOS
-            if nix::is_nixos()? {
-                tokio::task::block_in_place(|| nix::patch(&profile_directory))?;
-            } else {
-                let voxygen_file = profile_directory.join(consts::VOXYGEN_FILE);
-                let server_cli_file = profile_directory.join(consts::SERVER_CLI_FILE);
-                set_permissions(vec![&voxygen_file, &server_cli_file]).await?;
-            }
-        }
-
-        // After successful install, update the profile.
-        profile.version = Some(version);
-
-        Ok(profile)
-    }
-
     /// Returns whether the profile is ready to be started
     pub fn installed(&self) -> bool {
         self.voxygen_path().exists() && self.version.is_some()
@@ -339,20 +304,6 @@ impl Profile {
             self.supported_wgpu_backends = Vec::new();
         }
     }
-}
-
-/// Tries to set executable permissions on linux
-#[cfg(unix)]
-async fn set_permissions(files: Vec<&std::path::PathBuf>) -> Result<()> {
-    for file in files {
-        Command::new("chmod")
-            .arg("+x")
-            .arg(file)
-            .spawn()?
-            .wait()
-            .await?;
-    }
-    Ok(())
 }
 
 pub fn parse_env_vars(env_vars: &str) -> (Vec<(&str, &str)>, Vec<String>) {

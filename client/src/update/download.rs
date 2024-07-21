@@ -77,7 +77,7 @@ impl InternalProgressData {
 }
 
 #[derive(Debug)]
-pub(super) enum Storage {
+pub enum Storage {
     FileInfo(PathBuf),
     File(File),
     Memory(BytesMut),
@@ -153,4 +153,49 @@ impl DownloadContent {
             _ => "",
         }
     }
+}
+
+use futures_util::stream::Stream;
+use iced::futures;
+
+use super::{Progress, UpdateError};
+
+pub fn download_stream<T>(
+    rb: RequestBuilder,
+    s: Storage,
+    t: T,
+) -> impl Stream<Item = Progress> {
+    let state: Result<Download<T>, UpdateError> =
+        Ok(Download::Start(rb, s, DownloadContent::FullZip, t));
+    futures::stream::unfold(state, |state| async move {
+        let download = match state {
+            Err(e) => return Some((Progress::Errored(e.clone()), Err(e))),
+            Ok(download) => download,
+        };
+
+        let res = match download {
+            Download::Start(rb, s, dl, t) => Download::Start(rb, s, dl.clone(), t)
+                .progress()
+                .await
+                .map(|s| Some((Progress::InProgress(ProgressData::new(0, dl)), Ok(s)))),
+            Download::Progress(res, s, id, t) => {
+                Download::Progress(res, s, id.clone(), t)
+                    .progress()
+                    .await
+                    .map(|s| Some((Progress::InProgress(id.progress.clone()), Ok(s))))
+            },
+            Download::Finished(s, t) => Download::Finished(s, t)
+                .progress()
+                .await
+                .map(|s| Some((Progress::Successful(None), Ok(s)))),
+        };
+
+        match res {
+            Ok(ok) => ok,
+            Err(e) => {
+                let e = super::UpdateError::Custom(format!("{e}"));
+                Some((Progress::Errored(e.clone()), Err(e)))
+            },
+        }
+    })
 }
