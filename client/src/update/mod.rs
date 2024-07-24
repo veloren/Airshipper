@@ -1,13 +1,13 @@
-use std::{
-    convert::TryFrom, future::Future, io::Read, os::unix::fs::PermissionsExt, pin::Pin,
-};
+use std::{convert::TryFrom, future::Future, io::Read, pin::Pin};
 
 use crate::{
-    consts::{DOWNLOAD_FILE, SERVER_CLI_FILE, VOXYGEN_FILE},
-    error::ClientError,
+    consts::DOWNLOAD_FILE, error::ClientError, profiles::Profile, GITHUB_CLIENT,
+    WEB_CLIENT,
+};
+#[cfg(unix)]
+use crate::{
+    consts::{SERVER_CLI_FILE, VOXYGEN_FILE},
     nix,
-    profiles::Profile,
-    GITHUB_CLIENT, WEB_CLIENT,
 };
 use bytes::{Buf, BytesMut};
 use compare::{prepare_local_with_remote, Compared};
@@ -22,6 +22,8 @@ use futures_util::{
 use iced::futures;
 use local_directory::{FileInformation, LocalDirectory};
 use remote_zip::{gen_classsic, RemoteZipError};
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use tokio::io::AsyncWriteExt;
 use zip_core::{
     raw::{parse::Parse, CentralDirectoryHeader, LocalFileHeader},
