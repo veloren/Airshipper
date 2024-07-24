@@ -1,4 +1,6 @@
-use std::{convert::TryFrom, io::Read, os::unix::fs::PermissionsExt, time::Duration};
+use std::{
+    convert::TryFrom, future::Future, io::Read, os::unix::fs::PermissionsExt, pin::Pin,
+};
 
 use crate::{
     consts::{DOWNLOAD_FILE, SERVER_CLI_FILE, VOXYGEN_FILE},
@@ -7,12 +9,16 @@ use crate::{
     profiles::Profile,
     GITHUB_CLIENT, WEB_CLIENT,
 };
-use afterburner::Afterburner;
 use bytes::{Buf, BytesMut};
 use compare::{prepare_local_with_remote, Compared};
-use download::{Download, DownloadContent, InternalProgressData, ProgressData};
+use download::{
+    Download, DownloadContent, DownloadError, InternalProgressData, ProgressData,
+};
 use flate2::read::DeflateDecoder;
-use futures_util::stream::Stream;
+use futures_util::{
+    stream::{FuturesUnordered, Stream},
+    FutureExt,
+};
 use iced::futures;
 use local_directory::{FileInformation, LocalDirectory};
 use remote_zip::{gen_classsic, RemoteZipError};
@@ -23,7 +29,6 @@ use zip_core::{
     Signature,
 };
 
-mod afterburner;
 mod compare;
 mod download;
 mod local_directory;
@@ -60,6 +65,15 @@ pub struct UpdateParameters {
     pub force_complete_redownload: bool,
 }
 
+type Afterburner = FuturesUnordered<
+    Pin<
+        Box<
+            dyn Future<Output = Result<Download<CentralDirectoryHeader>, DownloadError>>
+                + Send,
+        >,
+    >,
+>;
+
 #[derive(Debug)]
 #[allow(private_interfaces)]
 pub(super) enum State {
@@ -81,9 +95,8 @@ pub(super) enum State {
     DownloadingPartially(
         UpdateParameters,
         Compared,
-        Download<CentralDirectoryHeader>,
         Vec<(BytesMut, CentralDirectoryHeader, LocalFileHeader)>,
-        Afterburner<CentralDirectoryHeader>,
+        Afterburner,
         InternalProgressData,
     ),
     UnzipPartial(
@@ -116,8 +129,8 @@ impl State {
             State::DownloadingClassic(p, d) => downloading_classic(p, d).await,
             State::UnzipClassic(p) => unzip_classic(p).await,
             State::FilterMissingFiles(p, cds, fi) => filter_missings(p, cds, fi).await,
-            State::DownloadingPartially(p, cp, d, f, a, pr) => {
-                downloading_partial(p, cp, d, f, a, pr).await
+            State::DownloadingPartially(p, cp, f, a, pr) => {
+                downloading_partial(p, cp, f, a, pr).await
             },
             State::UnzipPartial(p, cp, f, pr) => unzip_partial(p, cp, f, pr).await,
             State::RemovingPartially(p, cp) => removing_partial(p, cp).await,
@@ -354,8 +367,6 @@ async fn unzip_classic(
     Ok(Some((Progress::Evaluating, State::FinalCleanup(params))))
 }
 
-const DOWNLOADS_IN_QUEUE_SPEEDUP: u32 = 5;
-
 // compares if files are different and prepares next steps
 async fn filter_missings(
     params: UpdateParameters,
@@ -410,15 +421,16 @@ async fn filter_missings(
                 content: content.clone(),
             };
             let iprogress = InternalProgressData::new(progress);
+            let afterburner = FuturesUnordered::new();
+            afterburner.push(first_partially.progress().boxed());
 
             Ok(Some((
                 Progress::ReadyToDownload,
                 State::DownloadingPartially(
                     params,
                     compared,
-                    first_partially,
                     vec![],
-                    Afterburner::new(DOWNLOADS_IN_QUEUE_SPEEDUP as usize),
+                    afterburner,
                     iprogress,
                 ),
             )))
@@ -434,21 +446,23 @@ async fn filter_missings(
 async fn downloading_partial(
     params: UpdateParameters,
     mut compared: Compared,
-    download: Download<CentralDirectoryHeader>,
     mut finished: Vec<(BytesMut, CentralDirectoryHeader, LocalFileHeader)>,
-    mut afterburner: Afterburner<CentralDirectoryHeader>,
+    mut afterburner: Afterburner,
     mut progress: InternalProgressData,
 ) -> Result<Option<(Progress, State)>, UpdateError> {
+    use futures::stream::StreamExt;
+    const DOWNLOADS_IN_QUEUE_SPEEDUP: usize = 5;
     // we can max finish 1 download each fn call, so its okay to only add 1 download.
     if afterburner.len() < DOWNLOADS_IN_QUEUE_SPEEDUP {
         if let Some(next_partially) = remote_zip::next_partial(&params, &mut compared) {
-            afterburner.start(next_partially).await
+            afterburner.push(next_partially.progress().boxed());
         }
     }
 
-    let download = download
-        .progress()
+    let download = afterburner
+        .next()
         .await
+        .unwrap()
         .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
 
     match download {
@@ -460,24 +474,6 @@ async fn downloading_partial(
                     .map(|remote| remote.fixed.compressed_size as u64)
                     .sum::<u64>();
             let pr = progress.progress.clone();
-
-            let ndownload = afterburner.next();
-            if ndownload.is_none() && afterburner.len() > 0 {
-                // we are not completly finished yet, spin another dummy round for
-                // afterburner to do its job, the download will stay Finished
-                tokio::time::sleep(Duration::from_millis(5)).await;
-                return Ok(Some((
-                    Progress::InProgress(pr),
-                    State::DownloadingPartially(
-                        params,
-                        compared,
-                        Download::Finished(s, r),
-                        finished,
-                        afterburner,
-                        progress,
-                    ),
-                )));
-            }
 
             let mut bytes = match s {
                 Storage::Memory(b) => b,
@@ -493,16 +489,12 @@ async fn downloading_partial(
             }
             finished.push((bytes, r, local_header));
 
-            if let Some(ndownload) = ndownload {
-                let download =
-                    ndownload.map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
-
+            if !afterburner.is_empty() {
                 Ok(Some((
                     Progress::InProgress(pr),
                     State::DownloadingPartially(
                         params,
                         compared,
-                        download,
                         finished,
                         afterburner,
                         progress,
@@ -527,12 +519,12 @@ async fn downloading_partial(
         Download::Progress(_r, _s, p, _p) => {
             progress.progress.content = p.progress.content.clone();
             progress.progress.bytes_per_sec = p.progress.bytes_per_sec;
+            afterburner.push(Download::Progress(_r, _s, p, _p).progress().boxed());
             Ok(Some((
                 Progress::InProgress(progress.progress.clone()),
                 State::DownloadingPartially(
                     params,
                     compared,
-                    Download::Progress(_r, _s, p, _p),
                     finished,
                     afterburner,
                     progress,
