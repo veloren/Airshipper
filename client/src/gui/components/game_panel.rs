@@ -1,5 +1,6 @@
 use crate::{
     assets::{DOWNLOAD_ICON, POPPINS_BOLD_FONT, POPPINS_MEDIUM_FONT, SETTINGS_ICON},
+    error::ClientError,
     gui::{
         custom_widgets::heading_with_rule,
         style::{
@@ -17,7 +18,7 @@ use crate::{
         widget::*,
     },
     io::ProcessUpdate,
-    logger::redirect_voxygen_log,
+    logger::{pretty_bytes, redirect_voxygen_log},
     profiles::Profile,
     update::{Progress, State, UpdateParameters},
 };
@@ -44,18 +45,18 @@ pub enum GamePanelMessage {
     DownloadProgress(Option<Progress>),
     PlayPressed,
     ServerBrowserServerChanged(Option<String>),
+    StartUpdate,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DownloadButtonState {
-    Starting,
+    Checking,
     WaitForConfirm,
     InProgress,
 }
 
 #[derive(Clone)]
 pub enum GamePanelState {
-    WaitForUpdate, //to get profile
     Updating {
         astate: Arc<Mutex<Option<State>>>,
         btnstate: DownloadButtonState,
@@ -76,7 +77,6 @@ pub struct GamePanelComponent {
 impl std::fmt::Debug for GamePanelState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            GamePanelState::WaitForUpdate => write!(f, "GamePanelState::WaitForUpdate"),
             GamePanelState::Updating { .. } => write!(f, "GamePanelState::Updating"),
             GamePanelState::ReadyToPlay => write!(f, "GamePanelState::ReadyToPlay"),
             GamePanelState::Playing(_) => write!(f, "GamePanelState::Playing"),
@@ -89,7 +89,7 @@ impl std::fmt::Debug for GamePanelState {
 impl Default for GamePanelComponent {
     fn default() -> Self {
         Self {
-            state: GamePanelState::WaitForUpdate,
+            state: GamePanelState::ReadyToPlay,
             download_progress: None,
             selected_server_browser_address: None,
         }
@@ -161,22 +161,13 @@ impl GamePanelComponent {
     ) -> Option<Command<DefaultViewMessage>> {
         let (next_state, command) = match msg {
             GamePanelMessage::PlayPressed => match &self.state {
-                GamePanelState::WaitForUpdate => {
-                    let state = State::ToBeEvaluated(UpdateParameters {
-                        profile: active_profile.clone(),
-                        force_complete_redownload: false,
-                    });
-
-                    let astate = Arc::new(Mutex::new(None));
-                    Self::trigger_next_state(state, astate, DownloadButtonState::Starting)
-                },
                 GamePanelState::ReadyToPlay => {
                     (Some(GamePanelState::Playing(active_profile.clone())), None)
                 },
                 GamePanelState::Retry => (
-                    Some(GamePanelState::WaitForUpdate),
+                    None,
                     Some(Command::perform(async {}, |_| {
-                        DefaultViewMessage::GamePanel(GamePanelMessage::PlayPressed)
+                        DefaultViewMessage::GamePanel(GamePanelMessage::StartUpdate)
                     })),
                 ),
                 GamePanelState::Offline(available) => {
@@ -190,10 +181,10 @@ impl GamePanelComponent {
                             // The game has never been downloaded so the only option is to
                             // retry the download
                             (
-                                Some(GamePanelState::WaitForUpdate),
+                                None,
                                 Some(Command::perform(async {}, |_| {
                                     DefaultViewMessage::GamePanel(
-                                        GamePanelMessage::PlayPressed,
+                                        GamePanelMessage::StartUpdate,
                                     )
                                 })),
                             )
@@ -217,6 +208,15 @@ impl GamePanelComponent {
                     (None, None)
                 },
             },
+            GamePanelMessage::StartUpdate => {
+                let state = State::ToBeEvaluated(UpdateParameters {
+                    profile: active_profile.clone(),
+                    force_complete_redownload: false,
+                });
+
+                let astate = Arc::new(Mutex::new(None));
+                Self::trigger_next_state(state, astate, DownloadButtonState::Checking)
+            },
             GamePanelMessage::DownloadProgress(progress) => {
                 self.download_progress = progress.clone();
 
@@ -225,11 +225,14 @@ impl GamePanelComponent {
                         tracing::error!("Download failed with: {}", err);
                         let mut profile = active_profile.clone();
                         profile.version = None;
-                        // check if err is network offline error
-                        let next_state = if active_profile.installed() {
-                            GamePanelState::Offline(true)
+                        let next_state = if matches!(err, ClientError::NetworkError) {
+                            if active_profile.installed() {
+                                GamePanelState::Offline(true)
+                            } else {
+                                GamePanelState::Offline(false)
+                            }
                         } else {
-                            GamePanelState::Offline(false)
+                            GamePanelState::Retry
                         };
                         (
                             Some(next_state),
@@ -264,8 +267,7 @@ impl GamePanelComponent {
                         }
                     },
                     Some(Progress::ReadyToDownload) => {
-                        //wait for press
-                        tracing::info!("Need to confirm the update!");
+                        tracing::info!("Need to confirm the update");
                         (
                             if let GamePanelState::Updating { astate, .. } = &self.state {
                                 Some(GamePanelState::Updating {
@@ -291,9 +293,9 @@ impl GamePanelComponent {
                 ProcessUpdate::Exit(code) => {
                     debug!("Veloren exited with {}", code);
                     (
-                        Some(GamePanelState::WaitForUpdate),
+                        Some(GamePanelState::Retry),
                         Some(Command::perform(async {}, |_| {
-                            DefaultViewMessage::GamePanel(GamePanelMessage::PlayPressed)
+                            DefaultViewMessage::GamePanel(GamePanelMessage::StartUpdate)
                         })),
                     )
                 },
@@ -375,7 +377,6 @@ impl GamePanelComponent {
     fn set_state(&mut self, state: GamePanelState) {
         use GamePanelState::*;
         let same = match &self.state {
-            WaitForUpdate => matches!(state, WaitForUpdate),
             Updating { .. } => matches!(state, Updating { .. }),
             ReadyToPlay => matches!(state, ReadyToPlay),
             Playing(_) => matches!(state, Playing(_)),
@@ -414,7 +415,7 @@ impl GamePanelComponent {
                 let download_rate = bytes_per_sec as f32 / 1_000_000.0;
 
                 let progress_text =
-                    format!("{} MB / {} MB", downloaded / 1_000_000, total / 1_000_000);
+                    format!("{} / {}", pretty_bytes(downloaded), pretty_bytes(total));
 
                 let mut download_stats_row = row![]
                     .push(Image::new(Handle::from_memory(DOWNLOAD_ICON.to_vec())))
@@ -513,8 +514,8 @@ impl GamePanelComponent {
                         GamePanelState::Updating {
                             btnstate: dstate, ..
                         } => match *dstate {
-                            DownloadButtonState::Starting => (
-                                "Starting...",
+                            DownloadButtonState::Checking => (
+                                "Checking...",
                                 ButtonStyle::Download(DownloadButtonStyle::Update(
                                     ButtonState::Disabled,
                                 )),
@@ -545,14 +546,6 @@ impl GamePanelComponent {
                                 ButtonState::Disabled,
                             )),
                             false,
-                            None,
-                        ),
-                        GamePanelState::WaitForUpdate => (
-                            "Updating...",
-                            ButtonStyle::Download(DownloadButtonStyle::Update(
-                                ButtonState::Enabled,
-                            )),
-                            true,
                             None,
                         ),
                     };

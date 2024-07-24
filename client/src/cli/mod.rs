@@ -1,5 +1,6 @@
 use crate::{
-    fs, gui, io, logger,
+    fs, gui, io,
+    logger::{self, pretty_bytes},
     profiles::{parse_env_vars, Profile},
     update::UpdateParameters,
     Result,
@@ -157,15 +158,10 @@ async fn update(profile: &mut Profile, do_not_ask: bool) -> Result<()> {
                     s => format!(": {s}"),
                 };
                 progress_bar.set_position(progress_data.percent_complete());
-                let print = |x| match x {
-                    0..1_500 => format!("{} Byte", x),
-                    1_500..2_500_000 => format!("{} kB", x / 1_000),
-                    x => format!("{} MB", x / 1_000_000),
-                };
                 progress_bar.set_message(format!(
                     "{} / {} {file_info}",
-                    print(progress_data.downloaded_bytes),
-                    print(progress_data.total_bytes),
+                    pretty_bytes(progress_data.downloaded_bytes),
+                    pretty_bytes(progress_data.total_bytes),
                 ));
             },
             //TODO: store profile

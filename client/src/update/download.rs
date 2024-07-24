@@ -4,6 +4,8 @@ use std::{path::PathBuf, time::Duration};
 use reqwest::{RequestBuilder, StatusCode};
 use tokio::{fs::File, io::AsyncWriteExt, time::Instant};
 
+use crate::error::ClientError;
+
 #[derive(Debug, Clone)]
 pub struct ProgressData {
     pub total_bytes: u64,
@@ -151,6 +153,16 @@ impl DownloadContent {
         match self {
             DownloadContent::SingleFile(x) => x,
             _ => "",
+        }
+    }
+}
+
+impl From<DownloadError> for ClientError {
+    fn from(value: DownloadError) -> Self {
+        match value {
+            DownloadError::InvalidStatus(_) => ClientError::NetworkError,
+            DownloadError::Reqwest(_) => ClientError::NetworkError,
+            DownloadError::WriteError(_) => ClientError::IoError,
         }
     }
 }

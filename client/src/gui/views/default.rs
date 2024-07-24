@@ -224,7 +224,7 @@ impl DefaultView {
                         DefaultViewMessage::LauncherUpdate,
                     ),
                     Command::perform(async {}, |_| {
-                        DefaultViewMessage::GamePanel(GamePanelMessage::PlayPressed)
+                        DefaultViewMessage::GamePanel(GamePanelMessage::StartUpdate)
                     }),
                 ]);
             },

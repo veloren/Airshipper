@@ -36,16 +36,6 @@ mod remote_zip;
 
 pub use download::Storage;
 
-#[derive(Debug, Clone, thiserror::Error)]
-pub(crate) enum UpdateError {
-    #[error("Failed to access Airshippers Server for download information: {0}")]
-    FailedToAccessAirshipperServer(ClientError),
-    #[error("Failed to download the Veloren update, probably from github: {0}")]
-    FailedToAccessVelorenDownload(ClientError),
-    #[error("Custom Error: {0}")]
-    Custom(String),
-}
-
 #[derive(Debug, Clone)]
 pub enum Progress {
     Evaluating,
@@ -55,7 +45,7 @@ pub enum Progress {
     #[allow(clippy::enum_variant_names)]
     InProgress(ProgressData),
     Successful(Profile),
-    Errored(UpdateError),
+    Errored(ClientError),
 }
 
 #[derive(Debug, Clone)]
@@ -147,22 +137,18 @@ impl State {
 // asks airshipper server for version and compares with profile
 async fn evalute_remote_version(
     mut params: UpdateParameters,
-) -> Result<Option<(Progress, State)>, UpdateError> {
+) -> Result<Option<(Progress, State)>, ClientError> {
     tracing::debug!("evalute_remote_version");
     if params.force_complete_redownload {
         return Ok(Some((Progress::ReadyToDownload, gen_classsic(params))));
     }
 
-    let map_err =
-        |e: reqwest::Error| UpdateError::FailedToAccessAirshipperServer(e.into());
     let remote = WEB_CLIENT
         .get(params.profile.version_url())
         .send()
-        .await
-        .map_err(map_err)?
+        .await?
         .text()
-        .await
-        .map_err(map_err)?;
+        .await?;
 
     let remote_matches_profile =
         Some(remote.clone()) != params.profile.version || !&params.profile.installed();
@@ -178,7 +164,7 @@ async fn evalute_remote_version(
 fn fallback(
     params: &UpdateParameters,
     remote_matches_profile: bool,
-) -> Result<Option<(Progress, State)>, UpdateError> {
+) -> Result<Option<(Progress, State)>, ClientError> {
     if remote_matches_profile {
         // If content_length is unavailable and profile matches, we assume
         // everything is fine
@@ -199,13 +185,10 @@ fn fallback(
 async fn evaluate_remote_eocd(
     params: UpdateParameters,
     remote_matches_profile: bool,
-) -> Result<Option<(Progress, State)>, UpdateError> {
+) -> Result<Option<(Progress, State)>, ClientError> {
     tracing::debug!("evalute_remote_cd");
     let zip_url = params.profile.download_url();
-    let map_err =
-        |e: reqwest::Error| UpdateError::FailedToAccessVelorenDownload(e.into());
-    let content_length_resp =
-        GITHUB_CLIENT.head(&zip_url).send().await.map_err(map_err)?;
+    let content_length_resp = GITHUB_CLIENT.head(&zip_url).send().await?;
 
     let content_length = match content_length_resp.content_length() {
         Some(len) => len,
@@ -216,7 +199,7 @@ async fn evaluate_remote_eocd(
     let eocd = match remote_zip::download_eocd(content_length, &zip_url).await {
         Ok(eocd) => eocd,
         Err(RemoteZipError::Reqwest(e)) => {
-            return Err(UpdateError::FailedToAccessVelorenDownload(e.into()));
+            return Err(e)?;
         },
         Err(_) => return fallback(&params, remote_matches_profile),
     };
@@ -235,11 +218,8 @@ async fn evaluate_remote_cd(
     params: UpdateParameters,
     remote_matches_profile: bool,
     download: Download<()>,
-) -> Result<Option<(Progress, State)>, UpdateError> {
-    let download = download
-        .progress()
-        .await
-        .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+) -> Result<Option<(Progress, State)>, ClientError> {
+    let download = download.progress().await?;
     match download {
         Download::Finished(storage, ()) => {
             //download CDs
@@ -275,11 +255,11 @@ async fn evaluate_local_dir(
     params: UpdateParameters,
     local_dir: LocalDirectory,
     cds: Vec<CentralDirectoryHeader>,
-) -> Result<Option<(Progress, State)>, UpdateError> {
+) -> Result<Option<(Progress, State)>, ClientError> {
     let local_dir = local_dir
         .progress()
         .await
-        .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+        .map_err(|e| ClientError::Custom(e.to_string()))?;
     match local_dir {
         LocalDirectory::Finished(file_infos) => Ok(Some((
             Progress::Evaluating,
@@ -297,11 +277,8 @@ async fn evaluate_local_dir(
 async fn downloading_classic(
     params: UpdateParameters,
     download: Download<()>,
-) -> Result<Option<(Progress, State)>, UpdateError> {
-    let download = download
-        .progress()
-        .await
-        .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+) -> Result<Option<(Progress, State)>, ClientError> {
+    let download = download.progress().await?;
     match &download {
         Download::Finished(_, ()) => Ok(Some((
             Progress::InProgress(ProgressData::new(0, DownloadContent::FullZip)),
@@ -318,51 +295,41 @@ async fn downloading_classic(
 // continues_downloading
 async fn unzip_classic(
     params: UpdateParameters,
-) -> Result<Option<(Progress, State)>, UpdateError> {
+) -> Result<Option<(Progress, State)>, ClientError> {
     let dir = params.profile.directory();
     tracing::info!("Unzipping to {:?}", &dir);
-    let mut zip_file = std::fs::File::open(dir.join(DOWNLOAD_FILE))
-        .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+    let mut zip_file = std::fs::File::open(dir.join(DOWNLOAD_FILE))?;
 
-    let mut archive = zip::ZipArchive::new(&mut zip_file)
-        .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+    let mut archive = zip::ZipArchive::new(&mut zip_file)?;
 
     // Delete all assets to ensure that no obsolete assets will remain.
     let assets = params.profile.directory().join("assets");
     if assets.exists() {
-        std::fs::remove_dir_all(assets)
-            .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+        std::fs::remove_dir_all(assets)?;
     }
 
     for i in 1..archive.len() {
-        let mut file = archive
-            .by_index(i)
-            .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+        let mut file = archive.by_index(i)?;
         // TODO: Verify that `sanitized_name()` works correctly in this case.
         #[allow(deprecated)]
         let path = params.profile.directory().join(file.sanitized_name());
 
         if file.is_dir() {
-            std::fs::create_dir_all(path)
-                .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+            std::fs::create_dir_all(path)?;
         } else {
             let mut target = std::fs::OpenOptions::new()
                 .write(true)
                 .create(true)
                 .truncate(true)
-                .open(path)
-                .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+                .open(path)?;
 
-            std::io::copy(&mut file, &mut target)
-                .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+            std::io::copy(&mut file, &mut target)?;
         }
     }
 
     // Delete downloaded zip
     tracing::trace!("Extracted files, deleting zip archive.");
-    tokio::fs::remove_file(params.profile.directory().join(DOWNLOAD_FILE))
-        .await
-        .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+    tokio::fs::remove_file(params.profile.directory().join(DOWNLOAD_FILE)).await?;
 
     Ok(Some((Progress::Evaluating, State::FinalCleanup(params))))
 }
@@ -372,7 +339,7 @@ async fn filter_missings(
     params: UpdateParameters,
     cds: Vec<CentralDirectoryHeader>,
     file_infos: Vec<FileInformation>,
-) -> Result<Option<(Progress, State)>, UpdateError> {
+) -> Result<Option<(Progress, State)>, ClientError> {
     tracing::debug!("filter_missings");
     let mut compared = prepare_local_with_remote(cds, file_infos);
 
@@ -393,7 +360,7 @@ async fn filter_missings(
         return fallback(&params, false);
     }
 
-    const MAX_FILES_FOR_PARTIAL_DOWNLOAD: usize = 100;
+    const MAX_FILES_FOR_PARTIAL_DOWNLOAD: usize = 200;
     if compared.needs_redownload.len() > MAX_FILES_FOR_PARTIAL_DOWNLOAD {
         tracing::info!(
             "to many files changed to make partial download efficient, falling back to \
@@ -449,9 +416,9 @@ async fn downloading_partial(
     mut finished: Vec<(BytesMut, CentralDirectoryHeader, LocalFileHeader)>,
     mut afterburner: Afterburner,
     mut progress: InternalProgressData,
-) -> Result<Option<(Progress, State)>, UpdateError> {
+) -> Result<Option<(Progress, State)>, ClientError> {
     use futures::stream::StreamExt;
-    const DOWNLOADS_IN_QUEUE_SPEEDUP: usize = 5;
+    const DOWNLOADS_IN_QUEUE_SPEEDUP: usize = 15;
     // we can max finish 1 download each fn call, so its okay to only add 1 download.
     if afterburner.len() < DOWNLOADS_IN_QUEUE_SPEEDUP {
         if let Some(next_partially) = remote_zip::next_partial(&params, &mut compared) {
@@ -462,8 +429,7 @@ async fn downloading_partial(
     let download = afterburner
         .next()
         .await
-        .unwrap()
-        .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+        .expect("There should be at least 1 entry to be downloaded")?;
 
     match download {
         Download::Finished(s, r) => {
@@ -541,7 +507,7 @@ async fn unzip_partial(
     compared: Compared,
     mut finished: Vec<(BytesMut, CentralDirectoryHeader, LocalFileHeader)>,
     mut progress: InternalProgressData,
-) -> Result<Option<(Progress, State)>, UpdateError> {
+) -> Result<Option<(Progress, State)>, ClientError> {
     match finished.pop() {
         Some((rbytes, remote, _)) => {
             let remote_file_size = remote.fixed.compressed_size as usize;
@@ -566,9 +532,7 @@ async fn unzip_partial(
             }
 
             let parent = path.parent().unwrap();
-            tokio::fs::create_dir_all(parent)
-                .await
-                .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+            tokio::fs::create_dir_all(parent).await?;
 
             let file = tokio::spawn(tokio::fs::File::create(path));
 
@@ -586,14 +550,9 @@ async fn unzip_partial(
                 _ => return fallback(&params, false), /* should not happen at this                                         * point */
             };
 
-            let mut file = file
-                .await
-                .unwrap()
-                .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+            let mut file = file.await.unwrap()?;
             // TODO: evaluate splitting this up
-            file.write_all_buf(&mut file_data)
-                .await
-                .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+            file.write_all_buf(&mut file_data).await?;
 
             progress.add_chunk(remote_file_size as u64);
 
@@ -616,13 +575,11 @@ async fn unzip_partial(
 async fn removing_partial(
     params: UpdateParameters,
     mut compared: Compared,
-) -> Result<Option<(Progress, State)>, UpdateError> {
+) -> Result<Option<(Progress, State)>, ClientError> {
     match compared.needs_deletion.pop() {
         Some(f) => {
             tracing::debug!("deleting {:?}", &f.path);
-            tokio::fs::remove_file(&f.path)
-                .await
-                .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+            tokio::fs::remove_file(&f.path).await?;
             let progress = ProgressData {
                 bytes_per_sec: 0,
                 content: DownloadContent::SingleFile(f.local_path.clone()),
@@ -642,26 +599,21 @@ async fn removing_partial(
 // permissions, update params
 async fn final_cleanup(
     params: UpdateParameters,
-) -> Result<Option<(Progress, State)>, UpdateError> {
+) -> Result<Option<(Progress, State)>, ClientError> {
     #[cfg(unix)]
     {
         let profile_directory = params.profile.directory();
 
         // Patch executable files if we are on NixOS
-        if nix::is_nixos().map_err(|e| UpdateError::Custom(format!("{:?}", e)))? {
-            nix::patch(&profile_directory)
-                .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+        if nix::is_nixos()? {
+            nix::patch(&profile_directory)?;
         } else {
             let p = |path| async move {
-                let meta = tokio::fs::metadata(&path)
-                    .await
-                    .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
+                let meta = tokio::fs::metadata(&path).await?;
                 let mut perm = meta.permissions();
                 perm.set_mode(0o755);
-                tokio::fs::set_permissions(&path, perm)
-                    .await
-                    .map_err(|e| UpdateError::Custom(format!("{:?}", e)))?;
-                Ok(())
+                tokio::fs::set_permissions(&path, perm).await?;
+                Ok::<(), ClientError>(())
             };
 
             let voxygen_file = profile_directory.join(VOXYGEN_FILE);

@@ -191,3 +191,11 @@ pub(crate) fn redirect_voxygen_log(line: &str) {
         tracing::info!(target: "voxygen","{}", line);
     }
 }
+
+pub(crate) fn pretty_bytes(bytes: u64) -> String {
+    match bytes {
+        0..1_500 => format!("{} Byte", bytes),
+        1_500..2_500_000 => format!("{} kB", bytes / 1_000),
+        bytes => format!("{} MB", bytes / 1_000_000),
+    }
+}
