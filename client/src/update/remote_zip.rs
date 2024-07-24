@@ -9,12 +9,12 @@ use zip_core::{
     Signature,
 };
 
-use crate::GITHUB_CLIENT;
+use crate::{profiles::Profile, GITHUB_CLIENT};
 
 use super::{
     compare::Compared,
     download::{Download, DownloadContent, Storage},
-    State, UpdateParameters,
+    State,
 };
 
 #[derive(Debug, Error)]
@@ -85,17 +85,17 @@ pub(super) fn extract_cds(mut cd_bytes: Bytes) -> Option<Vec<CentralDirectoryHea
     Some(cds)
 }
 
-pub(super) fn gen_classsic(params: UpdateParameters) -> State {
-    let request_builder = GITHUB_CLIENT.get(params.profile.download_url());
-    let storage = Storage::FileInfo(params.profile.download_path());
+pub(super) fn gen_classsic(profile: Profile) -> State {
+    let request_builder = GITHUB_CLIENT.get(profile.download_url());
+    let storage = Storage::FileInfo(profile.download_path());
 
     let download =
         Download::Start(request_builder, storage, DownloadContent::FullZip, ());
-    State::DownloadingClassic(params, download)
+    State::DownloadingClassic(profile, download)
 }
 
 pub(super) fn next_partial(
-    params: &UpdateParameters,
+    profile: &Profile,
     compared: &mut Compared,
 ) -> Option<Download<CentralDirectoryHeader>> {
     compared.needs_redownload.pop().map(|remote| {
@@ -113,7 +113,7 @@ pub(super) fn next_partial(
         let storage = Storage::Memory(bytes);
 
         let request_builder = GITHUB_CLIENT
-            .get(params.profile.download_url())
+            .get(profile.download_url())
             .header(RANGE, range);
 
         let remote_file = std::str::from_utf8(&remote.file_name)

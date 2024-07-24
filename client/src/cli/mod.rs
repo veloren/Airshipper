@@ -2,7 +2,6 @@ use crate::{
     fs, gui, io,
     logger::{self, pretty_bytes},
     profiles::{parse_env_vars, Profile},
-    update::UpdateParameters,
     Result,
 };
 use parse::Action;
@@ -124,11 +123,7 @@ async fn update(profile: &mut Profile, do_not_ask: bool) -> Result<()> {
     );
     progress_bar.set_length(100);
 
-    let mut stream = update(UpdateParameters {
-        profile: profile.clone(),
-        force_complete_redownload: false,
-    })
-    .boxed();
+    let mut stream = update(profile.clone(), false).boxed();
 
     while let Some(progress) = stream.next().await {
         match progress {

@@ -20,7 +20,7 @@ use crate::{
     io::ProcessUpdate,
     logger::{pretty_bytes, redirect_voxygen_log},
     profiles::Profile,
-    update::{Progress, State, UpdateParameters},
+    update::{Progress, State},
 };
 use iced::{
     alignment::{Horizontal, Vertical},
@@ -209,10 +209,7 @@ impl GamePanelComponent {
                 },
             },
             GamePanelMessage::StartUpdate => {
-                let state = State::ToBeEvaluated(UpdateParameters {
-                    profile: active_profile.clone(),
-                    force_complete_redownload: false,
-                });
+                let state = State::ToBeEvaluated(active_profile.clone(), false);
 
                 let astate = Arc::new(Mutex::new(None));
                 Self::trigger_next_state(state, astate, DownloadButtonState::Checking)

@@ -29,6 +29,8 @@ pub struct Profile {
     pub wgpu_backend: WgpuBackend,
     pub log_level: LogLevel,
     pub env_vars: String,
+    // if set, on every download we do a full zip download
+    pub disable_partial_download: bool,
 
     #[serde(skip)]
     pub supported_wgpu_backends: Vec<WgpuBackend>,
@@ -157,6 +159,7 @@ impl Profile {
             log_level: LogLevel::Default,
             env_vars: String::new(),
             supported_wgpu_backends: Vec::new(),
+            disable_partial_download: false,
         }
     }
 
