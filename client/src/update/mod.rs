@@ -34,7 +34,7 @@ mod download;
 mod local_directory;
 mod remote_zip;
 
-pub use download::{download_stream, Storage};
+pub use download::Storage;
 
 #[derive(Debug, Clone, thiserror::Error)]
 pub(crate) enum UpdateError {
@@ -54,7 +54,7 @@ pub enum Progress {
     ReadyToDownload,
     #[allow(clippy::enum_variant_names)]
     InProgress(ProgressData),
-    Successful(Option<Profile>),
+    Successful(Profile),
     Errored(UpdateError),
 }
 
@@ -672,7 +672,7 @@ async fn final_cleanup(
     }
 
     Ok(Some((
-        Progress::Successful(Some(params.profile)),
+        Progress::Successful(params.profile),
         State::Finished,
     )))
 }

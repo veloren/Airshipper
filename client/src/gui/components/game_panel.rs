@@ -99,11 +99,6 @@ impl Default for GamePanelComponent {
 impl GamePanelComponent {
     pub fn subscription(&self) -> iced::Subscription<GamePanelMessage> {
         match &self.state {
-            /*
-            GamePanelState::Updating {
-                url, download_path, ..
-            } => subscriptions::download::file(url, download_path)
-            .map(GamePanelMessage::DownloadProgress),*/
             GamePanelState::Playing(profile) => subscriptions::process::stream(
                 profile.clone(),
                 self.selected_server_browser_address.clone(),
@@ -246,12 +241,10 @@ impl GamePanelComponent {
                     },
                     Some(Progress::Successful(profile)) => (
                         Some(GamePanelState::ReadyToPlay),
-                        profile.map(|profile| {
-                            Command::perform(
-                                async { Action::UpdateProfile(profile) },
-                                DefaultViewMessage::Action,
-                            )
-                        }),
+                        Some(Command::perform(
+                            async { Action::UpdateProfile(profile) },
+                            DefaultViewMessage::Action,
+                        )),
                     ),
                     Some(Progress::InProgress(_)) | Some(Progress::Evaluating) => {
                         if let GamePanelState::Updating { astate, btnstate } = &self.state
