@@ -20,8 +20,8 @@ pub(super) enum LocalDirectoryError {
 #[derive(Clone, Debug)]
 pub(super) struct FileInformation {
     pub path: PathBuf,
-    // with stripped prefix
-    pub local_path: String,
+    // with stripped prefix with / as file ending
+    pub local_unix_path: String,
     pub crc32: u32,
 }
 
@@ -64,16 +64,20 @@ impl LocalDirectory {
                     } else {
                         let file_bytes = tokio::fs::read(&path).await?;
                         let crc32 = crc32fast::hash(&file_bytes);
-                        let local_path = path
+                        let local_unix_path = path
                             .strip_prefix(&root)?
                             .to_str()
-                            .ok_or(LocalDirectoryError::InvalidUtf8Filename)?
-                            .to_string();
+                            .ok_or(LocalDirectoryError::InvalidUtf8Filename)?;
+
+                        #[cfg(windows)]
+                        let local_unix_path = local_unix_path.replace(r#"\"#, "/");
+
+                        let local_unix_path = local_unix_path.to_string();
 
                         fileinfo.push(FileInformation {
                             path,
                             crc32,
-                            local_path,
+                            local_unix_path,
                         });
                     }
                     Ok(Self::Progress(root, dir, fileinfo, nextdirs, progress))

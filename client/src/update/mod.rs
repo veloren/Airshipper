@@ -582,7 +582,7 @@ async fn removing_partial(
             tokio::fs::remove_file(&f.path).await?;
             let progress = ProgressData {
                 bytes_per_sec: 0,
-                content: DownloadContent::SingleFile(f.local_path.clone()),
+                content: DownloadContent::SingleFile(f.local_unix_path.clone()),
                 total_bytes: compared.needs_deletion_total,
                 downloaded_bytes: compared.needs_deletion_total
                     - compared.needs_deletion.len() as u64,

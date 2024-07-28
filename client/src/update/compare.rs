@@ -64,7 +64,8 @@ pub(super) fn prepare_local_with_remote(
     let needs_deletion: Vec<_> = needs_deletion
         .into_iter()
         .filter(|fi| {
-            !(fi.local_path.starts_with("userdata/") || &fi.local_path == "veloren.zip")
+            !(fi.local_unix_path.starts_with("userdata/")
+                || &fi.local_unix_path == "veloren.zip")
         })
         .collect();
 
@@ -103,7 +104,7 @@ fn compare_local_with_remote(
 
     for l in local {
         let _ = compare_map
-            .entry(l.local_path.clone())
+            .entry(l.local_unix_path.clone())
             .or_insert((Some(l), None));
     }
     for r in remote {
