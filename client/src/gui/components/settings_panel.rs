@@ -56,7 +56,7 @@ impl SettingsPanelComponent {
                         DefaultViewMessage::Action,
                     ),
                     Command::perform(async {}, |_| {
-                        DefaultViewMessage::GamePanel(GamePanelMessage::PlayPressed)
+                        DefaultViewMessage::GamePanel(GamePanelMessage::StartUpdate)
                     }),
                 ]))
             },
@@ -71,7 +71,7 @@ impl SettingsPanelComponent {
                         DefaultViewMessage::Action,
                     ),
                     Command::perform(async {}, |_| {
-                        DefaultViewMessage::GamePanel(GamePanelMessage::PlayPressed)
+                        DefaultViewMessage::GamePanel(GamePanelMessage::StartUpdate)
                     }),
                 ]))
             },
