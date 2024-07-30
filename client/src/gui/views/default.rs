@@ -218,16 +218,14 @@ impl DefaultView {
                             )
                         },
                     ),
-                    Command::perform(Profile::update(active_profile.clone()), |update| {
-                        DefaultViewMessage::GamePanel(GamePanelMessage::GameUpdate(
-                            update,
-                        ))
-                    }),
                     #[cfg(windows)]
                     Command::perform(
                         async { tokio::task::block_in_place(crate::windows::query) },
                         DefaultViewMessage::LauncherUpdate,
                     ),
+                    Command::perform(async {}, |_| {
+                        DefaultViewMessage::GamePanel(GamePanelMessage::StartUpdate)
+                    }),
                 ]);
             },
 

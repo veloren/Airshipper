@@ -2,10 +2,7 @@ pub const SUPPORTED_SERVER_API_VERSION: u32 = 1;
 
 // Filesystem
 
-#[cfg(windows)]
 pub const DOWNLOAD_FILE: &str = "veloren.zip";
-#[cfg(unix)]
-pub const DOWNLOAD_FILE: &str = "veloren";
 
 #[cfg(windows)]
 pub const VOXYGEN_FILE: &str = "veloren-voxygen.exe";

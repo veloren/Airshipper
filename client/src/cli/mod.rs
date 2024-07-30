@@ -1,5 +1,6 @@
 use crate::{
-    fs, gui, io, logger, net,
+    fs, gui, io,
+    logger::{self, pretty_bytes},
     profiles::{parse_env_vars, Profile},
     Result,
 };
@@ -50,7 +51,10 @@ pub fn process() -> Result<()> {
     }
 
     // CLI
-    let rt = tokio::runtime::Runtime::new()?;
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .worker_threads(4)
+        .build()?;
 
     // let the user know incase airshipper can be updated.
     #[cfg(windows)]
@@ -72,8 +76,7 @@ pub fn process() -> Result<()> {
         state.save_mut().await?;
 
         Ok::<(), ClientError>(())
-    })?;
-    Ok(())
+    })
 }
 
 async fn process_arguments(
@@ -109,30 +112,7 @@ async fn process_arguments(
 }
 
 async fn update(profile: &mut Profile, do_not_ask: bool) -> Result<()> {
-    if let Some(version) = Profile::update(profile.clone()).await? {
-        if do_not_ask {
-            tracing::info!("Updating...");
-            download(profile.clone()).await?;
-            tracing::info!("Extracting...");
-            *profile = Profile::install(profile.clone(), version).await?;
-            tracing::info!("Done!");
-        } else {
-            tracing::info!("Update found, do you want to update? [Y/n]");
-            if confirm_action()? {
-                tracing::info!("Updating...");
-                download(profile.clone()).await?;
-                tracing::info!("Extracting...");
-                *profile = Profile::install(profile.clone(), version).await?;
-                tracing::info!("Done!");
-            }
-        }
-    } else {
-        tracing::info!("Profile already up-to-date.");
-    }
-    Ok(())
-}
-
-async fn download(profile: Profile) -> Result<()> {
+    use crate::update::{update, Progress};
     use indicatif::{ProgressBar, ProgressStyle};
 
     let progress_bar = ProgressBar::new(0).with_style(
@@ -143,21 +123,45 @@ async fn download(profile: Profile) -> Result<()> {
     );
     progress_bar.set_length(100);
 
-    let mut stream = crate::net::download(profile.url(), profile.download_path()).boxed();
+    let mut stream = update(profile.clone(), false).boxed();
 
     while let Some(progress) = stream.next().await {
         match progress {
-            net::Progress::Started => {},
-            net::Progress::Errored(e) => return Err(e.into()),
-            net::Progress::Finished => return Ok(()),
-            net::Progress::Advanced(progress_data) => {
-                progress_bar.set_position(progress_data.percent_complete as u64);
+            Progress::Evaluating => {
+                let next = if progress_bar.position() == 33 {
+                    66
+                } else {
+                    33
+                };
+
+                progress_bar.set_message("Evaluating Update");
+                progress_bar.set_position(next);
+            },
+            Progress::ReadyToDownload => {
+                if !do_not_ask {
+                    tracing::info!("Update found, do you want to update? [Y/n]");
+                    if !confirm_action()? {
+                        // No update for you :/
+                        tracing::info!("skipping update.");
+                        break;
+                    }
+                }
+            },
+            Progress::InProgress(progress_data) => {
+                let file_info = match progress_data.content.show() {
+                    "" => "".to_string(),
+                    s => format!(": {s}"),
+                };
+                progress_bar.set_position(progress_data.percent_complete());
                 progress_bar.set_message(format!(
-                    "{} MB / {} MB",
-                    progress_data.downloaded_bytes / 1_000_000,
-                    progress_data.total_bytes / 1_000_000
+                    "{} / {} {file_info}",
+                    pretty_bytes(progress_data.downloaded_bytes),
+                    pretty_bytes(progress_data.total_bytes),
                 ));
             },
+            //TODO: store profile
+            Progress::Successful(_) => return Ok(()),
+            Progress::Errored(e) => return Err(ClientError::Custom(e.to_string())),
         }
     }
     Ok(())
