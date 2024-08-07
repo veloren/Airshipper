@@ -125,8 +125,19 @@ impl ProgressData {
     }
 
     pub(crate) fn cur_step_remaining(&self) -> Duration {
+        if self.cur_step.processed_bytes > self.cur_step.total_bytes {
+            let process = &self;
+            tracing::warn!(
+                ?process,
+                "Processed Bytes is larger than Total Bytes, something seems off"
+            );
+        }
+
         Duration::from_secs_f32(
-            (self.cur_step.total_bytes - self.cur_step.processed_bytes) as f32
+            (self
+                .cur_step
+                .total_bytes
+                .saturating_sub(self.cur_step.processed_bytes)) as f32
                 / self.overall.bytes_per_sec.max(1) as f32,
         )
     }
