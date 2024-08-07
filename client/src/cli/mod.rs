@@ -148,15 +148,16 @@ async fn update(profile: &mut Profile, do_not_ask: bool) -> Result<()> {
                 }
             },
             Progress::InProgress(progress_data) => {
-                let file_info = match progress_data.content.show() {
+                let step = progress_data.cur_step();
+                let file_info = match step.content.show() {
                     "" => "".to_string(),
                     s => format!(": {s}"),
                 };
-                progress_bar.set_position(progress_data.percent_complete());
+                progress_bar.set_position(step.percent_complete());
                 progress_bar.set_message(format!(
                     "{} / {} {file_info}",
-                    pretty_bytes(progress_data.processed_bytes),
-                    pretty_bytes(progress_data.total_bytes),
+                    pretty_bytes(step.processed_bytes),
+                    pretty_bytes(step.total_bytes),
                 ));
             },
             //TODO: store profile

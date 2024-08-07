@@ -13,7 +13,7 @@ use crate::{profiles::Profile, GITHUB_CLIENT};
 
 use super::{
     compare::Compared,
-    download::{Download, Storage, UpdateContent},
+    download::{Download, ProgressData, StepProgress, Storage, UpdateContent},
     State,
 };
 
@@ -91,7 +91,11 @@ pub(super) fn gen_classsic(profile: Profile) -> State {
 
     let download =
         Download::Start(request_builder, storage, UpdateContent::DownloadFullZip, ());
-    State::DownloadingClassic(profile, download)
+    let progress = ProgressData::new(
+        StepProgress::new(0, UpdateContent::DownloadFullZip),
+        Default::default(),
+    );
+    State::DownloadingClassic(profile, download, progress)
 }
 
 pub(super) fn next_partial(

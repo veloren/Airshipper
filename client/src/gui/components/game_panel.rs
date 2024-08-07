@@ -400,12 +400,12 @@ impl GamePanelComponent {
                         .unwrap_or(&Progress::Evaluating)
                     {
                         Progress::InProgress(progress_data) => (
-                            progress_data.percent_complete() as f32,
-                            progress_data.total_bytes,
-                            progress_data.processed_bytes,
-                            progress_data.bytes_per_sec,
-                            progress_data.remaining(),
-                            Some(progress_data.content.clone()),
+                            progress_data.cur_step().percent_complete() as f32,
+                            progress_data.cur_step().total_bytes,
+                            progress_data.cur_step().processed_bytes,
+                            progress_data.overall().bytes_per_sec(),
+                            progress_data.cur_step_remaining(),
+                            Some(progress_data.cur_step().content.clone()),
                         ),
                         Progress::Successful(_) => {
                             (100.0, 0, 0, 0, Duration::from_secs(0), None)
