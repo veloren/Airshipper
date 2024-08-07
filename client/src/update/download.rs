@@ -9,36 +9,37 @@ use crate::error::ClientError;
 #[derive(Debug, Clone)]
 pub struct ProgressData {
     pub total_bytes: u64,
-    pub downloaded_bytes: u64,
+    pub processed_bytes: u64,
     pub bytes_per_sec: u64,
-    pub content: DownloadContent,
+    pub content: UpdateContent,
 }
 
 #[derive(Debug, Clone)]
-pub enum DownloadContent {
+pub enum UpdateContent {
     CentralDirectory,
-    FullZip,
-    SingleFile(String),
+    DownloadFullZip,
+    DownloadFile(String),
+    Decompress(String),
 }
 
 impl ProgressData {
-    pub(crate) fn new(total_bytes: u64, content: DownloadContent) -> Self {
+    pub(crate) fn new(total_bytes: u64, content: UpdateContent) -> Self {
         Self {
             total_bytes,
             content,
             bytes_per_sec: 0,
-            downloaded_bytes: 0,
+            processed_bytes: 0,
         }
     }
 
     pub(crate) fn percent_complete(&self) -> u64 {
-        (self.downloaded_bytes as f32 * 100.0 / self.total_bytes as f32) as u64
+        (self.processed_bytes as f32 * 100.0 / self.total_bytes as f32) as u64
     }
 
     #[allow(dead_code)]
     pub(crate) fn remaining(&self) -> Duration {
         Duration::from_secs_f32(
-            (self.total_bytes - self.downloaded_bytes) as f32
+            (self.total_bytes - self.processed_bytes) as f32
                 / self.bytes_per_sec.max(1) as f32,
         )
     }
@@ -48,7 +49,7 @@ impl ProgressData {
 pub(super) struct InternalProgressData {
     pub(super) progress: ProgressData,
     last_rate_check: Instant,
-    downloaded_since_last_check: usize,
+    downloaded_since_last_check: u64,
 }
 
 impl InternalProgressData {
@@ -61,13 +62,14 @@ impl InternalProgressData {
     }
 
     pub(crate) fn add_chunk(&mut self, data: u64) {
-        self.progress.downloaded_bytes += data;
+        self.progress.processed_bytes += data;
+        self.downloaded_since_last_check += data;
 
         let current_time = Instant::now();
         let since_last_check = current_time - self.last_rate_check;
         let since_last_check_f32 = since_last_check.as_secs_f32();
         if since_last_check >= Duration::from_millis(500)
-            || (since_last_check_f32 > 0.0 && self.progress.downloaded_bytes == data)
+            || (since_last_check_f32 > 0.0 && self.progress.processed_bytes == data)
         {
             let bytes_per_sec =
                 (self.downloaded_since_last_check as f32 / since_last_check_f32) as u64;
@@ -97,7 +99,7 @@ pub(super) enum DownloadError {
 
 #[derive(Debug)]
 pub(super) enum Download<T> {
-    Start(RequestBuilder, Storage, DownloadContent, T),
+    Start(RequestBuilder, Storage, UpdateContent, T),
     Progress(reqwest::Response, Storage, InternalProgressData, T),
     Finished(Storage, T),
 }
@@ -148,10 +150,11 @@ impl<T> Download<T> {
     }
 }
 
-impl DownloadContent {
+impl UpdateContent {
     pub fn show(&self) -> &str {
         match self {
-            DownloadContent::SingleFile(x) => x,
+            UpdateContent::DownloadFile(x) => x,
+            UpdateContent::Decompress(x) => x,
             _ => "",
         }
     }

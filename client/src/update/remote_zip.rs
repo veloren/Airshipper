@@ -13,7 +13,7 @@ use crate::{profiles::Profile, GITHUB_CLIENT};
 
 use super::{
     compare::Compared,
-    download::{Download, DownloadContent, Storage},
+    download::{Download, Storage, UpdateContent},
     State,
 };
 
@@ -68,7 +68,7 @@ pub(super) fn download_cds(eocd: &EndOfCentralDirectory, url: &str) -> Download<
     Download::Start(
         request_builder,
         storage,
-        DownloadContent::CentralDirectory,
+        UpdateContent::CentralDirectory,
         (),
     )
 }
@@ -90,7 +90,7 @@ pub(super) fn gen_classsic(profile: Profile) -> State {
     let storage = Storage::FileInfo(profile.download_path());
 
     let download =
-        Download::Start(request_builder, storage, DownloadContent::FullZip, ());
+        Download::Start(request_builder, storage, UpdateContent::DownloadFullZip, ());
     State::DownloadingClassic(profile, download)
 }
 
@@ -123,7 +123,7 @@ pub(super) fn next_partial(
         Download::Start(
             request_builder,
             storage,
-            DownloadContent::SingleFile(remote_file),
+            UpdateContent::DownloadFile(remote_file),
             remote,
         )
     })

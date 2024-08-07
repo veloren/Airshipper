@@ -5,7 +5,7 @@ use std::{
 use thiserror::Error;
 use tokio::fs::ReadDir;
 
-use super::download::{DownloadContent, InternalProgressData, ProgressData};
+use super::download::{InternalProgressData, ProgressData, UpdateContent};
 
 #[derive(Error, Debug)]
 pub(super) enum LocalDirectoryError {
@@ -45,7 +45,7 @@ impl LocalDirectory {
                 let dir = tokio::fs::read_dir(&root).await?;
                 let progress = InternalProgressData::new(ProgressData::new(
                     0,
-                    DownloadContent::SingleFile(root.to_string_lossy().to_string()),
+                    UpdateContent::DownloadFile(root.to_string_lossy().to_string()),
                 ));
                 let nextdirs = VecDeque::new();
                 Ok(Self::Progress(root, dir, Vec::new(), nextdirs, progress))
@@ -85,7 +85,7 @@ impl LocalDirectory {
                 None => {
                     if let Some(next) = nextdirs.pop_front() {
                         let dir = tokio::fs::read_dir(&next).await?;
-                        progress.progress.content = DownloadContent::SingleFile(
+                        progress.progress.content = UpdateContent::DownloadFile(
                             next.to_string_lossy().to_string(),
                         );
                         Ok(Self::Progress(root, dir, fileinfo, nextdirs, progress))

@@ -155,7 +155,7 @@ async fn update(profile: &mut Profile, do_not_ask: bool) -> Result<()> {
                 progress_bar.set_position(progress_data.percent_complete());
                 progress_bar.set_message(format!(
                     "{} / {} {file_info}",
-                    pretty_bytes(progress_data.downloaded_bytes),
+                    pretty_bytes(progress_data.processed_bytes),
                     pretty_bytes(progress_data.total_bytes),
                 ));
             },

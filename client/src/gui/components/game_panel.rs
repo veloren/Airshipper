@@ -20,7 +20,7 @@ use crate::{
     io::ProcessUpdate,
     logger::{pretty_bytes, redirect_voxygen_log},
     profiles::Profile,
-    update::{Progress, State},
+    update::{Progress, State, UpdateContent},
 };
 use iced::{
     alignment::{Horizontal, Vertical},
@@ -393,21 +393,25 @@ impl GamePanelComponent {
             {
                 // When the game is downloading, the download progress bar and related
                 // stats replace the Launch / Update button
-                let (percent, total, downloaded, bytes_per_sec, remaining) = match self
-                    .download_progress
-                    .as_ref()
-                    .unwrap_or(&Progress::Evaluating)
-                {
-                    Progress::InProgress(progress_data) => (
-                        progress_data.percent_complete() as f32,
-                        progress_data.total_bytes,
-                        progress_data.downloaded_bytes,
-                        progress_data.bytes_per_sec,
-                        progress_data.remaining(),
-                    ),
-                    Progress::Successful(_) => (100.0, 0, 0, 0, Duration::from_secs(0)),
-                    _ => (0.0, 0, 0, 0, Duration::from_secs(0)),
-                };
+                let (percent, total, downloaded, bytes_per_sec, remaining, step) =
+                    match self
+                        .download_progress
+                        .as_ref()
+                        .unwrap_or(&Progress::Evaluating)
+                    {
+                        Progress::InProgress(progress_data) => (
+                            progress_data.percent_complete() as f32,
+                            progress_data.total_bytes,
+                            progress_data.processed_bytes,
+                            progress_data.bytes_per_sec,
+                            progress_data.remaining(),
+                            Some(progress_data.content.clone()),
+                        ),
+                        Progress::Successful(_) => {
+                            (100.0, 0, 0, 0, Duration::from_secs(0), None)
+                        },
+                        _ => (0.0, 0, 0, 0, Duration::from_secs(0), None),
+                    };
 
                 let download_rate = bytes_per_sec as f32 / 1_000_000.0;
 
@@ -454,9 +458,16 @@ impl GamePanelComponent {
                         );
                 }
 
+                let step = match step {
+                    Some(UpdateContent::DownloadFullZip) => "Redownloading",
+                    Some(UpdateContent::DownloadFile(_)) => "Downloading",
+                    Some(UpdateContent::Decompress(_)) => "Installing",
+                    _ => "",
+                };
+
                 container(
                     column![]
-                        .push(text("Downloading").font(POPPINS_BOLD_FONT).size(20))
+                        .push(text(step).font(POPPINS_BOLD_FONT).size(20))
                         .push(
                             container(download_stats_row).padding(Padding::from([5, 0])),
                         )

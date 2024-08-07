@@ -11,9 +11,7 @@ use crate::{
 };
 use bytes::{Buf, BytesMut};
 use compare::{prepare_local_with_remote, Compared};
-use download::{
-    Download, DownloadContent, DownloadError, InternalProgressData, ProgressData,
-};
+use download::{Download, DownloadError, InternalProgressData, ProgressData};
 use flate2::read::DeflateDecoder;
 use futures_util::{
     stream::{FuturesUnordered, Stream},
@@ -36,7 +34,7 @@ mod download;
 mod local_directory;
 mod remote_zip;
 
-pub use download::Storage;
+pub use download::{Storage, UpdateContent};
 
 #[derive(Debug, Clone)]
 pub enum Progress {
@@ -281,7 +279,7 @@ async fn downloading_classic(
     let download = download.progress().await?;
     match &download {
         Download::Finished(_, ()) => Ok(Some((
-            Progress::InProgress(ProgressData::new(0, DownloadContent::FullZip)),
+            Progress::InProgress(ProgressData::new(0, UpdateContent::DownloadFullZip)),
             State::UnzipClassic(profile),
         ))),
         Download::Progress(_, _, progress, _) => Ok(Some((
@@ -383,7 +381,7 @@ async fn filter_missings(
 
             let progress = ProgressData {
                 bytes_per_sec: 0,
-                downloaded_bytes: 0,
+                processed_bytes: 0,
                 total_bytes: compared.needs_redownload_bytes,
                 content: content.clone(),
             };
@@ -433,7 +431,7 @@ async fn downloading_partial(
 
     match download {
         Download::Finished(s, r) => {
-            progress.progress.downloaded_bytes = compared.needs_redownload_bytes
+            progress.progress.processed_bytes = compared.needs_redownload_bytes
                 - compared
                     .needs_redownload
                     .iter()
@@ -473,7 +471,7 @@ async fn downloading_partial(
                     .sum();
                 let progress = InternalProgressData::new(ProgressData::new(
                     total,
-                    DownloadContent::CentralDirectory,
+                    UpdateContent::Decompress("".to_string()),
                 ));
                 tracing::info!("unzipping files");
                 Ok(Some((
@@ -555,6 +553,7 @@ async fn unzip_partial(
             file.write_all_buf(&mut file_data).await?;
 
             progress.add_chunk(remote_file_size as u64);
+            progress.progress.content = UpdateContent::Decompress(filename.to_string());
 
             Ok(Some((
                 Progress::InProgress(progress.progress.clone()),
@@ -582,9 +581,9 @@ async fn removing_partial(
             tokio::fs::remove_file(&f.path).await?;
             let progress = ProgressData {
                 bytes_per_sec: 0,
-                content: DownloadContent::SingleFile(f.local_unix_path.clone()),
+                content: UpdateContent::DownloadFile(f.local_unix_path.clone()),
                 total_bytes: compared.needs_deletion_total,
-                downloaded_bytes: compared.needs_deletion_total
+                processed_bytes: compared.needs_deletion_total
                     - compared.needs_deletion.len() as u64,
             };
             Ok(Some((
