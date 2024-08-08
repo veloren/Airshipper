@@ -251,13 +251,19 @@ impl GamePanelComponent {
                         {
                             let state = {
                                 let mut l = astate.blocking_lock();
-                                l.take().expect("impossible, should always be filled")
+                                l.take()
                             };
-                            Self::trigger_next_state(
-                                state,
-                                astate.clone(),
-                                btnstate.clone(),
-                            )
+                            match state {
+                                Some(state) => Self::trigger_next_state(
+                                    state,
+                                    astate.clone(),
+                                    btnstate.clone(),
+                                ),
+                                None => {
+                                    tracing::warn!("Wrong State"); // might happen if there is a click right between this and the resulting command
+                                    (None, None)
+                                },
+                            }
                         } else {
                             tracing::warn!("Wrong State");
                             (None, None)

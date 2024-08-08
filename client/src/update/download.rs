@@ -76,14 +76,18 @@ impl OverallProgress {
         let current_time = Instant::now();
         let since_last_check = current_time - self.last_rate_check;
         let since_last_check_f32 = since_last_check.as_secs_f32();
-        if since_last_check >= Duration::from_millis(250)
+        if since_last_check >= Duration::from_millis(500)
             || (since_last_check_f32 > 0.0 && self.bytes_per_sec == 0)
         {
             let bytes_per_sec =
                 (self.downloaded_since_last_check as f32 / since_last_check_f32) as u64;
             self.downloaded_since_last_check = 0;
             self.last_rate_check = current_time;
-            self.bytes_per_sec = bytes_per_sec;
+            if self.bytes_per_sec == 0 {
+                self.bytes_per_sec = bytes_per_sec;
+            } else {
+                self.bytes_per_sec = (self.bytes_per_sec * 3 + bytes_per_sec) / 4;
+            }
         }
         data
     }
