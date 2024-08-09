@@ -11,9 +11,7 @@ use crate::{
 };
 use bytes::{Buf, BytesMut};
 use compare::{prepare_local_with_remote, Compared};
-use download::{
-    Download, DownloadContent, DownloadError, InternalProgressData, ProgressData,
-};
+use download::{Download, DownloadError, ProgressData, StepProgress};
 use flate2::read::DeflateDecoder;
 use futures_util::{
     stream::{FuturesUnordered, Stream},
@@ -36,10 +34,10 @@ mod download;
 mod local_directory;
 mod remote_zip;
 
-pub use download::Storage;
+pub use download::{Storage, UpdateContent};
 
 #[derive(Debug, Clone)]
-pub enum Progress {
+pub(crate) enum Progress {
     Evaluating,
     /// If the consumer sees ReadyToDownload a download is necessary, but they can
     /// implement logic to avoid any download
@@ -66,7 +64,7 @@ pub(super) enum State {
     DownloadEndOfCentralDirectory(Profile, bool),
     DownloadCentralDirectory(Profile, bool, Download<()>),
     CrcLocalDirectory(Profile, LocalDirectory, Vec<CentralDirectoryHeader>),
-    DownloadingClassic(Profile, Download<()>),
+    DownloadingClassic(Profile, Download<()>, ProgressData),
     UnzipClassic(Profile),
     FilterMissingFiles(Profile, Vec<CentralDirectoryHeader>, Vec<FileInformation>),
     DownloadingPartially(
@@ -74,13 +72,13 @@ pub(super) enum State {
         Compared,
         Vec<(BytesMut, CentralDirectoryHeader, LocalFileHeader)>,
         Afterburner,
-        InternalProgressData,
+        ProgressData,
     ),
     UnzipPartial(
         Profile,
         Compared,
         Vec<(BytesMut, CentralDirectoryHeader, LocalFileHeader)>,
-        InternalProgressData,
+        ProgressData,
     ),
     RemovingPartially(Profile, Compared),
     FinalCleanup(Profile),
@@ -107,7 +105,7 @@ impl State {
             },
             State::DownloadCentralDirectory(p, m, d) => evaluate_remote_cd(p, m, d).await,
             State::CrcLocalDirectory(p, ld, cds) => evaluate_local_dir(p, ld, cds).await,
-            State::DownloadingClassic(p, d) => downloading_classic(p, d).await,
+            State::DownloadingClassic(p, d, pr) => downloading_classic(p, d, pr).await,
             State::UnzipClassic(p) => unzip_classic(p).await,
             State::FilterMissingFiles(p, cds, fi) => filter_missings(p, cds, fi).await,
             State::DownloadingPartially(p, cp, f, a, pr) => {
@@ -266,7 +264,7 @@ async fn evaluate_local_dir(
             State::FilterMissingFiles(profile, cds, file_infos),
         ))),
         LocalDirectory::Progress(_, _, _, _, ref progress) => Ok(Some((
-            Progress::InProgress(progress.progress.clone()),
+            Progress::InProgress(progress.clone()),
             State::CrcLocalDirectory(profile, local_dir, cds),
         ))),
         LocalDirectory::Start(_) => unreachable!(),
@@ -277,17 +275,29 @@ async fn evaluate_local_dir(
 async fn downloading_classic(
     profile: Profile,
     download: Download<()>,
+    mut progress: ProgressData,
 ) -> Result<Option<(Progress, State)>, ClientError> {
     let download = download.progress().await?;
-    match &download {
+    match download {
         Download::Finished(_, ()) => Ok(Some((
-            Progress::InProgress(ProgressData::new(0, DownloadContent::FullZip)),
+            Progress::InProgress(ProgressData::new(
+                StepProgress::new(0, UpdateContent::DownloadFullZip),
+                Default::default(),
+            )),
             State::UnzipClassic(profile),
         ))),
-        Download::Progress(_, _, progress, _) => Ok(Some((
-            Progress::InProgress(progress.progress.clone()),
-            State::DownloadingClassic(profile, download),
-        ))),
+        Download::Progress(_r, _s, mut pr, _t) => {
+            progress.cur_step_mut().total_bytes = pr.total_bytes;
+            progress.add_from_step(&mut pr);
+            Ok(Some((
+                Progress::InProgress(progress.clone()),
+                State::DownloadingClassic(
+                    profile,
+                    Download::Progress(_r, _s, pr, _t),
+                    progress,
+                ),
+            )))
+        },
         Download::Start(_, _, _, _) => unreachable!(),
     }
 }
@@ -381,13 +391,10 @@ async fn filter_missings(
                 _ => unreachable!(),
             };
 
-            let progress = ProgressData {
-                bytes_per_sec: 0,
-                downloaded_bytes: 0,
-                total_bytes: compared.needs_redownload_bytes,
-                content: content.clone(),
-            };
-            let iprogress = InternalProgressData::new(progress);
+            let progress = ProgressData::new(
+                StepProgress::new(compared.needs_redownload_bytes, content.clone()),
+                Default::default(),
+            );
             let afterburner = FuturesUnordered::new();
             afterburner.push(first_partially.progress().boxed());
 
@@ -398,7 +405,7 @@ async fn filter_missings(
                     compared,
                     vec![],
                     afterburner,
-                    iprogress,
+                    progress,
                 ),
             )))
         },
@@ -415,7 +422,7 @@ async fn downloading_partial(
     mut compared: Compared,
     mut finished: Vec<(BytesMut, CentralDirectoryHeader, LocalFileHeader)>,
     mut afterburner: Afterburner,
-    mut progress: InternalProgressData,
+    mut progress: ProgressData,
 ) -> Result<Option<(Progress, State)>, ClientError> {
     use futures::stream::StreamExt;
     const DOWNLOADS_IN_QUEUE_SPEEDUP: usize = 15;
@@ -433,14 +440,6 @@ async fn downloading_partial(
 
     match download {
         Download::Finished(s, r) => {
-            progress.progress.downloaded_bytes = compared.needs_redownload_bytes
-                - compared
-                    .needs_redownload
-                    .iter()
-                    .map(|remote| remote.fixed.compressed_size as u64)
-                    .sum::<u64>();
-            let pr = progress.progress.clone();
-
             let mut bytes = match s {
                 Storage::Memory(b) => b,
                 _ => unreachable!(),
@@ -457,7 +456,7 @@ async fn downloading_partial(
 
             if !afterburner.is_empty() {
                 Ok(Some((
-                    Progress::InProgress(pr),
+                    Progress::InProgress(progress.clone()),
                     State::DownloadingPartially(
                         profile,
                         compared,
@@ -471,23 +470,23 @@ async fn downloading_partial(
                     .iter()
                     .map(|e| e.1.fixed.compressed_size as u64)
                     .sum();
-                let progress = InternalProgressData::new(ProgressData::new(
-                    total,
-                    DownloadContent::CentralDirectory,
-                ));
+                let pr = ProgressData::new(
+                    StepProgress::new(total, UpdateContent::Decompress("".to_string())),
+                    Default::default(),
+                );
                 tracing::info!("unzipping files");
                 Ok(Some((
-                    Progress::InProgress(pr),
-                    State::UnzipPartial(profile, compared, finished, progress),
+                    Progress::InProgress(progress),
+                    State::UnzipPartial(profile, compared, finished, pr),
                 )))
             }
         },
-        Download::Progress(_r, _s, p, _p) => {
-            progress.progress.content = p.progress.content.clone();
-            progress.progress.bytes_per_sec = p.progress.bytes_per_sec;
+        Download::Progress(_r, _s, mut p, _p) => {
+            progress.add_from_step(&mut p);
+
             afterburner.push(Download::Progress(_r, _s, p, _p).progress().boxed());
             Ok(Some((
-                Progress::InProgress(progress.progress.clone()),
+                Progress::InProgress(progress.clone()),
                 State::DownloadingPartially(
                     profile,
                     compared,
@@ -506,7 +505,7 @@ async fn unzip_partial(
     profile: Profile,
     compared: Compared,
     mut finished: Vec<(BytesMut, CentralDirectoryHeader, LocalFileHeader)>,
-    mut progress: InternalProgressData,
+    mut progress: ProgressData,
 ) -> Result<Option<(Progress, State)>, ClientError> {
     match finished.pop() {
         Some((rbytes, remote, _)) => {
@@ -555,16 +554,18 @@ async fn unzip_partial(
             file.write_all_buf(&mut file_data).await?;
 
             progress.add_chunk(remote_file_size as u64);
+            progress.cur_step_mut().content =
+                UpdateContent::Decompress(filename.to_string());
 
             Ok(Some((
-                Progress::InProgress(progress.progress.clone()),
+                Progress::InProgress(progress.clone()),
                 State::UnzipPartial(profile, compared, finished, progress),
             )))
         },
         None => {
             tracing::info!("deleting files that should be removed");
             Ok(Some((
-                Progress::InProgress(progress.progress.clone()),
+                Progress::InProgress(progress),
                 State::RemovingPartially(profile, compared),
             )))
         },
@@ -580,13 +581,15 @@ async fn removing_partial(
         Some(f) => {
             tracing::debug!("deleting {:?}", &f.path);
             tokio::fs::remove_file(&f.path).await?;
-            let progress = ProgressData {
-                bytes_per_sec: 0,
-                content: DownloadContent::SingleFile(f.local_unix_path.clone()),
-                total_bytes: compared.needs_deletion_total,
-                downloaded_bytes: compared.needs_deletion_total
-                    - compared.needs_deletion.len() as u64,
-            };
+            let mut progress = ProgressData::new(
+                StepProgress::new(
+                    compared.needs_deletion_total,
+                    UpdateContent::DownloadFile(f.local_unix_path.clone()),
+                ),
+                Default::default(),
+            );
+            progress.cur_step_mut().processed_bytes =
+                compared.needs_deletion_total - compared.needs_deletion.len() as u64;
             Ok(Some((
                 Progress::InProgress(progress),
                 State::RemovingPartially(profile, compared),

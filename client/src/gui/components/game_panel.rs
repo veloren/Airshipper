@@ -20,7 +20,7 @@ use crate::{
     io::ProcessUpdate,
     logger::{pretty_bytes, redirect_voxygen_log},
     profiles::Profile,
-    update::{Progress, State},
+    update::{Progress, State, UpdateContent},
 };
 use iced::{
     alignment::{Horizontal, Vertical},
@@ -251,13 +251,19 @@ impl GamePanelComponent {
                         {
                             let state = {
                                 let mut l = astate.blocking_lock();
-                                l.take().expect("impossible, should always be filled")
+                                l.take()
                             };
-                            Self::trigger_next_state(
-                                state,
-                                astate.clone(),
-                                btnstate.clone(),
-                            )
+                            match state {
+                                Some(state) => Self::trigger_next_state(
+                                    state,
+                                    astate.clone(),
+                                    btnstate.clone(),
+                                ),
+                                None => {
+                                    tracing::warn!("Wrong State"); // might happen if there is a click right between this and the resulting command
+                                    (None, None)
+                                },
+                            }
                         } else {
                             tracing::warn!("Wrong State");
                             (None, None)
@@ -393,21 +399,25 @@ impl GamePanelComponent {
             {
                 // When the game is downloading, the download progress bar and related
                 // stats replace the Launch / Update button
-                let (percent, total, downloaded, bytes_per_sec, remaining) = match self
-                    .download_progress
-                    .as_ref()
-                    .unwrap_or(&Progress::Evaluating)
-                {
-                    Progress::InProgress(progress_data) => (
-                        progress_data.percent_complete() as f32,
-                        progress_data.total_bytes,
-                        progress_data.downloaded_bytes,
-                        progress_data.bytes_per_sec,
-                        progress_data.remaining(),
-                    ),
-                    Progress::Successful(_) => (100.0, 0, 0, 0, Duration::from_secs(0)),
-                    _ => (0.0, 0, 0, 0, Duration::from_secs(0)),
-                };
+                let (percent, total, downloaded, bytes_per_sec, remaining, step) =
+                    match self
+                        .download_progress
+                        .as_ref()
+                        .unwrap_or(&Progress::Evaluating)
+                    {
+                        Progress::InProgress(progress_data) => (
+                            progress_data.cur_step().percent_complete() as f32,
+                            progress_data.cur_step().total_bytes,
+                            progress_data.cur_step().processed_bytes,
+                            progress_data.overall().bytes_per_sec(),
+                            progress_data.cur_step_remaining(),
+                            Some(progress_data.cur_step().content.clone()),
+                        ),
+                        Progress::Successful(_) => {
+                            (100.0, 0, 0, 0, Duration::from_secs(0), None)
+                        },
+                        _ => (0.0, 0, 0, 0, Duration::from_secs(0), None),
+                    };
 
                 let download_rate = bytes_per_sec as f32 / 1_000_000.0;
 
@@ -454,9 +464,16 @@ impl GamePanelComponent {
                         );
                 }
 
+                let step = match step {
+                    Some(UpdateContent::DownloadFullZip) => "Redownloading",
+                    Some(UpdateContent::DownloadFile(_)) => "Downloading",
+                    Some(UpdateContent::Decompress(_)) => "Installing",
+                    _ => "",
+                };
+
                 container(
                     column![]
-                        .push(text("Downloading").font(POPPINS_BOLD_FONT).size(20))
+                        .push(text(step).font(POPPINS_BOLD_FONT).size(20))
                         .push(
                             container(download_stats_row).padding(Padding::from([5, 0])),
                         )
