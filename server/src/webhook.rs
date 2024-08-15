@@ -1,21 +1,16 @@
 use crate::{
-    config::{self, GithubReleaseConfig, Webhook},
+    config::{self, GithubReleaseConfig},
     models::Artifact,
     FsStorage, Result,
     ServerError::OctocrabError,
 };
 use octocrab::{models::repos::Release, GitHubError, Octocrab};
-use rocket::http::Status;
 use serde::Deserialize;
 use url::Url;
 
 #[tracing::instrument(skip(artifacts, db))]
-pub async fn process(
-    artifacts: Vec<Artifact>,
-    channel: String,
-    mut db: crate::DbConnection,
-) {
-    match db.exist(&artifacts).await {
+pub async fn process(artifacts: Vec<Artifact>, channel: String, db: &crate::Db) {
+    match crate::db::actions::artifacts_exist(db, &artifacts).await {
         Ok(true) => tracing::warn!("Received duplicate artifacts!"),
         Err(e) => {
             tracing::error!(?e, "Error checking for duplicate artifacts in db");
@@ -34,18 +29,27 @@ pub async fn process(
     };
 
     for artifact in artifacts {
-        if let Err(e) = transfer(artifact, channel, &mut db).await {
+        if let Err(e) = transfer(artifact, channel, db).await {
             tracing::error!(?e, "Failed to transfer artifact");
         }
     }
-    if let Err(e) = crate::prune::prune(&mut db).await {
+    if let Err(e) = crate::db::actions::prune(db).await {
         tracing::error!(?e, "Pruning failed");
     }
     match reqwest::Client::builder().build() {
         Ok(client) => {
             for webhook in &channel.webhooks {
-                if let Err(e) = execute_custom_webhook(&client, webhook).await {
-                    tracing::error!(?e, ?webhook, "Executing Webhook failed");
+                let code = match client.get(&webhook.url).send().await {
+                    Ok(c) => c,
+                    Err(e) => {
+                        tracing::error!(?e, ?webhook, "Executing Webhook failed");
+                        continue;
+                    },
+                }
+                .status();
+
+                if !code.is_success() {
+                    tracing::error!(?code, "Webhook Statuscode is not success");
                 }
             }
         },
@@ -56,7 +60,7 @@ pub async fn process(
 async fn transfer(
     mut artifact: Artifact,
     channel: &config::Channel,
-    db: &mut crate::DbConnection,
+    db: &crate::Db,
 ) -> Result<()> {
     use tokio::{fs::File, io::AsyncWriteExt};
 
@@ -100,7 +104,7 @@ async fn transfer(
 
         // Update database with new information
         tracing::info!("hash valid. Update database...");
-        db.insert_artifact(&artifact).await?;
+        crate::db::actions::insert_artifact(db, &artifact).await?;
 
         // Delete obselete artifact
         tokio::fs::remove_file(&artifact.file_name).await?;
@@ -197,18 +201,5 @@ async fn get_github_release(
             .await
             .map_err(OctocrabError),
         err => err.map_err(OctocrabError),
-    }
-}
-
-/// Execute Custom Webhook
-async fn execute_custom_webhook(
-    client: &reqwest::Client,
-    webhook: &Webhook,
-) -> Result<()> {
-    let code = client.get(&webhook.url).send().await?.status();
-    if code.is_success() {
-        Ok(())
-    } else {
-        Err(crate::ServerError::Status(Status { code: code.into() }))
     }
 }

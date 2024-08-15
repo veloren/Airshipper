@@ -14,13 +14,6 @@ impl FsStorage {
         Ok(())
     }
 
-    /// Deletes artifact from filesystem storage.
-    #[tracing::instrument]
-    pub async fn delete(artifact: &Artifact) -> Result<()> {
-        Self::delete_file(&artifact.file_name).await?;
-        Ok(())
-    }
-
     /// Store file to the filesystem storage.
     #[tracing::instrument]
     async fn store_file(
@@ -36,7 +29,7 @@ impl FsStorage {
     }
 
     #[tracing::instrument]
-    async fn delete_file(filename: impl ToString + std::fmt::Debug) -> Result<()> {
+    pub async fn delete_file(filename: impl ToString + std::fmt::Debug) {
         let mut root_folder = crate::CONFIG.get_local_storage_path();
         root_folder.push(PROFILE_FOLDER);
         let filename = filename.to_string();
@@ -48,8 +41,6 @@ impl FsStorage {
                 e
             );
         }
-
-        Ok(())
     }
 
     /// returns the public URL that is bound to the rocket Static Serving

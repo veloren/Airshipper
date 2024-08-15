@@ -21,3 +21,9 @@ airshipper.ron
 data/
 /.vscode
 *.exe
+
+# database
+airshipper.db
+airshipper.db-shm
+airshipper.db-wal
+/local

@@ -1,17 +1,16 @@
 use crate::{
     config::{Channel, Platform},
-    db::{schema::artifacts, DbArtifact, FsStorage},
+    db::FsStorage,
     models::{Build, PipelineUpdate},
 };
-use chrono::NaiveDateTime;
-use diesel::Queryable;
+use chrono::{DateTime, Utc};
 use url::Url;
 
-#[derive(Debug, Queryable, Insertable, Clone)]
-#[table_name = "artifacts"]
+#[derive(Debug, Clone)]
+
 pub struct Artifact {
     pub build_id: i64,
-    pub date: NaiveDateTime,
+    pub date: DateTime<Utc>,
     pub hash: String,
     pub author: String,
     pub merged_by: String,
@@ -23,23 +22,6 @@ pub struct Artifact {
     pub download_uri: String,
 }
 
-impl From<&DbArtifact> for Artifact {
-    fn from(db: &DbArtifact) -> Self {
-        Self {
-            build_id: db.build_id,
-            date: db.date,
-            hash: db.hash.clone(),
-            author: db.author.clone(),
-            merged_by: db.merged_by.clone(),
-            os: db.os.clone(),
-            arch: db.arch.clone(),
-            channel: db.channel.clone(),
-            file_name: db.file_name.clone(),
-            download_uri: db.download_uri.clone(),
-        }
-    }
-}
-
 impl Artifact {
     pub fn try_from(
         pipe: &PipelineUpdate,
@@ -49,8 +31,7 @@ impl Artifact {
     ) -> Option<Self> {
         // Check if it contains artifact
         if build.artifacts_file.filename.is_some() {
-            // Datetime<Utc> isn't store-able in diesel.
-            let date = pipe.commit.timestamp.naive_utc();
+            let date = pipe.commit.timestamp;
 
             let build_id = build.id as i64;
             let os = platform.os.clone();

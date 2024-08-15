@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS artifacts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    build_id INTEGER NOT NULL,
+    date DATETIME NOT NULL,
+    hash STRING NOT NULL,
+    author STRING NOT NULL,
+    merged_by STRING NOT NULL,
+    os STRING NOT NULL,
+    arch STRING NOT NULL,
+    channel STRING NOT NULL,
+    file_name STRING NOT NULL UNIQUE,
+    download_uri STRING NOT NULL UNIQUE
+);

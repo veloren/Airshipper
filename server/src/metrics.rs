@@ -73,36 +73,28 @@ impl Metrics {
             .inc();
     }
 
+    pub fn increment_http_routes_in(&self, path: &str) {
+        self.http_routes_in.with_label_values(&[path]).inc();
+    }
+
     /// Returns statistics
-    #[allow(clippy::result_large_err)]
-    pub fn gather(&self) -> Result<String> {
+    pub fn gather(&self) -> String {
         let mut buffer = vec![];
         let encoder = TextEncoder::new();
         let metric_families = self.registry.gather();
-        encoder.encode(&metric_families, &mut buffer)?;
+        encoder
+            .encode(&metric_families, &mut buffer)
+            .expect("buffer has unlimited size");
 
-        Ok(String::from_utf8(buffer).unwrap())
+        String::from_utf8_lossy(&buffer).to_string()
     }
 }
 
-use rocket::{
-    fairing::{Fairing, Info, Kind},
-    request::Request,
-    response::Response,
-};
-#[crate::async_trait]
-impl Fairing for Metrics {
-    fn info(&self) -> Info {
-        Info {
-            name: "Prometheus metric collection",
-            kind: Kind::Response,
-        }
-    }
-
-    async fn on_response<'r>(&self, request: &'r Request<'_>, _: &mut Response<'r>) {
-        if let Some(route) = request.route() {
-            let endpoint = route.uri.as_str();
-            self.http_routes_in.with_label_values(&[endpoint]).inc();
-        }
+/* TODO
+async fn on_response<'r>(request: &'r Request<'_>, _: &mut Response<'r>) {
+    if let Some(route) = request.route() {
+        let endpoint = route.uri.as_str();
+        self.http_routes_in.with_label_values(&[endpoint]).inc();
     }
 }
+ */

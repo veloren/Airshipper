@@ -4,7 +4,5 @@ pub mod gitlab;
 pub mod user;
 // exposing api for e.g. querying latest version
 pub mod api;
-// Catch all case
-pub mod catchers;
 // Exposes prometheus statistics
 pub mod metrics;

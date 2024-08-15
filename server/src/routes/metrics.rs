@@ -1,10 +1,9 @@
 #![allow(unused_imports)]
-use crate::{metrics::Metrics, Result};
-use rocket::*;
+use axum::{extract::State, response::IntoResponse};
+
+use crate::{metrics::Metrics, Context, Result};
 use std::sync::Arc;
 
-#[allow(clippy::result_large_err)]
-#[get("/metrics")]
-pub fn metrics(metrics: &State<Arc<Metrics>>) -> Result<String> {
-    metrics.gather()
+pub async fn metrics(State(context): State<Context>) -> impl IntoResponse {
+    context.metrics.gather()
 }

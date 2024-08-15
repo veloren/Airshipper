@@ -3,47 +3,88 @@
 // How to send manual webhooks:
 // curl --header "Content-Type: application/json" --request POST --data "@<FILE_WITH_WEBHOOK_DATA>" --header "X-Gitlab-Event: Pipeline Hook" --header "X-Gitlab-Token: <TOKEN>" http://<ADDRESS>
 
-use rocket::{fs::FileServer, *};
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate diesel_migrations;
-
 mod config;
 mod db;
 mod error;
-mod fairings;
-mod guards;
 mod logger;
 mod metrics;
 mod models;
-mod prune;
 mod routes;
 mod webhook;
 
 use crate::error::ServerError;
+use axum::{
+    body::Body,
+    extract::{MatchedPath, Request, State},
+    http::Response,
+    middleware::{self, Next},
+    routing::{get, post},
+    Router,
+};
 use config::{loading, Config, CONFIG_PATH, LOCAL_STORAGE_PATH};
+use db::Db;
 use metrics::Metrics;
-use std::{path::Path, sync::Arc};
+use std::{net::SocketAddr, path::Path, sync::Arc};
 
 pub type Result<T> = std::result::Result<T, ServerError>;
-pub use db::{DbConnection, FsStorage};
+use db::FsStorage;
 
 lazy_static::lazy_static! {
     /// Contains all configuration needed.
     pub static ref CONFIG: Config = Config::compile(loading::Config::load(Path::new(CONFIG_PATH)).unwrap_or_else(|_| panic!("Couldn't open config file {}", CONFIG_PATH))).unwrap();
 }
 
-#[rocket::launch]
-async fn rocket() -> _ {
-    dotenv::from_path("server/.env").ok();
-    build().await.unwrap()
+fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let _guard = Arc::new(logger::init(tracing::metadata::LevelFilter::INFO));
+
+    let local_storage_folder = CONFIG.get_local_storage_path();
+    if !local_storage_folder.exists() {
+        std::fs::create_dir_all(local_storage_folder.clone()).unwrap();
+    }
+
+    tracing::info!("Starting veloren airshipper");
+
+    let rt = tokio::runtime::Runtime::new()?;
+    rt.block_on(async {
+        tokio::select! {
+            _ = server() => tracing::info!("server exited"),
+        }
+    });
+    tracing::info!("stopped");
+
+    Ok(())
 }
 
-#[allow(clippy::nonstandard_macro_braces)]
-async fn build() -> Result<rocket::Rocket<rocket::Build>> {
-    let guard = Arc::new(logger::init(tracing::metadata::LevelFilter::INFO));
+#[derive(Clone)]
+pub struct Context {
+    /// Prometheus metrics
+    pub metrics: Arc<Metrics>,
+    pub db: Arc<Db>,
+}
 
+pub async fn server() {
+    use std::future::IntoFuture;
+    tracing::debug!("Starting up server");
+
+    let metrics = Metrics::new().expect("Failed to create prometheus statistics!");
+    let metrics = Arc::new(metrics);
+
+    let context = Context {
+        metrics: Arc::clone(&metrics),
+        db: Arc::new(
+            Db::new(
+                crate::CONFIG
+                    .get_db_file_path()
+                    .as_path()
+                    .to_str()
+                    .expect("non-UTF8 path"),
+            )
+            .await
+            .unwrap(),
+        ),
+    };
+
+    let lsp = format!("/{}", LOCAL_STORAGE_PATH);
     let local_storage_folder = CONFIG.get_local_storage_path();
     if !local_storage_folder.exists() {
         tokio::fs::create_dir_all(local_storage_folder.clone())
@@ -51,33 +92,56 @@ async fn build() -> Result<rocket::Rocket<rocket::Build>> {
             .unwrap();
     }
 
-    let metrics = Metrics::new().expect("Failed to create prometheus statistics!");
-    let metrics = Arc::new(metrics);
+    async fn empty() {}
 
-    // Base of the config and attach everything else
-    Ok(CONFIG
-        .rocket()
-        .attach(DbConnection::fairing())
-        .attach(fairings::db::DbInit)
-        .attach(metrics.clone())
-        .manage(guard)
-        .manage(metrics)
-        .mount("/", routes![
-            routes::gitlab::post_pipeline_update,
-            routes::user::index,
-            routes::user::ping,
-            routes::user::robots,
-            routes::user::favicon,
-            routes::api::announcement,
-            routes::api::api_version,
-            routes::api::channels,
-            routes::api::version,
-            routes::api::download,
-            routes::metrics::metrics,
-        ])
-        .mount(
-            &format!("/{}", LOCAL_STORAGE_PATH),
-            FileServer::from(local_storage_folder),
+    // build our application with a route
+    let app = Router::new()
+        .route("/metrics", get(routes::metrics::metrics))
+        .route("/", post(routes::gitlab::post_pipeline_update))
+        .route("/api/version", get(routes::api::api_version))
+        .route("/announcement", get(routes::api::announcement))
+        .route("/channels/:os/:arch", get(routes::api::channels))
+        .route("/version/:os/:arch/:channel", get(routes::api::version))
+        .route("/latest/:os/:arch/:channel", get(routes::api::download))
+        .route("/", get(routes::user::index))
+        .route("/ping", get(empty))
+        .route("/favicon.ico", get(empty))
+        .route("/robots.txt", get(routes::user::robots))
+        .nest_service(
+            &lsp,
+            tower_http::services::ServeDir::new(local_storage_folder),
         )
-        .register("/", catchers![routes::catchers::not_found]))
+        .route_layer(middleware::from_fn_with_state(metrics, track_metrics))
+        .with_state(context);
+
+    // run our app with hyper
+    // `axum::Server` is a re-export of `hyper::Server`
+    let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
+    tracing::debug!(?addr, "listening");
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .expect("can't bind to web-port.");
+    tracing::info!(?addr, "listening on");
+    let server = axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .into_future();
+    server.await.unwrap();
+    tracing::debug!("Shutdown server");
+}
+
+async fn track_metrics(
+    State(metrics): State<Arc<Metrics>>,
+    req: Request,
+    next: Next,
+) -> Response<Body> {
+    let path = if let Some(matched_path) = req.extensions().get::<MatchedPath>() {
+        matched_path.as_str().to_owned()
+    } else {
+        req.uri().path().to_owned()
+    };
+    metrics.increment_http_routes_in(&path);
+
+    next.run(req).await
 }
