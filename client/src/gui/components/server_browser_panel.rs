@@ -313,7 +313,11 @@ impl ServerBrowserPanelComponent {
             };
             let select_row_button = button(container(row).padding(Padding::from([0, 8])))
                 .on_press(DefaultViewMessage::ServerBrowserPanel(
-                    ServerBrowserPanelMessage::SelectServerEntry(Some(i)),
+                    if self.selected_index == Some(i) {
+                        ServerBrowserPanelMessage::SelectServerEntry(None)
+                    } else {
+                        ServerBrowserPanelMessage::SelectServerEntry(Some(i))
+                    },
                 ))
                 .style(row_style)
                 .height(Length::Fixed(30.0))
