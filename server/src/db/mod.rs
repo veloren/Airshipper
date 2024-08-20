@@ -44,7 +44,7 @@ impl Db {
             })
             .connect(&conection_args)
             .await
-            .expect("cannot connect to database, unable to start moderation-tool");
+            .expect("cannot connect to database, unable to start airshipper server");
 
         let x = pool.options();
         tracing::info!(?x, "pool options");

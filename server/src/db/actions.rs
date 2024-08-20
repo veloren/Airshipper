@@ -1,24 +1,24 @@
-use sqlx::{any::AnyArguments, Any, Executor, QueryBuilder, Row, Transaction};
+use sqlx::{Any, Executor, QueryBuilder, Row, Transaction};
 
 use crate::{db::Db, models::Artifact, FsStorage, Result};
 
 #[tracing::instrument(skip(db))]
 pub async fn artifacts_exist(db: &Db, cmp: &[Artifact]) -> Result<bool> {
-    let uris: Vec<String> = cmp.iter().map(|x| &x.download_uri).cloned().collect();
+    let uris = cmp.iter().map(|x| &x.download_uri);
 
-    let args = AnyArguments::default();
-    let mut query_builder = QueryBuilder::with_arguments(
+    let mut query_builder = QueryBuilder::new(
         r"SELECT COUNT(id) as cnt
         FROM artifacts
         WHERE (download_uri) IN ",
-        args,
     );
     query_builder.push_tuples(uris, |mut b, uri| {
         b.push_bind(uri);
     });
 
-    let row = query_builder.build().fetch_one(&db.pool).await?;
-    let count: i64 = row.try_get("cnt")?;
+    let count: i64 = query_builder
+        .build_query_scalar()
+        .fetch_one(&db.pool)
+        .await?;
 
     Ok(count == cmp.len() as i64)
 }
@@ -29,7 +29,7 @@ pub async fn insert_artifact(db: &Db, artifact: &Artifact) -> Result<i64> {
     // TODO: Check whether UNIQUE constraint gets violated and throw a warning but
     // proceed!
     let query = sqlx::query(
-        r"INSERT INTO artifacts (build_id, date, hash, author, merged_by, os, arch, channel, file_name, download_uri) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING ID",
+        r"INSERT INTO artifacts (build_id, date, hash, author, merged_by, os, arch, channel, file_name, download_uri) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
     ).bind(artifact.build_id)
     .bind(artifact.date.to_string())
     .bind(&artifact.hash)
@@ -67,7 +67,11 @@ pub async fn get_latest_version_uri<
     let searched_channel = searched_channel.to_string().to_lowercase();
 
     let query = sqlx::query(
-        r"SELECT hash, download_uri FROM artifacts WHERE os = ? AND arch = ? AND channel = ? ORDER BY date DESC;",
+        r"SELECT hash, download_uri
+          FROM artifacts
+          WHERE os = ? AND arch = ? AND channel = ?
+          ORDER BY date DESC
+          LIMIT 1;",
     )
     .bind(&searched_os)
     .bind(&searched_arch)
@@ -115,9 +119,11 @@ async fn prune_artifacts(con: &mut Transaction<'static, Any>) -> Result<Vec<Stri
         "DELETE FROM artifacts
     WHERE id NOT IN
     (
-        SELECT MIN(id)
+        SELECT id
         FROM artifacts
         GROUP BY channel, os, arch
+        ORDER BY date DESC
+        LIMIT 1
     ) RETURNING file_name",
     );
     let rows = con.fetch_all(query).await?;

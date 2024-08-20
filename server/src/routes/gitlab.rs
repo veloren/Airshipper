@@ -13,10 +13,7 @@ use axum::{
 use std::sync::Arc;
 use tracing::*;
 
-// make sure noone can create this struct externally
-#[allow(dead_code)]
-struct GitlabAuthenticatedInternal;
-pub struct GitlabAuthenticated(GitlabAuthenticatedInternal);
+pub struct GitlabAuthenticated(());
 
 #[derive(Debug)]
 pub enum AuthError {
@@ -60,7 +57,7 @@ where
             .values()
             .any(|c| c.gitlab_secret == token)
         {
-            return Ok(GitlabAuthenticated(GitlabAuthenticatedInternal));
+            return Ok(GitlabAuthenticated(()));
         }
 
         Err(AuthError::InvalidSecret)
