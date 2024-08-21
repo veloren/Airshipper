@@ -68,10 +68,13 @@ pub async fn version(
     match get_latest_version_uri(&context.db, &os, &arch, channel).await {
         Ok(Some(vu)) => (StatusCode::OK, vu.version),
         Ok(None) => (StatusCode::NOT_FOUND, "not found".to_string()),
-        Err(_) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "database error".to_string(),
-        ),
+        Err(e) => {
+            tracing::error!(?e, "Error in /version endpoint");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "database error".to_string(),
+            )
+        },
     }
 }
 
@@ -90,6 +93,9 @@ pub async fn download(
                 .unwrap()
         },
         Ok(None) => StatusCode::NOT_FOUND.into_response(),
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        Err(e) => {
+            tracing::error!(?e, "Error in /download endpoint");
+            (StatusCode::INTERNAL_SERVER_ERROR, "database error").into_response()
+        },
     }
 }

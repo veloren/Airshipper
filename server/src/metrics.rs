@@ -89,12 +89,3 @@ impl Metrics {
         String::from_utf8_lossy(&buffer).to_string()
     }
 }
-
-/* TODO
-async fn on_response<'r>(request: &'r Request<'_>, _: &mut Response<'r>) {
-    if let Some(route) = request.route() {
-        let endpoint = route.uri.as_str();
-        self.http_routes_in.with_label_values(&[endpoint]).inc();
-    }
-}
- */

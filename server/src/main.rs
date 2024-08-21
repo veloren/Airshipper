@@ -45,12 +45,8 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     tracing::info!("Starting veloren airshipper");
 
     let rt = tokio::runtime::Runtime::new()?;
-    rt.block_on(async {
-        tokio::select! {
-            _ = server() => tracing::info!("server exited"),
-        }
-    });
-    tracing::info!("stopped");
+    rt.block_on(server());
+    tracing::info!("server stopped");
 
     Ok(())
 }
@@ -62,8 +58,7 @@ pub struct Context {
     pub db: Arc<Db>,
 }
 
-pub async fn server() {
-    use std::future::IntoFuture;
+async fn server() {
     tracing::debug!("Starting up server");
 
     let metrics = Metrics::new().expect("Failed to create prometheus statistics!");
@@ -125,8 +120,7 @@ pub async fn server() {
     let server = axum::serve(
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
-    )
-    .into_future();
+    );
     server.await.unwrap();
     tracing::debug!("Shutdown server");
 }

@@ -5,14 +5,6 @@ pub use self::fs::*;
 
 use sqlx::{Executor, Pool};
 
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum DatabaseInitError {
-    #[error("Failed to apply database migrations: {0:?}")]
-    MigrationFailed(#[from] sqlx::migrate::MigrateError),
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum DbType {
     Sqlite,
@@ -48,6 +40,7 @@ impl Db {
 
         let x = pool.options();
         tracing::info!(?x, "pool options");
+        // relies on single pool connection
         if t == DbType::Sqlite {
             pool.execute("PRAGMA journal_mode = WAL;").await.unwrap();
             pool.execute("PRAGMA busy_timeout = 250;").await.unwrap();

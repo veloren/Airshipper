@@ -35,7 +35,7 @@ ron = "0.8"
 regex = "1.10"
 
 axum = "0.7"
-tower-http = { version = "*", features = ["fs"] }
+tower-http = { version = "0.5.2", features = ["fs"] }
 # Networking
 reqwest = { version = "0.11.4", features = ["stream"] }
 # Github
@@ -48,7 +48,6 @@ sqlx = { version = "0.7", features = [
     "runtime-tokio",
     "postgres",
     "sqlite",
-    "macros",
     "chrono",
     "any",
 ] }

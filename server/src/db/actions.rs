@@ -3,7 +3,7 @@ use sqlx::{Any, Executor, QueryBuilder, Row, Transaction};
 use crate::{db::Db, models::Artifact, FsStorage, Result};
 
 #[tracing::instrument(skip(db))]
-pub async fn artifacts_exist(db: &Db, cmp: &[Artifact]) -> Result<bool> {
+pub async fn any_artifacts_exist(db: &Db, cmp: &[Artifact]) -> Result<bool> {
     let uris = cmp.iter().map(|x| &x.download_uri);
 
     let mut query_builder = QueryBuilder::new(
@@ -20,7 +20,7 @@ pub async fn artifacts_exist(db: &Db, cmp: &[Artifact]) -> Result<bool> {
         .fetch_one(&db.pool)
         .await?;
 
-    Ok(count == cmp.len() as i64)
+    Ok(count > 0)
 }
 
 #[tracing::instrument(skip(db))]
@@ -28,7 +28,7 @@ pub async fn insert_artifact(db: &Db, artifact: &Artifact) -> Result<i64> {
     // TODO: check if the following TODO still is wanted behavior
     // TODO: Check whether UNIQUE constraint gets violated and throw a warning but
     // proceed!
-    let query = sqlx::query(
+    let query = sqlx::query_scalar(
         r"INSERT INTO artifacts (build_id, date, hash, author, merged_by, os, arch, channel, file_name, download_uri) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
     ).bind(artifact.build_id)
     .bind(artifact.date.to_string())
@@ -41,8 +41,7 @@ pub async fn insert_artifact(db: &Db, artifact: &Artifact) -> Result<i64> {
     .bind(&artifact.file_name)
     .bind(&artifact.download_uri);
 
-    let row = db.pool.fetch_one(query).await?;
-    let id: i64 = row.try_get("id")?;
+    let id: i64 = query.fetch_one(&db.pool).await?;
     Ok(id)
 }
 
@@ -92,29 +91,22 @@ pub async fn get_latest_version_uri<
 pub async fn prune(db: &Db) -> Result<()> {
     let mut con = db.pool.begin().await?;
 
-    if has_pruneable_artifacts(&mut con).await? {
-        let files = prune_artifacts(&mut con).await?;
+    let files = prune_artifacts(&mut con).await?;
 
-        for file in files {
-            tracing::info!("Deleting prunable artifact: {:?}", file);
-            FsStorage::delete_file(&file).await;
-        }
+    for file in files {
+        tracing::info!("Deleting prunable artifact: {:?}", file);
+        FsStorage::delete_file(&file).await;
     }
+
     con.commit().await?;
 
     Ok(())
 }
 
-async fn has_pruneable_artifacts(con: &mut Transaction<'static, Any>) -> Result<bool> {
-    let query = sqlx::query("SELECT COUNT(id) as cnt FROM artifacts");
-    let row = con.fetch_one(query).await?;
-
-    let count: i64 = row.try_get("cnt")?;
-    Ok(count > 20)
-}
-
 /// Prunes all artifacts but one per os/arch/channel combination
 async fn prune_artifacts(con: &mut Transaction<'static, Any>) -> Result<Vec<String>> {
+    // Currently date is a STRING and the order DESC might cause weird effects IF we
+    // would store different timezones.
     let query = sqlx::query(
         "DELETE FROM artifacts
     WHERE id NOT IN
@@ -127,6 +119,10 @@ async fn prune_artifacts(con: &mut Transaction<'static, Any>) -> Result<Vec<Stri
     ) RETURNING file_name",
     );
     let rows = con.fetch_all(query).await?;
+
+    if !rows.is_empty() {
+        tracing::info!("pruned artifacts from db");
+    }
 
     let mut files = Vec::new();
     for row in rows {

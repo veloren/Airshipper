@@ -10,7 +10,7 @@ use url::Url;
 
 #[tracing::instrument(skip(artifacts, db))]
 pub async fn process(artifacts: Vec<Artifact>, channel: String, db: &crate::Db) {
-    match crate::db::actions::artifacts_exist(db, &artifacts).await {
+    match crate::db::actions::any_artifacts_exist(db, &artifacts).await {
         Ok(true) => tracing::warn!("Received duplicate artifacts!"),
         Err(e) => {
             tracing::error!(?e, "Error checking for duplicate artifacts in db");
@@ -39,17 +39,13 @@ pub async fn process(artifacts: Vec<Artifact>, channel: String, db: &crate::Db) 
     match reqwest::Client::builder().build() {
         Ok(client) => {
             for webhook in &channel.webhooks {
-                let code = match client.get(&webhook.url).send().await {
-                    Ok(c) => c,
-                    Err(e) => {
-                        tracing::error!(?e, ?webhook, "Executing Webhook failed");
-                        continue;
+                let code = client.get(&webhook.url).send().await.map(|r| r.status());
+                match code {
+                    Ok(code) if code.is_success() => {},
+                    Ok(code) => {
+                        tracing::error!(?code, "Webhook Statuscode is not success")
                     },
-                }
-                .status();
-
-                if !code.is_success() {
-                    tracing::error!(?code, "Webhook Statuscode is not success");
+                    Err(e) => tracing::error!(?e, ?webhook, "Executing Webhook failed"),
                 }
             }
         },
