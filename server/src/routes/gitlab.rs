@@ -84,6 +84,7 @@ pub async fn post_pipeline_update(
 ) -> impl IntoResponse {
     let pipeline_id = update.object_attributes.id;
     let _span = span!(Level::INFO, "", ?pipeline_id);
+    tracing::info!("Got webhook from gitlab.com for a finished pipeline");
     if !update.early_filter() {
         tracing::trace!("early return");
         return StatusCode::OK;

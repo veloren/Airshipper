@@ -112,32 +112,52 @@ impl PipelineUpdate {
             // get all schedules available
             let mut headers = HeaderMap::new();
             headers.insert("PRIVATE-TOKEN", HeaderValue::from_str(token)?);
-            headers.insert(ACCEPT, HeaderValue::from_static("*/*"));
+            headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
             let client = reqwest::Client::builder()
                 .default_headers(headers)
                 .build()?;
-            let schedules = client
+            let schedules_resp = client
                 .get(format!(
                     "https://gitlab.com/api/v4/projects/{}/pipeline_schedules",
                     crate::config::PROJECT_ID,
                 ))
                 .send()
-                .await?
-                .json::<Vec<Schedules>>()
                 .await?;
+            let full = schedules_resp.bytes().await?;
+            let schedules: Vec<Schedules> = match serde_json::from_slice(&full) {
+                Ok(schedules) => schedules,
+                Err(e) => {
+                    tracing::warn!(
+                        ?e,
+                        ?full,
+                        "Invalid Response from gitlab for schedules"
+                    );
+                    return Err(Box::new(e));
+                },
+            };
             tracing::trace!(?schedules, "Schedules");
             for schedule in schedules {
                 let id = schedule.id;
-                let mut details = client
+                let details_resp = client
                     .get(format!(
                         "https://gitlab.com/api/v4/projects/{}/pipeline_schedules/{}",
                         crate::config::PROJECT_ID,
                         id
                     ))
                     .send()
-                    .await?
-                    .json::<Schedule>()
                     .await?;
+                let full = details_resp.bytes().await?;
+                let mut details: Schedule = match serde_json::from_slice(&full) {
+                    Ok(details) => details,
+                    Err(e) => {
+                        tracing::warn!(
+                            ?e,
+                            ?full,
+                            "Invalid Response from gitlab for details"
+                        );
+                        return Err(Box::new(e));
+                    },
+                };
                 tracing::trace!(?details, "Details");
                 if details.last_pipeline.id == pipeline_id {
                     self.object_attributes
