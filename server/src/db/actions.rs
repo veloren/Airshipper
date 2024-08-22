@@ -115,7 +115,6 @@ async fn prune_artifacts(con: &mut Transaction<'static, Any>) -> Result<Vec<Stri
         FROM artifacts
         GROUP BY channel, os, arch
         ORDER BY date DESC
-        LIMIT 1
     ) RETURNING file_name",
     );
     let rows = con.fetch_all(query).await?;

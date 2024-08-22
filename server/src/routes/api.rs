@@ -43,6 +43,7 @@ pub async fn announcement() -> Json<Announcement> {
 }
 
 /// List all channels that are supported for a specific platform
+#[tracing::instrument()]
 pub async fn channels(Path((os, arch)): Path<(String, String)>) -> Json<Vec<String>> {
     let platform = Platform { os, arch };
 
@@ -61,6 +62,7 @@ pub async fn channels(Path((os, arch)): Path<(String, String)>) -> Json<Vec<Stri
     Json(result)
 }
 
+#[tracing::instrument(skip(context))]
 pub async fn version(
     State(context): State<Context>,
     Path((os, arch, channel)): Path<(String, String, String)>,
@@ -78,19 +80,16 @@ pub async fn version(
     }
 }
 
+#[tracing::instrument(skip(context))]
 pub async fn download(
     State(context): State<Context>,
     Path((os, arch, channel)): Path<(String, String, String)>,
 ) -> Response<Body> {
-    tracing::info!(?os, ?arch, ?channel, "Serving Download");
+    tracing::debug!("requesting Download location");
     match get_latest_version_uri(&context.db, &os, &arch, &channel).await {
         Ok(Some(vu)) => {
             context.metrics.increment_download(&os, &arch, &channel);
-            Response::builder()
-                .status(303)
-                .header(LOCATION, vu.uri)
-                .body(Body::empty())
-                .unwrap()
+            Redirect::to(&vu.uri).into_response()
         },
         Ok(None) => StatusCode::NOT_FOUND.into_response(),
         Err(e) => {
