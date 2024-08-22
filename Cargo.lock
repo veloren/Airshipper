@@ -6351,9 +6351,9 @@ dependencies = [
 
 [[package]]
 name = "zip-core"
-version = "0.0.3"
+version = "0.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "026f39084595f9bfde24a8918b10e75c5211476eec87203148512c9d9dc2cf99"
+checksum = "80450ab4ae3b90969de71e73d9a7259c6a2adefe62218168a840a08f4ced766c"
 dependencies = [
  "bytes",
 ]
