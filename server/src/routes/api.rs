@@ -1,19 +1,16 @@
-#![allow(unused_imports)]
 use crate::{
     config::{Platform, API_VERSION},
     db::actions::get_latest_version_uri,
-    metrics::Metrics,
-    Context, Result,
+    Context,
 };
 use axum::{
     body::Body,
     extract::{Path, State},
-    http::{header::LOCATION, Response, StatusCode},
+    http::{Response, StatusCode},
     response::{IntoResponse, Redirect},
     Json,
 };
 use serde::Serialize;
-use std::sync::Arc;
 
 #[derive(Serialize)]
 pub struct Version {
@@ -35,7 +32,6 @@ pub struct Announcement {
 
 /// Public Service Announcement to be displayed in Airshipper
 pub async fn announcement() -> Json<Announcement> {
-    use chrono::TimeZone;
     Json(Announcement {
         message: None,
         last_change: chrono::Utc::now(),

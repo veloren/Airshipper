@@ -1,5 +1,3 @@
-#![allow(clippy::unit_arg)]
-
 // How to send manual webhooks:
 // curl --header "Content-Type: application/json" --request POST --data "@<FILE_WITH_WEBHOOK_DATA>" --header "X-Gitlab-Event: Pipeline Hook" --header "X-Gitlab-Token: <TOKEN>" http://<ADDRESS>
 
@@ -12,7 +10,6 @@ mod models;
 mod routes;
 mod webhook;
 
-use crate::error::ServerError;
 use axum::{
     body::Body,
     extract::{MatchedPath, Request, State},
@@ -22,12 +19,9 @@ use axum::{
     Router,
 };
 use config::{loading, Config, CONFIG_PATH, LOCAL_STORAGE_PATH};
-use db::Db;
+use db::{Db, FsStorage};
 use metrics::Metrics;
 use std::{net::SocketAddr, path::Path, sync::Arc};
-
-pub type Result<T> = std::result::Result<T, ServerError>;
-use db::FsStorage;
 
 lazy_static::lazy_static! {
     /// Contains all configuration needed.

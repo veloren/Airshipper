@@ -5,6 +5,7 @@ use reqwest::header::{HeaderMap, HeaderValue, ACCEPT};
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
+#[allow(dead_code)]
 pub struct PipelineUpdate {
     pub object_kind: String,
     pub object_attributes: ObjectAttributes,
@@ -183,6 +184,7 @@ pub struct Variable {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[allow(dead_code)]
 pub struct ObjectAttributes {
     pub id: u64,
     #[serde(rename = "ref")]
@@ -199,6 +201,7 @@ pub struct ObjectAttributes {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[allow(dead_code)]
 pub struct User {
     pub name: String,
     pub username: String,
@@ -206,12 +209,14 @@ pub struct User {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[allow(dead_code)]
 pub struct Author {
     pub name: String,
     pub email: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[allow(dead_code)]
 pub struct Project {
     pub id: u64,
     pub name: String,
@@ -227,6 +232,7 @@ pub struct Project {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[allow(dead_code)]
 pub struct Commit {
     pub id: String,
     pub message: String,
@@ -236,6 +242,7 @@ pub struct Commit {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[allow(dead_code)]
 pub struct Build {
     pub id: u64,
     pub stage: String,
@@ -260,6 +267,7 @@ pub struct Runner {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[allow(dead_code)]
 pub struct ArtifactsFile {
     pub filename: Option<String>,
     pub size: Option<u64>,
