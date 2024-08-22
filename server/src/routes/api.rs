@@ -32,6 +32,9 @@ pub struct Announcement {
 
 /// Public Service Announcement to be displayed in Airshipper
 pub async fn announcement() -> Json<Announcement> {
+    // When this is empty return `chrono::Utc::now()` so a client could recheck
+    // after a certain time. If there is an actually announcement, choose a static
+    // time, e.g. the time you made that announcement public.
     Json(Announcement {
         message: None,
         last_change: chrono::Utc::now(),
