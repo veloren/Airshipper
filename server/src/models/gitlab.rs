@@ -123,12 +123,14 @@ impl PipelineUpdate {
                 ))
                 .send()
                 .await?;
+            let status = schedules_resp.status();
             let full = schedules_resp.bytes().await?;
             let schedules: Vec<Schedules> = match serde_json::from_slice(&full) {
                 Ok(schedules) => schedules,
                 Err(e) => {
                     tracing::warn!(
                         ?e,
+                        ?status,
                         ?full,
                         "Invalid Response from gitlab for schedules"
                     );
@@ -146,12 +148,14 @@ impl PipelineUpdate {
                     ))
                     .send()
                     .await?;
+                let status = details_resp.status();
                 let full = details_resp.bytes().await?;
                 let mut details: Schedule = match serde_json::from_slice(&full) {
                     Ok(details) => details,
                     Err(e) => {
                         tracing::warn!(
                             ?e,
+                            ?status,
                             ?full,
                             "Invalid Response from gitlab for details"
                         );

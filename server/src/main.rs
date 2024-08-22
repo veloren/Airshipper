@@ -31,7 +31,7 @@ use db::FsStorage;
 
 lazy_static::lazy_static! {
     /// Contains all configuration needed.
-    pub static ref CONFIG: Config = Config::compile(loading::Config::load(Path::new(CONFIG_PATH)).unwrap_or_else(|_| panic!("Couldn't open config file {}", CONFIG_PATH))).unwrap();
+    pub(crate) static ref CONFIG: Config = Config::compile(loading::Config::load(Path::new(CONFIG_PATH)).unwrap_or_else(|_| panic!("Couldn't open config file {}", CONFIG_PATH))).unwrap();
 }
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -52,7 +52,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 }
 
 #[derive(Clone)]
-pub struct Context {
+pub(crate) struct Context {
     /// Prometheus metrics
     pub metrics: Arc<Metrics>,
     pub db: Arc<Db>,
@@ -92,7 +92,7 @@ async fn server() {
     // build our application with a route
     let app = Router::new()
         .route("/metrics", get(routes::metrics::metrics))
-        .route("/", post(routes::gitlab::post_pipeline_update))
+        .route("/gitlab", post(routes::gitlab::post_pipeline_update))
         .route("/api/version", get(routes::api::api_version))
         .route("/announcement", get(routes::api::announcement))
         .route("/channels/:os/:arch", get(routes::api::channels))

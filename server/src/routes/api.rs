@@ -68,8 +68,15 @@ pub async fn version(
     Path((os, arch, channel)): Path<(String, String, String)>,
 ) -> impl IntoResponse {
     match get_latest_version_uri(&context.db, &os, &arch, channel).await {
-        Ok(Some(vu)) => (StatusCode::OK, vu.version),
-        Ok(None) => (StatusCode::NOT_FOUND, "not found".to_string()),
+        Ok(Some(vu)) => {
+            let version = vu.version;
+            tracing::trace!(?version, "serving version");
+            (StatusCode::OK, version)
+        },
+        Ok(None) => {
+            tracing::debug!("no version found");
+            (StatusCode::NOT_FOUND, "not found".to_string())
+        },
         Err(e) => {
             tracing::error!(?e, "Error in /version endpoint");
             (
@@ -85,13 +92,17 @@ pub async fn download(
     State(context): State<Context>,
     Path((os, arch, channel)): Path<(String, String, String)>,
 ) -> Response<Body> {
-    tracing::debug!("requesting Download location");
     match get_latest_version_uri(&context.db, &os, &arch, &channel).await {
         Ok(Some(vu)) => {
+            let uri = vu.uri;
             context.metrics.increment_download(&os, &arch, &channel);
-            Redirect::to(&vu.uri).into_response()
+            tracing::trace!(?uri, "serving download location");
+            Redirect::to(&uri).into_response()
         },
-        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Ok(None) => {
+            tracing::debug!("no download location found");
+            StatusCode::NOT_FOUND.into_response()
+        },
         Err(e) => {
             tracing::error!(?e, "Error in /download endpoint");
             (StatusCode::INTERNAL_SERVER_ERROR, "database error").into_response()

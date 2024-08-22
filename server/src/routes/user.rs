@@ -18,7 +18,9 @@ Check for supported channels via /channels/&lt;os&gt;/&lt;arch&gt; :<br>
 
 Check for new versions via /version/&lt;os&gt;/&lt;arch&gt;/&lt;channel&gt; :<br>
 <ul>
+ <li><a href="/version/linux/x86_64/weekly">/version/linux/x86_64/weekly</a></li>
  <li><a href="/version/linux/x86_64/nightly">/version/linux/x86_64/nightly</a></li>
+ <li><a href="/version/windows/x86_64/weekly">/version/windows/x86_64/weekly</a></li>
  <li><a href="/version/windows/x86_64/nightly">/version/windows/x86_64/nightly</a></li>
 </ul>
 

@@ -20,6 +20,7 @@ pub fn init(level: LevelFilter) -> Vec<impl Drop> {
         "reqwest=info",
         "rustls=info",
         "want=info",
+        "sqlx::query=info",
         "tokio_util::codec=error",
     ];
 
