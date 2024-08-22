@@ -1,62 +1,125 @@
 #![allow(unused_imports)]
 use crate::{
-    guards::{GitlabEvent, GitlabSecret},
-    metrics::Metrics,
-    models::PipelineUpdate,
-    webhook, Result,
+    config::HOOK_TYPE, metrics::Metrics, models::PipelineUpdate, webhook, Context, Result,
 };
-use rocket::{http::Status, serde::json::Json, *};
+use axum::{
+    async_trait,
+    body::Body,
+    extract::{FromRequestParts, State},
+    http::{request::Parts, Response, StatusCode},
+    response::IntoResponse,
+    Json,
+};
 use std::sync::Arc;
 use tracing::*;
 
-#[tracing::instrument(skip(_secret, _event, metrics, payload, db))]
-#[post("/", format = "json", data = "<payload>")]
-pub async fn post_pipeline_update(
-    _secret: GitlabSecret,
-    _event: GitlabEvent,
-    payload: Option<Json<PipelineUpdate>>,
-    metrics: &State<Arc<Metrics>>,
-    db: crate::DbConnection,
-) -> Result<Status> {
-    match payload {
-        Some(mut update) => {
-            let pipeline_id = update.object_attributes.id;
-            let _span = span!(Level::INFO, "", ?pipeline_id);
-            if !update.early_filter() {
-                tracing::trace!("early return");
-                return Ok(Status::Ok);
-            }
-            //Extend payload with variables
-            if let Err(e) = update.extends_variables().await {
-                tracing::warn!(?e, "couldn't extend variables");
-            };
-            tracing::info!(?update.object_attributes.variables, "got variables");
+pub struct GitlabAuthenticated(());
 
-            match update.channel() {
-                Some(channel) => {
-                    let artifacts = update.artifacts(&channel);
-                    if artifacts.is_empty() {
-                        tracing::debug!(?channel, "Request rejected, no artifacts");
-                        Ok(Status::Ok)
-                    } else {
-                        for a in &artifacts {
-                            metrics.increment_artifact_upload(&a.os, &a.arch, &channel);
-                        }
-                        let c = channel.clone();
-                        tokio::spawn(
-                            webhook::process(artifacts, channel, db)
-                                .instrument(tracing::info_span!("")),
-                        );
-                        metrics.increment_upload(&c);
-                        Ok(Status::Accepted)
-                    }
-                },
-                None => {
-                    tracing::trace!("Request rejected, no channel");
-                    Ok(Status::Ok)
-                },
+#[derive(Debug)]
+pub enum AuthError {
+    MissingEvent,
+    InvalidEvent,
+    MissingSecret,
+    InvalidSecret,
+}
+
+#[async_trait]
+impl<S> FromRequestParts<S> for GitlabAuthenticated
+where
+    S: Send + Sync,
+{
+    type Rejection = AuthError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        _state: &S,
+    ) -> std::result::Result<Self, Self::Rejection> {
+        const GITLAB_EVENT: &str = "X-Gitlab-Event";
+        const GITLAB_SECRET: &str = "X-Gitlab-Token";
+        let event = parts
+            .headers
+            .get(GITLAB_EVENT)
+            .ok_or(AuthError::MissingEvent)?;
+
+        if event.to_str().map_err(|_| AuthError::InvalidEvent)? != HOOK_TYPE {
+            return Err(AuthError::InvalidEvent);
+        }
+
+        let token = parts
+            .headers
+            .get(GITLAB_SECRET)
+            .ok_or(AuthError::MissingSecret)?;
+
+        let token = token.to_str().map_err(|_| AuthError::InvalidSecret)?;
+
+        if crate::CONFIG
+            .channels
+            .values()
+            .any(|c| c.gitlab_secret == token)
+        {
+            return Ok(GitlabAuthenticated(()));
+        }
+
+        Err(AuthError::InvalidSecret)
+    }
+}
+
+impl IntoResponse for AuthError {
+    fn into_response(self) -> Response<Body> {
+        let (status, error_message) = match self {
+            AuthError::MissingEvent => (StatusCode::BAD_REQUEST, "Missing Event"),
+            AuthError::InvalidEvent => (StatusCode::BAD_REQUEST, "Invalid Event"),
+            AuthError::MissingSecret => (StatusCode::BAD_REQUEST, "Missing Secret"),
+            AuthError::InvalidSecret => (StatusCode::UNAUTHORIZED, "Invalid Secret"),
+        };
+        (status, error_message).into_response()
+    }
+}
+
+#[tracing::instrument(skip(update, context))]
+pub async fn post_pipeline_update(
+    _: GitlabAuthenticated,
+    State(context): State<Context>,
+    Json(mut update): Json<PipelineUpdate>,
+) -> impl IntoResponse {
+    let pipeline_id = update.object_attributes.id;
+    let _span = span!(Level::INFO, "", ?pipeline_id);
+    if !update.early_filter() {
+        tracing::trace!("early return");
+        return StatusCode::OK;
+    }
+    //Extend payload with variables
+    if let Err(e) = update.extends_variables().await {
+        tracing::warn!(?e, "couldn't extend variables");
+    };
+    tracing::info!(?update.object_attributes.variables, "got variables");
+
+    match update.channel() {
+        Some(channel) => {
+            let artifacts = update.artifacts(&channel);
+            if artifacts.is_empty() {
+                tracing::debug!(?channel, "Request rejected, no artifacts");
+                StatusCode::OK
+            } else {
+                for a in &artifacts {
+                    context
+                        .metrics
+                        .increment_artifact_upload(&a.os, &a.arch, &channel);
+                }
+                let c = channel.clone();
+                let db = Arc::clone(&context.db);
+                tokio::spawn(async move {
+                    webhook::process(artifacts, channel, &db)
+                        .instrument(tracing::info_span!(""))
+                        .await;
+                });
+                context.metrics.increment_upload(&c);
+                StatusCode::ACCEPTED
             }
         },
-        None => Ok(Status::UnprocessableEntity),
+        None => {
+            tracing::trace!("Request rejected, no channel");
+            StatusCode::OK
+        },
     }
 }

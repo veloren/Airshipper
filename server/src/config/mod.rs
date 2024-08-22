@@ -1,6 +1,5 @@
 pub use crate::config::loading::{GithubReleaseConfig, Platform, Webhook};
 use regex::Regex;
-use rocket::{serde::json::Value, Rocket};
 use std::collections::HashMap;
 
 pub mod loading;
@@ -254,22 +253,6 @@ impl Config {
         let mut path = std::path::PathBuf::from(self.data_path.clone());
         path.push(LOCAL_STORAGE_PATH);
         path
-    }
-
-    pub fn rocket(&self) -> Rocket<rocket::Build> {
-        use rocket::figment::{util::map, Figment};
-        // Set database url
-        let dbpath = self.get_db_file_path();
-        let options =
-            map!["url" => Value::from(dbpath.to_str().expect("non UTF8-path provided"))];
-        let mut config = rocket::Config::release_default();
-        config.log_level = rocket::log::LogLevel::Debug;
-        config.address = std::net::Ipv4Addr::new(0, 0, 0, 0).into();
-
-        let provider =
-            Figment::from(config).merge(("databases", map!["sqlite" => &options]));
-
-        rocket::custom(provider)
     }
 }
 

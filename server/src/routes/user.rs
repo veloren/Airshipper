@@ -1,9 +1,7 @@
-#![allow(unused_imports)]
-use rocket::*;
+use axum::response::Html;
 
-#[get("/")]
-pub fn index() -> rocket::response::content::RawHtml<&'static str> {
-    rocket::response::content::RawHtml(
+pub async fn index() -> Html<&'static str> {
+    Html(
         r#"<html>
 <h1>Veloren Airshipper Download Server</h1>
 
@@ -35,18 +33,7 @@ Read public service announcement: <a href="/announcement">/announcement</a> <br>
     )
 }
 
-#[get("/ping")]
-pub fn ping() -> &'static str {
-    ""
-}
-
-#[get("/robots.txt")]
-pub fn robots() -> &'static str {
+pub async fn robots() -> &'static str {
     "User-agent: *
      Disallow: /"
-}
-
-#[get("/favicon.ico")]
-pub fn favicon() -> &'static str {
-    ""
 }

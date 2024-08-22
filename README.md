@@ -8,7 +8,7 @@ A cross-platform Veloren launcher.
 
 ## Features
 
-- [x] Update/Download and start nightly.
+- [x] Update/Download and start nightly/weekly.
 - [x] Fancy UI with batteries included.
 - [x] Updates itself on windows.
 
