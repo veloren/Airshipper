@@ -99,7 +99,7 @@ async fn server() {
         .route("/version/:os/:arch/:channel", get(routes::api::version))
         .route("/latest/:os/:arch/:channel", get(routes::api::download))
         .route("/", get(routes::user::index))
-        .route("/ping", get(empty))
+        .route("/health", get(empty))
         .route("/favicon.ico", get(empty))
         .route("/robots.txt", get(routes::user::robots))
         .nest_service(
