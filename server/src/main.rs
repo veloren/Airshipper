@@ -25,7 +25,7 @@ use std::{net::SocketAddr, path::Path, sync::Arc};
 
 lazy_static::lazy_static! {
     /// Contains all configuration needed.
-    pub(crate) static ref CONFIG: Config = Config::compile(loading::Config::load(Path::new(CONFIG_PATH)).unwrap_or_else(|_| panic!("Couldn't open config file {}", CONFIG_PATH))).unwrap();
+    static ref CONFIG: Config = Config::compile(loading::Config::load(Path::new(CONFIG_PATH)).unwrap_or_else(|_| panic!("Couldn't open config file {}", CONFIG_PATH))).unwrap();
 }
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -46,7 +46,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 }
 
 #[derive(Clone)]
-pub(crate) struct Context {
+struct Context {
     /// Prometheus metrics
     pub metrics: Arc<Metrics>,
     pub db: Arc<Db>,
