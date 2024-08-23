@@ -1,19 +1,16 @@
-#![allow(unused_imports)]
 use crate::{
     config::{Platform, API_VERSION},
     db::actions::get_latest_version_uri,
-    metrics::Metrics,
-    Context, Result,
+    Context,
 };
 use axum::{
     body::Body,
     extract::{Path, State},
-    http::{header::LOCATION, Response, StatusCode},
+    http::{Response, StatusCode},
     response::{IntoResponse, Redirect},
     Json,
 };
 use serde::Serialize;
-use std::sync::Arc;
 
 #[derive(Serialize)]
 pub struct Version {
@@ -35,7 +32,9 @@ pub struct Announcement {
 
 /// Public Service Announcement to be displayed in Airshipper
 pub async fn announcement() -> Json<Announcement> {
-    use chrono::TimeZone;
+    // When this is empty return `chrono::Utc::now()` so a client could recheck
+    // after a certain time. If there is an actually announcement, choose a static
+    // time, e.g. the time you made that announcement public.
     Json(Announcement {
         message: None,
         last_change: chrono::Utc::now(),
@@ -68,8 +67,15 @@ pub async fn version(
     Path((os, arch, channel)): Path<(String, String, String)>,
 ) -> impl IntoResponse {
     match get_latest_version_uri(&context.db, &os, &arch, channel).await {
-        Ok(Some(vu)) => (StatusCode::OK, vu.version),
-        Ok(None) => (StatusCode::NOT_FOUND, "not found".to_string()),
+        Ok(Some(vu)) => {
+            let version = vu.version;
+            tracing::trace!(?version, "serving version");
+            (StatusCode::OK, version)
+        },
+        Ok(None) => {
+            tracing::debug!("no version found");
+            (StatusCode::NOT_FOUND, "not found".to_string())
+        },
         Err(e) => {
             tracing::error!(?e, "Error in /version endpoint");
             (
@@ -85,13 +91,17 @@ pub async fn download(
     State(context): State<Context>,
     Path((os, arch, channel)): Path<(String, String, String)>,
 ) -> Response<Body> {
-    tracing::debug!("requesting Download location");
     match get_latest_version_uri(&context.db, &os, &arch, &channel).await {
         Ok(Some(vu)) => {
+            let uri = vu.uri;
             context.metrics.increment_download(&os, &arch, &channel);
-            Redirect::to(&vu.uri).into_response()
+            tracing::trace!(?uri, "serving download location");
+            Redirect::to(&uri).into_response()
         },
-        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Ok(None) => {
+            tracing::debug!("no download location found");
+            StatusCode::NOT_FOUND.into_response()
+        },
         Err(e) => {
             tracing::error!(?e, "Error in /download endpoint");
             (StatusCode::INTERNAL_SERVER_ERROR, "database error").into_response()

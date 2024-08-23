@@ -1,9 +1,14 @@
 use sqlx::{Any, Executor, QueryBuilder, Row, Transaction};
 
-use crate::{db::Db, models::Artifact, FsStorage, Result};
+use crate::{
+    db::Db,
+    error::{ProcessError, ServerError},
+    models::Artifact,
+    FsStorage,
+};
 
 #[tracing::instrument(skip(db))]
-pub async fn any_artifacts_exist(db: &Db, cmp: &[Artifact]) -> Result<bool> {
+pub async fn any_artifacts_exist(db: &Db, cmp: &[Artifact]) -> Result<bool, ServerError> {
     let uris = cmp.iter().map(|x| &x.download_uri);
 
     let mut query_builder = QueryBuilder::new(
@@ -24,7 +29,7 @@ pub async fn any_artifacts_exist(db: &Db, cmp: &[Artifact]) -> Result<bool> {
 }
 
 #[tracing::instrument(skip(db))]
-pub async fn insert_artifact(db: &Db, artifact: &Artifact) -> Result<i64> {
+pub async fn insert_artifact(db: &Db, artifact: &Artifact) -> Result<i64, ProcessError> {
     // TODO: check if the following TODO still is wanted behavior
     // TODO: Check whether UNIQUE constraint gets violated and throw a warning but
     // proceed!
@@ -60,7 +65,7 @@ pub async fn get_latest_version_uri<
     searched_os: T,
     searched_arch: U,
     searched_channel: Y,
-) -> Result<Option<VersionUri>> {
+) -> Result<Option<VersionUri>, ServerError> {
     let searched_os = searched_os.to_string().to_lowercase();
     let searched_arch = searched_arch.to_string().to_lowercase();
     let searched_channel = searched_channel.to_string().to_lowercase();
@@ -88,7 +93,7 @@ pub async fn get_latest_version_uri<
 
 /// Prunes local db and S3 storage from old nightlies.
 #[tracing::instrument(skip(db))]
-pub async fn prune(db: &Db) -> Result<()> {
+pub async fn prune(db: &Db) -> Result<(), ServerError> {
     let mut con = db.pool.begin().await?;
 
     let files = prune_artifacts(&mut con).await?;
@@ -104,7 +109,9 @@ pub async fn prune(db: &Db) -> Result<()> {
 }
 
 /// Prunes all artifacts but one per os/arch/channel combination
-async fn prune_artifacts(con: &mut Transaction<'static, Any>) -> Result<Vec<String>> {
+async fn prune_artifacts(
+    con: &mut Transaction<'static, Any>,
+) -> Result<Vec<String>, ServerError> {
     // Currently date is a STRING and the order DESC might cause weird effects IF we
     // would store different timezones.
     let query = sqlx::query(

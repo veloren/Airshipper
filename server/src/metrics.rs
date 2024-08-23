@@ -1,4 +1,3 @@
-use crate::Result;
 use prometheus::{Encoder, IntCounterVec, Opts, Registry, TextEncoder};
 
 /// Prometheus Metrics
@@ -11,8 +10,7 @@ pub struct Metrics {
 }
 
 impl Metrics {
-    #[allow(clippy::result_large_err)]
-    pub fn new() -> Result<Self> {
+    pub(crate) fn new() -> Result<Self, prometheus::Error> {
         let registry = Registry::new();
 
         let downloads = IntCounterVec::new(

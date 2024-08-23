@@ -1,7 +1,4 @@
-#![allow(unused_imports)]
-use crate::{
-    config::HOOK_TYPE, metrics::Metrics, models::PipelineUpdate, webhook, Context, Result,
-};
+use crate::{config::HOOK_TYPE, models::PipelineUpdate, webhook, Context};
 use axum::{
     async_trait,
     body::Body,

@@ -1,5 +1,3 @@
-#![allow(clippy::unit_arg)]
-
 // How to send manual webhooks:
 // curl --header "Content-Type: application/json" --request POST --data "@<FILE_WITH_WEBHOOK_DATA>" --header "X-Gitlab-Event: Pipeline Hook" --header "X-Gitlab-Token: <TOKEN>" http://<ADDRESS>
 
@@ -12,7 +10,6 @@ mod models;
 mod routes;
 mod webhook;
 
-use crate::error::ServerError;
 use axum::{
     body::Body,
     extract::{MatchedPath, Request, State},
@@ -22,16 +19,13 @@ use axum::{
     Router,
 };
 use config::{loading, Config, CONFIG_PATH, LOCAL_STORAGE_PATH};
-use db::Db;
+use db::{Db, FsStorage};
 use metrics::Metrics;
 use std::{net::SocketAddr, path::Path, sync::Arc};
 
-pub type Result<T> = std::result::Result<T, ServerError>;
-use db::FsStorage;
-
 lazy_static::lazy_static! {
     /// Contains all configuration needed.
-    pub static ref CONFIG: Config = Config::compile(loading::Config::load(Path::new(CONFIG_PATH)).unwrap_or_else(|_| panic!("Couldn't open config file {}", CONFIG_PATH))).unwrap();
+    static ref CONFIG: Config = Config::compile(loading::Config::load(Path::new(CONFIG_PATH)).unwrap_or_else(|_| panic!("Couldn't open config file {}", CONFIG_PATH))).unwrap();
 }
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -52,7 +46,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 }
 
 #[derive(Clone)]
-pub struct Context {
+struct Context {
     /// Prometheus metrics
     pub metrics: Arc<Metrics>,
     pub db: Arc<Db>,
@@ -92,7 +86,7 @@ async fn server() {
     // build our application with a route
     let app = Router::new()
         .route("/metrics", get(routes::metrics::metrics))
-        .route("/", post(routes::gitlab::post_pipeline_update))
+        .route("/gitlab", post(routes::gitlab::post_pipeline_update))
         .route("/api/version", get(routes::api::api_version))
         .route("/announcement", get(routes::api::announcement))
         .route("/channels/:os/:arch", get(routes::api::channels))

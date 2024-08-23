@@ -1,8 +1,8 @@
 use crate::{
     config::{self, GithubReleaseConfig},
+    error::ProcessError,
     models::Artifact,
-    FsStorage, Result,
-    ServerError::OctocrabError,
+    FsStorage,
 };
 use octocrab::{models::repos::Release, GitHubError, Octocrab};
 use serde::Deserialize;
@@ -57,7 +57,7 @@ async fn transfer(
     mut artifact: Artifact,
     channel: &config::Channel,
     db: &crate::Db,
-) -> Result<()> {
+) -> Result<(), ProcessError> {
     use tokio::{fs::File, io::AsyncWriteExt};
 
     tracing::info!("Downloading...");
@@ -119,7 +119,7 @@ fn get_remote_hash(resp: &reqwest::Response) -> String {
 async fn upload_to_github_release(
     file_name: &str,
     github_release_config: &GithubReleaseConfig,
-) -> Result<Url> {
+) -> Result<Url, ProcessError> {
     let octocrab = Octocrab::builder()
         .personal_token(github_release_config.github_token.clone())
         .build()?;
@@ -171,7 +171,7 @@ async fn upload_to_github_release(
 async fn get_github_release(
     octocrab: &Octocrab,
     github_release_config: &GithubReleaseConfig,
-) -> Result<Release> {
+) -> Result<Release, ProcessError> {
     let repo_get_result = octocrab
         .repos(
             &github_release_config.github_repository_owner,
@@ -195,7 +195,7 @@ async fn get_github_release(
             .create(&github_release_config.github_release)
             .send()
             .await
-            .map_err(OctocrabError),
-        err => err.map_err(OctocrabError),
+            .map_err(ProcessError::Octocrab),
+        err => err.map_err(ProcessError::Octocrab),
     }
 }

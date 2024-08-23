@@ -1,4 +1,4 @@
-use crate::{models::Artifact, Result};
+use crate::{error::ProcessError, models::Artifact};
 use std::path::PathBuf;
 
 #[derive(Default, Clone, Copy)]
@@ -9,7 +9,7 @@ pub const PROFILE_FOLDER: &str = "nightly";
 impl FsStorage {
     /// store artifact
     #[tracing::instrument]
-    pub async fn store(artifact: &Artifact) -> Result<()> {
+    pub async fn store(artifact: &Artifact) -> Result<(), ProcessError> {
         Self::store_file(&artifact.file_name).await?;
         Ok(())
     }
@@ -18,7 +18,7 @@ impl FsStorage {
     #[tracing::instrument]
     async fn store_file(
         local_filename: impl ToString + std::fmt::Debug,
-    ) -> Result<String> {
+    ) -> Result<String, ProcessError> {
         let mut root_folder = crate::CONFIG.get_local_storage_path();
         root_folder.push(PROFILE_FOLDER);
         tokio::fs::create_dir_all(root_folder.clone()).await?;

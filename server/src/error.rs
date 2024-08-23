@@ -1,23 +1,23 @@
 use thiserror::Error;
 
+/// for clients of airshipper asking us stuff
 #[derive(Error, Debug)]
-pub enum ServerError {
-    // Web facing
-    #[error("Respond with Status: {0}")]
-    Status(#[from] axum::Error),
-    // Internal errors
-    #[error("Internal Error: {0}")]
-    ReqwestError(#[from] reqwest::Error),
+pub(crate) enum ServerError {
     #[error("Sqlx error: {0}")]
-    DieselError(#[from] sqlx::Error),
+    Database(#[from] sqlx::Error),
+}
+
+/// for proceeses triggered internally, e.g. upload of new versions triggered by gitlab
+#[derive(Error, Debug)]
+pub(crate) enum ProcessError {
     #[error("Internal Error: {0}")]
-    IoError(#[from] std::io::Error),
-    #[error("Internal Metrics Error: {0}")]
-    PrometheusError(#[from] prometheus::Error),
-    #[error("Code '{0}' received with artifact {1:?}")]
-    InvalidResponseCode(reqwest::StatusCode, crate::models::Artifact),
+    Reqwest(#[from] reqwest::Error),
+    #[error("Sqlx error: {0}")]
+    Database(#[from] sqlx::Error),
+    #[error("Internal Error: {0}")]
+    Io(#[from] std::io::Error),
     #[error("Octocrab error: {0}")]
-    OctocrabError(#[from] octocrab::Error),
+    Octocrab(#[from] octocrab::Error),
     #[error("Url parse error: {0}")]
-    UrlParseError(#[from] url::ParseError),
+    UrlParse(#[from] url::ParseError),
 }
