@@ -44,7 +44,7 @@ octocrab = { version = "0.39" }
 serde = { version = "1.0.105", features = ["derive"] }
 serde_json = "1.0.59"
 # Database
-sqlx = { version = "0.8", features = [
+sqlx = { version = "0.8.1", features = [
     "runtime-tokio",
     "postgres",
     "sqlite",
