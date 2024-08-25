@@ -4,8 +4,8 @@ use crate::{
     models::Artifact,
     FsStorage,
 };
-use octocrab::{models::repos::Release, GitHubError, Octocrab};
-use serde::Deserialize;
+use octocrab::{models::repos::Release, repos::ReleasesHandler, GitHubError, Octocrab};
+use tokio::io::AsyncReadExt;
 use url::Url;
 
 #[tracing::instrument(skip(artifacts, db))]
@@ -123,61 +123,35 @@ async fn upload_to_github_release(
     let octocrab = Octocrab::builder()
         .personal_token(github_release_config.github_token.clone())
         .build()?;
-    let release = get_github_release(&octocrab, github_release_config).await?;
+    let repo = octocrab.repos(
+        &github_release_config.github_repository_owner,
+        &github_release_config.github_repository,
+    );
+    let release_handler = repo.releases();
 
-    //Remove extra {?name,label} in the url path.
-    //This is required because the github API returns {?name,label}
-    //at the end of the upload url, which needs to be removed before
-    //using the url.
-    let stripped_url = release
-        .upload_url
-        .strip_suffix("{?name,label}")
-        .unwrap_or(&release.upload_url);
-    let mut new_url = Url::parse(stripped_url)?;
+    let release = get_github_release(&release_handler, github_release_config).await?;
 
-    //Taken from https://github.com/XAMPPRocky/octocrab/issues/96#issuecomment-863002976
-    new_url.set_query(Some(format!("{}={}", "name", file_name).as_str()));
+    let file_size = tokio::fs::metadata(file_name).await?.len();
+    let mut file = tokio::fs::File::open(file_name).await?;
+    let mut buffer = Vec::with_capacity(file_size as usize);
+    file.read_to_end(&mut buffer).await?;
+    let data = bytes::Bytes::from(buffer);
 
-    let file_size = std::fs::metadata(file_name)?.len();
-    let file = tokio::fs::File::open(file_name).await?;
-    let stream =
-        tokio_util::codec::FramedRead::new(file, tokio_util::codec::BytesCodec::new());
-    let body = reqwest::Body::wrap_stream(stream);
-
-    let builder = octocrab
-        .request_builder(new_url.as_str(), reqwest::Method::POST)
-        .header("Content-Type", "application/octet-stream")
-        .header("Content-Length", file_size.to_string());
-
-    #[derive(Deserialize)]
-    struct DownloadUrl {
-        browser_download_url: String,
-    }
-
-    let response = builder
-        .body(body)
+    let asset = release_handler
+        .upload_asset(release.id.0, file_name, data)
         .send()
-        .await?
-        .json::<DownloadUrl>()
         .await?;
 
-    let download_url = Url::parse(&response.browser_download_url)?;
-
-    Ok(download_url)
+    Ok(asset.browser_download_url)
 }
 
 ///Gets the github release set in config if the release exists, otherwise creates and
 /// returns it.
-async fn get_github_release(
-    octocrab: &Octocrab,
-    github_release_config: &GithubReleaseConfig,
+async fn get_github_release<'octo, 'r>(
+    release_handler: &ReleasesHandler<'octo, 'r>,
+    github_release_config: &'r GithubReleaseConfig,
 ) -> Result<Release, ProcessError> {
-    let repo_get_result = octocrab
-        .repos(
-            &github_release_config.github_repository_owner,
-            &github_release_config.github_repository,
-        )
-        .releases()
+    let repo_get_result = release_handler
         .get_by_tag(&github_release_config.github_release)
         .await;
 
@@ -186,12 +160,7 @@ async fn get_github_release(
         Err(octocrab::Error::GitHub {
             source: GitHubError { message, .. },
             ..
-        }) if message == "Not Found" => octocrab
-            .repos(
-                &github_release_config.github_repository_owner,
-                &github_release_config.github_repository,
-            )
-            .releases()
+        }) if message == "Not Found" => release_handler
             .create(&github_release_config.github_release)
             .send()
             .await
