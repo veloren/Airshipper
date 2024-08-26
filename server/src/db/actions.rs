@@ -30,9 +30,6 @@ pub async fn any_artifacts_exist(db: &Db, cmp: &[Artifact]) -> Result<bool, Serv
 
 #[tracing::instrument(skip(db))]
 pub async fn insert_artifact(db: &Db, artifact: &Artifact) -> Result<i64, ProcessError> {
-    // TODO: check if the following TODO still is wanted behavior
-    // TODO: Check whether UNIQUE constraint gets violated and throw a warning but
-    // proceed!
     let query = sqlx::query_scalar(
         r"INSERT INTO artifacts (build_id, date, hash, author, merged_by, os, arch, channel, file_name, download_uri) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
     ).bind(artifact.build_id)

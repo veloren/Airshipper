@@ -5,6 +5,7 @@ use crate::{
     FsStorage,
 };
 use octocrab::{models::repos::Release, repos::ReleasesHandler, GitHubError, Octocrab};
+use serde_json::json;
 use tokio::io::AsyncReadExt;
 use url::Url;
 
@@ -53,6 +54,7 @@ pub async fn process(artifacts: Vec<Artifact>, channel: String, db: &crate::Db) 
     }
 }
 
+#[tracing::instrument(skip(channel, db))]
 async fn transfer(
     mut artifact: Artifact,
     channel: &config::Channel,
@@ -87,6 +89,9 @@ async fn transfer(
         tracing::info!("Storing...");
 
         FsStorage::store(&artifact).await?;
+        let already_exists: serde_json::Value = json!(
+            r#"{"code": "already_exists", "field": "name", "resource": "ReleaseAsset"}"#
+        );
 
         if let Some(github_release_config) = &channel.github_release_config {
             let upload_to_github_result =
@@ -94,13 +99,19 @@ async fn transfer(
                     .await;
             match upload_to_github_result {
                 Ok(download_url) => artifact.download_uri = download_url.to_string(),
+                Err(ProcessError::Octocrab(octocrab::Error::GitHub {
+                    source,
+                    backtrace: _,
+                })) if source.errors == Some(vec![already_exists]) => {
+                    tracing::info!(?source, "skip upload, asset already exists")
+                },
                 Err(e) => tracing::error!(?e, "Couldn't upload to github"),
             }
         }
 
         // Update database with new information
-        tracing::info!("hash valid. Update database...");
         crate::db::actions::insert_artifact(db, &artifact).await?;
+        tracing::info!("persisted artifact to db");
 
         // Delete obselete artifact
         tokio::fs::remove_file(&artifact.file_name).await?;
