@@ -103,7 +103,21 @@ async fn transfer(
                     source,
                     backtrace: _,
                 })) if source.errors == Some(vec![already_exists]) => {
-                    tracing::info!(?source, "skip upload, asset already exists")
+                    // Octocrab doesnt return the downloadurl, so we rely here on the
+                    // hardcoded version
+                    let download_url = format!(
+                        "https://github.com/{}/{}/releases/download/{}/{}",
+                        github_release_config.github_repository_owner,
+                        github_release_config.github_repository,
+                        github_release_config.github_release,
+                        artifact.file_name
+                    );
+                    tracing::info!(
+                        ?source,
+                        ?download_url,
+                        "skip upload, asset already exists, was this webhook rerun?"
+                    );
+                    artifact.download_uri = download_url
                 },
                 Err(e) => tracing::error!(?e, "Couldn't upload to github"),
             }
