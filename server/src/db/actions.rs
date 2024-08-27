@@ -106,9 +106,13 @@ pub async fn prune(db: &Db) -> Result<(), ServerError> {
 }
 
 /// Prunes all artifacts but one per os/arch/channel combination
+#[allow(unused_variables, unreachable_code)]
 async fn prune_artifacts(
     con: &mut Transaction<'static, Any>,
 ) -> Result<Vec<String>, ServerError> {
+    // TODO: fix the sql query
+    return Ok(vec![]);
+
     // Currently date is a STRING and the order DESC might cause weird effects IF we
     // would store different timezones.
     let query = sqlx::query(
