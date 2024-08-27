@@ -90,7 +90,7 @@ async fn transfer(
 
         FsStorage::store(&artifact).await?;
         let already_exists: serde_json::Value = json!(
-            r#"{"code": "already_exists", "field": "name", "resource": "ReleaseAsset"}"#
+            {"code": "already_exists", "field": "name", "resource": "ReleaseAsset"}
         );
 
         if let Some(github_release_config) = &channel.github_release_config {
