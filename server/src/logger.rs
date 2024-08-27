@@ -18,6 +18,7 @@ pub fn init(level: LevelFilter) -> Vec<impl Drop> {
         "h2=info",
         "hyper=warn",
         "reqwest=info",
+        "tower::buffer::worker=info",
         "rustls=info",
         "want=info",
         "sqlx::query=info",
