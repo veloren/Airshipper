@@ -69,7 +69,7 @@ pub(super) fn prepare_local_with_remote(
         .into_iter()
         .filter(|fi| {
             !KEEP_PATHS
-                .into_iter()
+                .iter()
                 .any(|keep| fi.local_unix_path.starts_with(keep))
         })
         .collect();
