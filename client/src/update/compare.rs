@@ -4,6 +4,10 @@ use zip_core::raw::CentralDirectoryHeader;
 
 use super::local_directory::FileInformation;
 
+/// Paths which should *not* be deleted by airshipper if they're not included in the
+/// update
+const KEEP_PATHS: &[&str] = &["userdata/", "screenshots/", "maps/", "veloren.zip"];
+
 #[derive(Debug)]
 pub(super) struct Compared {
     pub needs_redownload: Vec<CentralDirectoryHeader>,
@@ -64,8 +68,9 @@ pub(super) fn prepare_local_with_remote(
     let needs_deletion: Vec<_> = needs_deletion
         .into_iter()
         .filter(|fi| {
-            !(fi.local_unix_path.starts_with("userdata/")
-                || &fi.local_unix_path == "veloren.zip")
+            !KEEP_PATHS
+                .into_iter()
+                .any(|keep| fi.local_unix_path.starts_with(keep))
         })
         .collect();
 
