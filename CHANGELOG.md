@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Fixed
 
+## [0.13.0] - 2024-08-31
+
+## Fixed
+
+- Airshipper will no longer wipe your veloren screenshots
+
 ## [0.12.0] - 2024-08-28
 
 ## Added
