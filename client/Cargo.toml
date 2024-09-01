@@ -20,6 +20,15 @@ app = true
 name = "Airshipper"
 icon = "./client/assets/logo.ico"
 
+[package.metadata.bundle]
+identifier = "io.github.burtonageo.cargo-bundle.hello"
+icon = ["assets/logo.ico"]
+category = "Utility"
+short_description = "Airshipper - Veloren Downloader"
+long_description = """
+Provides automatic updates for the voxel RPG Veloren.
+"""
+
 [badges]
 maintenance = { status = "actively-developed" }
 
