@@ -20,15 +20,6 @@ app = true
 name = "Airshipper"
 icon = "./client/assets/logo.ico"
 
-[package.metadata.bundle]
-identifier = "io.github.burtonageo.cargo-bundle.hello"
-icon = ["assets/logo.ico"]
-category = "Utility"
-short_description = "Airshipper - Veloren Downloader"
-long_description = """
-Provides automatic updates for the voxel RPG Veloren.
-"""
-
 [badges]
 maintenance = { status = "actively-developed" }
 
@@ -37,6 +28,7 @@ maintenance = { status = "actively-developed" }
 # to bundle ssl in CI.
 bundled = ["openssl-sys"]
 bundled_font = []
+bin_msi = ["msi", "uuid", "toml"]
 
 [dependencies]
 veloren-serverbrowser-api = "0.3.1"
@@ -81,7 +73,7 @@ serde = "1.0.116"
 semver = "1"
 rss = "2.0.7"
 ron = "0.8.1"
-zip = "0.6.6"
+zip = "2"
 zip-core = "0.0.4"
 crc32fast = "1.4.2"
 flate2 = "1.0"
@@ -111,6 +103,11 @@ rand = "0.8.5"
 chrono = { version = "0.4.22", features = ["serde"] }
 country-parser = "0.1.1"
 
+# .msi generation
+msi = { version = "0.8", optional = true }
+uuid = { version = "1.10.0", optional = true }
+toml = { version = "0.8.0", optional = true }
+
 # bundle all the things!
 openssl-sys = { version = "0.9", features = ["vendored"], optional = true }
 
@@ -120,3 +117,7 @@ self_update = { version = "0.39.0", features = ["archive-zip"] }
 
 [build-dependencies]
 winresource = "0.1.15"
+
+[[bin]]
+name = "msi"
+required-features = ["bin_msi"]
