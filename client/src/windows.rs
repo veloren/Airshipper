@@ -1,5 +1,5 @@
 use crate::{fs, windows, Result};
-use self_update::update::Release;
+use self_update::update::{Release, ReleaseAsset};
 use semver::Version;
 use std::{
     ffi::{OsStr, OsString},
@@ -18,8 +18,15 @@ use winapi::{
     },
 };
 
+fn get_asset(release: &Release) -> Option<ReleaseAsset> {
+    release
+        .asset_for("windows", None)
+        .or_else(|| release.asset_for(".msi", None))
+        .or_else(|| release.asset_for("installer.exe", None))
+}
+
 pub fn query() -> Result<Option<Release>> {
-    let releases = self_update::backends::github::ReleaseList::configure()
+    let releases = self_update::backends::gitlab::ReleaseList::configure()
         .repo_owner("veloren")
         .repo_name("airshipper")
         .build()?
@@ -27,13 +34,12 @@ pub fn query() -> Result<Option<Release>> {
 
     // Get latest Github release
     if let Some(latest_release) = releases.first() {
+        tracing::trace!("detected online release: {:?}", latest_release);
+
         // Check if Github release is newer
         if Version::parse(&latest_release.version)?
             > Version::parse(env!("CARGO_PKG_VERSION"))?
-            && latest_release
-                .asset_for("windows", None)
-                .or_else(|| latest_release.asset_for(".msi", None))
-                .is_some()
+            && get_asset(latest_release).is_some()
         {
             tracing::debug!("Found new Airshipper release: {}", &latest_release.version);
             return Ok(Some(latest_release.clone()));
@@ -53,9 +59,7 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
     std::fs::create_dir_all(&update_cache_path)
         .expect("failed to create cache directory!");
 
-    let asset = latest_release
-        .asset_for("windows", None)
-        .or_else(|| latest_release.asset_for(".msi", None));
+    let asset = get_asset(latest_release);
 
     // Check Github release provides artifact for current platform
     if let Some(asset) = asset {
@@ -65,9 +69,9 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
             &asset.download_url,
             update_cache_path.join(&asset.name).display()
         );
-        let msi_file_path = update_cache_path.join(&asset.name);
+        let install_file_path = update_cache_path.join(&asset.name);
 
-        let msi_file = File::create(&msi_file_path)?;
+        let install_file = File::create(&install_file_path)?;
 
         self_update::Download::from_url(&asset.download_url)
             .set_header(
@@ -75,12 +79,12 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
                 "application/octet-stream".parse().unwrap(),
             )
             .show_progress(false)
-            .download_to(&msi_file)?;
+            .download_to(&install_file)?;
 
         // Extract installer incase it's zipped
         if asset.name.ends_with(".zip") {
             tracing::debug!("Extracting asset...");
-            self_update::Extract::from_source(&msi_file_path)
+            self_update::Extract::from_source(&install_file_path)
                 .archive(self_update::ArchiveKind::Zip)
                 .extract_file(
                     &update_cache_path,
@@ -88,18 +92,22 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
                 )?;
         }
 
-        drop(msi_file);
+        install_file.sync_all()?; //make sure we block on sync before we start it
+        drop(install_file);
 
         tracing::debug!("Starting installer...");
-        // Execute msi installer
-        let result = windows::execute_as_admin(
-            "msiexec",
-            &format!(
-                "/passive /i \"{}\" /L*V \"{}\" AUTOSTART=1",
-                msi_file_path.display(),
-                update_cache_path.join("airshipper-install.log").display()
+        // Execute the installer
+        let result = match install_file_path.extension().and_then(|f| f.to_str()) {
+            Some(".exe") => windows::execute_as_admin(install_file_path, ""),
+            _ => windows::execute_as_admin(
+                "msiexec",
+                &format!(
+                    "/passive /i \"{}\" /L*V \"{}\" AUTOSTART=1",
+                    install_file_path.display(),
+                    update_cache_path.join("airshipper-install.log").display()
+                ),
             ),
-        );
+        };
 
         if result <= 32 {
             tracing::error!(
@@ -113,9 +121,10 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
     Ok(())
 }
 
-pub fn execute_as_admin<T>(program: T, args: T) -> i32
+pub fn execute_as_admin<T, T2>(program: T, args: T2) -> i32
 where
     T: Into<OsString>,
+    T2: Into<OsString>,
 {
     let operation: Vec<u16> = OsStr::new("runas\0").encode_wide().collect();
     let mut program = program.into();
