@@ -17,13 +17,28 @@
   image: registry.gitlab.com/veloren/veloren-docker-ci/base/windows-x86_64:${CACHE_IMAGE_TAG}
   script:
     - cargo build --target=x86_64-pc-windows-gnu --release -p airshipper --all-features
+    - cargo build --target=x86_64-pc-windows-gnu --release -p airshipper-server --all-features
+    - mv target/x86_64-pc-windows-gnu/release/airshipper.exe $CI_PROJECT_DIR
+    - mv target/x86_64-pc-windows-gnu/release/airshipper-server.exe $CI_PROJECT_DIR
+  artifacts:
+    paths:
+      - airshipper.exe
+      - airshipper-server.exe
+      - LICENSE
+    expire_in: 1 week
+
+.twindows-installer:
+  image: registry.gitlab.com/veloren/veloren-docker-ci/base/windows-x86_64:${CACHE_IMAGE_TAG}
+  dependencies:
+    - windows-x86_64
+  script:
     - chmod +x client/nsis/update_installer_version.sh
     - bash client/nsis/update_installer_version.sh
     - makensis client/nsis/installer.nsi
-    - mv client/nsis/airshipper-windows.exe $CI_PROJECT_DIR
+    - mv client/nsis/airshipper-installer.exe $CI_PROJECT_DIR
   artifacts:
     paths:
-      - airshipper-windows.exe
+      - airshipper-installer.exe
     expire_in: 1 week
 
 .tmacos:
@@ -105,6 +120,18 @@ windows-x86_64:
       dotenv: windows_job_id.env
   tags: ["veloren/*", "build", "publish", "trusted"]
 
+windows-installer-x86_64:
+  extends:
+    - .tmastertag
+    - .twindows-installer
+  stage: build2
+  after_script:
+    - echo WINDOWS_INSTALLER_JOB_ID=$CI_JOB_ID >> windows_installer_job_id.env
+  artifacts:
+    reports:
+      dotenv: windows_installer_job_id.env
+  tags: ["veloren/*", "build", "publish", "trusted"]
+
 # Optional builds - these are in the check stage even though they're builds to allow building
 # the output even if code quality checks fail
 .tnon-master-optional:
@@ -136,4 +163,13 @@ opt-windows-x86_64:
   extends:
     - .twindows
     - .tnon-master-optional
+  tags: ["veloren/*", "build"]
+
+opt-windows-installer-x86_64:
+  extends:
+    - .twindows-installer
+    - .tnon-master-optional
+  dependencies:
+    - opt-windows-x86_64
+  stage: build2
   tags: ["veloren/*", "build"]

@@ -1,6 +1,7 @@
 stages:
   - check
   - build
+  - build2
   - publish
   - deploy
 
