@@ -50,17 +50,17 @@ gitlab_release:
     assets:
       links:
         - name: "Linux (x86_64) Client"
-          url: "https://gitlab.com/veloren/airshipper/-/jobs/${LINUX_X86_64_JOB_ID}/artifacts/file/airshipper"
+          url: "https://gitlab.com/veloren/airshipper/-/jobs/${LINUX_X86_64_JOB_ID}/artifacts/raw/airshipper"
         - name: "Linux (x86_64) Server"
-          url: "https://gitlab.com/veloren/airshipper/-/jobs/${LINUX_X86_64_JOB_ID}/artifacts/file/airshipper-server"
+          url: "https://gitlab.com/veloren/airshipper/-/jobs/${LINUX_X86_64_JOB_ID}/artifacts/raw/airshipper-server"
         - name: "MacOS (x86_64) Client"
-          url: "https://gitlab.com/veloren/airshipper/-/jobs/${MACOS_X86_64_JOB_ID}/artifacts/file/airshipper"
+          url: "https://gitlab.com/veloren/airshipper/-/jobs/${MACOS_X86_64_JOB_ID}/artifacts/raw/airshipper"
         - name: "MacOS (aarch64) Client"
-          url: "https://gitlab.com/veloren/airshipper/-/jobs/${MACOS_AARCH64_JOB_ID}/artifacts/file/airshipper"
+          url: "https://gitlab.com/veloren/airshipper/-/jobs/${MACOS_AARCH64_JOB_ID}/artifacts/raw/airshipper"
         - name: "Windows (x86_64) Client"
-          url: "https://gitlab.com/veloren/airshipper/-/jobs/${WINDOWS_JOB_ID}/artifacts/file/airshipper.exe"
+          url: "https://gitlab.com/veloren/airshipper/-/jobs/${WINDOWS_JOB_ID}/artifacts/raw/airshipper.exe"
         - name: "Windows (x86_64) Installer"
-          url: "https://gitlab.com/veloren/airshipper/-/jobs/${WINDOWS_INSTALLER_JOB_ID}/artifacts/file/airshipper-installer.exe"
+          url: "https://gitlab.com/veloren/airshipper/-/jobs/${WINDOWS_INSTALLER_JOB_ID}/artifacts/raw/airshipper-installer.exe"
 
 # Generates flatpak files and pushes them to https://github.com/flathub/net.veloren.airshipper
 flatpak:
