@@ -107,7 +107,12 @@ country-parser = "0.1.1"
 openssl-sys = { version = "0.9", features = ["vendored"], optional = true }
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3.9", features = ["shellapi", "winuser"] }
+windows-sys = { version = "0.59.0", features = [
+    "Win32_UI",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_Threading",
+] }
 self_update = { version = "0.41.0", features = ["archive-zip"] }
 
 [build-dependencies]

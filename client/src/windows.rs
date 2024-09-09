@@ -7,22 +7,29 @@ use std::{
     os::windows::ffi::OsStrExt,
     ptr,
 };
-use winapi::{
-    ctypes::c_int,
-    shared::minwindef::DWORD,
-    um::{
-        processthreadsapi::GetCurrentProcessId,
-        shellapi::ShellExecuteW,
-        wincon::GetConsoleWindow,
-        winuser::{GetWindowThreadProcessId, ShowWindow, SW_HIDE, SW_SHOW},
+use windows_sys::Win32::{
+    System::{Console::GetConsoleWindow, Threading::GetCurrentProcessId},
+    UI::{
+        Shell::ShellExecuteW,
+        WindowsAndMessaging::{GetWindowThreadProcessId, ShowWindow, SW_HIDE, SW_SHOW},
     },
 };
 
 fn get_asset(release: &Release) -> Option<ReleaseAsset> {
-    release
-        .asset_for("windows", None)
-        .or_else(|| release.asset_for(".msi", None))
-        .or_else(|| release.asset_for("installer.exe", None))
+    release.asset_for("windows", None).or_else(|| {
+        release
+            .assets
+            .iter()
+            .find(|a| {
+                let name = a.name.to_uppercase();
+                let download_url = a.download_url.to_uppercase();
+
+                download_url.ends_with(".MSI")
+                    || download_url.ends_with("INSTALLER.EXE")
+                    || (name.ends_with("INSTALLER") && name.contains("WINDOWS"))
+            })
+            .cloned()
+    })
 }
 
 pub fn query() -> Result<Option<Release>> {
@@ -43,7 +50,7 @@ pub fn query() -> Result<Option<Release>> {
         tracing::trace!(?newer, ?contains_asset, "online release info");
 
         // Check if Github release is newer
-        if newer && contains_asset {
+        if contains_asset && newer {
             tracing::debug!("Found new Airshipper release: {}", &latest_release.version);
             return Ok(Some(latest_release.clone()));
         } else {
@@ -67,12 +74,19 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
     // Check Github release provides artifact for current platform
     if let Some(asset) = asset {
         tracing::debug!("Found asset: {:?}", asset);
+        let download_file_name = asset
+            .download_url
+            .rsplit_once('/')
+            .map(|(_, end)| end)
+            .unwrap_or("installer.exe");
+
+        let install_file_path = update_cache_path.join(download_file_name);
         tracing::debug!(
             "Downloading '{}' to '{}'",
             &asset.download_url,
-            update_cache_path.join(&asset.name).display()
+            install_file_path.display()
         );
-        let install_file_path = update_cache_path.join(&asset.name);
+        let install_file_path = update_cache_path.join(&download_file_name);
 
         let install_file = File::create(&install_file_path)?;
 
@@ -84,24 +98,13 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
             .show_progress(false)
             .download_to(&install_file)?;
 
-        // Extract installer incase it's zipped
-        if asset.name.ends_with(".zip") {
-            tracing::debug!("Extracting asset...");
-            self_update::Extract::from_source(&install_file_path)
-                .archive(self_update::ArchiveKind::Zip)
-                .extract_file(
-                    &update_cache_path,
-                    asset.name.strip_suffix(".zip").unwrap(),
-                )?;
-        }
-
         install_file.sync_all()?; //make sure we block on sync before we start it
         drop(install_file);
 
         tracing::debug!("Starting installer...");
         // Execute the installer
         let result = match install_file_path.extension().and_then(|f| f.to_str()) {
-            Some(".exe") => windows::execute_as_admin(install_file_path, ""),
+            Some("exe") => windows::execute_as_admin(install_file_path, ""),
             _ => windows::execute_as_admin(
                 "msiexec",
                 &format!(
@@ -146,7 +149,7 @@ where
             arguments.as_ptr(),
             ptr::null(),
             SW_SHOW,
-        ) as c_int
+        ) as i32
     }
 }
 
@@ -169,7 +172,7 @@ fn started_from_console() -> bool {
         let console_wnd = GetConsoleWindow();
         let process_id = GetCurrentProcessId();
 
-        let mut parent_id = DWORD::default();
+        let mut parent_id = 0;
         GetWindowThreadProcessId(console_wnd, &mut parent_id);
 
         process_id != parent_id
