@@ -8,6 +8,7 @@ stages:
 variables:
   GIT_CLEAN_FLAGS: -f
   CACHE_IMAGE_TAG: 02724a80
+  TAG_REGEX: '/^v[0-9]+\.[0-9]+\.[0-9]+$/'
 
 default:
   # https://docs.gitlab.com/ee/ci/pipelines/settings.html#auto-cancel-pending-pipelines
@@ -37,9 +38,11 @@ workflow:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 # For release builds that should only run when a commit on master is tagged
-.tmastertag:
+.treleasetag:
   rules:
-    - if: ($CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_TAG != null)
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event" && ( $CI_COMMIT_TAG != null && $CI_COMMIT_TAG =~ $TAG_REGEX )
+      when: on_success
+    - when: never
 
 include:
   - local: .gitlab/CI/check.gitlab-ci.yml
