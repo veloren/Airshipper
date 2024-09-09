@@ -24,7 +24,7 @@ docker:
     - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/server/Dockerfile --destination "${CI_REGISTRY_IMAGE}/server:${CI_COMMIT_REF_NAME}"
 
 gitlab_release:
-  extends: .tmastertag
+  extends: .treleasetag
   stage: publish
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   tags: ["veloren/*", "publish", "trusted"]

@@ -74,7 +74,7 @@ linux-x86_64:
   extends:
     - .tlinux
   stage: build
-  # linux-x86_64 doesn't use .tmastertag as airshipper server is deployed on every merge to master
+  # linux-x86_64 doesn't use .treleasetag as airshipper server is deployed on every merge to master
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   after_script:
@@ -86,7 +86,7 @@ linux-x86_64:
 
 macos-x86_64:
   extends:
-    - .tmastertag
+    - .treleasetag
     - .tmacos
   stage: build
   after_script:
@@ -98,7 +98,7 @@ macos-x86_64:
 
 macos-aarch64:
   extends:
-    - .tmastertag
+    - .treleasetag
     - .tmacos-aarch64
   stage: build
   after_script:
@@ -110,7 +110,7 @@ macos-aarch64:
 
 windows-x86_64:
   extends:
-    - .tmastertag
+    - .treleasetag
     - .twindows
   stage: build
   after_script:
@@ -122,7 +122,7 @@ windows-x86_64:
 
 windows-installer-x86_64:
   extends:
-    - .tmastertag
+    - .treleasetag
     - .twindows-installer
   stage: build2
   after_script:
