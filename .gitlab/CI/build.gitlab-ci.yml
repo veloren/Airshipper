@@ -76,7 +76,7 @@ linux-x86_64:
   stage: build
   # linux-x86_64 doesn't use .treleasetag as airshipper server is deployed on every merge to master
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: ($CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_COMMIT_TAG != null)
   after_script:
     - echo LINUX_X86_64_JOB_ID=$CI_JOB_ID >> linux_x86_64_job_id.env
   artifacts:
