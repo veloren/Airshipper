@@ -36,11 +36,14 @@ pub fn query() -> Result<Option<Release>> {
     if let Some(latest_release) = releases.first() {
         tracing::trace!("detected online release: {:?}", latest_release);
 
+        let newer = Version::parse(&latest_release.version)?
+            > Version::parse(env!("CARGO_PKG_VERSION"))?;
+        let contains_asset = get_asset(latest_release).is_some();
+
+        tracing::trace!(?newer, ?contains_asset, "online release info");
+
         // Check if Github release is newer
-        if Version::parse(&latest_release.version)?
-            > Version::parse(env!("CARGO_PKG_VERSION"))?
-            && get_asset(latest_release).is_some()
-        {
+        if newer && contains_asset {
             tracing::debug!("Found new Airshipper release: {}", &latest_release.version);
             return Ok(Some(latest_release.clone()));
         } else {
