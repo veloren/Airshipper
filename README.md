@@ -16,6 +16,10 @@ A cross-platform Veloren launcher.
 
 **NOTE:** Airshipper cannot be considered stable yet.
 
+For *binary* packages the gitlab releases can be used.
+
+For *source* packages **do not** use the `master` branch. Always package latest release either via tag (`v*.*.*`) or branch (`r*.*`) as master is unstable and contains work in progress features.
+
 #### Compile from source
 
 ```bash
@@ -49,5 +53,5 @@ cargo run --release --bin airshipper-server
 #### For NixOS users
 
 You can install Airshipper with:
-- Flakes enabled Nix: `nix profile install github:veloren/Airshipper`
-- Flakes disabled Nix: `nix-env -i -f "https://github.com/veloren/Airshipper/tarball/master"`
+- Flakes enabled Nix: `nix profile install gitlab:veloren/Airshipper`
+- Flakes disabled Nix: `nix-env -i -f "https://gitlab.com/veloren/Airshipper/tarball/master"`

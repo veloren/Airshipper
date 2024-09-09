@@ -8,7 +8,7 @@
 !define VERSION "0.13.0.0" # Updated by update_installer_version.sh during CI
 !define COPYRIGHT "Veloren contributors"
 !define DESCRIPTION "Provides automatic updates for the voxel RPG Veloren."
-!define INSTALLER_NAME "airshipper-windows.exe"
+!define INSTALLER_NAME "airshipper-installer.exe"
 !define MAIN_APP_EXE "airshipper.exe"
 !define ICON "airshipper.ico"
 !define BANNER "banner.bmp"
@@ -95,8 +95,8 @@ Section -MainProgram
 	SetOverwrite ifnewer
 	SetOutPath "$INSTDIR"
 
-	# Currently the Airshipper installer only installs airshipper.exe
-	File /r "..\..\target\x86_64-pc-windows-gnu\release\airshipper.exe"
+	# Currently the Airshipper installer only installs airshipper.exe, put here by the previous job
+	File /r "..\..\airshipper.exe"
 SectionEnd
 
 Section -Icons_Reg
