@@ -13,7 +13,7 @@ pub(crate) fn stream_process(
 ) -> Result<impl Stream<Item = ProcessUpdate>, tokio::io::Error> {
     // Avoid allocating a console
     #[cfg(windows)]
-    cmd.creation_flags(winapi::um::winbase::DETACHED_PROCESS);
+    cmd.creation_flags(windows_sys::Win32::System::Threading::DETACHED_PROCESS);
 
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
