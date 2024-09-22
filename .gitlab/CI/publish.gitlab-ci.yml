@@ -54,7 +54,7 @@ gitlab_release:
           link_type: "image"
           url: "https://gitlab.com/veloren/airshipper/-/jobs/${LINUX_X86_64_JOB_ID}/artifacts/raw/airshipper"
         - name: "Linux (x86_64) Server"
-          filepath: "/binaries/linux-client-x86_64"
+          filepath: "/binaries/linux-server-x86_64"
           link_type: "image"
           url: "https://gitlab.com/veloren/airshipper/-/jobs/${LINUX_X86_64_JOB_ID}/artifacts/raw/airshipper-server"
         - name: "MacOS (x86_64) Client"
