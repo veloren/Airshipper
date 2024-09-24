@@ -4,12 +4,14 @@
   script:
     - cargo build --release -p airshipper --all-features
     - cargo build --release -p airshipper-server --all-features
+    - zip -j $CI_PROJECT_DIR/airshipper-linux target/release/airshipper LICENSE
     - mv target/release/airshipper $CI_PROJECT_DIR
     - mv target/release/airshipper-server $CI_PROJECT_DIR
   artifacts:
     paths:
       - airshipper
       - airshipper-server
+      - airshipper-linux.zip
       - LICENSE
     expire_in: 1 week
 
@@ -52,12 +54,14 @@
     - export MACOSX_DEPLOYMENT_TARGET="10.13"
     - cargo build --release -p airshipper --all-features
     - cargo build --release -p airshipper-server --all-features
+    - zip -j $CI_PROJECT_DIR/airshipper-macos target/release/airshipper LICENSE
     - mv target/release/airshipper $CI_PROJECT_DIR
     - mv target/release/airshipper-server $CI_PROJECT_DIR
   artifacts:
     paths:
       - airshipper
       - airshipper-server
+      - airshipper-macos.zip
       - LICENSE
     expire_in: 1 week
 
