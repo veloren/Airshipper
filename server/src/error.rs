@@ -5,6 +5,8 @@ use thiserror::Error;
 pub(crate) enum ServerError {
     #[error("Sqlx error: {0}")]
     Database(#[from] sqlx::Error),
+    #[error("Time Parse error: {0}")]
+    ChronoParse(#[from] chrono::ParseError),
 }
 
 /// for proceeses triggered internally, e.g. upload of new versions triggered by gitlab

@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+
+use chrono::{DateTime, Utc};
 use sqlx::{Any, Executor, QueryBuilder, Row, Transaction};
 
 use crate::{
@@ -33,7 +36,7 @@ pub async fn insert_artifact(db: &Db, artifact: &Artifact) -> Result<i64, Proces
     let query = sqlx::query_scalar(
         r"INSERT INTO artifacts (build_id, date, hash, author, merged_by, os, arch, channel, file_name, download_uri) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
     ).bind(artifact.build_id)
-    .bind(artifact.date.to_string())
+    .bind(artifact.date.to_rfc3339())
     .bind(&artifact.hash)
     .bind(&artifact.author)
     .bind(&artifact.merged_by)
@@ -89,15 +92,28 @@ pub async fn get_latest_version_uri<
 }
 
 /// Prunes local db and S3 storage from old nightlies.
+// The urge to put this is a single query might be high, hear me out:
+//  - The algorithm should take account of timezones (something that sqlite cannot do)
+//  - The algorithm should not rely on that IDs are always increasing
+//  - The algorithm should not rely on implementation behavior (e.g. that GROUP BY returns
+//    the first it finds), if its not in the specification.
+//  - test it with all suported DB backends
+//  - the pruning procedure should not leave dangling files in either the DB or the
+//    filesystem, if it can only be deleted in one place but not the other because of
+//    (temporary) errors
+// Good luck
 #[tracing::instrument(skip(db))]
 pub async fn prune(db: &Db) -> Result<(), ServerError> {
     let mut con = db.pool.begin().await?;
 
-    let files = prune_artifacts(&mut con).await?;
+    let artifacts = artifacts_to_be_pruned(&mut con).await?;
 
-    for file in files {
+    for (id, file) in artifacts.into_iter() {
         tracing::info!("Deleting prunable artifact: {:?}", file);
-        FsStorage::delete_file(&file).await;
+        // dont fail on Err here
+        if let Ok(()) = FsStorage::delete_file(&file).await {
+            prune_artifact(&mut con, id).await?
+        }
     }
 
     con.commit().await?;
@@ -105,36 +121,80 @@ pub async fn prune(db: &Db) -> Result<(), ServerError> {
     Ok(())
 }
 
-/// Prunes all artifacts but one per os/arch/channel combination
 #[allow(unused_variables, unreachable_code)]
-async fn prune_artifacts(
+async fn artifacts_to_be_pruned(
     con: &mut Transaction<'static, Any>,
-) -> Result<Vec<String>, ServerError> {
-    // TODO: fix the sql query
-    return Ok(vec![]);
-
+) -> Result<Vec<(i64, String)>, ServerError> {
     // Currently date is a STRING and the order DESC might cause weird effects IF we
     // would store different timezones.
-    let query = sqlx::query(
-        "DELETE FROM artifacts
-    WHERE id NOT IN
-    (
-        SELECT id
-        FROM artifacts
-        GROUP BY channel, os, arch
-        ORDER BY date DESC
-    ) RETURNING file_name",
-    );
+    let query =
+        sqlx::query("SELECT id, date, file_name, channel, os, arch FROM artifacts");
     let rows = con.fetch_all(query).await?;
 
-    if !rows.is_empty() {
-        tracing::info!("pruned artifacts from db");
+    #[derive(PartialEq, Eq, Hash)]
+    struct ArtifactGroup {
+        os: String,
+        arch: String,
+        channel: String,
     }
 
-    let mut files = Vec::new();
-    for row in rows {
-        let file_name = row.try_get("file_name")?;
-        files.push(file_name);
+    struct Artifact {
+        id: i64,
+        date: DateTime<Utc>,
+        file_name: String,
     }
-    Ok(files)
+
+    let mut artifacts: HashMap<ArtifactGroup, Vec<Artifact>> = HashMap::new();
+
+    for row in rows {
+        let date: String = row.try_get("date")?;
+        // Old database format:
+        //   2024-09-05 16:56:55 UTC
+        // new Format:
+        //   rfc3339
+        let date = DateTime::parse_from_rfc3339(&date)
+            .or_else(|_| {
+                DateTime::parse_from_str(
+                    &date.replace(" UTC", " +0000"),
+                    "%Y-%m-%d %H:%M:%S %z",
+                )
+            })?
+            .to_utc();
+
+        let group = ArtifactGroup {
+            os: row.try_get("os")?,
+            arch: row.try_get("arch")?,
+            channel: row.try_get("channel")?,
+        };
+        let artifact = Artifact {
+            id: row.try_get("id")?,
+            date,
+            file_name: row.try_get("file_name")?,
+        };
+
+        let grouped = artifacts.entry(group).or_default();
+        grouped.push(artifact);
+    }
+
+    for (key, grouped) in artifacts.iter_mut() {
+        grouped.sort_by_key(|e| e.date);
+        // last element is newest, so we pop it to keep it
+        grouped.pop();
+    }
+
+    Ok(artifacts
+        .into_values()
+        .flat_map(|grouped| grouped.into_iter().map(|e| (e.id, e.file_name)))
+        .collect())
+}
+
+/// Prunes all artifacts but one per os/arch/channel combination
+#[allow(unused_variables, unreachable_code)]
+async fn prune_artifact(
+    con: &mut Transaction<'static, Any>,
+    id: i64,
+) -> Result<(), ServerError> {
+    let query = sqlx::query("DELETE FROM artifacts WHERE id = ?").bind(id);
+    let rows = con.execute(query).await?;
+    Ok(())
 }
