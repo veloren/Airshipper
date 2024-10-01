@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, io::ErrorKind};
 
 use chrono::{DateTime, Utc};
 use sqlx::{Any, Executor, QueryBuilder, Row, Transaction};
@@ -36,7 +36,7 @@ pub async fn insert_artifact(db: &Db, artifact: &Artifact) -> Result<i64, Proces
     let query = sqlx::query_scalar(
         r"INSERT INTO artifacts (build_id, date, hash, author, merged_by, os, arch, channel, file_name, download_uri) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
     ).bind(artifact.build_id)
-    .bind(artifact.date.to_rfc3339())
+    .bind(artifact.date.to_utc().to_rfc3339())
     .bind(&artifact.hash)
     .bind(&artifact.author)
     .bind(&artifact.merged_by)
@@ -91,9 +91,11 @@ pub async fn get_latest_version_uri<
     }
 }
 
-/// Prunes local db and S3 storage from old nightlies.
+/// Prunes local db and S3 storage from old nightlies by removing all artifacts but one
+/// per os/arch/channel combination
 // The urge to put this is a single query might be high, hear me out:
 //  - The algorithm should take account of timezones (something that sqlite cannot do)
+//    (optional) (NOTE: get_latest_version_uri still depends on it)
 //  - The algorithm should not rely on that IDs are always increasing
 //  - The algorithm should not rely on implementation behavior (e.g. that GROUP BY returns
 //    the first it finds), if its not in the specification.
@@ -108,11 +110,15 @@ pub async fn prune(db: &Db) -> Result<(), ServerError> {
 
     let artifacts = artifacts_to_be_pruned(&mut con).await?;
 
-    for (id, file) in artifacts.into_iter() {
+    for (id, file) in artifacts {
         tracing::info!("Deleting prunable artifact: {:?}", file);
         // dont fail on Err here
-        if let Ok(()) = FsStorage::delete_file(&file).await {
-            prune_artifact(&mut con, id).await?
+        match FsStorage::delete_file(&file).await {
+            Ok(()) => delete_artifact(&mut con, id).await?,
+            Err(e) if e.kind() == ErrorKind::NotFound => {
+                delete_artifact(&mut con, id).await?
+            },
+            _ => (),
         }
     }
 
@@ -121,10 +127,9 @@ pub async fn prune(db: &Db) -> Result<(), ServerError> {
     Ok(())
 }
 
-#[allow(unused_variables, unreachable_code)]
 async fn artifacts_to_be_pruned(
     con: &mut Transaction<'static, Any>,
-) -> Result<Vec<(i64, String)>, ServerError> {
+) -> Result<impl Iterator<Item = (i64, String)>, ServerError> {
     // Currently date is a STRING and the order DESC might cause weird effects IF we
     // would store different timezones.
     let query =
@@ -176,7 +181,7 @@ async fn artifacts_to_be_pruned(
         grouped.push(artifact);
     }
 
-    for (key, grouped) in artifacts.iter_mut() {
+    for (_, grouped) in artifacts.iter_mut() {
         grouped.sort_by_key(|e| e.date);
         // last element is newest, so we pop it to keep it
         grouped.pop();
@@ -184,17 +189,15 @@ async fn artifacts_to_be_pruned(
 
     Ok(artifacts
         .into_values()
-        .flat_map(|grouped| grouped.into_iter().map(|e| (e.id, e.file_name)))
-        .collect())
+        .flat_map(|grouped| grouped.into_iter().map(|e| (e.id, e.file_name))))
 }
 
-/// Prunes all artifacts but one per os/arch/channel combination
-#[allow(unused_variables, unreachable_code)]
-async fn prune_artifact(
+/// deletes single artifact from db
+async fn delete_artifact(
     con: &mut Transaction<'static, Any>,
     id: i64,
 ) -> Result<(), ServerError> {
     let query = sqlx::query("DELETE FROM artifacts WHERE id = ?").bind(id);
-    let rows = con.execute(query).await?;
+    let _rows = con.execute(query).await?;
     Ok(())
 }
