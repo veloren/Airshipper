@@ -8,10 +8,6 @@ lazy_static::lazy_static! {
     pub static ref BASE_PATH: PathBuf = base();
 }
 
-// TODO: Is there a way to figure out whether airshipper has been installed or not
-//       to allow to use another base location and avoid polluting the current install
-// while developing?
-
 /// Returns the base path where all airshipper files like config, profiles belong.
 ///
 /// |Platform | Example                                                       |
@@ -20,9 +16,14 @@ lazy_static::lazy_static! {
 /// | macOS   | /Users/Alice/Library/Application Support/com.Foo-Corp.Bar-App |
 /// | Windows | C:\Users\Alice\AppData\Roaming                                |
 fn base() -> PathBuf {
-    let path = dirs::data_dir()
-        .expect("Couldn't locate where to put launcher data!")
-        .join("airshipper");
+    let path = std::env::var("AIRSHIPPER_ROOT").map_or_else(
+        |_| {
+            dirs::data_dir()
+                .expect("Couldn't locate where to put launcher data!")
+                .join("airshipper")
+        },
+        PathBuf::from,
+    );
     std::fs::create_dir_all(&path).expect("failed to create data directory!");
     path
 }

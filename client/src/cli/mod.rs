@@ -69,8 +69,7 @@ pub fn process() -> Result<()> {
         let mut state = Airshipper::load(cmd.clone()).await;
 
         // handle arguments
-        process_arguments(&mut state.active_profile, cmd.action.unwrap(), cmd.verbose)
-            .await?;
+        process_arguments(&mut state, cmd.action.unwrap(), cmd.verbose).await?;
 
         // Save state
         state.save_mut().await?;
@@ -80,29 +79,29 @@ pub fn process() -> Result<()> {
 }
 
 async fn process_arguments(
-    profile: &mut Profile,
+    airshipper: &mut Airshipper,
     action: Action,
     verbose: i32,
 ) -> Result<()> {
-    profile.log_level = match verbose {
+    airshipper.active_profile.log_level = match verbose {
         0 => LogLevel::Default,
         1 => LogLevel::Debug,
         _ => LogLevel::Trace,
     };
 
     match action {
-        Action::Update => update(profile, true).await?,
-        Action::Start => start(profile, None).await?,
+        Action::Update => update(airshipper, true).await?,
+        Action::Start => start(&mut airshipper.active_profile, None).await?,
         Action::Run => {
-            if let Err(e) = update(profile, false).await {
+            if let Err(e) = update(airshipper, false).await {
                 tracing::error!(
                     ?e,
                     "Couldn't update the game, starting installed version."
                 );
             }
-            start(profile, None).await?
+            start(&mut airshipper.active_profile, None).await?
         },
-        Action::Config => config(profile).await?,
+        Action::Config => config(&mut airshipper.active_profile).await?,
         #[cfg(windows)]
         Action::Upgrade => {
             tokio::task::block_in_place(upgrade)?;
@@ -111,7 +110,7 @@ async fn process_arguments(
     Ok(())
 }
 
-async fn update(profile: &mut Profile, do_not_ask: bool) -> Result<()> {
+async fn update(airshipper: &mut Airshipper, do_not_ask: bool) -> Result<()> {
     use crate::update::{update, Progress};
     use indicatif::{ProgressBar, ProgressStyle};
 
@@ -123,7 +122,7 @@ async fn update(profile: &mut Profile, do_not_ask: bool) -> Result<()> {
     );
     progress_bar.set_length(100);
 
-    let mut stream = update(profile.clone(), false).boxed();
+    let mut stream = update(airshipper.active_profile.clone(), false).boxed();
 
     while let Some(progress) = stream.next().await {
         match progress {
@@ -160,8 +159,11 @@ async fn update(profile: &mut Profile, do_not_ask: bool) -> Result<()> {
                     pretty_bytes(step.total_bytes),
                 ));
             },
-            //TODO: store profile
-            Progress::Successful(_) => return Ok(()),
+            Progress::Successful(new_profile) => {
+                tracing::debug!(?new_profile, "Updating profile");
+                airshipper.active_profile = new_profile;
+                return Ok(());
+            },
             Progress::Errored(e) => return Err(ClientError::Custom(e.to_string())),
         }
     }
