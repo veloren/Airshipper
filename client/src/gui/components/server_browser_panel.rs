@@ -614,8 +614,7 @@ impl ServerBrowserPanelComponent {
             ServerBrowserPanelMessage::RefreshPing => Some(Command::batch(
                 self.servers.iter_mut().filter_map(|server| {
                     let query_client = server.query_client.0.take();
-                    // let query_port = server.server.query_port?;
-                    let query_port = 14006; // TODO: Undo when the serverbrowser MR is merged
+                    let query_port = server.server.query_port?;
                     let server_address = server.server.address.clone();
                     let server_address2 = server.server.address.clone();
 

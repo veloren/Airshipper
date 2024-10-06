@@ -5631,8 +5631,9 @@ dependencies = [
 
 [[package]]
 name = "veloren-serverbrowser-api"
-version = "0.3.1"
-source = "git+https://gitlab.com/crab_man/serverbrowser.git?branch=crab/query-port#e068eede2906964fbefce2a18cd43efd3e53d373"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ae9805174e6b642bd6a4ad0685d6be50db958e3cf105d9d3e1f725ee2e1ffae"
 dependencies = [
  "country-parser",
  "serde",

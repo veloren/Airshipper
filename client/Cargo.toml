@@ -30,9 +30,7 @@ bundled = ["openssl-sys"]
 bundled_font = []
 
 [dependencies]
-# FIXME: Revert once MR is merged on the serverbrowser repo and new version is released on crates.io
-veloren-serverbrowser-api = { git = "https://gitlab.com/crab_man/serverbrowser.git", branch = "crab/query-port" }
-# veloren-serverbrowser-api = "0.3.1"
+veloren-serverbrowser-api = "0.4.0"
 veloren-query-server = { version = "0.1.0", default-features = false, features = ["client"] }
 
 # Cli
