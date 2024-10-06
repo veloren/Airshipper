@@ -29,8 +29,8 @@ use iced::{
     },
     Alignment, Command, Length, Padding,
 };
-use std::{cmp::min, time::Duration};
-use tracing::{debug, error};
+use std::{borrow::Cow, cmp::min, time::Duration};
+use tracing::debug;
 use url::Url;
 use veloren_query_server::{client::QueryClient, proto::ServerInfo as QueryServerInfo};
 use veloren_serverbrowser_api::{FieldContent, GameServer};
@@ -121,11 +121,18 @@ impl ServerBrowserPanelComponent {
             column![].push(container(
                 row![]
                     .push(
-                        container(Image::new(Handle::from_memory(GLOBE_ICON.to_vec())))
-                            .height(Length::Fill)
-                            .width(Length::Shrink)
-                            .align_y(Vertical::Center)
-                            .padding(Padding::from([0, 0, 0, 12])),
+                        container(
+                            button(Image::new(Handle::from_memory(GLOBE_ICON.to_vec())))
+                                .on_press(DefaultViewMessage::ServerBrowserPanel(
+                                    ServerBrowserPanelMessage::RefreshPing,
+                                )),
+                        )
+                        .center_x()
+                        .center_y()
+                        .height(Length::Fill)
+                        .width(Length::Shrink)
+                        .align_y(Vertical::Center)
+                        .padding(Padding::from([0, 0, 0, 12])),
                     )
                     .push(
                         container(
@@ -195,6 +202,9 @@ impl ServerBrowserPanelComponent {
                 .push(
                     heading_button("Location", Some(ServerSortOrder::Location))
                         .width(Length::FillPortion(2)),
+                )
+                .push(heading_button("Players", Some(ServerSortOrder::PlayerCount))
+                    .width(Length::FillPortion(1))
                 )
                 .push(
                     heading_button("Ping (ms)", Some(ServerSortOrder::Ping))
@@ -301,6 +311,18 @@ impl ServerBrowserPanelComponent {
                     .width(Length::FillPortion(2)),
                 )
                 .push(
+                    column_cell(&server_entry.server_info.map_or(
+                        Cow::Borrowed("?"),
+                        |info| {
+                            Cow::Owned(format!(
+                                "{}/{}",
+                                info.players_count, info.player_cap
+                            ))
+                        },
+                    ))
+                    .width(Length::FillPortion(1)),
+                )
+                .push(
                     row![]
                         .spacing(5)
                         .push(
@@ -308,11 +330,17 @@ impl ServerBrowserPanelComponent {
                                 .height(Length::Fill)
                                 .align_y(Vertical::Center),
                         )
-                        .push(column_cell(
-                            &server_entry.ping.map_or("Error".to_owned(), |x| {
-                                format!("{}", x.as_millis())
-                            }),
-                        ))
+                        .push(column_cell(&server_entry.ping.map_or_else(
+                            || {
+                                (if server_entry.server.query_port.is_none() {
+                                    "?"
+                                } else {
+                                    "Error"
+                                })
+                                .to_owned()
+                            },
+                            |x| format!("{}", x.as_millis()),
+                        )))
                         .width(Length::FillPortion(1)),
                 )
                 .padding(0);
@@ -355,9 +383,7 @@ impl ServerBrowserPanelComponent {
             // If there's a selected server (which there should always be, unless the
             // server list API returned no servers) show details for that
             // server.
-            let selected_server = self
-                .selected_index
-                .and_then(|x| self.servers.get(x).map(|y| &y.server));
+            let selected_server = self.selected_index.and_then(|x| self.servers.get(x));
 
             let discord_origin = url::Origin::Tuple(
                 "https".to_string(),
@@ -383,9 +409,13 @@ impl ServerBrowserPanelComponent {
                             .padding(Padding::from([5, 0])),
                     )
                     .push(
-                        container(scrollable(column![].push(row![].push({
-                            let mut fields =
-                                server.extra.clone().into_iter().collect::<Vec<_>>();
+                        container(scrollable(container({
+                            let mut fields = server
+                                .server
+                                .extra
+                                .clone()
+                                .into_iter()
+                                .collect::<Vec<_>>();
                             fields.sort_by(|a, b| a.0.cmp(&b.0));
                             let mut extras = row![].spacing(10);
                             for (id, field) in fields {
@@ -466,23 +496,48 @@ impl ServerBrowserPanelComponent {
                                     _ => {},
                                 };
                             }
+                            let queried_info =
+                                if let Some(query_info) = &server.server_info {
+                                    let battlemode = match  query_info.battlemode {
+                                        veloren_query_server::proto::ServerBattleMode::GlobalPvP => "Global PvP",
+                                        veloren_query_server::proto::ServerBattleMode::GlobalPvE => "Global PvE",
+                                        veloren_query_server::proto::ServerBattleMode::PerPlayer => "Player selected",
+                                    };
+
+                                    column![
+                                        text(format!("Battlemode: {battlemode}")),
+                                        text(format!("Version: {:x}", query_info.git_hash)),
+                                    ].spacing(5)
+                                } else {
+                                    column![text("Does not support the query server protocol :(")]
+                                };
+
                             column![]
                                 .spacing(5)
+                                .width(Length::Fill)
                                 .push(
                                     row![]
                                         .spacing(10)
-                                        .push(text(&server.name).font(UNIVERSAL_FONT))
                                         .push(
-                                            text(display_gameserver_address(server))
-                                                .font(UNIVERSAL_FONT)
-                                                .style(TextStyle::BrightOrange),
+                                            text(&server.server.name)
+                                                .font(UNIVERSAL_FONT),
+                                        )
+                                        .push(
+                                            text(display_gameserver_address(
+                                                &server.server,
+                                            ))
+                                            .font(UNIVERSAL_FONT)
+                                            .style(TextStyle::BrightOrange),
                                         ),
                                 )
                                 .push(text("Description: ").font(UNIVERSAL_FONT))
-                                .push(text(&server.description).font(UNIVERSAL_FONT))
+                                .push(
+                                    text(&server.server.description).font(UNIVERSAL_FONT),
+                                )
+                                .push(queried_info)
                                 .push(extras)
-                        }))))
-                        .height(Length::Fixed(128.0)),
+                        }).width(Length::Fill)))
+                        .height(Length::Fixed(160.0)),
                     );
             }
         } else {
@@ -578,15 +633,16 @@ impl ServerBrowserPanelComponent {
                             };
                             tracing::info!(?server_address2, "Querying server");
 
-                            let res = query_client.server_info().await;
+                            let res =
+                                crate::net::ping::perform_ping(&mut query_client).await;
                             Some((res, query_client))
                         },
                         move |res| {
                             let (query_client, server_info, ping) =
                                 if let Some((res, query_client)) = res {
-                                    let (server_info, ping) = res
+                                    let (ping, server_info) = res
                                         .inspect_err(|error| {
-                                            error!(
+                                            debug!(
                                                 ?server_address,
                                                 ?error,
                                                 "Failed to query server"
@@ -642,6 +698,15 @@ impl ServerBrowserPanelComponent {
                     x.server.name.clone(),
                 )
             }),
+            ServerSortOrder::PlayerCount => {
+                self.servers.sort_unstable_by(|entry_a, entry_b| {
+                    let cnt = |e: &ServerBrowserEntry| {
+                        e.server_info.map(|info| info.players_count)
+                    };
+
+                    cnt(entry_b).cmp(&cnt(entry_a))
+                })
+            },
             ServerSortOrder::Ping => self
                 .servers
                 .sort_unstable_by_key(|x| x.ping.or(Some(Duration::MAX))),
@@ -669,6 +734,7 @@ fn display_gameserver_address(gameserver: &GameServer) -> String {
 #[derive(Clone, Debug)]
 pub enum ServerSortOrder {
     Default,
+    PlayerCount,
     ServerName,
     Location,
     Ping,
