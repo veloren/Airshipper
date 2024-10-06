@@ -29,11 +29,7 @@ use iced::{
     },
     Alignment, Command, Length, Padding,
 };
-use std::{
-    cmp::min,
-    net::{IpAddr, SocketAddr},
-    time::Duration,
-};
+use std::{cmp::min, time::Duration};
 use tracing::{debug, error};
 use url::Url;
 use veloren_query_server::{client::QueryClient, proto::ServerInfo as QueryServerInfo};
@@ -220,16 +216,18 @@ impl ServerBrowserPanelComponent {
         };
 
         for (i, server_entry) in self.servers.iter().enumerate() {
-            let ping_icon = if server_entry.server.query_port.is_none() {
-                image(Handle::from_memory(PING_NONE_ICON.to_vec()))
-            } else {
-                match server_entry.ping.map(|p| p.as_millis()) {
-                    Some(0..=50) => image(Handle::from_memory(PING1_ICON.to_vec())),
-                    Some(51..=150) => image(Handle::from_memory(PING2_ICON.to_vec())),
-                    Some(151..=300) => image(Handle::from_memory(PING3_ICON.to_vec())),
-                    Some(_) => image(Handle::from_memory(PING4_ICON.to_vec())),
-                    _ => image(Handle::from_memory(PING_ERROR_ICON.to_vec())),
-                }
+            let ping_icon = match server_entry.ping.map(|p| p.as_millis()) {
+                Some(0..=50) => image(Handle::from_memory(PING1_ICON.to_vec())),
+                Some(51..=150) => image(Handle::from_memory(PING2_ICON.to_vec())),
+                Some(151..=300) => image(Handle::from_memory(PING3_ICON.to_vec())),
+                Some(_) => image(Handle::from_memory(PING4_ICON.to_vec())),
+                _ => {
+                    if server_entry.server.query_port.is_none() {
+                        image(Handle::from_memory(PING_NONE_ICON.to_vec()))
+                    } else {
+                        image(Handle::from_memory(PING_ERROR_ICON.to_vec()))
+                    }
+                },
             };
 
             let mut status_icons = row![]
@@ -517,10 +515,11 @@ impl ServerBrowserPanelComponent {
                     *self = server_browser;
                     if !self.servers.is_empty() {
                         // Why is there no simple `Command::message` ??
-                        Some(Command::perform(
-                            async {},
-                            |()| DefaultViewMessage::ServerBrowserPanel(ServerBrowserPanelMessage::RefreshPing)
-                        ))
+                        Some(Command::perform(async {}, |()| {
+                            DefaultViewMessage::ServerBrowserPanel(
+                                ServerBrowserPanelMessage::RefreshPing,
+                            )
+                        }))
                     } else {
                         None
                     }
@@ -559,42 +558,57 @@ impl ServerBrowserPanelComponent {
             },
             ServerBrowserPanelMessage::RefreshPing => Some(Command::batch(
                 self.servers.iter_mut().filter_map(|server| {
-                    let mut query_client = server.query_client.0.take().or_else(|| {
-                        let port = server.server.query_port?;
-                        let ip_addr = server
-                            .server
-                            .address
-                            .parse::<IpAddr>()
-                            .inspect_err(|err| error!(?server.server.address, ?err, "Invalid server address"))
-                            .ok()?;
-
-                            Some(QueryClient::new(SocketAddr::new(ip_addr, port)))
-                    })?;
-
+                    let query_client = server.query_client.0.take();
+                    // let query_port = server.server.query_port?;
+                    let query_port = 14006; // TODO: Undo when the serverbrowser MR is merged
                     let server_address = server.server.address.clone();
+                    let server_address2 = server.server.address.clone();
 
                     Some(Command::perform(
                         async move {
+                            let mut query_client = match query_client {
+                                Some(client) => client,
+                                None => {
+                                    crate::net::ping::create_client(
+                                        &server_address2,
+                                        query_port,
+                                    )
+                                    .await?
+                                },
+                            };
+                            tracing::info!(?server_address2, "Querying server");
+
                             let res = query_client.server_info().await;
-                            (res, query_client)
+                            Some((res, query_client))
                         },
-                        move |(res, query_client)| {
-                            let (server_info, ping) = res
-                                .inspect_err(
-                                    |error|
-                                    error!(?server_address, ?error, "Failed to qujry server")
-                                )
-                                .map_or((None, None), |(info, ping)| (Some(info), Some(ping)));
+                        move |res| {
+                            let (query_client, server_info, ping) =
+                                if let Some((res, query_client)) = res {
+                                    let (server_info, ping) = res
+                                        .inspect_err(|error| {
+                                            error!(
+                                                ?server_address,
+                                                ?error,
+                                                "Failed to query server"
+                                            )
+                                        })
+                                        .map_or((None, None), |(info, ping)| {
+                                            (Some(info), Some(ping))
+                                        });
+                                    (Some(query_client), server_info, ping)
+                                } else {
+                                    (None, None, None)
+                                };
 
                             DefaultViewMessage::ServerBrowserPanel(
                                 ServerBrowserPanelMessage::UpdateServerPing {
                                     server_address,
                                     server_info,
                                     ping,
-                                    query_client: SkipDebugClone(Some(query_client))
-                                }
+                                    query_client: SkipDebugClone(query_client),
+                                },
                             )
-                        }
+                        },
                     ))
                 }),
             )),
