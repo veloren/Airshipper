@@ -30,7 +30,8 @@ bundled = ["openssl-sys"]
 bundled_font = []
 
 [dependencies]
-veloren-serverbrowser-api = "0.3.1"
+veloren-serverbrowser-api = "0.4.0"
+veloren-query-server = { version = "0.1.2", default-features = false, features = ["client"] }
 
 # Cli
 clap = { version = "3.1.18", features = ["cargo", "derive"] }
@@ -62,8 +63,6 @@ reqwest = { version = "0.12.5", default-features = false, features = [
     "json",
     "http2",
 ] }
-surge-ping = "0.8.0"
-socket2 = "0.5.5"
 
 # Parsing
 pulldown-cmark = "0.8.0"

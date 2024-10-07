@@ -1,80 +1,60 @@
-use super::DEFAULT_GAME_PORT;
-use std::{net::IpAddr, str::FromStr, sync::Arc, time::Duration};
-use surge_ping::{PingIdentifier, PingSequence};
-use tokio::net;
-use tracing::{debug, warn};
+use std::{
+    net::{IpAddr, SocketAddr},
+    num::NonZeroU32,
+    sync::LazyLock,
+    time::Duration,
+};
 
-#[derive(Clone, Debug)]
-pub struct PingResult {
-    pub ping: Option<u128>,
-    pub server_address: String,
-}
+use tracing::warn;
+use veloren_query_server::{
+    client::{QueryClient, QueryClientError},
+    proto::ServerInfo,
+};
 
-pub async fn ping(
-    clients: (Arc<surge_ping::Client>, Arc<surge_ping::Client>),
-    server_address: String,
-    identifier: u16,
-) -> PingResult {
-    // If the server address is already an IP address, use it unmodified, otherwise
-    // attempt to resolve the server address to an IP using DNS
-    let ip_addr = match IpAddr::from_str(&server_address) {
-        Ok(ip_addr) => Some(ip_addr),
-        Err(_) => {
-            debug!(
-                "Server address {} is not an IP address, attempting DNS resolution...",
-                server_address
-            );
+static PING_COUNT: LazyLock<NonZeroU32> = LazyLock::new(|| NonZeroU32::new(5).unwrap());
 
-            // The server address is not an IP address, so attempt to resolve it via DNS
-            match net::lookup_host(format!(
-                "{}:{}",
-                server_address.clone(),
-                DEFAULT_GAME_PORT
-            ))
+pub async fn create_client(address: &str, port: u16) -> Option<QueryClient> {
+    let addr = match address.parse::<IpAddr>() {
+        Ok(addr) => SocketAddr::new(addr, port),
+        Err(_error) => tokio::net::lookup_host(format!("{address}:{port}"))
             .await
-            {
-                Ok(mut addr_iter) => {
-                    let result = addr_iter.next().map(|x| x.ip());
-
-                    debug!(
-                        "DNS resolution of address {} result: {:?}",
-                        server_address, result
-                    );
-                    result
-                },
-                Err(e) => {
-                    warn!(?e, ?server_address, "DNS resolution failed");
-                    None
-                },
-            }
-        },
+            .inspect_err(|error| warn!(?address, ?error, "Host lookup failed"))
+            .ok()?
+            .next()
+            .or_else(|| {
+                warn!(?address, "Host lookup returned no IP addresses");
+                None
+            })?,
     };
 
-    let ping = match ip_addr {
-        Some(ip) => {
-            let client = if ip.is_ipv4() { clients.0 } else { clients.1 };
+    Some(QueryClient::new(addr))
+}
 
-            const PAYLOAD: [u8; 56] = [0; 56];
+pub async fn perform_ping(
+    client: &mut QueryClient,
+) -> Result<(Duration, ServerInfo), QueryClientError> {
+    let mut avg_ms = 0.0;
+    let mut server_info = None;
+    let mut last_error = None;
 
-            let mut pinger = client.pinger(ip, PingIdentifier(identifier)).await;
-            pinger.timeout(Duration::from_secs(5));
+    for attempt in 1..=PING_COUNT.get() {
+        match client.server_info().await {
+            Ok((new_server_info, ping)) => {
+                avg_ms = ping.as_millis() as f32 * (1.0 / attempt as f32)
+                    + avg_ms * ((attempt as f32 - 1.0) / attempt as f32);
+                server_info = Some(new_server_info);
+            },
+            Err(error) => {
+                last_error = Some(error);
+            },
+        }
+    }
 
-            Some(
-                match pinger.ping(PingSequence(identifier), &PAYLOAD).await {
-                    Ok((_, dur)) => Some(dur.as_millis()),
-                    Err(e) => {
-                        debug!(?e, "Failed to ping host: {}", pinger.host);
-                        None
-                    },
-                },
+    server_info
+        .map(|info| (Duration::from_millis(avg_ms as u64), info))
+        .ok_or_else(|| {
+            last_error.expect(
+                "There must have occurred some error if server_info is not Some()",
             )
-        },
-        None => None,
-    }
-    .flatten();
-
-    PingResult {
-        ping,
-        server_address,
-    }
+        })
 }

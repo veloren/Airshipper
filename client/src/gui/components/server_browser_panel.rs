@@ -17,7 +17,6 @@ use crate::{
         widget::*,
     },
     net,
-    ping::PingResult,
     server_list::fetch_server_list,
     Result,
 };
@@ -30,20 +29,44 @@ use iced::{
     },
     Alignment, Command, Length, Padding,
 };
-use std::{cmp::min, sync::Arc};
+use std::{borrow::Cow, cmp::min, time::Duration};
 use tracing::debug;
 use url::Url;
+use veloren_query_server::{client::QueryClient, proto::ServerInfo as QueryServerInfo};
 use veloren_serverbrowser_api::{FieldContent, GameServer};
 
-#[derive(Debug, Clone)]
+pub const SERVER_BROWSER_PING_REFRESH: Duration = Duration::from_secs(20);
+
+#[derive(Clone, Debug)]
 pub struct ServerBrowserEntry {
     server: GameServer,
-    ping: Option<u128>,
+    ping: Option<Duration>,
+    server_info: Option<QueryServerInfo>,
+    query_client: SkipDebugClone<Option<QueryClient>>,
+}
+
+/// Newtype that skips debug and when the inner type is an option clones will always
+/// result in `None`. Needed because `QueryClient` is neither of both.
+pub struct SkipDebugClone<T>(pub T);
+impl<T> core::fmt::Debug for SkipDebugClone<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SkipDebug").finish()
+    }
+}
+impl<T> Clone for SkipDebugClone<Option<T>> {
+    fn clone(&self) -> Self {
+        Self(None)
+    }
 }
 
 impl From<GameServer> for ServerBrowserEntry {
     fn from(server: GameServer) -> Self {
-        Self { server, ping: None }
+        Self {
+            server,
+            ping: None,
+            server_info: None,
+            query_client: SkipDebugClone(None),
+        }
     }
 }
 
@@ -51,7 +74,13 @@ impl From<GameServer> for ServerBrowserEntry {
 pub enum ServerBrowserPanelMessage {
     SelectServerEntry(Option<usize>),
     UpdateServerList(Result<Option<ServerBrowserPanelComponent>>),
-    UpdateServerPing(PingResult),
+    RefreshPing,
+    UpdateServerPing {
+        server_address: String,
+        server_info: Option<QueryServerInfo>,
+        ping: Option<Duration>,
+        query_client: SkipDebugClone<Option<QueryClient>>,
+    },
     SortServers(ServerSortOrder),
 }
 
@@ -59,7 +88,6 @@ pub enum ServerBrowserPanelMessage {
 pub struct ServerBrowserPanelComponent {
     servers: Vec<ServerBrowserEntry>,
     selected_index: Option<usize>,
-    raw_socket_support: bool,
     server_list_fetch_error: bool,
 }
 
@@ -83,17 +111,9 @@ impl ServerBrowserPanelComponent {
             server_list_fetch_error = true;
         }
 
-        let raw_socket_support = socket2::Socket::new(
-            socket2::Domain::IPV4,
-            socket2::Type::RAW,
-            Some(socket2::Protocol::ICMPV4),
-        )
-        .is_ok();
-
         Ok(Some(Self {
             servers,
             selected_index: None,
-            raw_socket_support,
             server_list_fetch_error,
         }))
     }
@@ -103,11 +123,18 @@ impl ServerBrowserPanelComponent {
             column![].push(container(
                 row![]
                     .push(
-                        container(Image::new(Handle::from_memory(GLOBE_ICON.to_vec())))
-                            .height(Length::Fill)
-                            .width(Length::Shrink)
-                            .align_y(Vertical::Center)
-                            .padding(Padding::from([0, 0, 0, 12])),
+                        container(
+                            button(Image::new(Handle::from_memory(GLOBE_ICON.to_vec())))
+                                .on_press(DefaultViewMessage::ServerBrowserPanel(
+                                    ServerBrowserPanelMessage::RefreshPing,
+                                )),
+                        )
+                        .center_x()
+                        .center_y()
+                        .height(Length::Fill)
+                        .width(Length::Shrink)
+                        .align_y(Vertical::Center)
+                        .padding(Padding::from([0, 0, 0, 12])),
                     )
                     .push(
                         container(
@@ -178,6 +205,9 @@ impl ServerBrowserPanelComponent {
                     heading_button("Location", Some(ServerSortOrder::Location))
                         .width(Length::FillPortion(2)),
                 )
+                .push(heading_button("Players", Some(ServerSortOrder::PlayerCount))
+                    .width(Length::FillPortion(1))
+                )
                 .push(
                     heading_button("Ping (ms)", Some(ServerSortOrder::Ping))
                         .width(Length::FillPortion(1)),
@@ -198,16 +228,18 @@ impl ServerBrowserPanelComponent {
         };
 
         for (i, server_entry) in self.servers.iter().enumerate() {
-            let ping_icon = if !self.raw_socket_support {
-                image(Handle::from_memory(PING_NONE_ICON.to_vec()))
-            } else {
-                match server_entry.ping {
-                    Some(0..=50) => image(Handle::from_memory(PING1_ICON.to_vec())),
-                    Some(51..=150) => image(Handle::from_memory(PING2_ICON.to_vec())),
-                    Some(151..=300) => image(Handle::from_memory(PING3_ICON.to_vec())),
-                    Some(_) => image(Handle::from_memory(PING4_ICON.to_vec())),
-                    _ => image(Handle::from_memory(PING_ERROR_ICON.to_vec())),
-                }
+            let ping_icon = match server_entry.ping.map(|p| p.as_millis()) {
+                Some(0..=50) => image(Handle::from_memory(PING1_ICON.to_vec())),
+                Some(51..=150) => image(Handle::from_memory(PING2_ICON.to_vec())),
+                Some(151..=300) => image(Handle::from_memory(PING3_ICON.to_vec())),
+                Some(_) => image(Handle::from_memory(PING4_ICON.to_vec())),
+                _ => {
+                    if server_entry.server.query_port.is_none() {
+                        image(Handle::from_memory(PING_NONE_ICON.to_vec()))
+                    } else {
+                        image(Handle::from_memory(PING_ERROR_ICON.to_vec()))
+                    }
+                },
             };
 
             let mut status_icons = row![]
@@ -247,12 +279,6 @@ impl ServerBrowserPanelComponent {
                 );
             }
 
-            let no_ping_text = if !self.raw_socket_support {
-                "?"
-            } else {
-                "Error"
-            };
-
             let row = row![]
                 .width(Length::Fill)
                 .align_items(Alignment::Center)
@@ -287,6 +313,18 @@ impl ServerBrowserPanelComponent {
                     .width(Length::FillPortion(2)),
                 )
                 .push(
+                    column_cell(&server_entry.server_info.map_or(
+                        Cow::Borrowed("?"),
+                        |info| {
+                            Cow::Owned(format!(
+                                "{}/{}",
+                                info.players_count, info.player_cap
+                            ))
+                        },
+                    ))
+                    .width(Length::FillPortion(1)),
+                )
+                .push(
                     row![]
                         .spacing(5)
                         .push(
@@ -294,11 +332,17 @@ impl ServerBrowserPanelComponent {
                                 .height(Length::Fill)
                                 .align_y(Vertical::Center),
                         )
-                        .push(column_cell(
-                            &server_entry
-                                .ping
-                                .map_or(no_ping_text.to_owned(), |x| format!("{}", x)),
-                        ))
+                        .push(column_cell(&server_entry.ping.map_or_else(
+                            || {
+                                (if server_entry.server.query_port.is_none() {
+                                    "?"
+                                } else {
+                                    "Error"
+                                })
+                                .to_owned()
+                            },
+                            |x| format!("{}", x.as_millis()),
+                        )))
                         .width(Length::FillPortion(1)),
                 )
                 .padding(0);
@@ -333,27 +377,6 @@ impl ServerBrowserPanelComponent {
                 .style(ContainerStyle::ChangelogHeader),
         );
 
-        if !self.raw_socket_support {
-            col = col.push(
-                container(
-                    container(
-                        text(
-                            "Server pings not available - please re-run Airshipper with \
-                             elevated privileges. On Linux the required permissions can \
-                             be granted via the command \"setcap cap_net_raw=pe \
-                             /path/to/airshipper\"",
-                        )
-                        .horizontal_alignment(Horizontal::Center),
-                    )
-                    .style(ContainerStyle::Warning)
-                    .padding(10)
-                    .width(Length::Fill)
-                    .height(Length::Shrink),
-                )
-                .padding(10),
-            )
-        }
-
         if !self.server_list_fetch_error {
             col = col
                 .push(column_headings.height(Length::Shrink))
@@ -362,9 +385,7 @@ impl ServerBrowserPanelComponent {
             // If there's a selected server (which there should always be, unless the
             // server list API returned no servers) show details for that
             // server.
-            let selected_server = self
-                .selected_index
-                .and_then(|x| self.servers.get(x).map(|y| &y.server));
+            let selected_server = self.selected_index.and_then(|x| self.servers.get(x));
 
             let discord_origin = url::Origin::Tuple(
                 "https".to_string(),
@@ -390,9 +411,13 @@ impl ServerBrowserPanelComponent {
                             .padding(Padding::from([5, 0])),
                     )
                     .push(
-                        container(scrollable(column![].push(row![].push({
-                            let mut fields =
-                                server.extra.clone().into_iter().collect::<Vec<_>>();
+                        container(scrollable(container({
+                            let mut fields = server
+                                .server
+                                .extra
+                                .clone()
+                                .into_iter()
+                                .collect::<Vec<_>>();
                             fields.sort_by(|a, b| a.0.cmp(&b.0));
                             let mut extras = row![].spacing(10);
                             for (id, field) in fields {
@@ -473,23 +498,48 @@ impl ServerBrowserPanelComponent {
                                     _ => {},
                                 };
                             }
+                            let queried_info =
+                                if let Some(query_info) = &server.server_info {
+                                    let battlemode = match  query_info.battlemode {
+                                        veloren_query_server::proto::ServerBattleMode::GlobalPvP => "Global PvP",
+                                        veloren_query_server::proto::ServerBattleMode::GlobalPvE => "Global PvE",
+                                        veloren_query_server::proto::ServerBattleMode::PerPlayer => "Player selected",
+                                    };
+
+                                    column![
+                                        text(format!("Battlemode: {battlemode}")),
+                                        text(format!("Version: {:x}", query_info.git_hash)),
+                                    ].spacing(5)
+                                } else {
+                                    column![text("Does not support the query server protocol :(")]
+                                };
+
                             column![]
                                 .spacing(5)
+                                .width(Length::Fill)
                                 .push(
                                     row![]
                                         .spacing(10)
-                                        .push(text(&server.name).font(UNIVERSAL_FONT))
                                         .push(
-                                            text(display_gameserver_address(server))
-                                                .font(UNIVERSAL_FONT)
-                                                .style(TextStyle::BrightOrange),
+                                            text(&server.server.name)
+                                                .font(UNIVERSAL_FONT),
+                                        )
+                                        .push(
+                                            text(display_gameserver_address(
+                                                &server.server,
+                                            ))
+                                            .font(UNIVERSAL_FONT)
+                                            .style(TextStyle::BrightOrange),
                                         ),
                                 )
                                 .push(text("Description: ").font(UNIVERSAL_FONT))
-                                .push(text(&server.description).font(UNIVERSAL_FONT))
+                                .push(
+                                    text(&server.server.description).font(UNIVERSAL_FONT),
+                                )
+                                .push(queried_info)
                                 .push(extras)
-                        }))))
-                        .height(Length::Fixed(128.0)),
+                        }).width(Length::Fill)))
+                        .height(Length::Fixed(160.0)),
                     );
             }
         } else {
@@ -520,46 +570,13 @@ impl ServerBrowserPanelComponent {
             ServerBrowserPanelMessage::UpdateServerList(result) => match result {
                 Ok(Some(server_browser)) => {
                     *self = server_browser;
-                    if !self.raw_socket_support {
-                        debug!(
-                            "Skipping pinging servers as raw sockets are not supported"
-                        );
-                        None
-                    } else if !self.servers.is_empty() {
-                        let client_v4 = Arc::new(
-                            surge_ping::Client::new(&surge_ping::Config::default())
-                                .unwrap(),
-                        );
-                        let client_v6 = Arc::new(
-                            surge_ping::Client::new(
-                                &surge_ping::Config::builder()
-                                    .kind(surge_ping::ICMP::V6)
-                                    .build(),
+                    if !self.servers.is_empty() {
+                        // Why is there no simple `Command::message` ??
+                        Some(Command::perform(async {}, |()| {
+                            DefaultViewMessage::ServerBrowserPanel(
+                                ServerBrowserPanelMessage::RefreshPing,
                             )
-                            .unwrap(),
-                        );
-
-                        Some(Command::batch(self.servers.iter().enumerate().map(
-                            |(i, server)| {
-                                Command::perform(
-                                    net::ping::ping(
-                                        (client_v4.clone(), client_v6.clone()),
-                                        server.server.address.clone(),
-                                        // On MacOS using zero as a PingIdentifier
-                                        // results in a failure for some reason, so just
-                                        // add 1 to the index
-                                        (i + 1) as u16,
-                                    ),
-                                    |result| {
-                                        DefaultViewMessage::ServerBrowserPanel(
-                                            ServerBrowserPanelMessage::UpdateServerPing(
-                                                result,
-                                            ),
-                                        )
-                                    },
-                                )
-                            },
-                        )))
+                        }))
                     } else {
                         None
                     }
@@ -570,15 +587,22 @@ impl ServerBrowserPanelComponent {
                     None
                 },
             },
-            ServerBrowserPanelMessage::UpdateServerPing(ping_result) => {
-                debug!(?ping_result, "Received ping result for server");
+            ServerBrowserPanelMessage::UpdateServerPing {
+                server_address,
+                server_info,
+                ping,
+                query_client,
+            } => {
+                debug!(?ping, ?server_address, "Received ping result for server");
 
                 if let Some(server) = self
                     .servers
                     .iter_mut()
-                    .find(|x| x.server.address == ping_result.server_address)
+                    .find(|x| x.server.address == server_address)
                 {
-                    server.ping = ping_result.ping
+                    server.ping = ping;
+                    server.server_info = server_info;
+                    server.query_client = query_client;
                 };
 
                 // Currently there is no way to refresh pings, so it is OK to sort the
@@ -589,6 +613,62 @@ impl ServerBrowserPanelComponent {
 
                 None
             },
+            ServerBrowserPanelMessage::RefreshPing => Some(Command::batch(
+                self.servers.iter_mut().filter_map(|server| {
+                    let query_client = server.query_client.0.take();
+                    let query_port = server.server.query_port?;
+                    let server_address = server.server.address.clone();
+                    let server_address2 = server.server.address.clone();
+
+                    Some(Command::perform(
+                        async move {
+                            let mut query_client = match query_client {
+                                Some(client) => client,
+                                None => {
+                                    crate::net::ping::create_client(
+                                        &server_address2,
+                                        query_port,
+                                    )
+                                    .await?
+                                },
+                            };
+                            debug!(?server_address2, "Querying server");
+
+                            let res =
+                                crate::net::ping::perform_ping(&mut query_client).await;
+                            Some((res, query_client))
+                        },
+                        move |res| {
+                            let (query_client, server_info, ping) =
+                                if let Some((res, query_client)) = res {
+                                    let (ping, server_info) = res
+                                        .inspect_err(|error| {
+                                            debug!(
+                                                ?server_address,
+                                                ?error,
+                                                "Failed to query server"
+                                            )
+                                        })
+                                        .map_or((None, None), |(info, ping)| {
+                                            (Some(info), Some(ping))
+                                        });
+                                    (Some(query_client), server_info, ping)
+                                } else {
+                                    (None, None, None)
+                                };
+
+                            DefaultViewMessage::ServerBrowserPanel(
+                                ServerBrowserPanelMessage::UpdateServerPing {
+                                    server_address,
+                                    server_info,
+                                    ping,
+                                    query_client: SkipDebugClone(query_client),
+                                },
+                            )
+                        },
+                    ))
+                }),
+            )),
             ServerBrowserPanelMessage::SelectServerEntry(index) => {
                 self.selected_index = index;
                 let selected_server = index.and_then(|index| {
@@ -615,13 +695,22 @@ impl ServerBrowserPanelComponent {
             ServerSortOrder::Default => self.servers.sort_unstable_by_key(|x| {
                 (
                     !x.server.official,
-                    x.ping.or(Some(99999)),
+                    x.ping.or(Some(Duration::MAX)),
                     x.server.name.clone(),
                 )
             }),
+            ServerSortOrder::PlayerCount => {
+                self.servers.sort_unstable_by(|entry_a, entry_b| {
+                    let cnt = |e: &ServerBrowserEntry| {
+                        e.server_info.map(|info| info.players_count)
+                    };
+
+                    cnt(entry_b).cmp(&cnt(entry_a))
+                })
+            },
             ServerSortOrder::Ping => self
                 .servers
-                .sort_unstable_by_key(|x| x.ping.or(Some(99999))),
+                .sort_unstable_by_key(|x| x.ping.or(Some(Duration::MAX))),
             ServerSortOrder::ServerName => {
                 self.servers.sort_unstable_by_key(|x| x.server.name.clone())
             },
@@ -646,6 +735,7 @@ fn display_gameserver_address(gameserver: &GameServer) -> String {
 #[derive(Clone, Debug)]
 pub enum ServerSortOrder {
     Default,
+    PlayerCount,
     ServerName,
     Location,
     Ping,

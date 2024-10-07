@@ -1,7 +1,6 @@
 use crate::gui::style::{
     AirshipperTheme, BACKGROUND_BLUE, BLOG_POST_BACKGROUND_BLUE, BRIGHT_ORANGE,
-    DARK_WHITE, LIGHT_GREY, LIME_GREEN, MEDIUM_GREY, NAVY_BLUE, TOMATO_RED,
-    VERY_DARK_GREY,
+    DARK_WHITE, LIGHT_GREY, LIME_GREEN, MEDIUM_GREY, NAVY_BLUE, VERY_DARK_GREY,
 };
 use iced::{
     widget::{container, container::Appearance},
@@ -19,7 +18,6 @@ pub enum ContainerStyle {
     SidePanel,
     ColumnHeading,
     ChangelogHeader,
-    Warning,
     Tooltip,
     ExtraBrowser,
 }
@@ -37,7 +35,6 @@ impl container::StyleSheet for AirshipperTheme {
             ContainerStyle::SidePanel => sidepanel_container_style(),
             ContainerStyle::ColumnHeading => column_heading_container_style(),
             ContainerStyle::ChangelogHeader => changelog_header_container_style(),
-            ContainerStyle::Warning => warning_container_style(),
             ContainerStyle::Tooltip => tooltip_container_style(),
             ContainerStyle::ExtraBrowser => extra_browser_container_style(),
         }
@@ -95,16 +92,6 @@ fn column_heading_container_style() -> Appearance {
 fn changelog_header_container_style() -> Appearance {
     Appearance {
         background: Some(Background::Color(Color::BLACK)),
-        text_color: Some(Color::WHITE),
-        ..Appearance::default()
-    }
-}
-
-fn warning_container_style() -> Appearance {
-    Appearance {
-        background: Some(Background::Color(VERY_DARK_GREY)),
-        border_color: TOMATO_RED,
-        border_width: 2.0,
         text_color: Some(Color::WHITE),
         ..Appearance::default()
     }
