@@ -15,5 +15,7 @@ pub use community_showcase_panel::{
 pub use game_panel::{GamePanelComponent, GamePanelMessage};
 pub use logo_panel::LogoPanelComponent;
 pub use news_panel::{NewsPanelComponent, NewsPanelMessage};
-pub use server_browser_panel::{ServerBrowserPanelComponent, ServerBrowserPanelMessage};
+pub use server_browser_panel::{
+    ServerBrowserPanelComponent, ServerBrowserPanelMessage, SERVER_BROWSER_PING_REFRESH,
+};
 pub use settings_panel::{SettingsPanelComponent, SettingsPanelMessage};

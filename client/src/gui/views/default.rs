@@ -7,10 +7,11 @@ use crate::{
             CommunityShowcasePanelMessage, GamePanelComponent, GamePanelMessage,
             LogoPanelComponent, NewsPanelComponent, NewsPanelMessage,
             ServerBrowserPanelComponent, ServerBrowserPanelMessage,
-            SettingsPanelComponent, SettingsPanelMessage,
+            SettingsPanelComponent, SettingsPanelMessage, SERVER_BROWSER_PING_REFRESH,
         },
         rss_feed::RssFeedComponentMessage::UpdateRssFeed,
         style::container::ContainerStyle,
+        subscriptions,
         views::Action,
         widget::*,
     },
@@ -76,9 +77,24 @@ pub enum Interaction {
 
 impl DefaultView {
     pub fn subscription(&self) -> iced::Subscription<DefaultViewMessage> {
-        self.game_panel_component
-            .subscription()
-            .map(DefaultViewMessage::GamePanel)
+        iced::Subscription::batch(
+            IntoIterator::into_iter([
+                Some(
+                    self.game_panel_component
+                        .subscription()
+                        .map(DefaultViewMessage::GamePanel),
+                ),
+                self.show_server_browser.then_some(
+                    subscriptions::repeat_message::stream(
+                        SERVER_BROWSER_PING_REFRESH,
+                        DefaultViewMessage::ServerBrowserPanel(
+                            ServerBrowserPanelMessage::RefreshPing,
+                        ),
+                    ),
+                ),
+            ])
+            .flatten(),
+        )
     }
 
     pub fn view<'a>(

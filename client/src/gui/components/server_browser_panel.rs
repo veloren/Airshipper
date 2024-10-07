@@ -35,6 +35,8 @@ use url::Url;
 use veloren_query_server::{client::QueryClient, proto::ServerInfo as QueryServerInfo};
 use veloren_serverbrowser_api::{FieldContent, GameServer};
 
+pub const SERVER_BROWSER_PING_REFRESH: Duration = Duration::from_secs(20);
+
 #[derive(Clone, Debug)]
 pub struct ServerBrowserEntry {
     server: GameServer,
