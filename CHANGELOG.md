@@ -13,6 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Fixed
 
+## [0.15.0] - 2024-10-07
+
+## Added
+
+- Integrate server queries to show player counts, server version information, battlemode and better ping.
+
+## Fixed
+
+- Installing the game via the CLI works once again.
+
 ## [0.14.0] - 2024-09-12
 
 ## Changed
@@ -201,7 +211,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added GUI
 
-[unreleased]: https://github.com/veloren/Airshipper/compare/v0.14.0...master
+[unreleased]: https://github.com/veloren/Airshipper/compare/v0.15.0...master
 [0.2.0]: https://github.com/veloren/Airshipper/releases/tag/v0.2.0
 [0.2.1]: https://github.com/veloren/Airshipper/releases/tag/v0.2.1
 [0.3.0]: https://github.com/veloren/Airshipper/releases/tag/v0.3.0
@@ -220,3 +230,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.12.0]: https://github.com/veloren/Airshipper/releases/tag/v0.12.0
 [0.13.0]: https://github.com/veloren/Airshipper/releases/tag/v0.13.0
 [0.14.0]: https://github.com/veloren/Airshipper/releases/tag/v0.14.0
+[0.15.0]: https://github.com/veloren/Airshipper/releases/tag/v0.15.0

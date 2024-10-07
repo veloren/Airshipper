@@ -73,7 +73,7 @@ dependencies = [
 
 [[package]]
 name = "airshipper"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "bytes",
  "bytesize",
@@ -126,7 +126,7 @@ dependencies = [
 
 [[package]]
 name = "airshipper-server"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "axum",
  "bytes",
