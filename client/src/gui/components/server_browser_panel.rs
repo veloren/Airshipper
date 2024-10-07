@@ -630,7 +630,7 @@ impl ServerBrowserPanelComponent {
                                     .await?
                                 },
                             };
-                            tracing::info!(?server_address2, "Querying server");
+                            debug!(?server_address2, "Querying server");
 
                             let res =
                                 crate::net::ping::perform_ping(&mut query_client).await;

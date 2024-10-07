@@ -5620,9 +5620,9 @@ checksum = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
 
 [[package]]
 name = "veloren-query-server"
-version = "0.1.0"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "afbe000a31c2135c325be597adab889c28bab2affd9ab97817631688d535872f"
+checksum = "d6d70e1104409fffc11d604a281e50584d5d81272765ec8da2e5e059e0cc5811"
 dependencies = [
  "protocol",
  "tokio",
