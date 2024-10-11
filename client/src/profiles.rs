@@ -29,6 +29,8 @@ pub struct Profile {
     pub wgpu_backend: WgpuBackend,
     pub log_level: LogLevel,
     pub env_vars: String,
+    // TODO: make a file-picker UI for this
+    pub assets_override: Option<String>,
     // if set, on every download we do a full zip download
     pub disable_partial_download: bool,
 
@@ -158,6 +160,7 @@ impl Profile {
             wgpu_backend: WgpuBackend::Auto,
             log_level: LogLevel::Default,
             env_vars: String::new(),
+            assets_override: None,
             supported_wgpu_backends: Vec::new(),
             disable_partial_download: false,
         }
@@ -235,6 +238,14 @@ impl Profile {
                 LogLevel::Trace => OsString::from("trace"),
             };
             envs.insert("RUST_LOG", log_level);
+        }
+
+        if let Some(path) = &profile.assets_override {
+            if Path::new(&path).exists() {
+                envs.insert("VELOREN_ASSETS_OVERRIDE", path.into());
+            } else {
+                tracing::warn!("We can't find this assets override path: {}", path);
+            }
         }
 
         envs.insert("VOXYGEN_SCREENSHOT", screenshot_dir);

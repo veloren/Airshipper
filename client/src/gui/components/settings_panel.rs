@@ -29,6 +29,7 @@ pub enum SettingsPanelMessage {
     ChannelChanged(Channel),
     WgpuBackendChanged(profiles::WgpuBackend),
     EnvVarsChanged(String),
+    AssetsOverrideChanged(String),
     OpenLogsPressed,
     ChannelsLoaded(Result<Channels>),
 }
@@ -100,6 +101,14 @@ impl SettingsPanelComponent {
             SettingsPanelMessage::EnvVarsChanged(vars) => {
                 let mut profile = active_profile.clone();
                 profile.env_vars = vars;
+                Some(Command::perform(
+                    async { Action::UpdateProfile(profile) },
+                    DefaultViewMessage::Action,
+                ))
+            },
+            SettingsPanelMessage::AssetsOverrideChanged(assets) => {
+                let mut profile = active_profile.clone();
+                profile.assets_override = Some(assets);
                 Some(Command::perform(
                     async { Action::UpdateProfile(profile) },
                     DefaultViewMessage::Action,
@@ -220,6 +229,45 @@ impl SettingsPanelComponent {
         .size(FONT_SIZE)
         .gap(5);
 
+        // TODO: this and env_vars should probably scream at you for putting
+        // invalid data in
+        let assets_override = tooltip(
+            column![]
+                .spacing(5)
+                .push(text("ASSETS OVERRIDE").size(15).style(TextStyle::LightGrey))
+                .push(
+                    container(
+                        text_input(
+                            "/path/to/asset/folder/with/overrides",
+                            // borrowcheck isn't happy with unwrap_or_default
+                            #[allow(clippy::manual_unwrap_or)]
+                            #[allow(clippy::manual_unwrap_or_default)]
+                            if let Some(ref path) = active_profile.assets_override {
+                                path
+                            } else {
+                                ""
+                            },
+                            |path| {
+                                DefaultViewMessage::SettingsPanel(
+                                    SettingsPanelMessage::AssetsOverrideChanged(path),
+                                )
+                            },
+                        )
+                        .padding(PICK_LIST_PADDING)
+                        .size(FONT_SIZE),
+                    )
+                    .height(Length::Fixed(50.0))
+                    .width(Length::Fill),
+                ),
+            "Folder where you can put modified assets for testing or fun!
+Check https://book.veloren.net/ \
+             (Players -> Environment Variables)",
+            Position::Top,
+        )
+        .style(ContainerStyle::Tooltip)
+        .size(FONT_SIZE)
+        .gap(5);
+
         let env_vars = tooltip(
             column![]
                 .spacing(5)
@@ -292,7 +340,18 @@ impl SettingsPanelComponent {
         let second_row =
             container(row![].spacing(10).push(env_vars).push(channel_picker));
 
-        let col = column![].spacing(10).push(first_row).push(second_row);
+        let third_row = container(
+            row![]
+                .spacing(10)
+                .align_items(Alignment::End)
+                .push(assets_override),
+        );
+
+        let col = column![]
+            .spacing(10)
+            .push(first_row)
+            .push(second_row)
+            .push(third_row);
 
         column![]
             .push(heading_with_rule("Settings"))
