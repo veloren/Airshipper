@@ -1,11 +1,14 @@
 use crate::{
-    assets::FOLDER_ICON,
+    assets::{BOOK_ICON, FOLDER_ICON},
     channels::{Channel, Channels},
     gui::{
         components::GamePanelMessage,
         custom_widgets::heading_with_rule,
         style::{button::ButtonStyle, container::ContainerStyle, text::TextStyle},
-        views::{default::DefaultViewMessage, Action},
+        views::{
+            default::{DefaultViewMessage, Interaction},
+            Action,
+        },
         widget::*,
     },
     profiles,
@@ -16,7 +19,7 @@ use iced::{
     alignment::Horizontal,
     widget::{
         button, column, container, image, image::Handle, pick_list, row, text,
-        text_input, tooltip, tooltip::Position,
+        text_input, tooltip, tooltip::Position, Image,
     },
     Alignment, Command, Length, Padding,
 };
@@ -29,6 +32,7 @@ pub enum SettingsPanelMessage {
     ChannelChanged(Channel),
     WgpuBackendChanged(profiles::WgpuBackend),
     EnvVarsChanged(String),
+    AssetsOverrideChanged(String),
     OpenLogsPressed,
     ChannelsLoaded(Result<Channels>),
 }
@@ -100,6 +104,14 @@ impl SettingsPanelComponent {
             SettingsPanelMessage::EnvVarsChanged(vars) => {
                 let mut profile = active_profile.clone();
                 profile.env_vars = vars;
+                Some(Command::perform(
+                    async { Action::UpdateProfile(profile) },
+                    DefaultViewMessage::Action,
+                ))
+            },
+            SettingsPanelMessage::AssetsOverrideChanged(assets) => {
+                let mut profile = active_profile.clone();
+                profile.assets_override = Some(assets);
                 Some(Command::perform(
                     async { Action::UpdateProfile(profile) },
                     DefaultViewMessage::Action,
@@ -220,13 +232,64 @@ impl SettingsPanelComponent {
         .size(FONT_SIZE)
         .gap(5);
 
+        let help_link =
+            "https://book.veloren.net/players/env-vars.html#veloren_assets_override"
+                .to_owned();
+        let assets_override = tooltip(
+            column![]
+                .spacing(5)
+                .push(
+                    row![]
+                        .spacing(5)
+                        .push(
+                            text("ASSETS OVERRIDE").size(15).style(TextStyle::LightGrey),
+                        )
+                        .push(help_link_button(help_link)),
+                )
+                .push(
+                    container(
+                        text_input(
+                            "/path/to/asset/folder/with/overrides",
+                            active_profile
+                                .assets_override
+                                .as_deref()
+                                .unwrap_or_default(),
+                            |path| {
+                                DefaultViewMessage::SettingsPanel(
+                                    SettingsPanelMessage::AssetsOverrideChanged(path),
+                                )
+                            },
+                        )
+                        .padding(PICK_LIST_PADDING)
+                        .size(FONT_SIZE),
+                    )
+                    .height(Length::Fixed(50.0))
+                    .width(Length::Fixed(260.0)),
+                ),
+            "Folder where you can put modified assets for testing or fun!",
+            Position::Top,
+        )
+        .style(
+            // TODO: this and env_vars should probably scream at you for putting
+            // invalid data in
+            ContainerStyle::Tooltip,
+        )
+        .size(FONT_SIZE)
+        .gap(5);
+
+        let help_link = "https://book.veloren.net/players/env-vars.html".to_owned();
         let env_vars = tooltip(
             column![]
                 .spacing(5)
                 .push(
-                    text("ENVIRONMENT VARIABLES")
-                        .size(15)
-                        .style(TextStyle::LightGrey),
+                    row![]
+                        .spacing(5)
+                        .push(
+                            text("ENVIRONMENT VARIABLES")
+                                .size(15)
+                                .style(TextStyle::LightGrey),
+                        )
+                        .push(help_link_button(help_link)),
                 )
                 .push(
                     container(
@@ -292,7 +355,18 @@ impl SettingsPanelComponent {
         let second_row =
             container(row![].spacing(10).push(env_vars).push(channel_picker));
 
-        let col = column![].spacing(10).push(first_row).push(second_row);
+        let third_row = container(
+            row![]
+                .spacing(10)
+                .align_items(Alignment::End)
+                .push(assets_override),
+        );
+
+        let col = column![]
+            .spacing(10)
+            .push(first_row)
+            .push(second_row)
+            .push(third_row);
 
         column![]
             .push(heading_with_rule("Settings"))
@@ -303,4 +377,16 @@ impl SettingsPanelComponent {
             )
             .into()
     }
+}
+
+fn help_link_button(url: String) -> Element<'static, DefaultViewMessage> {
+    button(
+        Image::new(Handle::from_memory(BOOK_ICON.to_vec()))
+            .height(Length::Fixed(10.0))
+            .width(Length::Fixed(10.0)),
+    )
+    .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(url)))
+    .padding(Padding::new(0.0))
+    .style(ButtonStyle::Transparent)
+    .into()
 }
