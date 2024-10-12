@@ -1,11 +1,14 @@
 use crate::{
-    assets::FOLDER_ICON,
+    assets::{BOOK_ICON, FOLDER_ICON},
     channels::{Channel, Channels},
     gui::{
         components::GamePanelMessage,
         custom_widgets::heading_with_rule,
         style::{button::ButtonStyle, container::ContainerStyle, text::TextStyle},
-        views::{default::DefaultViewMessage, Action},
+        views::{
+            default::{DefaultViewMessage, Interaction},
+            Action,
+        },
         widget::*,
     },
     profiles,
@@ -16,7 +19,7 @@ use iced::{
     alignment::Horizontal,
     widget::{
         button, column, container, image, image::Handle, pick_list, row, text,
-        text_input, tooltip, tooltip::Position,
+        text_input, tooltip, tooltip::Position, Image,
     },
     Alignment, Command, Length, Padding,
 };
@@ -229,24 +232,28 @@ impl SettingsPanelComponent {
         .size(FONT_SIZE)
         .gap(5);
 
-        // TODO: this and env_vars should probably scream at you for putting
-        // invalid data in
+        let help_link =
+            "https://book.veloren.net/players/env-vars.html#veloren_assets_override"
+                .to_owned();
         let assets_override = tooltip(
             column![]
                 .spacing(5)
-                .push(text("ASSETS OVERRIDE").size(15).style(TextStyle::LightGrey))
+                .push(
+                    row![]
+                        .spacing(5)
+                        .push(
+                            text("ASSETS OVERRIDE").size(15).style(TextStyle::LightGrey),
+                        )
+                        .push(help_link_button(help_link)),
+                )
                 .push(
                     container(
                         text_input(
                             "/path/to/asset/folder/with/overrides",
-                            // borrowcheck isn't happy with unwrap_or_default
-                            #[allow(clippy::manual_unwrap_or)]
-                            #[allow(clippy::manual_unwrap_or_default)]
-                            if let Some(ref path) = active_profile.assets_override {
-                                path
-                            } else {
-                                ""
-                            },
+                            active_profile
+                                .assets_override
+                                .as_deref()
+                                .unwrap_or_default(),
                             |path| {
                                 DefaultViewMessage::SettingsPanel(
                                     SettingsPanelMessage::AssetsOverrideChanged(path),
@@ -257,24 +264,32 @@ impl SettingsPanelComponent {
                         .size(FONT_SIZE),
                     )
                     .height(Length::Fixed(50.0))
-                    .width(Length::Fill),
+                    .width(Length::Fixed(260.0)),
                 ),
-            "Folder where you can put modified assets for testing or fun!
-Check https://book.veloren.net/ \
-             (Players -> Environment Variables)",
+            "Folder where you can put modified assets for testing or fun!",
             Position::Top,
         )
-        .style(ContainerStyle::Tooltip)
+        .style(
+            // TODO: this and env_vars should probably scream at you for putting
+            // invalid data in
+            ContainerStyle::Tooltip,
+        )
         .size(FONT_SIZE)
         .gap(5);
 
+        let help_link = "https://book.veloren.net/players/env-vars.html".to_owned();
         let env_vars = tooltip(
             column![]
                 .spacing(5)
                 .push(
-                    text("ENVIRONMENT VARIABLES")
-                        .size(15)
-                        .style(TextStyle::LightGrey),
+                    row![]
+                        .spacing(5)
+                        .push(
+                            text("ENVIRONMENT VARIABLES")
+                                .size(15)
+                                .style(TextStyle::LightGrey),
+                        )
+                        .push(help_link_button(help_link)),
                 )
                 .push(
                     container(
@@ -362,4 +377,16 @@ Check https://book.veloren.net/ \
             )
             .into()
     }
+}
+
+fn help_link_button(url: String) -> Element<'static, DefaultViewMessage> {
+    button(
+        Image::new(Handle::from_memory(BOOK_ICON.to_vec()))
+            .height(Length::Fixed(10.0))
+            .width(Length::Fixed(10.0)),
+    )
+    .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(url)))
+    .padding(Padding::new(0.0))
+    .style(ButtonStyle::Transparent)
+    .into()
 }
