@@ -8,6 +8,8 @@ mod widget;
 
 use std::borrow::Cow;
 
+#[cfg(feature = "bundled_font")]
+use crate::assets::UNIVERSAL_FONT_BYTES;
 use crate::{
     assets::{
         POPPINS_BOLD_FONT_BYTES, POPPINS_FONT_BYTES, POPPINS_LIGHT_FONT_BYTES,
@@ -287,12 +289,13 @@ fn settings(cmd: CmdLine) -> Settings<CmdLine> {
             ..Default::default()
         },
         flags: cmd,
-        default_font: crate::assets::POPPINS_MEDIUM_FONT,
+        default_font: crate::assets::POPPINS_FONT,
         default_text_size: 20.0.into(),
-        // https://github.com/hecrj/iced/issues/537
-        antialiasing: false,
+        antialiasing: true,
         id: Some("airshipper".to_string()),
         fonts: vec![
+            #[cfg(feature = "bundled_font")]
+            Cow::Borrowed(UNIVERSAL_FONT_BYTES),
             Cow::Borrowed(POPPINS_FONT_BYTES),
             Cow::Borrowed(POPPINS_BOLD_FONT_BYTES),
             Cow::Borrowed(POPPINS_MEDIUM_FONT_BYTES),

@@ -24,10 +24,6 @@ pub const GLOBE_ICON: &[u8] = include_bytes!("../assets/icons/globe.png");
 pub const KEY_ICON: &[u8] = include_bytes!("../assets/icons/key.png");
 
 // Fonts
-// POPPINS_FONT_BYTES is a slice not a Font as it's used as the default application font
-pub const POPPINS_FONT_BYTES: &[u8] =
-    include_bytes!("../assets/fonts/Poppins-Regular.ttf");
-
 /// A font to be used for text that can be used to display user provided text such as
 /// those within the server browser panel.
 #[cfg(not(feature = "bundled_font"))]
@@ -40,18 +36,27 @@ pub const UNIVERSAL_FONT_BYTES: &[u8] =
     include_bytes!("../assets/fonts/GoNotoCurrent.ttf");
 
 // Poppins is the font used throughout the rest of the Airshipper client
+pub const POPPINS_FONT: Font = Font {
+    weight: Weight::Normal,
+    ..Font::with_name("Poppins")
+};
+pub const POPPINS_FONT_BYTES: &[u8] =
+    include_bytes!("../assets/fonts/Poppins-Regular.ttf");
+
 pub const POPPINS_BOLD_FONT: Font = Font {
     weight: Weight::Bold,
     ..Font::with_name("Poppins")
 };
 pub const POPPINS_BOLD_FONT_BYTES: &[u8] =
     include_bytes!("../assets/fonts/Poppins-Bold.ttf");
+
 pub const POPPINS_LIGHT_FONT: Font = Font {
     weight: Weight::Light,
     ..Font::with_name("Poppins")
 };
 pub const POPPINS_LIGHT_FONT_BYTES: &[u8] =
     include_bytes!("../assets/fonts/Poppins-Light.ttf");
+
 pub const POPPINS_MEDIUM_FONT: Font = Font {
     weight: Weight::Medium,
     ..Font::with_name("Poppins")

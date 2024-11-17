@@ -254,12 +254,12 @@ impl SettingsPanelComponent {
                                 .assets_override
                                 .as_deref()
                                 .unwrap_or_default(),
-                            |path| {
-                                DefaultViewMessage::SettingsPanel(
-                                    SettingsPanelMessage::AssetsOverrideChanged(path),
-                                )
-                            },
                         )
+                        .on_input(|path| {
+                            DefaultViewMessage::SettingsPanel(
+                                SettingsPanelMessage::AssetsOverrideChanged(path),
+                            )
+                        })
                         .padding(PICK_LIST_PADDING)
                         .size(FONT_SIZE),
                     )
@@ -274,7 +274,6 @@ impl SettingsPanelComponent {
             // invalid data in
             ContainerStyle::Tooltip,
         )
-        .size(FONT_SIZE)
         .gap(5);
 
         let help_link = "https://book.veloren.net/players/env-vars.html".to_owned();

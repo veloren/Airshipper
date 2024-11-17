@@ -40,7 +40,7 @@ rustyline = "13"
 colored = "2.0"
 
 # UI
-iced = { version = "0.12.0", features = ["tokio", "image", "debug", "advanced"] }
+iced = { version = "0.12.1", features = ["tokio", "image", "debug", "advanced"] }
 
 # Logging
 tracing = { version = "0.1.21", features = ["log"] }

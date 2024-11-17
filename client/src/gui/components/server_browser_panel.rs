@@ -89,7 +89,6 @@ pub struct ServerBrowserPanelComponent {
     servers: Vec<ServerBrowserEntry>,
     selected_index: Option<usize>,
     server_list_fetch_error: bool,
-    ping_allowed: bool,
 }
 
 impl ServerBrowserPanelComponent {
@@ -116,7 +115,6 @@ impl ServerBrowserPanelComponent {
             servers,
             selected_index: None,
             server_list_fetch_error,
-            ping_allowed: false,
         }))
     }
 

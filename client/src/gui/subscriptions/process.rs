@@ -5,15 +5,21 @@ use crate::{
     profiles::Profile,
 };
 use iced::{
-    advanced::{subscription::Recipe, Hasher},
-    event::Status,
-    futures, Event, Subscription,
+    advanced::{
+        subscription::{EventStream, Recipe},
+        Hasher,
+    },
+    futures::{
+        self,
+        stream::{BoxStream, StreamExt},
+    },
+    Subscription,
 };
 
 pub fn stream(
     profile: Profile,
     game_server_address: Option<String>,
-) -> iced::Subscription<io::ProcessUpdate> {
+) -> Subscription<io::ProcessUpdate> {
     Subscription::from_recipe(Process {
         profile,
         game_server_address,
@@ -34,12 +40,7 @@ impl Recipe for Process {
         format!("{:?}", self.profile).hash(state);
     }
 
-    fn stream(
-        self: Box<Self>,
-        _input: futures::stream::BoxStream<'static, (Event, Status)>,
-    ) -> futures::stream::BoxStream<'static, Self::Output> {
-        use iced::futures::stream::StreamExt;
-
+    fn stream(self: Box<Self>, _input: EventStream) -> BoxStream<'static, Self::Output> {
         let mut cmd = Profile::start(&self.profile, self.game_server_address.as_deref());
         match io::stream_process(&mut cmd) {
             Ok(stream) => stream.boxed(),
