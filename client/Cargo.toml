@@ -89,7 +89,7 @@ tokio = { version = "1.38", features = [
 ] }
 tokio-stream = { version = "0.1.6", features = ["io-util"] }
 futures-util = "0.3.15"
-derive_more = "0.99.11"
+derive_more = { version = "1.0.0", features = ["display"] }
 find_folder = "0.3.0"
 lazy_static = "1.4.0"
 thiserror = "1.0.20"

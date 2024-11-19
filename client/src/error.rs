@@ -3,33 +3,33 @@ use std::panic;
 
 #[derive(Clone, thiserror::Error, derive_more::Display, Debug)]
 pub enum ClientError {
-    #[display(fmt = "Error while performing filesystem operations.")]
+    #[display("Error while performing filesystem operations.")]
     IoError,
-    #[display(fmt = "Error while performing network operations.")]
+    #[display("Error while performing network operations.")]
     NetworkError,
-    #[display(fmt = "FATAL: Failed to start GUI!")]
+    #[display("FATAL: Failed to start GUI!")]
     IcedError,
-    #[display(fmt = "FATAL: Failed to save/load airshipper configuration!")]
+    #[display("FATAL: Failed to save/load airshipper configuration!")]
     RonError,
-    #[display(fmt = "Failed to parse Veloren News.")]
+    #[display("Failed to parse Veloren News.")]
     RssError,
-    #[display(fmt = "Failed to open webbrowser.")]
+    #[display("Failed to open webbrowser.")]
     OpenerError,
-    #[display(fmt = "Error with downloaded veloren archive.")]
+    #[display("Error with downloaded veloren archive.")]
     ArchiveError,
-    #[display(fmt = "Error parsing url.")]
+    #[display("Error parsing url.")]
     UrlParseError,
-    #[display(fmt = "Error reading input.")]
+    #[display("Error reading input.")]
     ReadlineError,
 
     #[cfg(windows)]
-    #[display(fmt = "FATAL: Failed to update airshipper!")]
+    #[display("FATAL: Failed to update airshipper!")]
     UpdateError,
     #[cfg(windows)]
-    #[display(fmt = "Failed to parse version.")]
+    #[display("Failed to parse version.")]
     VersionError,
 
-    #[display(fmt = "{}", "_0")]
+    #[display("{}", "_0")]
     Custom(String),
 }
 
