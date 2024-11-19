@@ -246,16 +246,21 @@ impl RssPost {
     fn process_description(desc: Option<&str>) -> String {
         match desc {
             Some(desc) => {
-                let stripped_html = html2text::from_read(desc.as_bytes(), 400)
-                    .lines()
-                    .take(3)
-                    .filter(|x| !x.contains("[banner]"))
-                    .fold(String::new(), |mut output, b| {
-                        use std::fmt::Write;
-                        let _ = writeln!(output, "{b}");
-                        output
-                    });
-                strip_markdown::strip_markdown(&stripped_html)
+                let wrapped_html = html2text::from_read(desc.as_bytes(), 400);
+                if let Ok(html) = wrapped_html {
+                    let stripped_html = html
+                        .lines()
+                        .take(3)
+                        .filter(|x| !x.contains("[banner]"))
+                        .fold(String::new(), |mut output, b| {
+                            use std::fmt::Write;
+                            let _ = writeln!(output, "{b}");
+                            output
+                        });
+                    strip_markdown::strip_markdown(&stripped_html)
+                } else {
+                    "HTML parsing failed.".into()
+                }
             },
             None => "No description found.".into(),
         }
