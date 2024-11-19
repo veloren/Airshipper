@@ -81,7 +81,7 @@ pub fn process() -> Result<()> {
 async fn process_arguments(
     airshipper: &mut Airshipper,
     action: Action,
-    verbose: i32,
+    verbose: u8,
 ) -> Result<()> {
     airshipper.active_profile.log_level = match verbose {
         0 => LogLevel::Default,
