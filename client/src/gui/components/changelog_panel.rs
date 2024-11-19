@@ -27,7 +27,7 @@ use iced::{
     },
     Alignment, Command, Length, Padding,
 };
-use pulldown_cmark::{Event, Options, Parser, Tag};
+use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd};
 use serde::{Deserialize, Serialize};
 use tracing::debug;
 
@@ -67,14 +67,18 @@ impl ChangelogPanelComponent {
         while let Some(event) = parser.next() {
             // h2 version header
             // starts a new version
-            if let Event::Start(Tag::Heading(2)) = event {
+            if let Event::Start(Tag::Heading {
+                level: HeadingLevel::H2,
+                ..
+            }) = event
+            {
                 let mut version: String = String::new();
                 let mut date: Option<String> = None;
 
                 // h2 version header text
                 while let Some(event) = parser.next() {
                     match event {
-                        Event::End(Tag::Heading(2)) => break,
+                        Event::End(TagEnd::Heading(HeadingLevel::H2)) => break,
                         Event::Text(text) => {
                             if text.contains(" - ") {
                                 date = Some(text[3..].trim().to_string());
@@ -91,20 +95,31 @@ impl ChangelogPanelComponent {
 
                 // h3 sections
                 // and paragraphs without sections aka notes
-                while let Some(event) =
-                    parser.next_if(|e| e != &Event::Start(Tag::Heading(2)))
-                {
+                while let Some(event) = parser.next_if(|e| {
+                    !matches!(
+                        e,
+                        &Event::Start(Tag::Heading {
+                            level: HeadingLevel::H2,
+                            ..
+                        })
+                    )
+                }) {
                     match event {
                         // h3 section header
                         // starts a new section
-                        Event::Start(Tag::Heading(3)) => {
+                        Event::Start(Tag::Heading {
+                            level: HeadingLevel::H3,
+                            ..
+                        }) => {
                             let mut section_name: Option<String> = None;
                             let mut section_lines: Vec<String> = Vec::new();
 
                             // h3 section header text
                             while let Some(event) = parser.next() {
                                 match event {
-                                    Event::End(Tag::Heading(3)) => break,
+                                    Event::End(TagEnd::Heading(HeadingLevel::H3)) => {
+                                        break;
+                                    },
                                     Event::Text(text) => {
                                         section_name = Some(text.trim().to_string());
                                     },
@@ -114,15 +129,26 @@ impl ChangelogPanelComponent {
 
                             // section list
                             while let Some(event) = parser.next_if(|e| {
-                                e != &Event::Start(Tag::Heading(2))
-                                    && e != &Event::Start(Tag::Heading(3))
+                                !matches!(
+                                    e,
+                                    &Event::Start(Tag::Heading {
+                                        level: HeadingLevel::H2,
+                                        ..
+                                    })
+                                ) && !matches!(
+                                    e,
+                                    &Event::Start(Tag::Heading {
+                                        level: HeadingLevel::H3,
+                                        ..
+                                    })
+                                )
                             }) {
                                 if let Event::Start(Tag::Item) = event {
                                     let mut item_text: String = String::new();
 
                                     while let Some(event) = parser.next() {
                                         match event {
-                                            Event::End(Tag::Item) => break,
+                                            Event::End(TagEnd::Item) => break,
                                             Event::Text(text) => {
                                                 item_text.push_str(&text);
                                             },
@@ -153,7 +179,7 @@ impl ChangelogPanelComponent {
                         Event::Start(Tag::Paragraph) => {
                             while let Some(event) = parser.next() {
                                 match event {
-                                    Event::End(Tag::Paragraph) => break,
+                                    Event::End(TagEnd::Paragraph) => break,
                                     Event::Text(text) => {
                                         notes.push(text.to_string());
                                     },
