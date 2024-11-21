@@ -23,9 +23,10 @@ use crate::{
 use iced::{
     alignment::{Horizontal, Vertical},
     widget::{
-        button, column, container, image, image::Handle, row, scrollable, text, Image,
+        button, column, container, image, image::Handle, row, scrollable, text,
+        text::LineHeight, Image,
     },
-    Alignment, Command, Length, Padding,
+    Alignment, Command, Length,
 };
 use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd};
 use serde::{Deserialize, Serialize};
@@ -279,15 +280,17 @@ impl ChangelogPanelComponent {
                     container(Image::new(Handle::from_memory(CHANGELOG_ICON.to_vec())))
                         .height(Length::Fill)
                         .width(Length::Shrink)
+                        .padding([0, 10, 0, 0])
                         .align_y(Vertical::Center),
                 )
                 .push(
                     container(
-                        Text::new("Latest Patch Notes")
+                        text("Latest Patch Notes")
                             .style(TextStyle::Dark)
                             .size(14)
                             .font(POPPINS_MEDIUM_FONT),
                     )
+                    .padding([3, 0, 0, 0])
                     .width(Length::Fill)
                     .height(Length::Fill)
                     .align_y(Vertical::Center),
@@ -297,7 +300,7 @@ impl ChangelogPanelComponent {
                         button(
                             row![]
                                 .push(
-                                    Text::new("Recent Changes")
+                                    text("Recent Changes")
                                         .style(TextStyle::LightGrey)
                                         .size(10)
                                         .font(POPPINS_MEDIUM_FONT)
@@ -312,8 +315,11 @@ impl ChangelogPanelComponent {
                         .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
                             GITLAB_MERGED_MR_URL.to_string(),
                         )))
+                        .padding([4, 10, 0, 10])
+                        .height(Length::Fixed(20.0))
                         .style(ButtonStyle::Browser(BrowserButtonStyle::Gitlab)),
                     )
+                    .padding([0, 10, 0, 0])
                     .height(Length::Fill)
                     .align_y(Vertical::Center)
                     .width(Length::Shrink),
@@ -333,7 +339,7 @@ impl ChangelogPanelComponent {
                         .on_scroll(|pos| {
                             DefaultViewMessage::ChangelogPanel(
                                 ChangelogPanelMessage::ScrollPositionChanged(
-                                    pos.absolute_offset().y,
+                                    pos.relative_offset().y,
                                 ),
                             )
                         })
@@ -371,8 +377,8 @@ impl ChangelogVersion {
         let mut version = column![].spacing(10).push(
             column![]
                 .push(
-                    container(text(version_string).font(POPPINS_BOLD_FONT).size(22))
-                        .padding(Padding::from([20, 0, 6, 33])),
+                    container(text(version_string).font(POPPINS_BOLD_FONT).size(20))
+                        .padding([20, 0, 6, 33]),
                 )
                 .push(Rule::horizontal(8)),
         );
@@ -382,21 +388,36 @@ impl ChangelogVersion {
         }
 
         for (section_name, section_lines) in &self.sections {
-            let mut section_col = column![].push(text(section_name).size(16));
+            let mut section_col = column![]
+                .push(
+                    text(section_name)
+                        .size(16)
+                        .line_height(LineHeight::Relative(2.0)),
+                )
+                .spacing(2);
 
             for line in section_lines {
                 section_col = section_col.push(
                     container(
                         row![]
-                            .push(text(" •  ").font(POPPINS_LIGHT_FONT).size(12))
-                            .push(text(line).font(POPPINS_LIGHT_FONT).size(12)),
+                            .push(
+                                text(" •  ")
+                                    .font(POPPINS_LIGHT_FONT)
+                                    .size(12)
+                                    .line_height(LineHeight::Absolute(16.into())),
+                            )
+                            .push(
+                                text(line)
+                                    .font(POPPINS_LIGHT_FONT)
+                                    .size(12)
+                                    .line_height(LineHeight::Absolute(16.into())),
+                            ),
                     )
-                    .padding(Padding::from([1, 0, 1, 10])),
+                    .padding([0, 0, 1, 10]),
                 );
             }
 
-            version = version
-                .push(container(section_col).padding(Padding::from([0, 33, 0, 33])));
+            version = version.push(container(section_col).padding([0, 33]));
         }
         container(version).into()
     }

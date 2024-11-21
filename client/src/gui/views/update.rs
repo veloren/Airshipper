@@ -48,7 +48,7 @@ impl UpdateView {
         let content = column![]
             .align_items(Alignment::Center)
             .spacing(10)
-            .push(text(&self.message))
+            .push(text(&self.message).size(14))
             .push(
                 row![]
                     .align_items(Alignment::Center)
@@ -57,19 +57,20 @@ impl UpdateView {
                     .push(
                         button(
                             text("Skip")
-                                .height(Length::Fill)
+                                .size(14)
                                 .horizontal_alignment(Horizontal::Center)
                                 .vertical_alignment(Vertical::Center),
                         )
                         .on_press(UpdateViewMessage::SkipPressed)
                         .style(ButtonStyle::Download(DownloadButtonStyle::Skip))
                         .width(Length::Fixed(100.0))
+                        .height(Length::Fixed(35.0))
                         .padding(7),
                     )
                     .push(
                         button(
                             text("Update")
-                                .height(Length::Fill)
+                                .size(14)
                                 .width(Length::Fixed(90.0))
                                 .horizontal_alignment(Horizontal::Center)
                                 .vertical_alignment(Vertical::Center),
@@ -79,6 +80,7 @@ impl UpdateView {
                             ButtonState::Enabled,
                         )))
                         .width(Length::Fixed(100.0))
+                        .height(Length::Fixed(35.0))
                         .padding(7),
                     ),
             );

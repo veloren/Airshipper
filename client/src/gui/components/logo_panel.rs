@@ -11,7 +11,7 @@ use crate::{
 use iced::{
     alignment::Vertical,
     widget::{button, column, container, image::Handle, row, text, text::Shaping, Image},
-    Alignment, Length, Padding,
+    Alignment, Length,
 };
 
 #[derive(Clone, Default, Debug)]
@@ -45,7 +45,7 @@ impl LogoPanelComponent {
                             "Donate",
                         )),
                 )
-                .padding(Padding::from([40, 0, 0, 0])),
+                .padding([40, 0, 0, 0]),
             );
 
         let container: Container<'_, DefaultViewMessage> = container(col).padding(20);
@@ -65,13 +65,13 @@ fn link_widget<'a>(
                 .push(
                     container(
                         Image::new(Handle::from_memory(image_bytes.to_vec()))
-                            .height(Length::Fixed(16.0))
-                            .width(Length::Fixed(16.0)),
+                            .height(Length::Fixed(24.0))
+                            .width(Length::Fixed(24.0)),
                     )
                     .align_y(Vertical::Center),
                 )
                 .push(
-                    container(text(link_text).size(16).shaping(Shaping::Advanced))
+                    container(text(link_text).size(14).shaping(Shaping::Advanced))
                         .align_y(Vertical::Center),
                 )
                 .push(
@@ -80,7 +80,7 @@ fn link_widget<'a>(
                     )))
                     .align_y(Vertical::Center),
                 )
-                .spacing(5),
+                .spacing(10),
         )
         .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
             url.to_string(),

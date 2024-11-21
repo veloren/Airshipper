@@ -106,6 +106,7 @@ impl NewsPost {
         } else {
             container(
                 text("Loading...")
+                    .size(14)
                     .horizontal_alignment(Horizontal::Center)
                     .vertical_alignment(Vertical::Center)
                     .width(Length::Fill)
@@ -118,16 +119,16 @@ impl NewsPost {
             column![]
                 .push(
                     image_container
-                        .width(Length::Fixed(211.0))
-                        .height(Length::Fixed(119.0)),
+                        .width(Length::Fixed(208.0))
+                        .height(Length::Fixed(117.0)),
                 )
                 .push(
                     container(
                         column![]
-                            .spacing(2)
-                            .push(text("Development").size(14).style(TextStyle::Lilac))
+                            .spacing(3)
+                            .push(text("Development").size(12).style(TextStyle::Lilac))
                             .push(text(&post.title).size(16).font(POPPINS_LIGHT_FONT))
-                            .push(text(&post.description).size(12)),
+                            .push(text(&post.description).size(11).line_height(1.5)),
                     )
                     .width(Length::Fill)
                     .style(ContainerStyle::BlogPost)

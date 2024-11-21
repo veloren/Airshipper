@@ -16,7 +16,7 @@ use crate::{
 use iced::{
     alignment::Vertical,
     widget::{button, column, container, image, image::Handle, row, text},
-    Alignment, Command, Length, Padding,
+    Alignment, Command, Length,
 };
 use serde::{Deserialize, Serialize};
 use tracing::debug;
@@ -123,21 +123,21 @@ impl AnnouncementPanelComponent {
         let mut content_row = row![
             container(
                 Text::new(rowtext)
-                    .size(10)
+                    .size(14)
                     .style(TextStyle::Dark)
                     .font(POPPINS_MEDIUM_FONT),
             )
             .width(Length::Fill)
             .height(Length::Fill)
             .align_y(Vertical::Center)
-            .padding(Padding::from([1, 0, 0, 16])),
+            .padding([3, 0, 0, 16]),
         ];
         if update {
             content_row = content_row.push(
                 container(
                     button(
                         row![
-                            text("Download Airshipper").size(14),
+                            text("Download Airshipper").size(10),
                             image(Handle::from_memory(UP_RIGHT_ARROW_ICON.to_vec(),))
                         ]
                         .spacing(5)
@@ -146,11 +146,11 @@ impl AnnouncementPanelComponent {
                     .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
                         AIRSHIPPER_RELEASE_URL.to_string(),
                     )))
-                    .padding(Padding::from([2, 10, 2, 12]))
+                    .padding([4, 10, 0, 12])
                     .height(Length::Fixed(20.0))
                     .style(ButtonStyle::AirshipperDownload),
                 )
-                .padding(Padding::from([0, 20, 0, 0]))
+                .padding([0, 20, 0, 0])
                 .height(Length::Fill)
                 .align_y(Vertical::Center)
                 .width(Length::Shrink),

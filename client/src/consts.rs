@@ -36,11 +36,12 @@ pub const COMMUNITY_SHOWCASE_URL: &str = "https://veloren.net/community-showcase
 pub const GITLAB_MERGED_MR_URL: &str =
     "https://gitlab.com/veloren/veloren/-/merge_requests?scope=all&sort=merged_at_desc&state=merged";
 
-pub const AIRSHIPPER_RELEASE_URL: &str = "https://github.com/veloren/Airshipper/releases";
+pub const AIRSHIPPER_RELEASE_URL: &str =
+    "https://gitlab.com/veloren/airshipper/-/releases";
 
 pub const OFFICIAL_AUTH_SERVER: &str = "https://auth.veloren.net";
 
 pub const OFFICIAL_SERVER_LIST: &str = "https://serverlist.veloren.net";
 
 pub const GITLAB_SERVER_BROWSER_URL: &str =
-    "https://gitlab.com/veloren/serverbrowser#veloren-server-browser";
+    "https://gitlab.com/veloren/serverbrowser#inclusion-of-new-servers-to-the-list";

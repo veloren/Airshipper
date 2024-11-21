@@ -3,6 +3,7 @@ use crate::{
     gui::views::{default::DefaultViewMessage, Action},
     net, ClientError, Result,
 };
+use bytes::Bytes;
 use futures_util::future::join_all;
 use iced::Command;
 use rss::Channel;
@@ -21,7 +22,7 @@ pub enum RssFeedComponentMessage {
     UpdateRssFeed(RssFeedUpdateStatus),
     ImageFetched {
         url: String,
-        result: Result<Vec<u8>>,
+        result: Result<Bytes>,
     },
 }
 
@@ -186,7 +187,7 @@ impl RssFeedData {
 
     /// Attempts to fetch an image for a given URL, retrieving it from the RSS image
     /// cache if possible, otherwise attempting to fetch it from the URL
-    pub async fn fetch_image(url: String) -> Result<Vec<u8>> {
+    pub async fn fetch_image(url: String) -> Result<Bytes> {
         let cache_base_path = fs::get_cache_path().join("rss_images");
         std::fs::create_dir_all(&cache_base_path).map_err(|_| ClientError::IoError)?;
 
@@ -202,7 +203,7 @@ impl RssFeedData {
                 url,
                 image_cache_path.to_string_lossy()
             );
-            return Ok(cached_bytes);
+            return Ok(Bytes::from(cached_bytes));
         }
 
         match crate::net::client::WEB_CLIENT.get(&*url).send().await {
@@ -216,7 +217,7 @@ impl RssFeedData {
                         image_cache_path.to_string_lossy()
                     );
                     std::fs::write(&image_cache_path, &bytes)?;
-                    Ok(bytes.to_vec())
+                    Ok(Bytes::from(bytes))
                 },
                 Err(e) => {
                     error!("Failed to fetch bytes of RSS image from URL {}", url);
@@ -239,7 +240,7 @@ pub struct RssPost {
     pub button_url: String,
     pub image_url: Option<String>,
     #[serde(skip)]
-    pub image_bytes: Option<Vec<u8>>,
+    pub image_bytes: Option<Bytes>,
 }
 
 impl RssPost {
@@ -277,21 +278,10 @@ impl From<&rss::Item> for RssPost {
             image_bytes: None,
         };
 
-        // If the RSS item has an enclosure (attached media), check if it's a jpg or png
-        // and if it is store the URL against the post for display in the RSS
-        // feed.
-        if let Some(enclosure) = item.enclosure.as_ref().filter(|enclosure| {
-            matches!(enclosure.mime_type.as_str(), "image/jpg" | "image/png")
-        }) {
-            let mut url = enclosure.url.clone();
-
-            // If the image is hosted by the discord CDN, use its ability to provide a
-            // resized image to save bandwidth
-            if url.starts_with("https://media.discordapp.net") {
-                url = format!("{}?width=320&height=240", url);
-            };
-
-            post.image_url = Some(url);
+        // If the RSS item has an enclosure (attached media), store the URL against
+        // the post for display in the RSS feed.
+        if let Some(enclosure) = item.enclosure.as_ref() {
+            post.image_url = Some(enclosure.url.clone());
         }
 
         post

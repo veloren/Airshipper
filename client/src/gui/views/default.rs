@@ -129,7 +129,7 @@ impl DefaultView {
                 ),
         )
         .height(Length::Fill)
-        .width(Length::Fixed(290.0))
+        .width(Length::Fixed(360.0))
         .style(ContainerStyle::SidePanel);
 
         let mut main_row = row![].push(left);
@@ -149,7 +149,7 @@ impl DefaultView {
             .width(Length::Fill);
             let right = container(news_panel_component.view())
                 .height(Length::Fill)
-                .width(Length::Fixed(237.0))
+                .width(Length::Fixed(248.0))
                 .style(ContainerStyle::SidePanel);
 
             main_row = main_row.push(middle).push(right);
