@@ -10,6 +10,7 @@ use crate::{
         views::default::{DefaultViewMessage, Interaction},
         widget::*,
     },
+    Result,
 };
 use iced::{
     alignment::{Horizontal, Vertical},
@@ -43,6 +44,8 @@ pub enum CommunityShowcasePanelMessage {
 }
 
 impl RssFeedComponent for CommunityShowcaseComponent {
+    const IMAGE_HEIGHT: u32 = 180;
+
     fn store_feed(&mut self, rss_feed: RssFeedData) {
         self.posts = rss_feed
             .posts
@@ -61,16 +64,12 @@ impl RssFeedComponent for CommunityShowcaseComponent {
         self.posts.iter_mut().map(|x| &mut x.rss_post).collect()
     }
 
-    fn rss_post_update_command(&self, url: String) -> Command<DefaultViewMessage> {
-        // TODO: All of this except the specific DefaultViewMessage is the same for every
-        // RssComponent so could be better encapsulated within the RssFeedComponent trait.
-        Command::perform(RssFeedData::fetch_image(url.to_owned()), move |img| {
-            DefaultViewMessage::CommunityShowcasePanel(
-                CommunityShowcasePanelMessage::RssUpdate(
-                    RssFeedComponentMessage::ImageFetched { url, result: img },
-                ),
-            )
-        })
+    fn image_fetched(url: String, result: Result<Handle>) -> DefaultViewMessage {
+        DefaultViewMessage::CommunityShowcasePanel(
+            CommunityShowcasePanelMessage::RssUpdate(
+                RssFeedComponentMessage::ImageFetched { url, result },
+            ),
+        )
     }
 
     fn after_rss_feed_updated(&mut self) {
@@ -81,6 +80,9 @@ impl RssFeedComponent for CommunityShowcaseComponent {
 }
 
 impl CommunityShowcaseComponent {
+    // 16:9 Aspect ratio
+    const IMAGE_WIDTH: u32 = 320;
+
     pub fn etag(&self) -> &str {
         &self.etag
     }
@@ -89,7 +91,12 @@ impl CommunityShowcaseComponent {
     pub(crate) async fn update_community_posts(
         local_version: String,
     ) -> RssFeedUpdateStatus {
-        RssFeedData::update_feed(consts::COMMUNITY_SHOWCASE_URL, local_version).await
+        RssFeedData::update_feed(
+            consts::COMMUNITY_SHOWCASE_URL,
+            local_version,
+            Self::IMAGE_HEIGHT,
+        )
+        .await
     }
 
     pub fn update(
@@ -173,15 +180,19 @@ impl CommunityPost {
     pub(crate) fn view(&self) -> Element<DefaultViewMessage> {
         let post = &self.rss_post;
 
-        let image_container = if let Some(bytes) = &post.image_bytes {
+        let image_container = if let Some(handle) = &post.image {
             container(
                 tooltip(
                     container(
-                        Image::new(Handle::from_memory(bytes.clone()))
-                            .content_fit(ContentFit::Cover),
-                    )
-                    .height(Length::Fixed(180.0))
-                    .width(Length::Fixed(320.0)),
+                        Image::new(handle.clone())
+                            .content_fit(ContentFit::Cover)
+                            .height(Length::Fixed(
+                                CommunityShowcaseComponent::IMAGE_HEIGHT as f32,
+                            ))
+                            .width(Length::Fixed(
+                                CommunityShowcaseComponent::IMAGE_WIDTH as f32,
+                            )),
+                    ),
                     text(&post.title).size(14),
                     Position::Right,
                 )
@@ -193,15 +204,21 @@ impl CommunityPost {
                 .align_x(Horizontal::Center)
                 .align_y(Vertical::Center)
                 .style(ContainerStyle::LoadingBlogPost)
-                .height(Length::Fixed(180.0))
-                .width(Length::Fixed(320.0))
+                .height(Length::Fixed(
+                    CommunityShowcaseComponent::IMAGE_HEIGHT as f32,
+                ))
+                .width(Length::Fixed(
+                    CommunityShowcaseComponent::IMAGE_WIDTH as f32,
+                ))
         };
         button(image_container)
             .style(ButtonStyle::Transparent)
             .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
                 post.button_url.clone(),
             )))
-            .width(Length::Fixed(320.0))
+            .width(Length::Fixed(
+                CommunityShowcaseComponent::IMAGE_WIDTH as f32,
+            ))
             .into()
     }
 }

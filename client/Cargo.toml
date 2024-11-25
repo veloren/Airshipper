@@ -78,7 +78,7 @@ crc32fast = "1.4.2"
 flate2 = "1.0"
 url = "2.2.2"
 # Other
-image = { version = "0.25.5", default-features = false, features = ["ico"] }
+image = { version = "0.25.5", default-features = false, features = ["ico", "jpeg", "png", "webp"] }
 tokio = { version = "1.38", features = [
     "macros",
     "io-util",
