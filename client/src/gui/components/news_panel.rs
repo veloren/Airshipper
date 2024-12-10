@@ -32,6 +32,7 @@ pub enum NewsPanelMessage {
 
 impl RssFeedComponent for NewsPanelComponent {
     const IMAGE_HEIGHT: u32 = 117;
+    const NAME: &str = "news";
 
     fn store_feed(&mut self, rss_feed: RssFeedData) {
         self.posts = rss_feed
@@ -66,8 +67,13 @@ impl NewsPanelComponent {
 
     /// Returns new News in case remote one is newer
     pub(crate) async fn update_news(local_version: String) -> RssFeedUpdateStatus {
-        RssFeedData::update_feed(consts::NEWS_URL, local_version, Self::IMAGE_HEIGHT)
-            .await
+        RssFeedData::update_feed(
+            consts::NEWS_URL,
+            local_version,
+            Self::NAME,
+            Self::IMAGE_HEIGHT,
+        )
+        .await
     }
 
     pub fn update(

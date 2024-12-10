@@ -16,6 +16,7 @@ use crate::{
         POPPINS_MEDIUM_FONT_BYTES,
     },
     cli::CmdLine,
+    consts::CACHE_VERSION,
     fs,
     gui::{style::AirshipperTheme, widget::*},
     profiles::Profile,
@@ -36,7 +37,7 @@ pub fn run(cmd: CmdLine) -> Result<()> {
     Ok(Airshipper::run(settings(cmd))?)
 }
 
-#[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Airshipper {
     #[serde(skip)]
     view: View,
@@ -46,6 +47,8 @@ pub struct Airshipper {
     #[serde(skip)]
     update_view: UpdateView,
     pub active_profile: Profile,
+    #[serde(default)]
+    cache_version: u8,
 
     // Airshipper update
     #[cfg(windows)]
@@ -64,6 +67,7 @@ impl Airshipper {
             #[cfg(windows)]
             update_view: UpdateView::default(),
             active_profile: Profile::default(),
+            cache_version: CACHE_VERSION,
             #[cfg(windows)]
             update: None,
             cmd: cmd.clone(),
@@ -83,6 +87,12 @@ impl Airshipper {
 
                             state.active_profile.reload_wgpu_backends();
 
+                            // Clear cache if version does not match
+                            if state.cache_version != CACHE_VERSION {
+                                let _ = std::fs::remove_dir_all(fs::get_cache_path());
+                                state.cache_version = CACHE_VERSION;
+                            }
+
                             state
                         },
                         Err(e) => {
@@ -90,7 +100,8 @@ impl Airshipper {
                                 "Reading state failed. Falling back to default: {}",
                                 e
                             );
-                            Self::default()
+                            let _ = std::fs::remove_dir_all(fs::get_cache_path());
+                            Self::new(&flags)
                         },
                     }
                 },
@@ -101,7 +112,8 @@ impl Airshipper {
                          state",
                         saved_state_file.to_string_lossy()
                     );
-                    Self::default()
+                    let _ = std::fs::remove_dir_all(fs::get_cache_path());
+                    Self::new(&flags)
                 },
             }
         })

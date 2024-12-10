@@ -93,7 +93,6 @@ dependencies = [
  "image 0.25.5",
  "indicatif",
  "lazy_static",
- "md5",
  "opener",
  "openssl-sys",
  "pulldown-cmark 0.12.2",

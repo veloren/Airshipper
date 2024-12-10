@@ -45,6 +45,7 @@ pub enum CommunityShowcasePanelMessage {
 
 impl RssFeedComponent for CommunityShowcaseComponent {
     const IMAGE_HEIGHT: u32 = 180;
+    const NAME: &str = "community_showcase";
 
     fn store_feed(&mut self, rss_feed: RssFeedData) {
         self.posts = rss_feed
@@ -94,6 +95,7 @@ impl CommunityShowcaseComponent {
         RssFeedData::update_feed(
             consts::COMMUNITY_SHOWCASE_URL,
             local_version,
+            Self::NAME,
             Self::IMAGE_HEIGHT,
         )
         .await

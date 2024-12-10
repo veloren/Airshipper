@@ -26,6 +26,7 @@ pub enum RssFeedComponentMessage {
 /// Allows a component to handle updates to an RSS feed that it owns
 pub trait RssFeedComponent {
     const IMAGE_HEIGHT: u32;
+    const NAME: &str;
 
     /// Stores the feed against the component's own state
     fn store_feed(&mut self, rss_feed_data: RssFeedData);
@@ -73,7 +74,12 @@ pub trait RssFeedComponent {
                             }
                             let url = post.image_url.as_ref().unwrap().to_owned();
                             Some(Command::perform(
-                                RssPost::fetch_image(url.clone(), Self::IMAGE_HEIGHT),
+                                RssPost::fetch_image(
+                                    url.clone(),
+                                    Self::NAME,
+                                    post.image_cache_name(),
+                                    Self::IMAGE_HEIGHT,
+                                ),
                                 move |img| Self::image_fetched(url, img),
                             ))
                         })
@@ -120,6 +126,7 @@ impl RssFeedData {
     pub async fn update_feed(
         feed_url: &str,
         local_version: String,
+        name: &str,
         height: u32,
     ) -> RssFeedUpdateStatus {
         let fetch = move |local_version: String| async move {
@@ -134,7 +141,7 @@ impl RssFeedData {
                             remote_version
                         );
                         Ok(RssFeedUpdateStatus::Updated(
-                            RssFeedData::fetch(feed_url, height).await?,
+                            RssFeedData::fetch(feed_url, name, height).await?,
                         ))
                     } else {
                         debug!(?feed_url, "RSS feed up-to-date.");
@@ -148,7 +155,7 @@ impl RssFeedData {
                         "No etag found for RSS feed, assuming an update is required."
                     );
                     Ok(RssFeedUpdateStatus::Updated(
-                        RssFeedData::fetch(feed_url, height).await?,
+                        RssFeedData::fetch(feed_url, name, height).await?,
                     ))
                 },
             }
@@ -159,7 +166,7 @@ impl RssFeedData {
             .unwrap_or_else(RssFeedUpdateStatus::UpdateFailed)
     }
 
-    pub async fn fetch(feed_url: &str, height: u32) -> Result<RssFeedData> {
+    pub async fn fetch(feed_url: &str, name: &str, height: u32) -> Result<RssFeedData> {
         use std::io::BufReader;
 
         let feed_response = net::query(feed_url).await?;
@@ -175,7 +182,7 @@ impl RssFeedData {
             .map(move |item| async move {
                 let mut post = RssPost::from(item);
                 if let Some(url) = &post.image_url {
-                    if let Ok(handle) = RssPost::fetch_image(url.to_owned(), height).await {
+                    if let Ok(handle) = RssPost::fetch_image(url.to_owned(), name, post.image_cache_name(), height).await {
                         post.image = Some(handle);
                     }
                 };
@@ -183,6 +190,16 @@ impl RssFeedData {
             })
             .collect::<Vec<_>>();
         let posts = join_all(futs).await;
+
+        if let Ok(dir) = std::fs::read_dir(RssPost::cache_base_path(name)) {
+            for file in dir.flatten() {
+                if let Ok(file_name) = file.file_name().into_string() {
+                    if !posts.iter().any(|i| i.image_cache_name() == file_name) {
+                        std::fs::remove_file(file.path())?;
+                    }
+                }
+            }
+        }
 
         Ok(RssFeedData { posts, etag })
     }
@@ -208,14 +225,15 @@ impl RssPost {
     /// Images are returned raw in order to circumvent a performance issue in the
     /// currently utilized version (0.12) of iced where images scrolled out of view
     /// are constantly being re-decoded, significantly lagging the UI.
-    pub async fn fetch_image(url: String, height: u32) -> Result<Handle> {
-        let cache_base_path = fs::get_cache_path().join("rss_images");
-        std::fs::create_dir_all(&cache_base_path).map_err(|_| ClientError::IoError)?;
-
-        // Use an MD5 hash as the filename to avoid dealing with special characters and
-        // long URLs that would make an unusable filename
-        let md5 = &md5::compute(&url);
-        let image_cache_path = cache_base_path.join(format!("{:?}", md5));
+    pub async fn fetch_image(
+        url: String,
+        feed_name: &str,
+        image_cache_name: String,
+        height: u32,
+    ) -> Result<Handle> {
+        let cache_base_path = Self::cache_base_path(feed_name);
+        std::fs::create_dir_all(&cache_base_path)?;
+        let image_cache_path = cache_base_path.join(image_cache_name);
 
         if let Ok(cached_bytes) = std::fs::read(&image_cache_path) {
             // Found the image cached locally so use it
@@ -224,11 +242,7 @@ impl RssPost {
                 url,
                 image_cache_path.to_string_lossy()
             );
-            // Resizing is repeated upon load in case old cache files are left over
-            // from previous versions
-            let image = image::load_from_memory(&cached_bytes)?
-                .resize(1000, height, FilterType::Nearest)
-                .into_rgba8();
+            let image = image::load_from_memory(&cached_bytes)?.into_rgba8();
             return Ok(Handle::from_pixels(
                 image.width(),
                 image.height(),
@@ -281,6 +295,18 @@ impl RssPost {
                 Err(e.into())
             },
         }
+    }
+
+    fn cache_base_path(feed_name: &str) -> std::path::PathBuf {
+        fs::get_cache_path().join(format!("{}_images", feed_name))
+    }
+
+    fn image_cache_name(&self) -> String {
+        self.button_url
+            .split('/')
+            .nth_back(1)
+            .unwrap_or_default()
+            .to_string()
     }
 
     fn process_description(desc: Option<&str>) -> String {
