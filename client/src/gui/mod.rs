@@ -6,14 +6,23 @@ mod subscriptions;
 mod views;
 mod widget;
 
+use std::borrow::Cow;
+
+#[cfg(feature = "bundled_font")]
+use crate::assets::UNIVERSAL_FONT_BYTES;
 use crate::{
+    assets::{
+        POPPINS_BOLD_FONT_BYTES, POPPINS_FONT_BYTES, POPPINS_LIGHT_FONT_BYTES,
+        POPPINS_MEDIUM_FONT_BYTES,
+    },
     cli::CmdLine,
+    consts::CACHE_VERSION,
     fs,
     gui::{style::AirshipperTheme, widget::*},
     profiles::Profile,
     Result,
 };
-use iced::{Application, Command, Settings, Subscription};
+use iced::{Application, Command, Settings, Size, Subscription};
 use ron::ser::PrettyConfig;
 use tokio::{fs::File, io::AsyncWriteExt};
 #[cfg(windows)]
@@ -28,7 +37,7 @@ pub fn run(cmd: CmdLine) -> Result<()> {
     Ok(Airshipper::run(settings(cmd))?)
 }
 
-#[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Airshipper {
     #[serde(skip)]
     view: View,
@@ -38,6 +47,8 @@ pub struct Airshipper {
     #[serde(skip)]
     update_view: UpdateView,
     pub active_profile: Profile,
+    #[serde(default)]
+    cache_version: u8,
 
     // Airshipper update
     #[cfg(windows)]
@@ -56,6 +67,7 @@ impl Airshipper {
             #[cfg(windows)]
             update_view: UpdateView::default(),
             active_profile: Profile::default(),
+            cache_version: CACHE_VERSION,
             #[cfg(windows)]
             update: None,
             cmd: cmd.clone(),
@@ -75,6 +87,12 @@ impl Airshipper {
 
                             state.active_profile.reload_wgpu_backends();
 
+                            // Clear cache if version does not match
+                            if state.cache_version != CACHE_VERSION {
+                                let _ = std::fs::remove_dir_all(fs::get_cache_path());
+                                state.cache_version = CACHE_VERSION;
+                            }
+
                             state
                         },
                         Err(e) => {
@@ -82,7 +100,8 @@ impl Airshipper {
                                 "Reading state failed. Falling back to default: {}",
                                 e
                             );
-                            Self::default()
+                            let _ = std::fs::remove_dir_all(fs::get_cache_path());
+                            Self::new(&flags)
                         },
                     }
                 },
@@ -93,7 +112,8 @@ impl Airshipper {
                          state",
                         saved_state_file.to_string_lossy()
                     );
-                    Self::default()
+                    let _ = std::fs::remove_dir_all(fs::get_cache_path());
+                    Self::new(&flags)
                 },
             }
         })
@@ -265,29 +285,33 @@ impl Application for Airshipper {
 }
 
 fn settings(cmd: CmdLine) -> Settings<CmdLine> {
-    use iced::window::{Icon, Settings as Window};
+    use iced::window::{icon, Settings as Window};
     let icon = image::load_from_memory(crate::assets::VELOREN_ICON).unwrap();
 
     Settings {
         window: Window {
-            size: (1050, 720),
+            size: Size::new(1050.0, 720.0),
             resizable: true,
             decorations: true,
             icon: Some(
-                Icon::from_rgba(icon.to_rgba8().into_raw(), icon.width(), icon.height())
+                icon::from_rgba(icon.to_rgba8().into_raw(), icon.width(), icon.height())
                     .unwrap(),
             ),
-            min_size: Some((400, 250)),
+            min_size: Some(Size::new(400.0, 250.0)),
             ..Default::default()
         },
         flags: cmd,
-        default_font: Some(crate::assets::POPPINS_FONT_BYTES),
-        default_text_size: 20.0,
-        // https://github.com/hecrj/iced/issues/537
-        antialiasing: false,
-        exit_on_close_request: true,
+        default_font: crate::assets::POPPINS_FONT,
+        default_text_size: 20.0.into(),
+        antialiasing: true,
         id: Some("airshipper".to_string()),
-        text_multithreading: false,
-        try_opengles_first: true, // Only used with glow backend
+        fonts: vec![
+            #[cfg(feature = "bundled_font")]
+            Cow::Borrowed(UNIVERSAL_FONT_BYTES),
+            Cow::Borrowed(POPPINS_FONT_BYTES),
+            Cow::Borrowed(POPPINS_BOLD_FONT_BYTES),
+            Cow::Borrowed(POPPINS_MEDIUM_FONT_BYTES),
+            Cow::Borrowed(POPPINS_LIGHT_FONT_BYTES),
+        ],
     }
 }

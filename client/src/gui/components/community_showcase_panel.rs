@@ -10,11 +10,15 @@ use crate::{
         views::default::{DefaultViewMessage, Interaction},
         widget::*,
     },
+    Result,
 };
 use iced::{
     alignment::{Horizontal, Vertical},
-    widget::{button, column, container, image::Handle, row, text, Image},
-    Command, ContentFit, Length, Padding,
+    widget::{
+        button, column, container, image::Handle, row, text, tooltip, tooltip::Position,
+        Image, Space,
+    },
+    Command, ContentFit, Length,
 };
 use rand::{prelude::SliceRandom, thread_rng};
 use serde::{Deserialize, Serialize};
@@ -40,6 +44,9 @@ pub enum CommunityShowcasePanelMessage {
 }
 
 impl RssFeedComponent for CommunityShowcaseComponent {
+    const IMAGE_HEIGHT: u32 = 180;
+    const NAME: &str = "community_showcase";
+
     fn store_feed(&mut self, rss_feed: RssFeedData) {
         self.posts = rss_feed
             .posts
@@ -58,16 +65,12 @@ impl RssFeedComponent for CommunityShowcaseComponent {
         self.posts.iter_mut().map(|x| &mut x.rss_post).collect()
     }
 
-    fn rss_post_update_command(&self, url: String) -> Command<DefaultViewMessage> {
-        // TODO: All of this except the specific DefaultViewMessage is the same for every
-        // RssComponent so could be better encapsulated within the RssFeedComponent trait.
-        Command::perform(RssFeedData::fetch_image(url.to_owned()), move |img| {
-            DefaultViewMessage::CommunityShowcasePanel(
-                CommunityShowcasePanelMessage::RssUpdate(
-                    RssFeedComponentMessage::ImageFetched { url, result: img },
-                ),
-            )
-        })
+    fn image_fetched(url: String, result: Result<Handle>) -> DefaultViewMessage {
+        DefaultViewMessage::CommunityShowcasePanel(
+            CommunityShowcasePanelMessage::RssUpdate(
+                RssFeedComponentMessage::ImageFetched { url, result },
+            ),
+        )
     }
 
     fn after_rss_feed_updated(&mut self) {
@@ -78,6 +81,9 @@ impl RssFeedComponent for CommunityShowcaseComponent {
 }
 
 impl CommunityShowcaseComponent {
+    // 16:9 Aspect ratio
+    const IMAGE_WIDTH: u32 = 320;
+
     pub fn etag(&self) -> &str {
         &self.etag
     }
@@ -86,7 +92,13 @@ impl CommunityShowcaseComponent {
     pub(crate) async fn update_community_posts(
         local_version: String,
     ) -> RssFeedUpdateStatus {
-        RssFeedData::update_feed(consts::COMMUNITY_SHOWCASE_URL, local_version).await
+        RssFeedData::update_feed(
+            consts::COMMUNITY_SHOWCASE_URL,
+            local_version,
+            Self::NAME,
+            Self::IMAGE_HEIGHT,
+        )
+        .await
     }
 
     pub fn update(
@@ -119,41 +131,43 @@ impl CommunityShowcaseComponent {
             container(text("Nothing to show"))
         };
 
-        let mut prev_button = button("<< Prev").style(ButtonStyle::NextPrev);
-        if self.offset > 0 {
-            prev_button =
-                prev_button.on_press(DefaultViewMessage::CommunityShowcasePanel(
-                    CommunityShowcasePanelMessage::PostOffsetChange(
-                        PostOffsetChange::Decrement,
-                    ),
-                ));
-        }
+        let prev_button = button(text("<< Prev").size(14))
+            .style(ButtonStyle::NextPrev)
+            .width(Length::Shrink)
+            .on_press(DefaultViewMessage::CommunityShowcasePanel(
+                CommunityShowcasePanelMessage::PostOffsetChange(
+                    PostOffsetChange::Decrement,
+                ),
+            ));
 
-        let mut next_button = button("Next >>").style(ButtonStyle::NextPrev);
-        if self.offset < max(self.posts.len(), 1) - 1 {
-            next_button =
-                next_button.on_press(DefaultViewMessage::CommunityShowcasePanel(
-                    CommunityShowcasePanelMessage::PostOffsetChange(
-                        PostOffsetChange::Increment,
-                    ),
-                ));
-        }
+        let next_button = button(text("Next >>").size(14))
+            .style(ButtonStyle::NextPrev)
+            .width(Length::Shrink)
+            .on_press(DefaultViewMessage::CommunityShowcasePanel(
+                CommunityShowcasePanelMessage::PostOffsetChange(
+                    PostOffsetChange::Increment,
+                ),
+            ));
+
+        let button_row = if self.offset == 0 {
+            row![]
+                .push(Space::with_width(Length::Fill))
+                .push(next_button)
+        } else if self.offset == max(self.posts.len(), 1) - 1 {
+            row![].push(prev_button)
+        } else {
+            row![]
+                .push(prev_button)
+                .push(Space::with_width(Length::Fill))
+                .push(next_button)
+        };
 
         column![]
             .push(heading_with_rule("Community Showcase"))
             .push(
-                container(
-                    column![].push(current_post).push(
-                        row![]
-                            .push(prev_button)
-                            .width(Length::Shrink)
-                            .push(container(" ").width(Length::Fill))
-                            .push(next_button)
-                            .width(Length::Shrink),
-                    ),
-                )
-                .width(Length::Fill)
-                .padding(Padding::from([10, 20])),
+                container(column![].push(current_post).push(button_row))
+                    .width(Length::Fill)
+                    .padding([10, 20]),
             )
             .into()
     }
@@ -168,29 +182,45 @@ impl CommunityPost {
     pub(crate) fn view(&self) -> Element<DefaultViewMessage> {
         let post = &self.rss_post;
 
-        // TODO: Tooltip with post description once Iced supports tooltip layering
-        // correctly. Currently tooltips get mixed up with the changelog text
-        // because Iced doesn't support multiple layers correctly.
-        let image_container = if let Some(bytes) = &post.image_bytes {
+        let image_container = if let Some(handle) = &post.image {
             container(
-                Image::new(Handle::from_memory(bytes.clone()))
-                    .content_fit(ContentFit::Cover),
+                tooltip(
+                    container(
+                        Image::new(handle.clone())
+                            .content_fit(ContentFit::Cover)
+                            .height(Length::Fixed(
+                                CommunityShowcaseComponent::IMAGE_HEIGHT as f32,
+                            ))
+                            .width(Length::Fixed(
+                                CommunityShowcaseComponent::IMAGE_WIDTH as f32,
+                            )),
+                    ),
+                    text(&post.title).size(14),
+                    Position::Right,
+                )
+                .style(ContainerStyle::Tooltip)
+                .gap(5),
             )
-            .height(Length::Fixed(180.0))
         } else {
             container(text("Loading..."))
                 .align_x(Horizontal::Center)
                 .align_y(Vertical::Center)
                 .style(ContainerStyle::LoadingBlogPost)
-                .height(Length::Fixed(180.0))
-                .width(Length::Fill)
+                .height(Length::Fixed(
+                    CommunityShowcaseComponent::IMAGE_HEIGHT as f32,
+                ))
+                .width(Length::Fixed(
+                    CommunityShowcaseComponent::IMAGE_WIDTH as f32,
+                ))
         };
         button(image_container)
             .style(ButtonStyle::Transparent)
             .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
                 post.button_url.clone(),
             )))
-            .width(Length::Fill)
+            .width(Length::Fixed(
+                CommunityShowcaseComponent::IMAGE_WIDTH as f32,
+            ))
             .into()
     }
 }

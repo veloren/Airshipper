@@ -26,9 +26,9 @@ use iced::{
     alignment::{Horizontal, Vertical},
     widget::{
         button, column, container, image, image::Handle, progress_bar, row, text,
-        tooltip, tooltip::Position, Image,
+        text::LineHeight, tooltip, tooltip::Position, Image,
     },
-    Alignment, Command, Length, Padding,
+    Alignment, Command, Length,
 };
 use std::{
     sync::Arc,
@@ -339,7 +339,7 @@ impl GamePanelComponent {
                         .height(Length::Fixed(30.0))
                         .push(
                             container(
-                                text(version_string).size(15).style(TextStyle::LightGrey),
+                                text(version_string).size(12).style(TextStyle::LightGrey),
                             )
                             .align_y(Vertical::Bottom)
                             .width(Length::Fill)
@@ -357,20 +357,19 @@ impl GamePanelComponent {
                                     ),
                                 )
                                 .center_y(),
-                                "Settings",
+                                text("Settings").size(14),
                                 Position::Left,
                             )
-                            .size(18)
                             .style(ContainerStyle::Tooltip)
                             .gap(5),
                         ),
                 )
-                .padding(Padding::from([0, 20])),
+                .padding([0, 20]),
             )
             .push(
                 container(self.download_area())
                     .width(Length::Fill)
-                    .padding(Padding::from([10, 20, 20, 20])),
+                    .padding([10, 20, 20, 20]),
             )
             .into()
     }
@@ -429,7 +428,7 @@ impl GamePanelComponent {
                     .push(
                         text(progress_text)
                             .horizontal_alignment(Horizontal::Right)
-                            .size(17),
+                            .size(12),
                     )
                     .spacing(5)
                     .align_items(Alignment::Center);
@@ -446,19 +445,19 @@ impl GamePanelComponent {
                     };
 
                     download_stats_row = download_stats_row
-                        .push(text("@").vertical_alignment(Vertical::Center).size(17))
+                        .push(text("@").vertical_alignment(Vertical::Center).size(12))
                         .push(
                             text(format!("{:.1} MB/s", download_rate))
                                 .font(POPPINS_BOLD_FONT)
-                                .size(17)
+                                .size(12)
                                 .width(Length::Fill),
                         )
                         .push(
                             row![]
                                 .push(
-                                    text(remaining_text).font(POPPINS_BOLD_FONT).size(17),
+                                    text(remaining_text).font(POPPINS_BOLD_FONT).size(12),
                                 )
-                                .push(text("left").size(17))
+                                .push(text("left").size(12))
                                 .spacing(2)
                                 .width(Length::Shrink),
                         );
@@ -473,10 +472,8 @@ impl GamePanelComponent {
 
                 container(
                     column![]
-                        .push(text(step).font(POPPINS_BOLD_FONT).size(20))
-                        .push(
-                            container(download_stats_row).padding(Padding::from([5, 0])),
-                        )
+                        .push(text(step).font(POPPINS_BOLD_FONT).size(14))
+                        .push(container(download_stats_row).padding([5, 0]))
                         .push(
                             progress_bar(0.0..=100.0f32, percent)
                                 .height(Length::Fixed(28.0)),
@@ -487,94 +484,102 @@ impl GamePanelComponent {
             _ => {
                 // For all other states, the button is shown with different text/styling
                 // dependant on the state
-                let (button_text, button_style, enabled, custom_font_size) =
-                    match &self.state {
-                        GamePanelState::ReadyToPlay
-                            if self.selected_server_browser_address.is_some() =>
-                        {
-                            (
-                                "Connect to selected server",
-                                ButtonStyle::Download(DownloadButtonStyle::Launch(
-                                    ButtonState::Enabled,
-                                )),
-                                true,
-                                Some(25),
-                            )
-                        },
-                        GamePanelState::ReadyToPlay => (
-                            "Launch",
-                            ButtonStyle::Download(DownloadButtonStyle::Launch(
-                                ButtonState::Enabled,
-                            )),
-                            true,
-                            None,
-                        ),
-                        GamePanelState::Offline(true) => (
-                            "Play Offline",
-                            ButtonStyle::Download(DownloadButtonStyle::Launch(
-                                ButtonState::Enabled,
-                            )),
-                            true,
-                            None,
-                        ),
-                        GamePanelState::Offline(false) => (
-                            "Try Again",
+                let (button_text, button_style, enabled) = match &self.state {
+                    GamePanelState::ReadyToPlay => (
+                        "Launch",
+                        ButtonStyle::Download(DownloadButtonStyle::Launch(
+                            ButtonState::Enabled,
+                        )),
+                        true,
+                    ),
+                    GamePanelState::Offline(true) => (
+                        "Play Offline",
+                        ButtonStyle::Download(DownloadButtonStyle::Launch(
+                            ButtonState::Enabled,
+                        )),
+                        true,
+                    ),
+                    GamePanelState::Offline(false) => (
+                        "Try Again",
+                        ButtonStyle::Download(DownloadButtonStyle::Update(
+                            ButtonState::Enabled,
+                        )),
+                        true,
+                    ),
+                    GamePanelState::Updating {
+                        btnstate: dstate, ..
+                    } => match *dstate {
+                        DownloadButtonState::Checking => (
+                            "Checking...",
                             ButtonStyle::Download(DownloadButtonStyle::Update(
-                                ButtonState::Enabled,
-                            )),
-                            true,
-                            None,
-                        ),
-                        GamePanelState::Updating {
-                            btnstate: dstate, ..
-                        } => match *dstate {
-                            DownloadButtonState::Checking => (
-                                "Checking...",
-                                ButtonStyle::Download(DownloadButtonStyle::Update(
-                                    ButtonState::Disabled,
-                                )),
-                                false,
-                                None,
-                            ),
-                            DownloadButtonState::WaitForConfirm => (
-                                "Download",
-                                ButtonStyle::Download(DownloadButtonStyle::Update(
-                                    ButtonState::Enabled,
-                                )),
-                                true,
-                                None,
-                            ),
-                            _ => unreachable!(),
-                        },
-                        GamePanelState::Retry => (
-                            "Retry",
-                            ButtonStyle::Download(DownloadButtonStyle::Update(
-                                ButtonState::Enabled,
-                            )),
-                            true,
-                            None,
-                        ),
-                        GamePanelState::Playing(_) => (
-                            "Playing",
-                            ButtonStyle::Download(DownloadButtonStyle::Launch(
                                 ButtonState::Disabled,
                             )),
                             false,
-                            None,
                         ),
-                    };
+                        DownloadButtonState::WaitForConfirm => (
+                            "Download",
+                            ButtonStyle::Download(DownloadButtonStyle::Update(
+                                ButtonState::Enabled,
+                            )),
+                            true,
+                        ),
+                        _ => unreachable!(),
+                    },
+                    GamePanelState::Retry => (
+                        "Retry",
+                        ButtonStyle::Download(DownloadButtonStyle::Update(
+                            ButtonState::Enabled,
+                        )),
+                        true,
+                    ),
+                    GamePanelState::Playing(_) => (
+                        "Playing",
+                        ButtonStyle::Download(DownloadButtonStyle::Launch(
+                            ButtonState::Disabled,
+                        )),
+                        false,
+                    ),
+                };
 
                 let mut launch_button = button(
                     text(button_text)
                         .font(POPPINS_BOLD_FONT)
-                        .size(custom_font_size.unwrap_or(45))
+                        .size(32)
                         .horizontal_alignment(Horizontal::Center)
                         .vertical_alignment(Vertical::Center)
                         .width(Length::Fill),
-                )
-                .style(button_style)
-                .width(Length::FillPortion(3))
-                .height(Length::Fixed(75.0));
+                );
+
+                if let GamePanelState::ReadyToPlay = &self.state {
+                    if self.selected_server_browser_address.is_some() {
+                        launch_button = button(
+                            column![]
+                                .align_items(Alignment::Center)
+                                .padding([10, 40])
+                                .push(
+                                    text("Connect to")
+                                        .font(POPPINS_BOLD_FONT)
+                                        .line_height(LineHeight::Absolute(22.into()))
+                                        .size(18)
+                                        .horizontal_alignment(Horizontal::Center)
+                                        .vertical_alignment(Vertical::Center),
+                                )
+                                .push(
+                                    text("selected server")
+                                        .font(POPPINS_BOLD_FONT)
+                                        .line_height(LineHeight::Absolute(22.into()))
+                                        .size(18)
+                                        .horizontal_alignment(Horizontal::Center)
+                                        .vertical_alignment(Vertical::Center),
+                                ),
+                        );
+                    }
+                };
+
+                launch_button = launch_button
+                    .style(button_style)
+                    .width(Length::FillPortion(3))
+                    .height(Length::Fixed(75.0));
 
                 if enabled {
                     launch_button = launch_button.on_press(
@@ -583,11 +588,23 @@ impl GamePanelComponent {
                 }
 
                 let server_browser_button = button(
-                    text("Server Browser")
-                        .font(POPPINS_MEDIUM_FONT)
-                        .size(22)
-                        .horizontal_alignment(Horizontal::Center)
-                        .vertical_alignment(Vertical::Center),
+                    column![]
+                        .align_items(Alignment::Center)
+                        .padding([10, 0])
+                        .push(
+                            text("Server")
+                                .font(POPPINS_MEDIUM_FONT)
+                                .size(16)
+                                .horizontal_alignment(Horizontal::Center)
+                                .vertical_alignment(Vertical::Center),
+                        )
+                        .push(
+                            text("Browser")
+                                .font(POPPINS_MEDIUM_FONT)
+                                .size(16)
+                                .horizontal_alignment(Horizontal::Center)
+                                .vertical_alignment(Vertical::Center),
+                        ),
                 )
                 .width(Length::FillPortion(1))
                 .height(Length::Fixed(75.0))

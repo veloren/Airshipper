@@ -27,7 +27,7 @@ use iced::{
         button, column, container, horizontal_rule, image, image::Handle, row,
         scrollable, text, tooltip, tooltip::Position, Image,
     },
-    Alignment, Command, Length, Padding,
+    Alignment, Command, Length,
 };
 use std::{borrow::Cow, cmp::min, time::Duration};
 use tracing::debug;
@@ -134,24 +134,25 @@ impl ServerBrowserPanelComponent {
                         .height(Length::Fill)
                         .width(Length::Shrink)
                         .align_y(Vertical::Center)
-                        .padding(Padding::from([0, 0, 0, 12])),
+                        .padding([0, 0, 0, 12]),
                     )
                     .push(
                         container(
                             text("Server Browser")
                                 .style(TextStyle::Dark)
+                                .size(16)
                                 .font(POPPINS_MEDIUM_FONT),
                         )
                         .width(Length::Fill)
                         .height(Length::Fill)
                         .align_y(Vertical::Center)
-                        .padding(Padding::from([1, 0, 0, 8])),
+                        .padding([1, 0, 0, 8]),
                     )
                     .push(
                         container(
                             button(
                                 row![]
-                                    .push(text("Get your server listed here").size(14))
+                                    .push(text("Get your server listed here").size(10))
                                     .push(image(Handle::from_memory(
                                         UP_RIGHT_ARROW_ICON.to_vec(),
                                     )))
@@ -163,13 +164,13 @@ impl ServerBrowserPanelComponent {
                                     GITLAB_SERVER_BROWSER_URL.to_string(),
                                 ),
                             ))
-                            .padding(Padding::from([2, 10, 2, 10]))
+                            .padding([4, 10, 0, 10])
                             .height(Length::Fixed(20.0))
                             .style(ButtonStyle::Browser(BrowserButtonStyle::Gitlab)),
                         )
                         .height(Length::Fill)
                         .align_y(Vertical::Center)
-                        .padding(Padding::from([1, 10, 0, 8])),
+                        .padding([1, 10, 0, 8]),
                     ),
             )),
         );
@@ -178,6 +179,7 @@ impl ServerBrowserPanelComponent {
             let mut button = button(
                 text(button_text)
                     .font(POPPINS_BOLD_FONT)
+                    .size(16)
                     .vertical_alignment(Vertical::Center),
             )
             .padding(0)
@@ -194,7 +196,6 @@ impl ServerBrowserPanelComponent {
         let column_headings = container(
             row![]
                 .width(Length::Fill)
-                .height(Length::Fixed(30.0))
                 // Spacer heading for icons column
                 .push(heading_button("", None).width(Length::Fixed(ICON_COLUMN_WIDTH)))
                 .push(
@@ -214,7 +215,7 @@ impl ServerBrowserPanelComponent {
                 ),
         )
         .style(ContainerStyle::ColumnHeading)
-        .padding(Padding::from([0, 8]))
+        .padding([10, 8])
         .width(Length::Fill);
 
         let mut server_list = column![];
@@ -224,6 +225,7 @@ impl ServerBrowserPanelComponent {
                 .width(Length::FillPortion(3))
                 .font(UNIVERSAL_FONT)
                 .height(Length::Fill)
+                .size(14)
                 .vertical_alignment(Vertical::Center)
         };
 
@@ -256,8 +258,11 @@ impl ServerBrowserPanelComponent {
                         image(Handle::from_memory(KEY_ICON.to_vec()))
                             .height(Length::Fixed(16.0))
                             .width(Length::Fixed(16.0)),
-                        "This server is using a custom auth server. Do not log into \
-                         this server unless you trust the owner.",
+                        text(
+                            "This server is using a custom auth server. Do not log into \
+                             this server unless you trust the owner.",
+                        )
+                        .size(14),
                         Position::Right,
                     )
                     .style(ContainerStyle::Tooltip)
@@ -271,7 +276,10 @@ impl ServerBrowserPanelComponent {
                         image(Handle::from_memory(STAR_ICON.to_vec()))
                             .height(Length::Fixed(16.0))
                             .width(Length::Fixed(16.0)),
-                        "This is an official server operated by the Veloren project",
+                        text(
+                            "This is an official server operated by the Veloren project",
+                        )
+                        .size(14),
                         Position::Right,
                     )
                     .style(ContainerStyle::Tooltip)
@@ -284,7 +292,7 @@ impl ServerBrowserPanelComponent {
                 .align_items(Alignment::Center)
                 .push(
                     container(status_icons)
-                        .padding(Padding::from([0, 8]))
+                        .padding([0, 8])
                         .width(Length::Fixed(ICON_COLUMN_WIDTH))
                         .align_x(Horizontal::Right),
                 )
@@ -355,7 +363,7 @@ impl ServerBrowserPanelComponent {
             } else {
                 ButtonStyle::ServerListEntry(ServerListEntryButtonState::NotSelected)
             };
-            let select_row_button = button(container(row).padding(Padding::from([0, 8])))
+            let select_row_button = button(container(row).padding([0, 8]))
                 .on_press(DefaultViewMessage::ServerBrowserPanel(
                     if self.selected_index == Some(i) {
                         ServerBrowserPanelMessage::SelectServerEntry(None)
@@ -408,7 +416,7 @@ impl ServerBrowserPanelComponent {
                     .push(
                         container(horizontal_rule(8))
                             .width(Length::Fill)
-                            .padding(Padding::from([5, 0])),
+                            .padding([5, 20]),
                     )
                     .push(
                         container(scrollable(container({
@@ -426,15 +434,15 @@ impl ServerBrowserPanelComponent {
                                     FieldContent::Text(c) => {
                                         let container = match id.as_str() {
                                             "email" => container(
-                                                text(format!("Email: {}", c)).size(14),
+                                                text(format!("Email: {}", c)).size(12),
                                             )
-                                            .padding(Padding::from([2, 10, 2, 10]))
+                                            .padding([2, 10, 2, 10])
                                             .style(ContainerStyle::ExtraBrowser),
                                             _ => container(
                                                 text(format!("{}: {}", field.name, c))
                                                     .size(14),
                                             )
-                                            .padding(Padding::from([2, 10, 2, 10]))
+                                            .padding([2, 10, 2, 10])
                                             .style(ContainerStyle::ExtraBrowser),
                                         };
                                         extras = extras.push(container);
@@ -442,7 +450,7 @@ impl ServerBrowserPanelComponent {
                                     FieldContent::Url(c) => {
                                         let mut button = button(
                                             row![]
-                                                .push(text(field.name).size(14))
+                                                .push(text(field.name).size(12))
                                                 .push(image(Handle::from_memory(
                                                     UP_RIGHT_ARROW_ICON.to_vec(),
                                                 )))
@@ -452,7 +460,7 @@ impl ServerBrowserPanelComponent {
                                         .on_press(DefaultViewMessage::Interaction(
                                             Interaction::OpenURL(c.clone()),
                                         ))
-                                        .padding(Padding::from([2, 10, 2, 10]))
+                                        .padding([2, 10, 2, 10])
                                         .height(Length::Fixed(20.0));
                                         let button_style = match id.as_str() {
                                             "discord"
@@ -507,11 +515,11 @@ impl ServerBrowserPanelComponent {
                                     };
 
                                     column![
-                                        text(format!("Battlemode: {battlemode}")),
-                                        text(format!("Version: {:x}", query_info.git_hash)),
+                                        text(format!("Battlemode: {battlemode}")).size(14),
+                                        text(format!("Version: {:x}", query_info.git_hash)).size(14),
                                     ].spacing(5)
                                 } else {
-                                    column![text("Does not support the query server protocol :(")]
+                                    column![text("Does not support the query server protocol :(").size(14)]
                                 };
 
                             column![]
@@ -522,31 +530,36 @@ impl ServerBrowserPanelComponent {
                                         .spacing(10)
                                         .push(
                                             text(&server.server.name)
-                                                .font(UNIVERSAL_FONT),
+                                                .font(UNIVERSAL_FONT)
+                                                .size(14),
                                         )
                                         .push(
                                             text(display_gameserver_address(
                                                 &server.server,
                                             ))
+                                            .size(14)
                                             .font(UNIVERSAL_FONT)
                                             .style(TextStyle::BrightOrange),
                                         ),
                                 )
-                                .push(text("Description: ").font(UNIVERSAL_FONT))
+                                .push(text("Description: ").font(UNIVERSAL_FONT).size(14))
                                 .push(
-                                    text(&server.server.description).font(UNIVERSAL_FONT),
+                                    text(&server.server.description)
+                                        .font(UNIVERSAL_FONT)
+                                        .size(14),
                                 )
                                 .push(queried_info)
                                 .push(extras)
                         }).width(Length::Fill)))
-                        .height(Length::Fixed(160.0)),
+                        .height(Length::Fixed(160.0))
+                        .padding([0, 0, 0, 40]),
                     );
             }
         } else {
             col = col.push(
                 container(
                     text("Error fetching server list")
-                        .size(20)
+                        .size(14)
                         .style(TextStyle::TomatoRed),
                 )
                 .padding(20)
@@ -557,7 +570,6 @@ impl ServerBrowserPanelComponent {
         let server_browser_container = container(col)
             .height(Length::Fill)
             .width(Length::Fill)
-            .padding(8)
             .style(ContainerStyle::Dark);
         server_browser_container.into()
     }

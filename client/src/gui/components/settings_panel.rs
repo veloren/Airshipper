@@ -21,7 +21,7 @@ use iced::{
         button, column, container, image, image::Handle, pick_list, row, text,
         text_input, tooltip, tooltip::Position, Image,
     },
-    Alignment, Command, Length, Padding,
+    Alignment, Command, Length,
 };
 use tracing::debug;
 
@@ -133,16 +133,19 @@ impl SettingsPanelComponent {
         active_profile: &'a Profile,
     ) -> Element<'a, DefaultViewMessage> {
         const PICK_LIST_PADDING: u16 = 7;
-        const FONT_SIZE: u16 = 18;
+        const FONT_SIZE: u16 = 12;
 
-        let graphics_mode = tooltip(
-            column![]
-                .spacing(5)
-                .push(text("GRAPHICS MODE").size(15).style(TextStyle::LightGrey))
-                .push(
+        let graphics_mode = column![]
+            .spacing(5)
+            .push(
+                container(text("GRAPHICS MODE").size(10).style(TextStyle::LightGrey))
+                    .padding([0, 0, 0, 3]),
+            )
+            .push(
+                tooltip(
                     container(
                         pick_list(
-                            &active_profile.supported_wgpu_backends,
+                            active_profile.supported_wgpu_backends.as_slice(),
                             Some(active_profile.wgpu_backend),
                             |x| {
                                 DefaultViewMessage::SettingsPanel(
@@ -151,40 +154,50 @@ impl SettingsPanelComponent {
                             },
                         )
                         .text_size(FONT_SIZE)
-                        .padding(PICK_LIST_PADDING),
+                        .padding(PICK_LIST_PADDING)
+                        .width(Length::Fill),
                     )
-                    .height(Length::Fixed(30.0))
-                    .width(Length::Fixed(100.0)),
-                ),
-            "The rendering backend that the game will use. \nLeave on Auto unless you \
-             are experiencing issues",
-            Position::Top,
-        )
-        .style(ContainerStyle::Tooltip)
-        .size(FONT_SIZE)
-        .gap(5);
-
-        let log_level = tooltip(
-            column![]
-                .spacing(5)
-                .push(
-                    row![]
-                        .spacing(5)
-                        .push(text("LOG LEVEL").size(15).style(TextStyle::LightGrey))
-                        .push(
-                            container(
-                                button(image(Handle::from_memory(FOLDER_ICON.to_vec())))
-                                    .on_press(DefaultViewMessage::SettingsPanel(
-                                        SettingsPanelMessage::OpenLogsPressed,
-                                    ))
-                                    .padding(Padding::new(0.0))
-                                    .style(ButtonStyle::Transparent),
-                            )
-                            .align_x(Horizontal::Right),
-                        )
-                        .align_items(Alignment::Center),
+                    .height(Length::Fixed(30.0)),
+                    text(
+                        "The rendering backend that the game will use. \nLeave on Auto \
+                         unless you are experiencing issues",
+                    )
+                    .size(14),
+                    Position::Bottom,
                 )
-                .push(
+                .style(ContainerStyle::Tooltip)
+                .gap(5),
+            )
+            .width(Length::FillPortion(1));
+
+        let log_level = column![]
+            .spacing(5)
+            .push(
+                row![]
+                    .spacing(5)
+                    .push(
+                        container(text("LOG LEVEL").size(10).style(TextStyle::LightGrey))
+                            .padding([0, 0, 0, 3]),
+                    )
+                    .push(
+                        container(
+                            button(
+                                image(Handle::from_memory(FOLDER_ICON.to_vec()))
+                                    .height(Length::Fixed(15.0))
+                                    .width(Length::Fixed(15.0)),
+                            )
+                            .on_press(DefaultViewMessage::SettingsPanel(
+                                SettingsPanelMessage::OpenLogsPressed,
+                            ))
+                            .padding(0)
+                            .style(ButtonStyle::Transparent),
+                        )
+                        .align_x(Horizontal::Right),
+                    )
+                    .align_items(Alignment::Center),
+            )
+            .push(
+                tooltip(
                     container(
                         pick_list(
                             profiles::LOG_LEVELS,
@@ -196,23 +209,30 @@ impl SettingsPanelComponent {
                             },
                         )
                         .text_size(FONT_SIZE)
-                        .padding(PICK_LIST_PADDING),
+                        .padding(PICK_LIST_PADDING)
+                        .width(Length::Fill),
                     )
-                    .height(Length::Fixed(30.0))
-                    .width(Length::Fixed(80.0)),
-                ),
-            "Changes the amount of information that the game outputs to its log file",
-            Position::Left,
-        )
-        .style(ContainerStyle::Tooltip)
-        .size(FONT_SIZE)
-        .gap(5);
+                    .height(Length::Fixed(30.0)),
+                    text(
+                        "Changes the amount of information that the game outputs to its \
+                         log file",
+                    )
+                    .size(14),
+                    Position::Bottom,
+                )
+                .style(ContainerStyle::Tooltip)
+                .gap(5),
+            )
+            .width(Length::FillPortion(1));
 
-        let server_picker = tooltip(
-            column![]
-                .spacing(5)
-                .push(text("SERVER").size(15).style(TextStyle::LightGrey))
-                .push(
+        let server_picker = column![]
+            .spacing(5)
+            .push(
+                container(text("SERVER").size(10).style(TextStyle::LightGrey))
+                    .padding([0, 0, 0, 3]),
+            )
+            .push(
+                tooltip(
                     container(
                         pick_list(profiles::SERVERS, Some(active_profile.server), |x| {
                             DefaultViewMessage::SettingsPanel(
@@ -220,33 +240,36 @@ impl SettingsPanelComponent {
                             )
                         })
                         .text_size(FONT_SIZE)
-                        .padding(PICK_LIST_PADDING),
+                        .padding(PICK_LIST_PADDING)
+                        .width(Length::Fill),
                     )
-                    .height(Length::Fixed(30.0))
-                    .width(Length::Fixed(120.0)),
-                ),
-            "The download server used for game downloads",
-            Position::Top,
-        )
-        .style(ContainerStyle::Tooltip)
-        .size(FONT_SIZE)
-        .gap(5);
+                    .height(Length::Fixed(30.0)),
+                    text("The download server used for game downloads").size(14),
+                    Position::Bottom,
+                )
+                .style(ContainerStyle::Tooltip)
+                .gap(5),
+            )
+            .width(Length::FillPortion(1));
 
         let help_link =
             "https://book.veloren.net/players/env-vars.html#veloren_assets_override"
                 .to_owned();
-        let assets_override = tooltip(
-            column![]
-                .spacing(5)
-                .push(
-                    row![]
-                        .spacing(5)
-                        .push(
-                            text("ASSETS OVERRIDE").size(15).style(TextStyle::LightGrey),
+        let assets_override = column![]
+            .spacing(5)
+            .push(
+                row![]
+                    .spacing(5)
+                    .push(
+                        container(
+                            text("ASSETS OVERRIDE").size(10).style(TextStyle::LightGrey),
                         )
-                        .push(help_link_button(help_link)),
-                )
-                .push(
+                        .padding([0, 0, 0, 3]),
+                    )
+                    .push(help_link_button(help_link)),
+            )
+            .push(
+                tooltip(
                     container(
                         text_input(
                             "/path/to/asset/folder/with/overrides",
@@ -254,72 +277,74 @@ impl SettingsPanelComponent {
                                 .assets_override
                                 .as_deref()
                                 .unwrap_or_default(),
-                            |path| {
-                                DefaultViewMessage::SettingsPanel(
-                                    SettingsPanelMessage::AssetsOverrideChanged(path),
-                                )
-                            },
                         )
+                        .on_input(|path| {
+                            DefaultViewMessage::SettingsPanel(
+                                SettingsPanelMessage::AssetsOverrideChanged(path),
+                            )
+                        })
                         .padding(PICK_LIST_PADDING)
                         .size(FONT_SIZE),
                     )
-                    .height(Length::Fixed(50.0))
-                    .width(Length::Fixed(260.0)),
-                ),
-            "Folder where you can put modified assets for testing or fun!",
-            Position::Top,
-        )
-        .style(
-            // TODO: this and env_vars should probably scream at you for putting
-            // invalid data in
-            ContainerStyle::Tooltip,
-        )
-        .size(FONT_SIZE)
-        .gap(5);
+                    .height(Length::Fixed(30.0)),
+                    text("Folder where you can put modified assets for testing or fun!")
+                        .size(14),
+                    Position::Bottom,
+                )
+                .style(
+                    // TODO: this and env_vars should probably scream at you for putting
+                    // invalid data in
+                    ContainerStyle::Tooltip,
+                )
+                .gap(5),
+            )
+            .width(Length::Fill);
 
         let help_link = "https://book.veloren.net/players/env-vars.html".to_owned();
-        let env_vars = tooltip(
-            column![]
-                .spacing(5)
-                .push(
-                    row![]
-                        .spacing(5)
-                        .push(
+        let env_vars = column![]
+            .spacing(5)
+            .push(
+                row![]
+                    .spacing(5)
+                    .push(
+                        container(
                             text("ENVIRONMENT VARIABLES")
-                                .size(15)
+                                .size(10)
                                 .style(TextStyle::LightGrey),
                         )
-                        .push(help_link_button(help_link)),
-                )
-                .push(
+                        .padding([0, 0, 0, 3]),
+                    )
+                    .push(help_link_button(help_link)),
+            )
+            .push(
+                tooltip(
                     container(
-                        text_input(
-                            "FOO=foo, BAR=bar",
-                            &active_profile.env_vars,
-                            |vars| {
+                        text_input("FOO=foo, BAR=bar", &active_profile.env_vars)
+                            .on_input(|vars| {
                                 DefaultViewMessage::SettingsPanel(
                                     SettingsPanelMessage::EnvVarsChanged(vars),
                                 )
-                            },
-                        )
-                        .padding(PICK_LIST_PADDING)
-                        .size(FONT_SIZE),
+                            })
+                            .padding(PICK_LIST_PADDING)
+                            .size(FONT_SIZE),
                     )
-                    .height(Length::Fixed(50.0))
-                    .width(Length::Fixed(190.0)),
-                ),
-            "Environment variables set when running Voxygen",
-            Position::Top,
-        )
-        .style(ContainerStyle::Tooltip)
-        .size(FONT_SIZE)
-        .gap(5);
+                    .height(Length::Fixed(30.0)),
+                    text("Environment variables set when running Voxygen").size(14),
+                    Position::Bottom,
+                )
+                .style(ContainerStyle::Tooltip)
+                .gap(5),
+            )
+            .width(Length::FillPortion(2));
 
-        let channel_picker = tooltip(
-            column![]
-                .spacing(5)
-                .push(text("CHANNEL").size(15).style(TextStyle::LightGrey))
-                .push(
+        let channel_picker = column![]
+            .spacing(5)
+            .push(
+                container(text("CHANNEL").size(10).style(TextStyle::LightGrey))
+                    .padding([0, 0, 0, 3]),
+            )
+            .push(
+                tooltip(
                     container(
                         pick_list(
                             self.channels.names.clone(),
@@ -330,18 +355,18 @@ impl SettingsPanelComponent {
                                 )
                             },
                         )
+                        .width(Length::Fill)
                         .text_size(FONT_SIZE)
                         .padding(PICK_LIST_PADDING),
                     )
-                    .height(Length::Fixed(30.0))
-                    .width(Length::Fixed(120.0)),
-                ),
-            "The download channel used for game downloads",
-            Position::Top,
-        )
-        .style(ContainerStyle::Tooltip)
-        .size(FONT_SIZE)
-        .gap(5);
+                    .height(Length::Fixed(30.0)),
+                    text("The download channel used for game downloads").size(14),
+                    Position::Bottom,
+                )
+                .style(ContainerStyle::Tooltip)
+                .gap(5),
+            )
+            .width(Length::FillPortion(1));
 
         let first_row = container(
             row![]
@@ -355,12 +380,8 @@ impl SettingsPanelComponent {
         let second_row =
             container(row![].spacing(10).push(env_vars).push(channel_picker));
 
-        let third_row = container(
-            row![]
-                .spacing(10)
-                .align_items(Alignment::End)
-                .push(assets_override),
-        );
+        let third_row =
+            container(row![].align_items(Alignment::End).push(assets_override));
 
         let col = column![]
             .spacing(10)
@@ -370,11 +391,7 @@ impl SettingsPanelComponent {
 
         column![]
             .push(heading_with_rule("Settings"))
-            .push(
-                container(col)
-                    .padding(Padding::from([10, 20]))
-                    .height(Length::Shrink),
-            )
+            .push(container(col).padding([15, 20]).height(Length::Shrink))
             .into()
     }
 }
@@ -382,11 +399,11 @@ impl SettingsPanelComponent {
 fn help_link_button(url: String) -> Element<'static, DefaultViewMessage> {
     button(
         Image::new(Handle::from_memory(BOOK_ICON.to_vec()))
-            .height(Length::Fixed(10.0))
-            .width(Length::Fixed(10.0)),
+            .height(Length::Fixed(15.0))
+            .width(Length::Fixed(15.0)),
     )
     .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(url)))
-    .padding(Padding::new(0.0))
+    .padding(0)
     .style(ButtonStyle::Transparent)
     .into()
 }

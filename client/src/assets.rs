@@ -1,4 +1,4 @@
-use iced::Font;
+use iced::{font::Weight, Font};
 
 pub const VELOREN_LOGO: &[u8] = include_bytes!("../assets/images/veloren-logo.png");
 pub const VELOREN_ICON: &[u8] = include_bytes!("../assets/icons/logo.ico");
@@ -24,31 +24,42 @@ pub const GLOBE_ICON: &[u8] = include_bytes!("../assets/icons/globe.png");
 pub const KEY_ICON: &[u8] = include_bytes!("../assets/icons/key.png");
 
 // Fonts
-// POPPINS_FONT_BYTES is a slice not a Font as it's used as the default application font
-pub const POPPINS_FONT_BYTES: &[u8] =
-    include_bytes!("../assets/fonts/Poppins-Regular.ttf");
-
 /// A font to be used for text that can be used to display user provided text such as
 /// those within the server browser panel.
 #[cfg(not(feature = "bundled_font"))]
-pub const UNIVERSAL_FONT: Font = Font::Default;
+pub const UNIVERSAL_FONT: Font = Font::DEFAULT;
 
 #[cfg(feature = "bundled_font")]
-pub const UNIVERSAL_FONT: Font = Font::External {
-    name: "Noto Sans Unified",
-    bytes: include_bytes!("../assets/fonts/GoNotoCurrent.ttf"),
-};
+pub const UNIVERSAL_FONT: Font = Font::with_name("Noto Sans Unified");
+#[cfg(feature = "bundled_font")]
+pub const UNIVERSAL_FONT_BYTES: &[u8] =
+    include_bytes!("../assets/fonts/GoNotoCurrent.ttf");
 
 // Poppins is the font used throughout the rest of the Airshipper client
-pub const POPPINS_BOLD_FONT: Font = Font::External {
-    name: "Poppins Bold",
-    bytes: include_bytes!("../assets/fonts/Poppins-Bold.ttf"),
+pub const POPPINS_FONT: Font = Font {
+    weight: Weight::Normal,
+    ..Font::with_name("Poppins")
 };
-pub const POPPINS_LIGHT_FONT: Font = Font::External {
-    name: "Poppins Light",
-    bytes: include_bytes!("../assets/fonts/Poppins-Light.ttf"),
+pub const POPPINS_FONT_BYTES: &[u8] =
+    include_bytes!("../assets/fonts/Poppins-Regular.ttf");
+
+pub const POPPINS_BOLD_FONT: Font = Font {
+    weight: Weight::Bold,
+    ..Font::with_name("Poppins")
 };
-pub const POPPINS_MEDIUM_FONT: Font = Font::External {
-    name: "Poppins Medium",
-    bytes: include_bytes!("../assets/fonts/Poppins-Medium.ttf"),
+pub const POPPINS_BOLD_FONT_BYTES: &[u8] =
+    include_bytes!("../assets/fonts/Poppins-Bold.ttf");
+
+pub const POPPINS_LIGHT_FONT: Font = Font {
+    weight: Weight::Light,
+    ..Font::with_name("Poppins")
 };
+pub const POPPINS_LIGHT_FONT_BYTES: &[u8] =
+    include_bytes!("../assets/fonts/Poppins-Light.ttf");
+
+pub const POPPINS_MEDIUM_FONT: Font = Font {
+    weight: Weight::Medium,
+    ..Font::with_name("Poppins")
+};
+pub const POPPINS_MEDIUM_FONT_BYTES: &[u8] =
+    include_bytes!("../assets/fonts/Poppins-Medium.ttf");

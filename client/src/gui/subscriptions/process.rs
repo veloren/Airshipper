@@ -1,13 +1,25 @@
+use std::hash::Hash;
+
 use crate::{
     io::{self, ProcessUpdate},
     profiles::Profile,
 };
-use iced::{futures, subscription::Recipe, Subscription};
+use iced::{
+    advanced::{
+        subscription::{EventStream, Recipe},
+        Hasher,
+    },
+    futures::{
+        self,
+        stream::{BoxStream, StreamExt},
+    },
+    Subscription,
+};
 
 pub fn stream(
     profile: Profile,
     game_server_address: Option<String>,
-) -> iced::Subscription<io::ProcessUpdate> {
+) -> Subscription<io::ProcessUpdate> {
     Subscription::from_recipe(Process {
         profile,
         game_server_address,
@@ -19,26 +31,16 @@ struct Process {
     game_server_address: Option<String>,
 }
 
-impl<H, I> Recipe<H, I> for Process
-where
-    H: std::hash::Hasher,
-{
+impl Recipe for Process {
     type Output = ProcessUpdate;
 
-    fn hash(&self, state: &mut H) {
-        use std::hash::Hash;
-
+    fn hash(&self, state: &mut Hasher) {
         std::any::TypeId::of::<Self>().hash(state);
         // TODO: is exploiting the Debug impl for hashing a good idea?
         format!("{:?}", self.profile).hash(state);
     }
 
-    fn stream(
-        self: Box<Self>,
-        _input: futures::stream::BoxStream<'static, I>,
-    ) -> futures::stream::BoxStream<'static, Self::Output> {
-        use iced::futures::stream::StreamExt;
-
+    fn stream(self: Box<Self>, _input: EventStream) -> BoxStream<'static, Self::Output> {
         let mut cmd = Profile::start(&self.profile, self.game_server_address.as_deref());
         match io::stream_process(&mut cmd) {
             Ok(stream) => stream.boxed(),

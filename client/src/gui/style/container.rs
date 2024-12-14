@@ -4,7 +4,7 @@ use crate::gui::style::{
 };
 use iced::{
     widget::{container, container::Appearance},
-    Background, Color,
+    Background, Border, Color,
 };
 
 #[derive(Default)]
@@ -60,8 +60,11 @@ fn announcement_container_style() -> Appearance {
 fn loading_blogpost_container_style() -> Appearance {
     Appearance {
         background: None,
-        border_width: 0.7,
-        border_color: DARK_WHITE,
+        border: Border {
+            color: DARK_WHITE,
+            width: 0.7,
+            ..Default::default()
+        },
         text_color: Some(DARK_WHITE),
         ..Appearance::default()
     }
@@ -100,7 +103,7 @@ fn changelog_header_container_style() -> Appearance {
 fn extra_browser_container_style() -> Appearance {
     Appearance {
         background: Some(Background::Color(LIME_GREEN)),
-        border_radius: 25.0,
+        border: Border::with_radius(25.0),
         ..Appearance::default()
     }
 }
@@ -109,8 +112,11 @@ fn tooltip_container_style() -> Appearance {
     Appearance {
         text_color: Some(LIGHT_GREY),
         background: Some(Background::Color(NAVY_BLUE)),
-        border_color: MEDIUM_GREY,
-        border_width: 1.0,
+        border: Border {
+            color: MEDIUM_GREY,
+            width: 1.0,
+            ..Default::default()
+        },
         ..Appearance::default()
     }
 }

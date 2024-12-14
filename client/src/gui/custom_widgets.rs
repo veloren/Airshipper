@@ -1,7 +1,7 @@
 use crate::{assets::POPPINS_BOLD_FONT, gui::widget::*};
 use iced::{
     widget::{container, horizontal_rule, row, text},
-    Alignment, Length, Padding,
+    Alignment, Length,
 };
 
 pub(crate) fn heading_with_rule<'a, T: 'a>(heading_text: &'a str) -> Element<T> {
@@ -10,8 +10,8 @@ pub(crate) fn heading_with_rule<'a, T: 'a>(heading_text: &'a str) -> Element<T> 
             .align_items(Alignment::Center)
             .push(container(horizontal_rule(8)).width(Length::Fixed(13.0)))
             .push(
-                container(text(heading_text).font(POPPINS_BOLD_FONT).size(20))
-                    .padding(Padding::from([0, 7])),
+                container(text(heading_text).font(POPPINS_BOLD_FONT).size(16))
+                    .padding([0, 7]),
             )
             .push(container(horizontal_rule(8)).width(Length::Fill)),
     )

@@ -32,7 +32,7 @@ fn default_rule_style() -> Appearance {
     Appearance {
         width: 1,
         color: Color::WHITE,
-        radius: 0.0,
+        radius: 0.0.into(),
         fill_mode: FillMode::Full,
     }
 }

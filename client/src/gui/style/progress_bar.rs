@@ -28,6 +28,6 @@ fn default_progress_bar_style() -> Appearance {
     Appearance {
         background: Background::Color(VERY_DARK_GREY),
         bar: Background::Color(LIME_GREEN),
-        border_radius: 3.0,
+        border_radius: 3.0.into(),
     }
 }

@@ -1,21 +1,21 @@
 //! This module parses command line arguments and returns a parsed struct on which
 //! the GUI/CLI can act upon.
-use clap::{crate_authors, crate_version, Parser, Subcommand};
+use clap::{crate_authors, crate_version, ArgAction::Count, Parser, Subcommand};
 
 /// Provides automatic updates for the voxel RPG Veloren. ( <https://veloren.net> )
 #[derive(Parser, Debug, Default, Clone)]
-#[clap(name = "Airshipper", version = crate_version!(), author = crate_authors!())]
+#[command(name = "Airshipper", version = crate_version!(), author = crate_authors!())]
 pub struct CmdLine {
-    #[clap(subcommand)]
+    #[command(subcommand)]
     pub action: Option<Action>,
     /// Set the logging verbosity for Veloren (v = DEBUG, vv = TRACE)
-    #[clap(short, long, parse(from_occurrences), global = true)]
-    pub verbose: i32,
+    #[arg(short, long, action = Count, global = true)]
+    pub verbose: u8,
     /// Set the logging verbosity for Airshipper (d = DEBUG, dd = TRACE)
-    #[clap(short, long, parse(from_occurrences), global = true)]
-    pub debug: i32,
+    #[arg(short, long, action = Count, global = true)]
+    pub debug: u8,
     /// Force a reset of all user data on startup
-    #[clap(long, global = true)]
+    #[arg(long, global = true)]
     pub force_reset: bool,
 }
 

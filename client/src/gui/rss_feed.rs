@@ -4,7 +4,8 @@ use crate::{
     net, ClientError, Result,
 };
 use futures_util::future::join_all;
-use iced::Command;
+use iced::{widget::image::Handle, Command};
+use image::{imageops::FilterType, ExtendedColorType, ImageFormat};
 use rss::Channel;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, warn};
@@ -19,14 +20,14 @@ pub enum RssFeedUpdateStatus {
 #[derive(Clone, Debug)]
 pub enum RssFeedComponentMessage {
     UpdateRssFeed(RssFeedUpdateStatus),
-    ImageFetched {
-        url: String,
-        result: Result<Vec<u8>>,
-    },
+    ImageFetched { url: String, result: Result<Handle> },
 }
 
 /// Allows a component to handle updates to an RSS feed that it owns
 pub trait RssFeedComponent {
+    const IMAGE_HEIGHT: u32;
+    const NAME: &str;
+
     /// Stores the feed against the component's own state
     fn store_feed(&mut self, rss_feed_data: RssFeedData);
 
@@ -34,9 +35,8 @@ pub trait RssFeedComponent {
     fn posts(&self) -> Vec<RssPost>;
     fn posts_mut(&mut self) -> Vec<&mut RssPost>;
 
-    /// Triggers an update message when an RSS post is updated to signal to the view that
-    /// it should refresh
-    fn rss_post_update_command(&self, url: String) -> Command<DefaultViewMessage>;
+    /// Returns the message to send after having fetched an image
+    fn image_fetched(url: String, result: Result<Handle>) -> DefaultViewMessage;
 
     /// An optional hook that is called after the RSS feed is updated
     fn after_rss_feed_updated(&mut self) {}
@@ -69,11 +69,19 @@ pub trait RssFeedComponent {
                         .filter_map(|post| {
                             // Filter out posts that we already have the image for, or
                             // don't have an image URL
-                            if post.image_bytes.is_some() || post.image_url.is_none() {
+                            if post.image.is_some() || post.image_url.is_none() {
                                 return None;
                             }
                             let url = post.image_url.as_ref().unwrap().to_owned();
-                            Some(self.rss_post_update_command(url))
+                            Some(Command::perform(
+                                RssPost::fetch_image(
+                                    url.clone(),
+                                    Self::NAME,
+                                    post.image_cache_name(),
+                                    Self::IMAGE_HEIGHT,
+                                ),
+                                move |img| Self::image_fetched(url, img),
+                            ))
                         })
                         .collect();
 
@@ -88,14 +96,14 @@ pub trait RssFeedComponent {
                 },
             },
             RssFeedComponentMessage::ImageFetched { result, url } => {
-                if let Ok(bytes) = result {
+                if let Ok(handle) = result {
                     if let Some(post) = self
                         .posts_mut()
                         .iter_mut()
                         .filter(|post| post.image_url.is_some())
                         .find(|post| post.image_url.as_ref().unwrap() == &url)
                     {
-                        post.image_bytes = Some(bytes);
+                        post.image = Some(handle);
                     }
                 }
 
@@ -118,6 +126,8 @@ impl RssFeedData {
     pub async fn update_feed(
         feed_url: &str,
         local_version: String,
+        name: &str,
+        height: u32,
     ) -> RssFeedUpdateStatus {
         let fetch = move |local_version: String| async move {
             match net::query_etag(feed_url).await? {
@@ -131,7 +141,7 @@ impl RssFeedData {
                             remote_version
                         );
                         Ok(RssFeedUpdateStatus::Updated(
-                            RssFeedData::fetch(feed_url).await?,
+                            RssFeedData::fetch(feed_url, name, height).await?,
                         ))
                     } else {
                         debug!(?feed_url, "RSS feed up-to-date.");
@@ -145,7 +155,7 @@ impl RssFeedData {
                         "No etag found for RSS feed, assuming an update is required."
                     );
                     Ok(RssFeedUpdateStatus::Updated(
-                        RssFeedData::fetch(feed_url).await?,
+                        RssFeedData::fetch(feed_url, name, height).await?,
                     ))
                 },
             }
@@ -156,7 +166,7 @@ impl RssFeedData {
             .unwrap_or_else(RssFeedUpdateStatus::UpdateFailed)
     }
 
-    pub async fn fetch(feed_url: &str) -> Result<RssFeedData> {
+    pub async fn fetch(feed_url: &str, name: &str, height: u32) -> Result<RssFeedData> {
         use std::io::BufReader;
 
         let feed_response = net::query(feed_url).await?;
@@ -172,8 +182,8 @@ impl RssFeedData {
             .map(move |item| async move {
                 let mut post = RssPost::from(item);
                 if let Some(url) = &post.image_url {
-                    if let Ok(bytes) = RssFeedData::fetch_image(url.to_owned()).await {
-                        post.image_bytes = Some(bytes);
+                    if let Ok(handle) = RssPost::fetch_image(url.to_owned(), name, post.image_cache_name(), height).await {
+                        post.image = Some(handle);
                     }
                 };
                 post
@@ -181,19 +191,49 @@ impl RssFeedData {
             .collect::<Vec<_>>();
         let posts = join_all(futs).await;
 
+        if let Ok(dir) = std::fs::read_dir(RssPost::cache_base_path(name)) {
+            for file in dir.flatten() {
+                if let Ok(file_name) = file.file_name().into_string() {
+                    if !posts.iter().any(|i| i.image_cache_name() == file_name) {
+                        std::fs::remove_file(file.path())?;
+                    }
+                }
+            }
+        }
+
         Ok(RssFeedData { posts, etag })
     }
+}
 
+/// An individual post parsed from an RSS feed
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct RssPost {
+    pub title: String,
+    pub description: String,
+    pub button_url: String,
+    pub image_url: Option<String>,
+    #[serde(skip)]
+    pub image: Option<Handle>,
+}
+
+impl RssPost {
     /// Attempts to fetch an image for a given URL, retrieving it from the RSS image
-    /// cache if possible, otherwise attempting to fetch it from the URL
-    pub async fn fetch_image(url: String) -> Result<Vec<u8>> {
-        let cache_base_path = fs::get_cache_path().join("rss_images");
-        std::fs::create_dir_all(&cache_base_path).map_err(|_| ClientError::IoError)?;
-
-        // Use an MD5 hash as the filename to avoid dealing with special characters and
-        // long URLs that would make an unusable filename
-        let md5 = &md5::compute(&url);
-        let image_cache_path = cache_base_path.join(format!("{:?}", md5));
+    /// cache if possible, otherwise attempting to download it from the URL.
+    /// Images are resized before being cached, (as well as after being retrieved
+    /// from the cache since full-sized images may have been cached in older versions)
+    /// to save memory and improve performance.
+    /// Images are returned raw in order to circumvent a performance issue in the
+    /// currently utilized version (0.12) of iced where images scrolled out of view
+    /// are constantly being re-decoded, significantly lagging the UI.
+    pub async fn fetch_image(
+        url: String,
+        feed_name: &str,
+        image_cache_name: String,
+        height: u32,
+    ) -> Result<Handle> {
+        let cache_base_path = Self::cache_base_path(feed_name);
+        std::fs::create_dir_all(&cache_base_path)?;
+        let image_cache_path = cache_base_path.join(image_cache_name);
 
         if let Ok(cached_bytes) = std::fs::read(&image_cache_path) {
             // Found the image cached locally so use it
@@ -202,21 +242,48 @@ impl RssFeedData {
                 url,
                 image_cache_path.to_string_lossy()
             );
-            return Ok(cached_bytes);
+            let image = image::load_from_memory(&cached_bytes)?.into_rgba8();
+            return Ok(Handle::from_pixels(
+                image.width(),
+                image.height(),
+                image.into_raw(),
+            ));
         }
 
-        match crate::net::client::WEB_CLIENT.get(&*url).send().await {
+        match crate::net::client::WEB_CLIENT.get(&url).send().await {
             Ok(response) => match response.bytes().await {
-                Ok(bytes) => {
-                    // Image successfully downloaded, write it to the cache before
-                    // returning it
-                    debug!(
-                        "Caching image from URL {} with path {}",
-                        url,
-                        image_cache_path.to_string_lossy()
-                    );
-                    std::fs::write(&image_cache_path, &bytes)?;
-                    Ok(bytes.to_vec())
+                Ok(bytes) => match image::load_from_memory(&bytes) {
+                    Ok(image) => {
+                        // Image successfully downloaded, write it to the cache before
+                        // returning it
+                        debug!(
+                            "Caching image from URL {} with path {}",
+                            url,
+                            image_cache_path.to_string_lossy()
+                        );
+                        // Decode the image and resize it to the specified height,
+                        // preserving aspect ratio. Works best if
+                        // said aspect ratio is 16:9 or wider.
+                        let rgba8 =
+                            image.resize(1000, height, FilterType::Nearest).into_rgba8();
+                        image::save_buffer_with_format(
+                            &image_cache_path,
+                            rgba8.as_raw(),
+                            rgba8.width(),
+                            rgba8.height(),
+                            ExtendedColorType::Rgba8,
+                            ImageFormat::Png,
+                        )?;
+                        Ok(Handle::from_pixels(
+                            rgba8.width(),
+                            rgba8.height(),
+                            rgba8.into_raw(),
+                        ))
+                    },
+                    Err(e) => {
+                        error!(?e, ?url, "Failed to decode image");
+                        Err(e.into())
+                    },
                 },
                 Err(e) => {
                     error!("Failed to fetch bytes of RSS image from URL {}", url);
@@ -229,33 +296,37 @@ impl RssFeedData {
             },
         }
     }
-}
 
-/// An individual post parsed from an RSS feed
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct RssPost {
-    pub title: String,
-    pub description: String,
-    pub button_url: String,
-    pub image_url: Option<String>,
-    #[serde(skip)]
-    pub image_bytes: Option<Vec<u8>>,
-}
+    fn cache_base_path(feed_name: &str) -> std::path::PathBuf {
+        fs::get_cache_path().join(format!("{}_images", feed_name))
+    }
 
-impl RssPost {
+    fn image_cache_name(&self) -> String {
+        self.button_url
+            .split('/')
+            .nth_back(1)
+            .unwrap_or_default()
+            .to_string()
+    }
+
     fn process_description(desc: Option<&str>) -> String {
         match desc {
             Some(desc) => {
-                let stripped_html = html2text::from_read(desc.as_bytes(), 400)
-                    .lines()
-                    .take(3)
-                    .filter(|x| !x.contains("[banner]"))
-                    .fold(String::new(), |mut output, b| {
-                        use std::fmt::Write;
-                        let _ = writeln!(output, "{b}");
-                        output
-                    });
-                strip_markdown::strip_markdown(&stripped_html)
+                let wrapped_html = html2text::from_read(desc.as_bytes(), 400);
+                if let Ok(html) = wrapped_html {
+                    let stripped_html = html
+                        .lines()
+                        .take(3)
+                        .filter(|x| !x.contains("[banner]"))
+                        .fold(String::new(), |mut output, b| {
+                            use std::fmt::Write;
+                            let _ = writeln!(output, "{b}");
+                            output
+                        });
+                    strip_markdown::strip_markdown(&stripped_html)
+                } else {
+                    "HTML parsing failed.".into()
+                }
             },
             None => "No description found.".into(),
         }
@@ -269,24 +340,13 @@ impl From<&rss::Item> for RssPost {
             description: Self::process_description(item.description()),
             button_url: item.link().unwrap_or("https://www.veloren.net").into(),
             image_url: None,
-            image_bytes: None,
+            image: None,
         };
 
-        // If the RSS item has an enclosure (attached media), check if it's a jpg or png
-        // and if it is store the URL against the post for display in the RSS
-        // feed.
-        if let Some(enclosure) = item.enclosure.as_ref().filter(|enclosure| {
-            matches!(enclosure.mime_type.as_str(), "image/jpg" | "image/png")
-        }) {
-            let mut url = enclosure.url.clone();
-
-            // If the image is hosted by the discord CDN, use its ability to provide a
-            // resized image to save bandwidth
-            if url.starts_with("https://media.discordapp.net") {
-                url = format!("{}?width=320&height=240", url);
-            };
-
-            post.image_url = Some(url);
+        // If the RSS item has an enclosure (attached media), store the URL against
+        // the post for display in the RSS feed.
+        if let Some(enclosure) = item.enclosure.as_ref() {
+            post.image_url = Some(enclosure.url.clone());
         }
 
         post

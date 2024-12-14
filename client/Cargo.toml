@@ -34,13 +34,13 @@ veloren-serverbrowser-api = "0.4.0"
 veloren-query-server = { version = "0.1.2", default-features = false, features = ["client"] }
 
 # Cli
-clap = { version = "3.1.18", features = ["cargo", "derive"] }
+clap = { version = "4.5.21", features = ["cargo", "derive"] }
 indicatif = "0.17"
-rustyline = "13"
+rustyline = "15"
 colored = "2.0"
 
 # UI
-iced = { version = "0.8.0", features = ["tokio", "image", "debug"] }
+iced = { version = "0.12.1", features = ["tokio", "image", "debug", "advanced"] }
 
 # Logging
 tracing = { version = "0.1.21", features = ["log"] }
@@ -65,20 +65,20 @@ reqwest = { version = "0.12.5", default-features = false, features = [
 ] }
 
 # Parsing
-pulldown-cmark = "0.8.0"
+pulldown-cmark = "0.12.2"
 strip_markdown = "0.2.0"
-html2text = "0.12.0"
+html2text = "0.13"
 serde = "1.0.116"
 semver = "1"
 rss = "2.0.7"
 ron = "0.8.1"
-zip = "0.6.6"
+zip = "2.2.0"
 zip-core = "0.0.4"
 crc32fast = "1.4.2"
 flate2 = "1.0"
 url = "2.2.2"
 # Other
-image = { version = "0.24.8", default-features = false, features = ["ico"] }
+image = { version = "0.25.5", default-features = false, features = ["ico", "jpeg", "png", "webp"] }
 tokio = { version = "1.38", features = [
     "macros",
     "io-util",
@@ -89,15 +89,14 @@ tokio = { version = "1.38", features = [
 ] }
 tokio-stream = { version = "0.1.6", features = ["io-util"] }
 futures-util = "0.3.15"
-derive_more = "0.99.11"
+derive_more = { version = "1.0.0", features = ["display"] }
 find_folder = "0.3.0"
 lazy_static = "1.4.0"
-thiserror = "1.0.20"
+thiserror = "2.0.3"
 bytesize = "1.0.1"
 bytes = "1"
-opener = "0.6.1"
+opener = "0.7.2"
 dirs = { package = "dirs-next", version = "2.0.0" }
-md5 = "0.7.0"
 rand = "0.8.5"
 chrono = { version = "0.4.22", features = ["serde"] }
 country-parser = "0.1.1"

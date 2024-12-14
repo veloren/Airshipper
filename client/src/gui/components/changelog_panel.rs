@@ -21,13 +21,14 @@ use crate::{
     net, Result,
 };
 use iced::{
-    alignment::Vertical,
+    alignment::{Horizontal, Vertical},
     widget::{
-        button, column, container, image, image::Handle, row, scrollable, text, Image,
+        button, column, container, image, image::Handle, row, scrollable, text,
+        text::LineHeight, Image,
     },
-    Alignment, Command, Length, Padding,
+    Alignment, Command, Length,
 };
-use pulldown_cmark::{Event, Options, Parser, Tag};
+use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd};
 use serde::{Deserialize, Serialize};
 use tracing::debug;
 
@@ -67,14 +68,18 @@ impl ChangelogPanelComponent {
         while let Some(event) = parser.next() {
             // h2 version header
             // starts a new version
-            if let Event::Start(Tag::Heading(2)) = event {
+            if let Event::Start(Tag::Heading {
+                level: HeadingLevel::H2,
+                ..
+            }) = event
+            {
                 let mut version: String = String::new();
                 let mut date: Option<String> = None;
 
                 // h2 version header text
                 while let Some(event) = parser.next() {
                     match event {
-                        Event::End(Tag::Heading(2)) => break,
+                        Event::End(TagEnd::Heading(HeadingLevel::H2)) => break,
                         Event::Text(text) => {
                             if text.contains(" - ") {
                                 date = Some(text[3..].trim().to_string());
@@ -91,20 +96,31 @@ impl ChangelogPanelComponent {
 
                 // h3 sections
                 // and paragraphs without sections aka notes
-                while let Some(event) =
-                    parser.next_if(|e| e != &Event::Start(Tag::Heading(2)))
-                {
+                while let Some(event) = parser.next_if(|e| {
+                    !matches!(
+                        e,
+                        &Event::Start(Tag::Heading {
+                            level: HeadingLevel::H2,
+                            ..
+                        })
+                    )
+                }) {
                     match event {
                         // h3 section header
                         // starts a new section
-                        Event::Start(Tag::Heading(3)) => {
+                        Event::Start(Tag::Heading {
+                            level: HeadingLevel::H3,
+                            ..
+                        }) => {
                             let mut section_name: Option<String> = None;
                             let mut section_lines: Vec<String> = Vec::new();
 
                             // h3 section header text
                             while let Some(event) = parser.next() {
                                 match event {
-                                    Event::End(Tag::Heading(3)) => break,
+                                    Event::End(TagEnd::Heading(HeadingLevel::H3)) => {
+                                        break;
+                                    },
                                     Event::Text(text) => {
                                         section_name = Some(text.trim().to_string());
                                     },
@@ -114,15 +130,26 @@ impl ChangelogPanelComponent {
 
                             // section list
                             while let Some(event) = parser.next_if(|e| {
-                                e != &Event::Start(Tag::Heading(2))
-                                    && e != &Event::Start(Tag::Heading(3))
+                                !matches!(
+                                    e,
+                                    &Event::Start(Tag::Heading {
+                                        level: HeadingLevel::H2,
+                                        ..
+                                    })
+                                ) && !matches!(
+                                    e,
+                                    &Event::Start(Tag::Heading {
+                                        level: HeadingLevel::H3,
+                                        ..
+                                    })
+                                )
                             }) {
                                 if let Event::Start(Tag::Item) = event {
                                     let mut item_text: String = String::new();
 
                                     while let Some(event) = parser.next() {
                                         match event {
-                                            Event::End(Tag::Item) => break,
+                                            Event::End(TagEnd::Item) => break,
                                             Event::Text(text) => {
                                                 item_text.push_str(&text);
                                             },
@@ -153,7 +180,7 @@ impl ChangelogPanelComponent {
                         Event::Start(Tag::Paragraph) => {
                             while let Some(event) = parser.next() {
                                 match event {
-                                    Event::End(Tag::Paragraph) => break,
+                                    Event::End(TagEnd::Paragraph) => break,
                                     Event::Text(text) => {
                                         notes.push(text.to_string());
                                     },
@@ -247,83 +274,82 @@ impl ChangelogPanelComponent {
             changelog = changelog.push(version.view());
         }
 
-        let top_row = row![].height(Length::Fixed(50.0)).push(
+        let top_row = container(
+            row![]
+                .push(
+                    container(Image::new(Handle::from_memory(CHANGELOG_ICON.to_vec())))
+                        .height(Length::Fill)
+                        .width(Length::Shrink)
+                        .padding([0, 10, 0, 0])
+                        .align_y(Vertical::Center),
+                )
+                .push(
+                    container(
+                        text("Latest Patch Notes")
+                            .style(TextStyle::Dark)
+                            .size(14)
+                            .font(POPPINS_MEDIUM_FONT),
+                    )
+                    .padding([3, 0, 0, 0])
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .align_y(Vertical::Center),
+                )
+                .push(
+                    container(
+                        button(
+                            row![]
+                                .push(
+                                    text("Recent Changes")
+                                        .style(TextStyle::LightGrey)
+                                        .size(10)
+                                        .font(POPPINS_MEDIUM_FONT)
+                                        .horizontal_alignment(Horizontal::Center),
+                                )
+                                .push(image(Handle::from_memory(
+                                    UP_RIGHT_ARROW_ICON.to_vec(),
+                                )))
+                                .spacing(5)
+                                .align_items(Alignment::Center),
+                        )
+                        .on_press(DefaultViewMessage::Interaction(Interaction::OpenURL(
+                            GITLAB_MERGED_MR_URL.to_string(),
+                        )))
+                        .padding([4, 10, 0, 10])
+                        .height(Length::Fixed(20.0))
+                        .style(ButtonStyle::Browser(BrowserButtonStyle::Gitlab)),
+                    )
+                    .padding([0, 10, 0, 0])
+                    .height(Length::Fill)
+                    .align_y(Vertical::Center)
+                    .width(Length::Shrink),
+                )
+                .width(Length::Fill)
+                .height(Length::Fill),
+        )
+        .align_y(Vertical::Center)
+        .padding(10)
+        .height(Length::Fixed(50.0))
+        .style(ContainerStyle::ChangelogHeader);
+
+        let col = column![].push(top_row).push(
             column![].push(
                 container(
-                    row![]
-                        .push(
-                            container(Image::new(Handle::from_memory(
-                                CHANGELOG_ICON.to_vec(),
-                            )))
-                            .height(Length::Fill)
-                            .width(Length::Shrink)
-                            .align_y(Vertical::Center)
-                            .padding(Padding::from([0, 0, 0, 12])),
-                        )
-                        .push(
-                            container(
-                                Text::new("Latest Patch Notes")
-                                    .style(TextStyle::Dark)
-                                    .font(POPPINS_MEDIUM_FONT),
+                    scrollable(changelog)
+                        .on_scroll(|pos| {
+                            DefaultViewMessage::ChangelogPanel(
+                                ChangelogPanelMessage::ScrollPositionChanged(
+                                    pos.relative_offset().y,
+                                ),
                             )
-                            .width(Length::Fill)
-                            .height(Length::Fill)
-                            .align_y(Vertical::Center)
-                            .padding(Padding::from([1, 0, 0, 8])),
-                        )
-                        .push(
-                            container(
-                                button(
-                                    row![]
-                                        .push(text("Recent Changes").size(14))
-                                        .push(image(Handle::from_memory(
-                                            UP_RIGHT_ARROW_ICON.to_vec(),
-                                        )))
-                                        .spacing(5)
-                                        .align_items(Alignment::Center),
-                                )
-                                .on_press(DefaultViewMessage::Interaction(
-                                    Interaction::OpenURL(
-                                        GITLAB_MERGED_MR_URL.to_string(),
-                                    ),
-                                ))
-                                .padding(Padding::from([2, 10, 2, 10]))
-                                .height(Length::Fixed(20.0))
-                                .style(ButtonStyle::Browser(BrowserButtonStyle::Gitlab)),
-                            )
-                            .padding(Padding::from([0, 20, 0, 0]))
-                            .height(Length::Fill)
-                            .align_y(Vertical::Center)
-                            .width(Length::Shrink),
-                        )
+                        })
                         .height(Length::Fill),
                 )
-                .align_y(Vertical::Center),
+                .height(Length::Fill)
+                .width(Length::Fill)
+                .style(ContainerStyle::Dark),
             ),
         );
-
-        let col = column![]
-            .push(
-                container(top_row)
-                    .width(Length::Fill)
-                    .style(ContainerStyle::ChangelogHeader),
-            )
-            .push(
-                column![].push(
-                    container(
-                        scrollable(changelog)
-                            .on_scroll(|pos| {
-                                DefaultViewMessage::ChangelogPanel(
-                                    ChangelogPanelMessage::ScrollPositionChanged(pos.y),
-                                )
-                            })
-                            .height(Length::Fill),
-                    )
-                    .height(Length::Fill)
-                    .width(Length::Fill)
-                    .style(ContainerStyle::Dark),
-                ),
-            );
 
         let changelog_container = container(col);
         changelog_container.into()
@@ -351,32 +377,47 @@ impl ChangelogVersion {
         let mut version = column![].spacing(10).push(
             column![]
                 .push(
-                    container(text(version_string).font(POPPINS_BOLD_FONT).size(28))
-                        .padding(Padding::from([20, 0, 6, 33])),
+                    container(text(version_string).font(POPPINS_BOLD_FONT).size(20))
+                        .padding([20, 0, 6, 33]),
                 )
                 .push(Rule::horizontal(8)),
         );
 
         for note in &self.notes {
-            version = version.push(text(note).size(18));
+            version = version.push(text(note).size(14));
         }
 
         for (section_name, section_lines) in &self.sections {
-            let mut section_col = column![].push(text(section_name).size(23));
+            let mut section_col = column![]
+                .push(
+                    text(section_name)
+                        .size(16)
+                        .line_height(LineHeight::Relative(2.0)),
+                )
+                .spacing(2);
 
             for line in section_lines {
                 section_col = section_col.push(
                     container(
                         row![]
-                            .push(text(" •  ").font(POPPINS_LIGHT_FONT).size(17))
-                            .push(text(line).font(POPPINS_LIGHT_FONT).size(17)),
+                            .push(
+                                text(" •  ")
+                                    .font(POPPINS_LIGHT_FONT)
+                                    .size(12)
+                                    .line_height(LineHeight::Absolute(16.into())),
+                            )
+                            .push(
+                                text(line)
+                                    .font(POPPINS_LIGHT_FONT)
+                                    .size(12)
+                                    .line_height(LineHeight::Absolute(16.into())),
+                            ),
                     )
-                    .padding(Padding::from([1, 0, 1, 10])),
+                    .padding([0, 0, 1, 10]),
                 );
             }
 
-            version = version
-                .push(container(section_col).padding(Padding::from([0, 33, 0, 33])));
+            version = version.push(container(section_col).padding([0, 33]));
         }
         container(version).into()
     }

@@ -10,6 +10,7 @@ use crate::{
         views::default::{DefaultViewMessage, Interaction},
         widget::*,
     },
+    Result,
 };
 use iced::{
     alignment::{Horizontal, Vertical},
@@ -30,6 +31,9 @@ pub enum NewsPanelMessage {
 }
 
 impl RssFeedComponent for NewsPanelComponent {
+    const IMAGE_HEIGHT: u32 = 117;
+    const NAME: &str = "news";
+
     fn store_feed(&mut self, rss_feed: RssFeedData) {
         self.posts = rss_feed
             .posts
@@ -47,24 +51,29 @@ impl RssFeedComponent for NewsPanelComponent {
         self.posts.iter_mut().map(|x| &mut x.rss_post).collect()
     }
 
-    fn rss_post_update_command(&self, url: String) -> Command<DefaultViewMessage> {
-        // TODO: All of this except the specific DefaultViewMessage is the same for every
-        // RssComponent so could be better encapsulated within the RssFeedComponent trait.
-        Command::perform(RssFeedData::fetch_image(url.to_owned()), move |img| {
-            DefaultViewMessage::NewsPanel(NewsPanelMessage::RssUpdate(
-                RssFeedComponentMessage::ImageFetched { url, result: img },
-            ))
-        })
+    fn image_fetched(url: String, result: Result<Handle>) -> DefaultViewMessage {
+        DefaultViewMessage::NewsPanel(NewsPanelMessage::RssUpdate(
+            RssFeedComponentMessage::ImageFetched { url, result },
+        ))
     }
 }
 impl NewsPanelComponent {
+    // 16:9 Aspect ratio
+    const IMAGE_WIDTH: u32 = 208;
+
     pub fn etag(&self) -> &str {
         &self.etag
     }
 
     /// Returns new News in case remote one is newer
     pub(crate) async fn update_news(local_version: String) -> RssFeedUpdateStatus {
-        RssFeedData::update_feed(consts::NEWS_URL, local_version).await
+        RssFeedData::update_feed(
+            consts::NEWS_URL,
+            local_version,
+            Self::NAME,
+            Self::IMAGE_HEIGHT,
+        )
+        .await
     }
 
     pub fn update(
@@ -99,13 +108,17 @@ impl NewsPost {
     pub(crate) fn view(&self) -> Element<DefaultViewMessage> {
         let post = &self.rss_post;
 
-        let image_container = if let Some(bytes) = &post.image_bytes {
+        let image_container = if let Some(handle) = &post.image {
             container(
-                image(Handle::from_memory(bytes.clone())).content_fit(ContentFit::Cover),
+                image(handle.clone())
+                    .content_fit(ContentFit::Cover)
+                    .width(Length::Fixed(NewsPanelComponent::IMAGE_WIDTH as f32))
+                    .height(Length::Fixed(NewsPanelComponent::IMAGE_HEIGHT as f32)),
             )
         } else {
             container(
                 text("Loading...")
+                    .size(14)
                     .horizontal_alignment(Horizontal::Center)
                     .vertical_alignment(Vertical::Center)
                     .width(Length::Fill)
@@ -118,16 +131,16 @@ impl NewsPost {
             column![]
                 .push(
                     image_container
-                        .width(Length::Fixed(211.0))
-                        .height(Length::Fixed(119.0)),
+                        .width(Length::Fixed(NewsPanelComponent::IMAGE_WIDTH as f32))
+                        .height(Length::Fixed(NewsPanelComponent::IMAGE_HEIGHT as f32)),
                 )
                 .push(
                     container(
                         column![]
-                            .spacing(2)
-                            .push(text("Development").size(16).style(TextStyle::Lilac))
-                            .push(text(&post.title).size(20).font(POPPINS_LIGHT_FONT))
-                            .push(text(&post.description).size(14)),
+                            .spacing(3)
+                            .push(text("Development").size(12).style(TextStyle::Lilac))
+                            .push(text(&post.title).size(16).font(POPPINS_LIGHT_FONT))
+                            .push(text(&post.description).size(11).line_height(1.5)),
                     )
                     .width(Length::Fill)
                     .style(ContainerStyle::BlogPost)
