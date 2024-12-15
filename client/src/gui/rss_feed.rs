@@ -302,11 +302,12 @@ impl RssPost {
     }
 
     fn image_cache_name(&self) -> String {
-        self.button_url
-            .split('/')
-            .nth_back(1)
-            .unwrap_or_default()
-            .to_string()
+        for item in self.button_url.split('/').rev() {
+            if !item.is_empty() {
+                return item.to_string();
+            }
+        }
+        self.title.clone()
     }
 
     fn process_description(desc: Option<&str>) -> String {
