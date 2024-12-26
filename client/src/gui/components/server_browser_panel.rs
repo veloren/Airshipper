@@ -89,6 +89,7 @@ pub struct ServerBrowserPanelComponent {
     servers: Vec<ServerBrowserEntry>,
     selected_index: Option<usize>,
     server_list_fetch_error: bool,
+    last_sort_ordering: Option<ServerSortOrder>,
 }
 
 impl ServerBrowserPanelComponent {
@@ -114,6 +115,7 @@ impl ServerBrowserPanelComponent {
         Ok(Some(Self {
             servers,
             selected_index: None,
+            last_sort_ordering: None,
             server_list_fetch_error,
         }))
     }
@@ -617,11 +619,7 @@ impl ServerBrowserPanelComponent {
                     server.query_client = query_client;
                 };
 
-                // Currently there is no way to refresh pings, so it is OK to sort the
-                // list using the default sort every time a ping is
-                // returned since pings are only requested on application
-                // startup.
-                self.sort_servers(ServerSortOrder::Default);
+                self.sort_servers(self.last_sort_ordering.unwrap_or_default());
 
                 None
             },
@@ -697,6 +695,7 @@ impl ServerBrowserPanelComponent {
             },
             ServerBrowserPanelMessage::SortServers(order) => {
                 self.sort_servers(order);
+                self.last_sort_ordering = Some(order);
                 None
             },
         };
@@ -744,8 +743,9 @@ fn display_gameserver_address(gameserver: &GameServer) -> String {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub enum ServerSortOrder {
+    #[default]
     Default,
     PlayerCount,
     ServerName,
