@@ -13,6 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Fixed
 
+## [0.16.0] - 2024-12-28
+
+## Added
+
+- `VELOREN_ASSETS_OVERRIDE` can now be set from the airshipper UI.
+
+## Changed
+
+- Most dependencies were updated.
+
+## Fixed
+
+- Ping refreshes no longer reset the selected sorting order.
+- Unneeded images will be removed from cache.
+
 ## [0.15.0] - 2024-10-07
 
 ## Added
@@ -231,3 +246,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.13.0]: https://github.com/veloren/Airshipper/releases/tag/v0.13.0
 [0.14.0]: https://github.com/veloren/Airshipper/releases/tag/v0.14.0
 [0.15.0]: https://github.com/veloren/Airshipper/releases/tag/v0.15.0
+[0.16.0]: https://github.com/veloren/Airshipper/releases/tag/v0.16.0
