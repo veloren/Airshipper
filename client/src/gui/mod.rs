@@ -11,6 +11,7 @@ use std::borrow::Cow;
 #[cfg(feature = "bundled_font")]
 use crate::assets::UNIVERSAL_FONT_BYTES;
 use crate::{
+    Result,
     assets::{
         POPPINS_BOLD_FONT_BYTES, POPPINS_FONT_BYTES, POPPINS_LIGHT_FONT_BYTES,
         POPPINS_MEDIUM_FONT_BYTES,
@@ -20,7 +21,6 @@ use crate::{
     fs,
     gui::{style::AirshipperTheme, widget::*},
     profiles::Profile,
-    Result,
 };
 use iced::{Application, Command, Settings, Size, Subscription};
 use ron::ser::PrettyConfig;
@@ -28,8 +28,8 @@ use tokio::{fs::File, io::AsyncWriteExt};
 #[cfg(windows)]
 use views::update::{UpdateView, UpdateViewMessage};
 use views::{
-    default::{DefaultView, DefaultViewMessage},
     Action, View,
+    default::{DefaultView, DefaultViewMessage},
 };
 
 /// Starts the GUI and won't return unless an error occurs
@@ -285,7 +285,7 @@ impl Application for Airshipper {
 }
 
 fn settings(cmd: CmdLine) -> Settings<CmdLine> {
-    use iced::window::{icon, Settings as Window};
+    use iced::window::{Settings as Window, icon};
     let icon = image::load_from_memory(crate::assets::VELOREN_ICON).unwrap();
 
     Settings {

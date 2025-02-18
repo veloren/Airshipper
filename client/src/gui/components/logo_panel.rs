@@ -9,9 +9,9 @@ use crate::{
     },
 };
 use iced::{
-    alignment::Vertical,
-    widget::{button, column, container, image::Handle, row, text, text::Shaping, Image},
     Alignment, Length,
+    alignment::Vertical,
+    widget::{Image, button, column, container, image::Handle, row, text, text::Shaping},
 };
 
 #[derive(Clone, Default, Debug)]

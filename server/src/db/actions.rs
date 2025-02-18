@@ -4,10 +4,10 @@ use chrono::{DateTime, Utc};
 use sqlx::{Any, Executor, QueryBuilder, Row, Transaction};
 
 use crate::{
+    FsStorage,
     db::Db,
     error::{ProcessError, ServerError},
     models::Artifact,
-    FsStorage,
 };
 
 #[tracing::instrument(skip(db))]

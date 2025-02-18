@@ -1,22 +1,22 @@
 use crate::{
+    Result,
     assets::{POPPINS_MEDIUM_FONT, UP_RIGHT_ARROW_ICON},
     consts::{AIRSHIPPER_RELEASE_URL, SUPPORTED_SERVER_API_VERSION},
     gui::{
         style::{button::ButtonStyle, container::ContainerStyle, text::TextStyle},
         views::{
-            default::{DefaultViewMessage, Interaction},
             Action,
+            default::{DefaultViewMessage, Interaction},
         },
         widget::*,
     },
     net,
     profiles::Profile,
-    Result,
 };
 use iced::{
+    Alignment, Command, Length,
     alignment::Vertical,
     widget::{button, column, container, image, image::Handle, row, text},
-    Alignment, Command, Length,
 };
 use serde::{Deserialize, Serialize};
 use tracing::debug;

@@ -5,15 +5,15 @@ use crate::{
     profiles::Profile,
 };
 use iced::{
+    Subscription,
     advanced::{
-        subscription::{EventStream, Recipe},
         Hasher,
+        subscription::{EventStream, Recipe},
     },
     futures::{
         self,
         stream::{BoxStream, StreamExt},
     },
-    Subscription,
 };
 
 pub fn stream(

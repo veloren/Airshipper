@@ -6,8 +6,8 @@ use crate::gui::style::{
     TWITCH_PURPLE, VERY_DARK_GREY, YOUTUBE_RED,
 };
 use iced::{
-    widget::{button, button::Appearance},
     Background, Border, Color, Vector,
+    widget::{button, button::Appearance},
 };
 
 #[derive(Debug, Clone, Copy)]

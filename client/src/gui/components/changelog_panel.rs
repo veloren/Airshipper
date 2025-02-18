@@ -1,4 +1,5 @@
 use crate::{
+    Result,
     assets::{
         CHANGELOG_ICON, POPPINS_BOLD_FONT, POPPINS_LIGHT_FONT, POPPINS_MEDIUM_FONT,
         UP_RIGHT_ARROW_ICON,
@@ -13,20 +14,20 @@ use crate::{
             text::TextStyle,
         },
         views::{
-            default::{DefaultViewMessage, Interaction},
             Action,
+            default::{DefaultViewMessage, Interaction},
         },
         widget::*,
     },
-    net, Result,
+    net,
 };
 use iced::{
+    Alignment, Command, Length,
     alignment::{Horizontal, Vertical},
     widget::{
-        button, column, container, image, image::Handle, row, scrollable, text,
-        text::LineHeight, Image,
+        Image, button, column, container, image, image::Handle, row, scrollable, text,
+        text::LineHeight,
     },
-    Alignment, Command, Length,
 };
 use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd};
 use serde::{Deserialize, Serialize};

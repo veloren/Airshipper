@@ -1,10 +1,10 @@
-use crate::gui::style::{AirshipperTheme, ALMOST_BLACK, ALMOST_BLACK2};
+use crate::gui::style::{ALMOST_BLACK, ALMOST_BLACK2, AirshipperTheme};
 use iced::{
+    Background, Border, Color,
     widget::{
         container, scrollable,
         scrollable::{Appearance, Scrollbar, Scroller},
     },
-    Background, Border, Color,
 };
 
 #[derive(Default)]

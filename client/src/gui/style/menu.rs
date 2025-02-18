@@ -1,7 +1,7 @@
 use crate::gui::style::{
-    pick_list::PickListStyle, AirshipperTheme, LIGHT_NAVY_BLUE, NAVY_BLUE,
+    AirshipperTheme, LIGHT_NAVY_BLUE, NAVY_BLUE, pick_list::PickListStyle,
 };
-use iced::{overlay, overlay::menu::Appearance, Background, Border, Color};
+use iced::{Background, Border, Color, overlay, overlay::menu::Appearance};
 
 #[derive(Copy, Clone, Debug, Default)]
 pub enum MenuStyle {

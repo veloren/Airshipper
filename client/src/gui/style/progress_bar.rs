@@ -1,7 +1,7 @@
 use crate::gui::style::{AirshipperTheme, LIME_GREEN, VERY_DARK_GREY};
 use iced::{
-    widget::{progress_bar, progress_bar::Appearance},
     Background,
+    widget::{progress_bar, progress_bar::Appearance},
 };
 
 pub enum ProgressBarStyle {

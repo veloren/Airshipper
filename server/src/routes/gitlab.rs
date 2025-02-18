@@ -1,11 +1,10 @@
-use crate::{config::HOOK_TYPE, models::PipelineUpdate, webhook, Context};
+use crate::{Context, config::HOOK_TYPE, models::PipelineUpdate, webhook};
 use axum::{
-    async_trait,
+    Json, async_trait,
     body::Body,
     extract::{FromRequestParts, State},
-    http::{request::Parts, Response, StatusCode},
+    http::{Response, StatusCode, request::Parts},
     response::IntoResponse,
-    Json,
 };
 use std::sync::Arc;
 use tracing::*;

@@ -1,4 +1,5 @@
 use crate::{
+    Result,
     assets::POPPINS_LIGHT_FONT,
     consts,
     gui::{
@@ -10,12 +11,11 @@ use crate::{
         views::default::{DefaultViewMessage, Interaction},
         widget::*,
     },
-    Result,
 };
 use iced::{
+    Alignment, Command, ContentFit, Length,
     alignment::{Horizontal, Vertical},
     widget::{button, column, container, image, image::Handle, scrollable, text},
-    Alignment, Command, ContentFit, Length,
 };
 use serde::{Deserialize, Serialize};
 

@@ -1,6 +1,6 @@
 //! This module parses command line arguments and returns a parsed struct on which
 //! the GUI/CLI can act upon.
-use clap::{crate_authors, crate_version, ArgAction::Count, Parser, Subcommand};
+use clap::{ArgAction::Count, Parser, Subcommand, crate_authors, crate_version};
 
 /// Provides automatic updates for the voxel RPG Veloren. ( <https://veloren.net> )
 #[derive(Parser, Debug, Default, Clone)]

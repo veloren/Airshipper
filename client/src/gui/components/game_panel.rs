@@ -9,11 +9,11 @@ use crate::{
         },
         subscriptions,
         views::{
+            Action,
             default::{
                 DefaultViewMessage,
                 Interaction::{self, SettingsPressed},
             },
-            Action,
         },
         widget::*,
     },
@@ -23,12 +23,12 @@ use crate::{
     update::{Progress, State, UpdateContent},
 };
 use iced::{
+    Alignment, Command, Length,
     alignment::{Horizontal, Vertical},
     widget::{
-        button, column, container, image, image::Handle, progress_bar, row, text,
-        text::LineHeight, tooltip, tooltip::Position, Image,
+        Image, button, column, container, image, image::Handle, progress_bar, row, text,
+        text::LineHeight, tooltip, tooltip::Position,
     },
-    Alignment, Command, Length,
 };
 use std::{
     sync::Arc,

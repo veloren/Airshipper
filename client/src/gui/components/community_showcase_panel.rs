@@ -1,5 +1,5 @@
 use crate::{
-    consts,
+    Result, consts,
     gui::{
         custom_widgets::heading_with_rule,
         rss_feed::{
@@ -10,15 +10,14 @@ use crate::{
         views::default::{DefaultViewMessage, Interaction},
         widget::*,
     },
-    Result,
 };
 use iced::{
+    Command, ContentFit, Length,
     alignment::{Horizontal, Vertical},
     widget::{
-        button, column, container, image::Handle, row, text, tooltip, tooltip::Position,
-        Image, Space,
+        Image, Space, button, column, container, image::Handle, row, text, tooltip,
+        tooltip::Position,
     },
-    Command, ContentFit, Length,
 };
 use rand::{prelude::SliceRandom, thread_rng};
 use serde::{Deserialize, Serialize};

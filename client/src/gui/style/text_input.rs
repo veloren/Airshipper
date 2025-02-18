@@ -2,8 +2,8 @@ use crate::gui::style::{
     AirshipperTheme, CORNFLOWER_BLUE, DARK_WHITE, LIGHT_GREY, MEDIUM_GREY, NAVY_BLUE,
 };
 use iced::{
-    widget::{text_input, text_input::Appearance},
     Background, Border, Color,
+    widget::{text_input, text_input::Appearance},
 };
 
 pub enum TextInputStyle {

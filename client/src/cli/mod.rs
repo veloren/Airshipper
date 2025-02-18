@@ -1,14 +1,13 @@
 use crate::{
-    fs, gui, io,
+    Result, fs, gui, io,
     logger::{self, pretty_bytes},
-    profiles::{parse_env_vars, Profile},
-    Result,
+    profiles::{Profile, parse_env_vars},
 };
 use parse::Action;
 mod parse;
 use iced::futures::stream::StreamExt;
 
-use crate::{error::ClientError, profiles::LogLevel, BASE_PATH};
+use crate::{BASE_PATH, error::ClientError, profiles::LogLevel};
 use gui::Airshipper;
 pub use parse::CmdLine;
 use tracing::level_filters::LevelFilter;
@@ -111,7 +110,7 @@ async fn process_arguments(
 }
 
 async fn update(airshipper: &mut Airshipper, do_not_ask: bool) -> Result<()> {
-    use crate::update::{update, Progress};
+    use crate::update::{Progress, update};
     use indicatif::{ProgressBar, ProgressStyle};
 
     let progress_bar = ProgressBar::new(0).with_style(
