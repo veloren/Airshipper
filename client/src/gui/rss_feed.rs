@@ -1,11 +1,11 @@
 use crate::{
-    fs,
-    gui::views::{default::DefaultViewMessage, Action},
-    net, ClientError, Result,
+    ClientError, Result, fs,
+    gui::views::{Action, default::DefaultViewMessage},
+    net,
 };
 use futures_util::future::join_all;
-use iced::{widget::image::Handle, Command};
-use image::{imageops::FilterType, ExtendedColorType, ImageFormat};
+use iced::{Command, widget::image::Handle};
+use image::{ExtendedColorType, ImageFormat, imageops::FilterType};
 use rss::Channel;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, warn};

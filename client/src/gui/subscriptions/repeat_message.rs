@@ -1,12 +1,12 @@
 use std::{hash::Hash, time::Duration};
 
 use iced::{
+    Subscription,
     advanced::{
-        subscription::{EventStream, Recipe},
         Hasher,
+        subscription::{EventStream, Recipe},
     },
     futures::{self, stream::BoxStream},
-    Subscription,
 };
 
 pub fn stream<M>(interval: Duration, message: M) -> iced::Subscription<M>

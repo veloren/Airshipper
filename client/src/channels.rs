@@ -1,4 +1,4 @@
-use crate::{net, Result};
+use crate::{Result, net};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 

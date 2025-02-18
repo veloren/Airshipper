@@ -1,7 +1,7 @@
 use super::Artifact;
 use crate::CONFIG;
 use chrono::{DateTime, Utc};
-use reqwest::header::{HeaderMap, HeaderValue, ACCEPT};
+use reqwest::header::{ACCEPT, HeaderMap, HeaderValue};
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]

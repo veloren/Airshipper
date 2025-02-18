@@ -3,8 +3,8 @@ use crate::gui::style::{
     DARK_WHITE, LIGHT_GREY, LIME_GREEN, MEDIUM_GREY, NAVY_BLUE, VERY_DARK_GREY,
 };
 use iced::{
-    widget::{container, container::Appearance},
     Background, Border, Color,
+    widget::{container, container::Appearance},
 };
 
 #[derive(Default)]

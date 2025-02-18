@@ -1,4 +1,5 @@
 use crate::{
+    Result,
     assets::{BOOK_ICON, FOLDER_ICON},
     channels::{Channel, Channels},
     gui::{
@@ -6,22 +7,21 @@ use crate::{
         custom_widgets::heading_with_rule,
         style::{button::ButtonStyle, container::ContainerStyle, text::TextStyle},
         views::{
-            default::{DefaultViewMessage, Interaction},
             Action,
+            default::{DefaultViewMessage, Interaction},
         },
         widget::*,
     },
     profiles,
     profiles::Profile,
-    Result,
 };
 use iced::{
+    Alignment, Command, Length,
     alignment::Horizontal,
     widget::{
-        button, column, container, image, image::Handle, pick_list, row, text,
-        text_input, tooltip, tooltip::Position, Image,
+        Image, button, column, container, image, image::Handle, pick_list, row, text,
+        text_input, tooltip, tooltip::Position,
     },
-    Alignment, Command, Length,
 };
 use tracing::debug;
 

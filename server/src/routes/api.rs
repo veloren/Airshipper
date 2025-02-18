@@ -1,14 +1,14 @@
 use crate::{
-    config::{Platform, API_VERSION},
-    db::actions::get_latest_version_uri,
     Context,
+    config::{API_VERSION, Platform},
+    db::actions::get_latest_version_uri,
 };
 use axum::{
+    Json,
     body::Body,
     extract::{Path, State},
     http::{Response, StatusCode},
     response::{IntoResponse, Redirect},
-    Json,
 };
 use serde::Serialize;
 

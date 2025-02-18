@@ -1,9 +1,10 @@
 use crate::{assets::POPPINS_BOLD_FONT, gui::widget::*};
 use iced::{
-    widget::{container, horizontal_rule, row, text},
     Alignment, Length,
+    widget::{container, horizontal_rule, row, text},
 };
 
+#[expect(elided_named_lifetimes)]
 pub(crate) fn heading_with_rule<'a, T: 'a>(heading_text: &'a str) -> Element<T> {
     container(
         row![]

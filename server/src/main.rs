@@ -11,14 +11,14 @@ mod routes;
 mod webhook;
 
 use axum::{
+    Router,
     body::Body,
     extract::{MatchedPath, Request, State},
     http::Response,
     middleware::{self, Next},
     routing::{get, post},
-    Router,
 };
-use config::{loading, Config, CONFIG_PATH, LOCAL_STORAGE_PATH};
+use config::{CONFIG_PATH, Config, LOCAL_STORAGE_PATH, loading};
 use db::{Db, FsStorage};
 use metrics::Metrics;
 use std::{net::SocketAddr, path::Path, sync::Arc};

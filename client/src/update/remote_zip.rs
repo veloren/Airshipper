@@ -2,19 +2,19 @@ use bytes::{Bytes, BytesMut};
 use reqwest::header::RANGE;
 use thiserror::Error;
 use zip_core::{
-    raw::{
-        parse::{find_next_signature, Parse},
-        CentralDirectoryHeader, EndOfCentralDirectory, EndOfCentralDirectoryFixed,
-    },
     Signature,
+    raw::{
+        CentralDirectoryHeader, EndOfCentralDirectory, EndOfCentralDirectoryFixed,
+        parse::{Parse, find_next_signature},
+    },
 };
 
-use crate::{profiles::Profile, GITHUB_CLIENT};
+use crate::{GITHUB_CLIENT, profiles::Profile};
 
 use super::{
+    State,
     compare::Compared,
     download::{Download, ProgressData, StepProgress, Storage, UpdateContent},
-    State,
 };
 
 #[derive(Debug, Error)]

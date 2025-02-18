@@ -1,4 +1,4 @@
-use iced::{application, application::Appearance, Color};
+use iced::{Color, application, application::Appearance};
 use lazy_static::lazy_static;
 
 pub mod button;

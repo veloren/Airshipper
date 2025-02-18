@@ -1,4 +1,4 @@
-use crate::{fs, windows, Result};
+use crate::{Result, fs, windows};
 use self_update::update::{Release, ReleaseAsset};
 use semver::Version;
 use std::{
@@ -11,7 +11,7 @@ use windows_sys::Win32::{
     System::{Console::GetConsoleWindow, Threading::GetCurrentProcessId},
     UI::{
         Shell::ShellExecuteW,
-        WindowsAndMessaging::{GetWindowThreadProcessId, ShowWindow, SW_HIDE, SW_SHOW},
+        WindowsAndMessaging::{GetWindowThreadProcessId, SW_HIDE, SW_SHOW, ShowWindow},
     },
 };
 

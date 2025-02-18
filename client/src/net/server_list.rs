@@ -1,4 +1,4 @@
-use crate::{query, Result};
+use crate::{Result, query};
 use veloren_serverbrowser_api::GameServerList;
 
 pub(crate) async fn fetch_server_list(url: String) -> Result<GameServerList> {

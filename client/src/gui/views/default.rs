@@ -6,8 +6,8 @@ use crate::{
             ChangelogPanelComponent, ChangelogPanelMessage, CommunityShowcaseComponent,
             CommunityShowcasePanelMessage, GamePanelComponent, GamePanelMessage,
             LogoPanelComponent, NewsPanelComponent, NewsPanelMessage,
-            ServerBrowserPanelComponent, ServerBrowserPanelMessage,
-            SettingsPanelComponent, SettingsPanelMessage, SERVER_BROWSER_PING_REFRESH,
+            SERVER_BROWSER_PING_REFRESH, ServerBrowserPanelComponent,
+            ServerBrowserPanelMessage, SettingsPanelComponent, SettingsPanelMessage,
         },
         rss_feed::RssFeedComponentMessage::UpdateRssFeed,
         style::container::ContainerStyle,
@@ -19,8 +19,8 @@ use crate::{
 };
 
 use iced::{
-    widget::{column, container, row},
     Command, Length,
+    widget::{column, container, row},
 };
 
 #[cfg(windows)]

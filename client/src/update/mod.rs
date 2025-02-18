@@ -1,8 +1,8 @@
 use std::{convert::TryFrom, future::Future, io::Read, pin::Pin};
 
 use crate::{
-    consts::DOWNLOAD_FILE, error::ClientError, profiles::Profile, GITHUB_CLIENT,
-    WEB_CLIENT,
+    GITHUB_CLIENT, WEB_CLIENT, consts::DOWNLOAD_FILE, error::ClientError,
+    profiles::Profile,
 };
 #[cfg(unix)]
 use crate::{
@@ -10,23 +10,23 @@ use crate::{
     nix,
 };
 use bytes::{Buf, BytesMut};
-use compare::{prepare_local_with_remote, Compared};
+use compare::{Compared, prepare_local_with_remote};
 use download::{Download, DownloadError, ProgressData, StepProgress};
 use flate2::read::DeflateDecoder;
 use futures_util::{
-    stream::{FuturesUnordered, Stream},
     FutureExt,
+    stream::{FuturesUnordered, Stream},
 };
 use iced::futures;
 use local_directory::{FileInformation, LocalDirectory};
-use remote_zip::{gen_classsic, RemoteZipError};
+use remote_zip::{RemoteZipError, gen_classsic};
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use tokio::io::AsyncWriteExt;
 use zip_core::{
-    raw::{parse::Parse, CentralDirectoryHeader, LocalFileHeader},
-    structs::CompressionMethod,
     Signature,
+    raw::{CentralDirectoryHeader, LocalFileHeader, parse::Parse},
+    structs::CompressionMethod,
 };
 
 mod compare;

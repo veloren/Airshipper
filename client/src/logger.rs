@@ -5,10 +5,11 @@ use termcolor::{ColorChoice, StandardStream};
 use tracing::info;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::{
-    filter::{targets::Targets, LevelFilter},
+    EnvFilter,
+    filter::{LevelFilter, targets::Targets},
     fmt::writer::MakeWriter,
     prelude::*,
-    registry, EnvFilter,
+    registry,
 };
 
 const MAX_LOG_LINES: usize = 10_000;

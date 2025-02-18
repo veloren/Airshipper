@@ -9,9 +9,9 @@ use crate::gui::{
     widget::*,
 };
 use iced::{
+    Alignment, Command, Length,
     alignment::{Horizontal, Vertical},
     widget::{button, column, container, row, text},
-    Alignment, Command, Length,
 };
 use self_update::update::Release;
 

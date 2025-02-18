@@ -1,10 +1,10 @@
 use crate::gui::style::{AirshipperTheme, NAVY_BLUE, VERY_DARK_GREY};
 use iced::{
+    Background, Border, Color,
     widget::{
         pick_list,
         pick_list::{Appearance, StyleSheet},
     },
-    Background, Border, Color,
 };
 
 #[derive(Copy, Clone, Debug)]

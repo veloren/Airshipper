@@ -2,8 +2,8 @@ use crate::gui::style::{
     AirshipperTheme, BRIGHT_ORANGE, DARK_WHITE, LIGHT_GREY, LILAC, TOMATO_RED,
 };
 use iced::{
-    widget::{text, text::Appearance},
     Color,
+    widget::{text, text::Appearance},
 };
 
 #[derive(Debug, Clone, Copy)]

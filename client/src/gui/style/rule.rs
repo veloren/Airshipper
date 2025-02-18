@@ -1,10 +1,10 @@
 use crate::gui::style::AirshipperTheme;
 use iced::{
+    Color,
     widget::{
         rule,
         rule::{Appearance, FillMode},
     },
-    Color,
 };
 
 #[derive(Debug, Clone, Copy)]

@@ -1,4 +1,4 @@
-use iced::{font::Weight, Font};
+use iced::{Font, font::Weight};
 
 pub const VELOREN_LOGO: &[u8] = include_bytes!("../assets/images/veloren-logo.png");
 pub const VELOREN_ICON: &[u8] = include_bytes!("../assets/icons/logo.ico");
