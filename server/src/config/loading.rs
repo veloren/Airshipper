@@ -76,6 +76,7 @@ pub struct Channel {
 }
 
 impl Platform {
+    #[expect(dead_code)]
     pub fn new<T: Into<String>>(os: T, arch: T) -> Self {
         Self {
             os: os.into(),

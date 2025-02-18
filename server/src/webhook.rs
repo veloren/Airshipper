@@ -1,10 +1,10 @@
 use crate::{
+    FsStorage,
     config::{self, GithubReleaseConfig},
     error::ProcessError,
     models::Artifact,
-    FsStorage,
 };
-use octocrab::{models::repos::Release, repos::ReleasesHandler, GitHubError, Octocrab};
+use octocrab::{GitHubError, Octocrab, models::repos::Release, repos::ReleasesHandler};
 use serde_json::json;
 use tokio::io::AsyncReadExt;
 use url::Url;
@@ -172,6 +172,7 @@ async fn upload_to_github_release(
 
 ///Gets the github release set in config if the release exists, otherwise creates and
 /// returns it.
+#[expect(clippy::needless_lifetimes)]
 async fn get_github_release<'octo, 'r>(
     release_handler: &ReleasesHandler<'octo, 'r>,
     github_release_config: &'r GithubReleaseConfig,

@@ -73,6 +73,7 @@ impl Artifact {
 
     /// Returns the file extension
     /// NOTE: without dot (e.g. zip)
+    #[expect(dead_code)]
     pub fn extension(&self) -> String {
         use std::{ffi::OsStr, path::PathBuf};
         PathBuf::from(&self.file_name)

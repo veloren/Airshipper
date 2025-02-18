@@ -1,8 +1,9 @@
 use crate::{
+    Result,
     assets::{
-        GLOBE_ICON, KEY_ICON, PING1_ICON, PING2_ICON, PING3_ICON, PING4_ICON,
-        PING_ERROR_ICON, PING_NONE_ICON, POPPINS_BOLD_FONT, POPPINS_MEDIUM_FONT,
-        STAR_ICON, UNIVERSAL_FONT, UP_RIGHT_ARROW_ICON,
+        GLOBE_ICON, KEY_ICON, PING_ERROR_ICON, PING_NONE_ICON, PING1_ICON, PING2_ICON,
+        PING3_ICON, PING4_ICON, POPPINS_BOLD_FONT, POPPINS_MEDIUM_FONT, STAR_ICON,
+        UNIVERSAL_FONT, UP_RIGHT_ARROW_ICON,
     },
     consts,
     consts::{GITLAB_SERVER_BROWSER_URL, OFFICIAL_SERVER_LIST},
@@ -18,16 +19,15 @@ use crate::{
     },
     net,
     server_list::fetch_server_list,
-    Result,
 };
 use consts::OFFICIAL_AUTH_SERVER;
 use iced::{
+    Alignment, Command, Length,
     alignment::{Horizontal, Vertical},
     widget::{
-        button, column, container, horizontal_rule, image, image::Handle, row,
-        scrollable, text, tooltip, tooltip::Position, Image,
+        Image, button, column, container, horizontal_rule, image, image::Handle, row,
+        scrollable, text, tooltip, tooltip::Position,
     },
-    Alignment, Command, Length,
 };
 use std::{borrow::Cow, cmp::min, time::Duration};
 use tracing::debug;
@@ -580,7 +580,7 @@ impl ServerBrowserPanelComponent {
         &mut self,
         msg: ServerBrowserPanelMessage,
     ) -> Option<Command<DefaultViewMessage>> {
-        return match msg {
+        match msg {
             ServerBrowserPanelMessage::UpdateServerList(result) => match result {
                 Ok(Some(server_browser)) => {
                     *self = server_browser;
@@ -698,7 +698,7 @@ impl ServerBrowserPanelComponent {
                 self.last_sort_ordering = Some(order);
                 None
             },
-        };
+        }
     }
 
     fn sort_servers(&mut self, order: ServerSortOrder) {
