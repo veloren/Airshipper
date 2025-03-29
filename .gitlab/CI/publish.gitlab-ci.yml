@@ -131,3 +131,17 @@ flatpak:
     - git checkout -b "veloren-bot/update_version"
     - git commit -m "updating new airshipper version"
     - git push --set-upstream origin "veloren-bot/update_version"
+
+cratesio:
+  stage: publish
+  environment: production
+  # Deploy the server on every merge to master and a tag is pushed to master
+  rules:
+    - if: ($CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_TAG != null)
+  image:
+    name: registry.gitlab.com/veloren/veloren-docker-ci/base/linux-x86_64:${CACHE_IMAGE_TAG}
+  tags: ["veloren/*", "publish", "trusted"]
+  before_script:
+    - echo "" # Override before_script in .gitlab-ci.yml
+  script:
+    - CARGO_REGISTRY_TOKEN=${VELOREN_BOT_CRATES_IO_ACCESS_TOKEN} cargo publish --package airshipper --dry-run
