@@ -373,7 +373,7 @@ async fn filter_missings(
     const MAX_FILES_FOR_PARTIAL_DOWNLOAD: usize = 200;
     if compared.needs_redownload.len() > MAX_FILES_FOR_PARTIAL_DOWNLOAD {
         tracing::info!(
-            "to many files changed to make partial download efficient, falling back to \
+            "too many files changed to make partial download efficient, falling back to \
              classic mode"
         );
         return fallback(&profile, false);
