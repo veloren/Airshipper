@@ -88,11 +88,9 @@ gitlab_release:
 
 # Generates flatpak files and pushes them to https://github.com/flathub/net.veloren.airshipper
 flatpak:
+  extends: .treleasetag
   stage: publish
   environment: production
-  # Deploy the server on every merge to master and a tag is pushed to master
-  rules:
-    - if: ($CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_TAG != null)
   image:
     name: debian:bookworm-slim
     entrypoint: [""]
@@ -133,11 +131,9 @@ flatpak:
     - git push --set-upstream origin "veloren-bot/update_version"
 
 cratesio:
+  extends: .treleasetag
   stage: publish
   environment: production
-  # Deploy the server on every merge to master and a tag is pushed to master
-  rules:
-    - if: ($CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_TAG != null)
   image:
     name: registry.gitlab.com/veloren/veloren-docker-ci/base/linux-x86_64:${CACHE_IMAGE_TAG}
   tags: ["veloren/*", "publish", "trusted"]
