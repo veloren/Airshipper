@@ -104,13 +104,17 @@ country-parser = "0.1.1"
 openssl-sys = { version = "0.9", features = ["vendored"], optional = true }
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.60", features = [
+windows-sys = { version = "0.61", features = [
     "Win32_UI",
     "Win32_UI_Shell",
     "Win32_UI_WindowsAndMessaging",
     "Win32_System_Threading",
 ] }
-self_update = { version = "0.42", features = ["archive-zip"] }
+self_update = { version = "1", default-features = false, features = [
+    "gitlab",
+    "reqwest",
+    "rustls",
+] }
 
 [build-dependencies]
 winresource = "0.1.15"
