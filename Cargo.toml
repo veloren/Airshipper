@@ -52,8 +52,12 @@ regex = "1.10"
 
 # Networking
 reqwest = { version = "0.13", default-features = false, features = [
-    "rustls",
+    "rustls-no-provider",
     "http2",
+] }
+rustls = { version = "0.23", default-features = false, features = [
+    "ring",
+    "std",
 ] }
 
 # Parsing
