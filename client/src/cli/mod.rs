@@ -59,7 +59,7 @@ pub fn process() -> Result<()> {
     if let Ok(Some(release)) = crate::windows::query() {
         tracing::info!(
             "New Airshipper release found: {}. Run `airshipper upgrade` to update.",
-            release.version
+            release.version()
         );
     }
 
@@ -306,7 +306,7 @@ async fn config(profile: &mut Profile) -> Result<()> {
 fn upgrade() -> Result<()> {
     match crate::windows::query()? {
         Some(release) => {
-            tracing::info!("Found new Airshipper release: {}", release.version);
+            tracing::info!("Found new Airshipper release: {}", release.version());
             crate::windows::update(&release)?;
         },
         None => tracing::info!("Airshipper is up-to-date."),

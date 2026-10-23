@@ -31,6 +31,10 @@ lazy_static::lazy_static! {
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let _guard = Arc::new(logger::init(tracing::metadata::LevelFilter::INFO));
 
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .unwrap();
+
     let local_storage_folder = CONFIG.get_local_storage_path();
     if !local_storage_folder.exists() {
         std::fs::create_dir_all(local_storage_folder.clone()).unwrap();

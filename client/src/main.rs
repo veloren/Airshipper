@@ -23,6 +23,9 @@ pub type Result<T> = std::result::Result<T, ClientError>;
 
 fn main() {
     error::panic_hook();
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .unwrap();
 
     // If we fail to read a line, the user probably cancelled an action
     if let Some(e) = cli::process()

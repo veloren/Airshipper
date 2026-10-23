@@ -23,9 +23,6 @@ icon = "./client/assets/logo.ico"
 maintenance = { status = "actively-developed" }
 
 [features]
-# Windows cannot bundle ssl by default and as such this feature exists
-# to bundle ssl in CI.
-bundled = ["openssl-sys"]
 bundled_font = []
 
 [dependencies]
@@ -37,7 +34,7 @@ veloren-query-server = { version = "0.1.2", default-features = false, features =
 # Cli
 clap = { version = "4.5.21", features = ["cargo", "derive"] }
 indicatif = "0.18"
-rustyline = "17"
+rustyline = "19"
 colored = "3"
 
 # UI
@@ -59,16 +56,17 @@ tracing-log = { workspace = true }
 regex = { workspace = true }
 # Networking
 reqwest = { workspace = true, features = ["json"] }
+rustls = { workspace = true }
 
 # Parsing
 pulldown-cmark = "0.13"
 strip_markdown = "0.2.0"
-html2text = "0.15"
+html2text = "0.17"
 serde = { workspace = true }
 semver = "1"
 rss = "2.0.7"
 ron = { workspace = true }
-remozipsy = "0.2.0"
+remozipsy = "0.4.0"
 crc32fast = "1.4.2"
 flate2 = "1.0"
 url = { workspace = true }
@@ -94,23 +92,23 @@ lazy_static = { workspace = true }
 thiserror = { workspace = true }
 bytesize = { workspace = true }
 bytes = { workspace = true }
-opener = "0.8"
+opener = "0.9"
 dirs = { package = "dirs-next", version = "2.0.0" }
-rand = "0.9"
+rand = "0.10"
 chrono = { workspace = true }
 country-parser = "0.1.1"
 
-# bundle all the things!
-openssl-sys = { version = "0.9", features = ["vendored"], optional = true }
-
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.60", features = [
+windows-sys = { version = "0.61", features = [
     "Win32_UI",
     "Win32_UI_Shell",
     "Win32_UI_WindowsAndMessaging",
     "Win32_System_Threading",
 ] }
-self_update = { version = "0.42", features = ["archive-zip"] }
+self_update = { version = "1", default-features = false, features = [
+    "gitlab",
+    "reqwest",
+] }
 
 [build-dependencies]
 winresource = "0.1.15"

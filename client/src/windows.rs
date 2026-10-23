@@ -18,11 +18,11 @@ use windows_sys::Win32::{
 fn get_asset(release: &Release) -> Option<ReleaseAsset> {
     release.asset_for("windows", None).or_else(|| {
         release
-            .assets
+            .assets()
             .iter()
             .find(|a| {
-                let name = a.name.to_uppercase();
-                let download_url = a.download_url.to_uppercase();
+                let name = a.name().to_uppercase();
+                let download_url = a.download_url().to_uppercase();
 
                 download_url.ends_with(".MSI")
                     || download_url.ends_with("INSTALLER.EXE")
@@ -39,19 +39,19 @@ pub fn query() -> Result<Option<Release>> {
         .build()?
         .fetch()?;
 
-    // Get latest Github release
-    if let Some(latest_release) = releases.first() {
+    // Get latest Gitlab release
+    if let Some(latest_release) = releases.latest() {
         tracing::trace!("detected online release: {:?}", latest_release);
 
-        let newer = Version::parse(&latest_release.version)?
+        let newer = Version::parse(latest_release.version())?
             > Version::parse(env!("CARGO_PKG_VERSION"))?;
         let contains_asset = get_asset(latest_release).is_some();
 
         tracing::trace!(?newer, ?contains_asset, "online release info");
 
-        // Check if Github release is newer
+        // Check if Gitlab release is newer
         if contains_asset && newer {
-            tracing::debug!("Found new Airshipper release: {}", &latest_release.version);
+            tracing::debug!("Found new Airshipper release: {}", latest_release.version());
             return Ok(Some(latest_release.clone()));
         } else {
             tracing::debug!("Airshipper is up-to-date.");
@@ -71,11 +71,11 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
 
     let asset = get_asset(latest_release);
 
-    // Check Github release provides artifact for current platform
+    // Check Gitlab release provides artifact for current platform
     if let Some(asset) = asset {
         tracing::debug!("Found asset: {:?}", asset);
         let download_file_name = asset
-            .download_url
+            .download_url()
             .rsplit_once('/')
             .map(|(_, end)| end)
             .unwrap_or("installer.exe");
@@ -83,19 +83,14 @@ pub(crate) fn update(latest_release: &Release) -> Result<()> {
         let install_file_path = update_cache_path.join(download_file_name);
         tracing::debug!(
             "Downloading '{}' to '{}'",
-            &asset.download_url,
+            asset.download_url(),
             install_file_path.display()
         );
-        let install_file_path = update_cache_path.join(&download_file_name);
-
         let install_file = File::create(&install_file_path)?;
 
-        self_update::Download::from_url(&asset.download_url)
-            .set_header(
-                reqwest::header::ACCEPT,
-                "application/octet-stream".parse().unwrap(),
-            )
-            .show_progress(false)
+        self_update::Download::from_url(asset.download_url())
+            .request_header(reqwest::header::ACCEPT, "application/octet-stream")
+            .show_download_progress(false)
             .download_to(&install_file)?;
 
         install_file.sync_all()?; //make sure we block on sync before we start it
